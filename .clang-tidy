@@ -9,6 +9,7 @@ Checks: >
   clang-analyzer-*,
   misc-*,
   hicpp-*,
+  -*include-cleaner,
 
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
@@ -63,9 +64,9 @@ CheckOptions:
   - key: readability-identifier-naming.PrivateMemberPrefix
     value: ''
   - key: readability-identifier-naming.PrivateMemberSuffix
-    value: '_'
+    value: ''
   - key: readability-identifier-naming.ProtectedMemberSuffix
-    value: '_'
+    value: ''
   - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.GlobalConstantCase
@@ -76,7 +77,7 @@ CheckOptions:
   - key: readability-identifier-naming.AbstractClassCase
     value: CamelCase
   - key: readability-identifier-naming.AbstractClassPrefix
-    value: 'I'
+    value: ''
 
   # --- Modernize tuning -------------------------------------------------------
   - key: modernize-use-override.IgnoreDestructors
