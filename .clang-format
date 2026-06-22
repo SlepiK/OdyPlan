@@ -1,0 +1,96 @@
+---
+Language: Cpp
+Standard: c++20
+BasedOnStyle: LLVM
+
+# --- Indentation -----------------------------------------------------------
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+NamespaceIndentation: All
+
+# --- Braces & layout ---------------------------------------------------------
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterStruct: false
+  AfterEnum: false
+  AfterUnion: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterControlStatement: false
+  AfterCaseLabel: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+Cpp11BracedListStyle: true
+FixNamespaceComments: true
+
+# --- Line length / wrapping --------------------------------------------------
+ColumnLimit: 100
+AlwaysBreakTemplateDeclarations: Yes
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers: NextLine
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+AlwaysBreakAfterReturnType: None
+BinPackArguments: false
+BinPackParameters: false
+
+# --- Pointers / references ---------------------------------------------------
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+# --- Includes -----------------------------------------------------------------
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^<(odyplan|odycompiler)/'
+    Priority:        1
+    SortPriority:    1
+  - Regex:           '^"'
+    Priority:        2
+    SortPriority:    2
+  - Regex:           '^<(llvm|clang)/'
+    Priority:        3
+    SortPriority:    3
+  - Regex:           '^<(spdlog|nlohmann|CLI)'
+    Priority:        4
+    SortPriority:    4
+  - Regex:           '.*'
+    Priority:        5
+    SortPriority:    5
+
+# --- Spacing -------------------------------------------------------------------
+SpaceBeforeParens: ControlStatements
+SpaceAfterTemplateKeyword: true
+SpacesInAngles: Never
+SpaceBeforeAssignmentOperators: true
+SpacesBeforeTrailingComments: 2
+
+# --- Alignment -----------------------------------------------------------------
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignTrailingComments: true
+AlignOperands: Align
+
+# --- Misc ------------------------------------------------------------------
+ReflowComments: true
+SortUsingDeclarations: true
+SpaceAroundPointerQualifiers: Default
+QualifierAlignment: Leave
+EmptyLineBeforeAccessModifier: Leave
+MaxEmptyLinesToKeep: 1
