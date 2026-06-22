@@ -43,6 +43,9 @@ jobs:
           sudo apt-get remove -y llvm* clang* libclang*
           sudo apt-get autoremove -y
 
+      - name: Add LLVM to PATH
+        run: echo "/home/runner/llvm-22/bin" >> "$GITHUB_PATH"
+
       - name: Verify toolchain
         run: |
           clang-tidy --version
