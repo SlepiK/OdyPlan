@@ -67,8 +67,6 @@ CheckOptions:
     value: ''
   - key: readability-identifier-naming.ProtectedMemberSuffix
     value: ''
-  - key: readability-identifier-naming.ConstantCase
-    value: ''
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.TemplateParameterCase
