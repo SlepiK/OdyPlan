@@ -7,9 +7,21 @@
 
 namespace sierra::odyplan::v1::core::opr {
     template <tuple::Tuple TOut>
-    class TypedSourceOperator : public ISourceOperator {
+    class TypedSourceOperator : public ISourceOperator, public flow::IEmitting<TOut> {
     public:
-        virtual void produce(flow::Emitter<TOut>* out) = 0;
+        void setEmitter(flow::Emitter<TOut>* emitter) final {
+            mEmitter = emitter;
+        }
+
+    protected:
+        void emit(const TOut& tuple) {
+            if (mEmitter != nullptr) {
+                mEmitter->emit(tuple);
+            }
+        }
+
+    private:
+        flow::Emitter<TOut>* mEmitter = nullptr;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 

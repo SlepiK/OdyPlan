@@ -7,10 +7,25 @@
 #include "pipe_operator.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    template <tuple::Tuple TIn, tuple::Tuple TOut>
-    class TypedPipeOperator : public IPipeOperator {
+    template <tuple::Tuple TOut, tuple::Tuple... TIn>
+    class TypedPipeOperator : public IPipeOperator,
+                              public ingest::IngestPorts<TIn...>,
+                              public flow::IEmitting<TOut> {
     public:
-        virtual void consume(const TIn& tupleIn, flow::Emitter<TOut>* out) = 0;
+        static constexpr std::size_t INPUT_PORT_COUNT = sizeof...(TIn);
+
+        void setEmitter(flow::Emitter<TOut>* emitter) final {
+            mEmitter = emitter;
+        }
+
+    protected:
+        void emit(const TOut& tuple) {
+            if (mEmitter != nullptr) {
+                mEmitter->emit(tuple);
+            }
+        }
+    private:
+        flow::Emitter<TOut>* mEmitter = nullptr;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 
