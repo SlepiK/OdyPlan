@@ -1,7 +1,6 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_TYPEDSINKOPERATOR_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_TYPEDSINKOPERATOR_H
 
-#include "core/operator/flow/consumer.h"
 #include "core/tuple/tuple.h"
 #include "sink_operator.h"
 
