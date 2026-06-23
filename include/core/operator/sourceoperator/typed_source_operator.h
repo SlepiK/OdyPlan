@@ -9,7 +9,7 @@ namespace sierra::odyplan::v1::core::opr {
     template <tuple::Tuple TOut>
     class TypedSourceOperator : public ISourceOperator {
     public:
-        virtual void produce(flow::IEmitter<TOut>& out) = 0;
+        virtual void produce(flow::EmitterFn<TOut> out) = 0;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 
