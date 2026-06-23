@@ -43,7 +43,7 @@ namespace sierra::odyplan::v1::core::opr::ingest {
     };
 
     template <tuple::Tuple... TInx>
-    using IngestPorts = typename IngestPortImpl<std::index_sequence_for<TInx...>, TInx...>::Type;
+    using IngestPorts = IngestPortImpl<std::index_sequence_for<TInx...>, TInx...>::Type;
 
 }  // namespace sierra::odyplan::v1::core::opr::ingest
 
