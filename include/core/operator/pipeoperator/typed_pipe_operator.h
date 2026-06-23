@@ -9,9 +9,9 @@
 namespace sierra::odyplan::v1::core::opr {
     template <tuple::Tuple TIn, tuple::Tuple TOut>
     class TypedPipeOperator : public IPipeOperator {
-	public:
-		virtual void consume(const TIn& tupleIn, flow::EmitterFn<TOut> out, void* state) = 0;
-	}
+    public:
+        virtual void consume(const TIn& tupleIn, flow::Emitter<TOut>* out) = 0;
+    };
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_TYPEDPIPEOPERATOR_H
