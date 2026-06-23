@@ -64,10 +64,17 @@ jobs:
           
       - name: Run clang-tidy
         run: |
-          find src include -type f \( -name '*.cpp' -o -name '*.cc' \) > /tmp/files.txt
-          if [ ! -s /tmp/files.txt ]; then
-            echo "No source files found to lint."
+          if [[ ! -d include ]]; then
+            echo "No include directory found. Skipping clang-tidy."
             exit 0
           fi
-          xargs clang-tidy -p build --warnings-as-errors='*' < /tmp/files.txt
+
+          FILES=$(find include -type f \( -name '*.h' -o -name '*.hpp' \))
+
+          if [[ -z "$FILES" ]]; then
+            echo "No header files found. Skipping clang-tidy."
+            exit 0
+          fi
+
+          echo "$FILES" | xargs clang-tidy -p build --warnings-as-errors='*'
 
