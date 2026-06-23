@@ -28,9 +28,9 @@ namespace sierra::odyplan::v1::core::opr::ingest {
 
     template <std::size_t... Ix, tuple::Tuple... TInx>
     struct IngestPortImpl<std::index_sequence<Ix...>, TInx...> {
-        struct Type : public IIngestPort<Ix, TInx>... {
+        struct Type : IIngestPort<Ix, TInx>... {
             Type() = default;
-            virtual ~Type() = default;
+            ~Type() override = default;
 
             Type(const Type&) = delete;
             Type& operator=(const Type&) = delete;
