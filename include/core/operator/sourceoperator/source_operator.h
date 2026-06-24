@@ -14,6 +14,8 @@ namespace sierra::odyplan::v1::core::opr {
 
         ISourceOperator(ISourceOperator&&) = delete;
         ISourceOperator& operator=(ISourceOperator&&) = delete;
+
+        virtual bool produce() = 0;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 
