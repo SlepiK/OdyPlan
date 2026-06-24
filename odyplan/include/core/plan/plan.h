@@ -13,7 +13,7 @@
 namespace sierra::odyplan::v1::core::plan {
     class Plan {
     public:
-        Plan();
+        Plan() = default;
 
         template <typename OpT, typename... Args>
         auto add(Args&&... args) -> opr::OperatorHandle<typename OpT::Tin, typename OpT::TOut> {
