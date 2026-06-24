@@ -1,14 +1,30 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 
+#include <core/operator/ingest/ingest.h>
+
 #include "core/tuple/tuple.h"
 
 namespace sierra::odyplan::v1::core::opr::flow {
+    class IEmitter {
+    public:
+        IEmitter() = default;
+
+        virtual ~IEmitter() = default;
+
+        IEmitter(const IEmitter&) = delete;
+        IEmitter& operator=(const IEmitter&) = delete;
+
+        IEmitter(IEmitter&&) = delete;
+        IEmitter& operator=(IEmitter&&) = delete;
+    };
+
     template <tuple::Tuple TOut>
-    class Emitter {
+    class Emitter : public IEmitter {
     public:
         Emitter() = default;
-        virtual ~Emitter() = default;
+
+        ~Emitter() override = default;
 
         Emitter(const Emitter&) = delete;
         Emitter& operator=(const Emitter&) = delete;
@@ -17,6 +33,19 @@ namespace sierra::odyplan::v1::core::opr::flow {
         Emitter& operator=(Emitter&&) = delete;
 
         virtual void emit(const TOut& tuple) = 0;
+    };
+
+    template <tuple::Tuple T, std::size_t TargetPort>
+    class BoundEmitter final : public Emitter<T> {
+    public:
+        explicit BoundEmitter(ingest::IIngestPort<TargetPort, T>* target) : mTarget(target) {}
+
+        void emit(const T& tuple) override {
+            mTarget->ingest(std::integral_constant<std::size_t, TargetPort>{}, tuple);
+        }
+
+    private:
+        ingest::IIngestPort<TargetPort, T>* mTarget;
     };
 
     template <tuple::Tuple TOut>

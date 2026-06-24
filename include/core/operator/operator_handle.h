@@ -4,10 +4,12 @@
 #include "core/tuple/tuple.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    template <tuple::Tuple TIn, tuple::Tuple TOut>
+    template <typename Opt, tuple::Tuple TOut, tuple::Tuple... TIn>
     class OperatorHandle {
     public:
-        explicit OperatorHandle(std::size_t index) : mIndex(index) {}
+        explicit OperatorHandle(const std::size_t index) : mIndex(index) {}
+
+        static constexpr std::size_t PORT_COUNT = sizeof...(TIn);
 
         [[nodiscard]] std::size_t getIndex() const {
             return mIndex;
