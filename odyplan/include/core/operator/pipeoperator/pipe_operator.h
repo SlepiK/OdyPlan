@@ -15,6 +15,13 @@ namespace sierra::odyplan::v1::core::opr {
         IPipeOperator(IPipeOperator&&) = delete;
         IPipeOperator& operator=(IPipeOperator&&) = delete;
     };
+
+    template <typename T>
+    concept PipeOperatorType =
+        OperatorHandleHasPorts<T> &&
+        std::derived_from<T, IPipeOperator> &&
+        port::PortsType<typename T::Input> &&
+        port::PortType<typename T::Output>;
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_PIPEOPERATOR_H

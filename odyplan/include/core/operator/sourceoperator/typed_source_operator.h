@@ -9,8 +9,8 @@ namespace sierra::odyplan::v1::core::opr {
     template <port::PortType TOut>
     class TypedSourceOperator : public ISourceOperator, public flow::IEmitting<TOut> {
     public:
-        using OperatorInput = port::NullPort;
-        using OperatorOutput = TOut;
+        using Input = port::NullPort;
+        using Output = TOut;
 
         void setEmitter(flow::Emitter<TOut>* emitter) final {
             mEmitter = emitter;

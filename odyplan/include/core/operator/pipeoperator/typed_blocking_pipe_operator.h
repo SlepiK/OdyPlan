@@ -12,8 +12,8 @@ namespace sierra::odyplan::v1::core::opr {
                                       public ingest::IngestPorts<TIn>,
                                       public flow::IDrainable<TOut> {
     public:
-        using OperatorInput = TIn;
-        using OperatorOutput = TOut;
+        using Input = TIn;
+        using Output = TOut;
 
         static constexpr std::size_t INPUT_PORT_COUNT = TIn::SIZE;
 

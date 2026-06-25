@@ -10,7 +10,7 @@
 namespace sierra::odyplan::v1::core::edge {
     class Edge {
     public:
-        Edge(const std::size_t source, const std::size_t sink, const std::size_t targetPortIndex) : mSource(source), mSink(sink), mTargetPortIndex(targetPortIndex) {}
+        Edge(const std::size_t from, const std::size_t to, const std::size_t toPortIndex) : mFrom(from), mTo(to), mToPortIndex(toPortIndex) {}
 
         virtual ~Edge() = default;
         Edge(const Edge&) = delete;
@@ -18,16 +18,16 @@ namespace sierra::odyplan::v1::core::edge {
         Edge(Edge&&) = delete;
         Edge& operator=(Edge&&) = delete;
 
-        [[nodiscard]] std::size_t source() const {
-            return mSource;
+        [[nodiscard]] std::size_t from() const {
+            return mFrom;
         }
 
-        [[nodiscard]] std::size_t sink() const {
-            return mSink;
+        [[nodiscard]] std::size_t to() const {
+            return mTo;
         }
 
-        [[nodiscard]] std::size_t targetPortIndex() const {
-            return mTargetPortIndex;
+        [[nodiscard]] std::size_t toPortIndex() const {
+            return mToPortIndex;
         }
 
         [[nodiscard]] virtual std::type_index payloadType() const = 0;
@@ -35,9 +35,9 @@ namespace sierra::odyplan::v1::core::edge {
         [[nodiscard]] virtual std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* sourceOperator, opr::IOperator* targetOperator) const = 0;
 
     private:
-        std::size_t mSource;
-        std::size_t mSink;
-        std::size_t mTargetPortIndex;
+        std::size_t mFrom;
+        std::size_t mTo;
+        std::size_t mToPortIndex;
     };
 }  // namespace sierra::odyplan::v1::core::edge
 

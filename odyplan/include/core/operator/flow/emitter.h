@@ -35,7 +35,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
         virtual void emit(const TOut& tuple) = 0;
     };
 
-    template <port::PortType T, std::size_t TargetPort>
+    template <std::size_t TargetPort, port::PortType T>
     class BoundEmitter final : public Emitter<T> {
     public:
         explicit BoundEmitter(ingest::IIngestPort<TargetPort, T>* target) : mTarget(target) {}
