@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_EDGE_TYPEDEDGE_H
 #define SIERRA_ODYPLAN_V1_CORE_EDGE_TYPEDEDGE_H
 
-#include "core/tuple/tuple.h"
+#include "core/port/port.h"
 #include "edge.h"
 
 #include <cstddef>
@@ -11,7 +11,7 @@
 namespace sierra::odyplan::v1::core::edge {
     inline constexpr std::size_t K_MAX_INGEST_SIDES = 8;
 
-    template <typename FromOpt, typename ToOpt, std::size_t Port, tuple::Tuple T>
+    template <typename FromOpt, typename ToOpt, std::size_t Port, port::PortType T>
     class TypedEdge final : public Edge {
     public:
         TypedEdge(std::size_t source, std::size_t target, std::size_t targetPortIndex) : Edge(source, target, targetPortIndex) {}

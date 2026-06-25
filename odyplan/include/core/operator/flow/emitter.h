@@ -3,7 +3,7 @@
 
 #include <core/operator/ingest/ingest.h>
 
-#include "core/tuple/tuple.h"
+#include "core/port/port.h"
 
 namespace sierra::odyplan::v1::core::opr::flow {
     class IEmitter {
@@ -19,7 +19,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
         IEmitter& operator=(IEmitter&&) = delete;
     };
 
-    template <tuple::Tuple TOut>
+    template <port::PortType TOut>
     class Emitter : public IEmitter {
     public:
         Emitter() = default;
@@ -35,7 +35,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
         virtual void emit(const TOut& tuple) = 0;
     };
 
-    template <tuple::Tuple T, std::size_t TargetPort>
+    template <port::PortType T, std::size_t TargetPort>
     class BoundEmitter final : public Emitter<T> {
     public:
         explicit BoundEmitter(ingest::IIngestPort<TargetPort, T>* target) : mTarget(target) {}
@@ -48,7 +48,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
         ingest::IIngestPort<TargetPort, T>* mTarget;
     };
 
-    template <tuple::Tuple TOut>
+    template <port::PortType TOut>
     class IEmitting {
     public:
         IEmitting() = default;
