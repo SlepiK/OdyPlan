@@ -6,30 +6,31 @@
 
 #include <cstddef>
 #include <typeindex>
-#include <core/operator/ingest/ingest.h>
+#include "core/operator/ingest/ingest.h"
 
 namespace sierra::odyplan::v1::core::edge {
-    inline constexpr std::size_t K_MAX_INGEST_SIDES = 8;
-
-    template <typename FromOpt, typename ToOpt, std::size_t Port, port::PortType T>
+    template <typename From, typename To, std::size_t ToPortIndex>
+        requires (std::derived_from<From, opr::IOperator> && std::derived_from<To, opr::IOperator> &&
+            (std::derived_from<From, opr::ISourceOperator> || std::derived_from<From, opr::IPipeOperator>) &&
+            (std::derived_from<To, opr::IPipeOperator> || std::derived_from<To, opr::ISinkOperator>) &&
+            (opr::OperatorHandleHasPorts<From> && opr::OperatorHandleHasPorts<To>))
     class TypedEdge final : public Edge {
     public:
-        TypedEdge(std::size_t source, std::size_t target, std::size_t targetPortIndex) : Edge(source, target, targetPortIndex) {}
+        TypedEdge(std::size_t from, std::size_t to) : Edge(from, to, ToPortIndex) {}
 
         [[nodiscard]] std::type_index payloadType() const override {
-            return std::type_index(typeid(T));
+            return std::type_index(typeid(From::Output));
         }
 
-        [[nodiscard]] std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* sourceOperator, opr::IOperator* targetOperator) {
-            auto* cSourceOperator = static_cast<FromOpt*>(sourceOperator);
-            auto* cTargetOperator = static_cast<ToOpt*>(targetOperator);
+        [[nodiscard]] std::unique_ptr<opr::flow::IEmitter> bind(From* iFrom, To* iTo) {
+            using edgePortType = From::Output;
 
-            opr::flow::IEmitting<T>* emittingSource = cSourceOperator;
-            opr::ingest::IIngestPort<Port, T>* ingestPort = cTargetOperator;
+            opr::flow::IEmitting<edgePortType>* emittingSource = iFrom;
+            opr::ingest::IIngestPort<ToPortIndex, edgePortType>* ingestPort = iTo;
 
-            auto emitter = std::make_unique<opr::flow::BoundEmitter<T, Port>>(ingestPort);
+            auto emitter = std::make_unique<opr::flow::BoundEmitter<ToPortIndex, edgePortType>>(ingestPort);
             emittingSource->setEmitter(emitter.get());
-            return std::make_unique<opr::flow::Emitter<T>>(std::move(emitter));
+            return std::make_unique<opr::flow::Emitter<edgePortType>>(std::move(emitter));
         }
     };
 }  // namespace sierra::odyplan::v1::core::edge

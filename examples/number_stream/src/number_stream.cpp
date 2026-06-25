@@ -8,5 +8,7 @@ int main() {
     auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
     auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
 
+    plan.connect(source, sink);
+
     return 0;
 }

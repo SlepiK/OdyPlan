@@ -9,8 +9,8 @@ namespace sierra::odyplan::v1::core::opr {
     template <port::PortType TIn>
     class TypedSinkOperator : public ISinkOperator, public ingest::IIngestPort<0, TIn> {
     public:
-        using OperatorInput = TIn;
-        using OperatorOutput = port::NullPort;
+        using Input = TIn;
+        using Output = port::NullPort;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 

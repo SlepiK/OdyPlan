@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V1_CORE_PORT_PORT_H
 
 #include <tuple>
-#include <type_traits>
 
 namespace sierra::odyplan::v1::core::port {
     template <typename T>

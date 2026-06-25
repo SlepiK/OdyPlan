@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATOR_H
 
 #include "core/operator/operator.h"
+#include "core/operator/operator_handle.h"
 
 namespace sierra::odyplan::v1::core::opr {
     class ISourceOperator : public virtual IOperator {
@@ -17,6 +18,13 @@ namespace sierra::odyplan::v1::core::opr {
 
         virtual bool produce() = 0;
     };
+
+    template <typename T>
+    concept SourceOperatorType =
+        OperatorHandleHasPorts<T> &&
+        std::derived_from<T, ISourceOperator> &&
+        std::same_as<typename T::Input, port::NullPort> &&
+        port::PortType<typename T::Output>;
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATOR_H
