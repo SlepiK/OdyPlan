@@ -22,10 +22,11 @@ namespace sierra::odyplan::v1::core::opr {
     };
 
     template <typename T>
-    concept OperatorHandleHasPorts =
+    concept HasOperatorHandleNeededFields =
         requires {
         typename T::Input;
         typename T::Output;
+        typename T::OperatorType;
     };
 }  // namespace sierra::odyplan::v1::core::opr
 

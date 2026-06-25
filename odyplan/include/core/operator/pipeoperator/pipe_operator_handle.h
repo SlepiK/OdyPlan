@@ -12,6 +12,7 @@ namespace sierra::odyplan::v1::core::opr {
     public:
         using Input = Operator::Input;
         using Output = Operator::Output;
+        using OperatorType = Operator;
 
         explicit PipeOperatorHandle(const std::size_t index) : BaseOperatorHandle(index) {}
 
@@ -29,7 +30,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept PipeOperatorHandleType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorHandleNeededFields<T> &&
         IsPipeHandle<std::remove_cvref_t<T>>::value &&
         port::PortsType<typename T::Input> &&
         port::PortType<typename T::Output>;

@@ -5,10 +5,12 @@
 
 int main() {
     sierra::odyplan::v1::core::plan::Plan plan;
-    auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
-    auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
+    const auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
+    const auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
 
     plan.connect(source, sink);
+
+    auto tst = "test";
 
     return 0;
 }

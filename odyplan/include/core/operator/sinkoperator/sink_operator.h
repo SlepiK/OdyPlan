@@ -2,10 +2,9 @@
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_SINKOPERATOR_H
 
 #include "core/operator/operator.h"
-#include "core/operator/operator_handle.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    class ISinkOperator : public virtual IOperator {
+    class ISinkOperator : public IOperator {
     public:
         ISinkOperator() = default;
         ~ISinkOperator() override = default;
@@ -19,7 +18,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SinkOperatorType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorNeededFields<T> &&
         std::derived_from<T, ISinkOperator> &&
         port::PortType<typename T::Input> &&
         std::same_as<typename T::Output, port::NullPort>;

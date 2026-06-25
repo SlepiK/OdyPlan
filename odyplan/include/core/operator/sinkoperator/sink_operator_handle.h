@@ -12,6 +12,7 @@ namespace sierra::odyplan::v1::core::opr {
     public:
         using Input = Operator::Input;
         using Output = port::NullPort;
+        using OperatorType = Operator;
 
         explicit SinkOperatorHandle(const std::size_t index) : BaseOperatorHandle(index) {}
 
@@ -29,7 +30,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SinkOperatorHandleType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorHandleNeededFields<T> &&
         IsSinkHandle<std::remove_cvref_t<T>>::value &&
         port::PortType<typename T::Input> &&
         std::same_as<typename T::Output, port::NullPort>;
