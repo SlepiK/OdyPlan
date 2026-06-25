@@ -105,7 +105,7 @@ namespace sierra::odyplan::v1::core::plan {
 
         template <std::size_t PortIndex, typename From, typename To>
         void connectPorts(const From& from, const To& to) {
-            mEdges.push_back(std::make_unique<edge::TypedEdge<From, To, PortIndex>>(from.index(), to.index()));
+            mEdges.push_back(std::make_unique<edge::TypedEdge<typename From::OperatorType, typename To::OperatorType, PortIndex>>(from.index(), to.index()));
         }
     };
 }  // namespace sierra::odyplan::v1::core::plan

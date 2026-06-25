@@ -13,6 +13,14 @@ namespace sierra::odyplan::v1::core::opr {
         IOperator(IOperator&&) = delete;
         IOperator& operator=(IOperator&&) = delete;
     };
+
+    template <typename T>
+    concept HasOperatorNeededFields =
+        requires {
+        typename T::Input;
+        typename T::Output;
+        };
+
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_OPERATOR_H

@@ -4,7 +4,7 @@
 #include "core/operator/operator.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    class IPipeOperator : public virtual IOperator {
+    class IPipeOperator : public IOperator {
     public:
         IPipeOperator() = default;
         ~IPipeOperator() override = default;
@@ -18,7 +18,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept PipeOperatorType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorNeededFields<T> &&
         std::derived_from<T, IPipeOperator> &&
         port::PortsType<typename T::Input> &&
         port::PortType<typename T::Output>;

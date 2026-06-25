@@ -13,24 +13,28 @@ namespace sierra::odyplan::v1::core::edge {
         requires (std::derived_from<From, opr::IOperator> && std::derived_from<To, opr::IOperator> &&
             (std::derived_from<From, opr::ISourceOperator> || std::derived_from<From, opr::IPipeOperator>) &&
             (std::derived_from<To, opr::IPipeOperator> || std::derived_from<To, opr::ISinkOperator>) &&
-            (opr::OperatorHandleHasPorts<From> && opr::OperatorHandleHasPorts<To>))
+            (opr::HasOperatorNeededFields<From> && opr::HasOperatorNeededFields<To>))
     class TypedEdge final : public Edge {
     public:
         TypedEdge(std::size_t from, std::size_t to) : Edge(from, to, ToPortIndex) {}
 
         [[nodiscard]] std::type_index payloadType() const override {
-            return std::type_index(typeid(From::Output));
+            //return std::type_index(typeid(From::Output));
+            return std::type_index(typeid(From));
         }
 
-        [[nodiscard]] std::unique_ptr<opr::flow::IEmitter> bind(From* iFrom, To* iTo) {
+        [[nodiscard]] std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* rawFrom, opr::IOperator* rawTo) const override {
+            auto to = static_cast<To*>(rawTo);
+            auto from = static_cast<From*>(rawFrom);
+
             using edgePortType = From::Output;
 
-            opr::flow::IEmitting<edgePortType>* emittingSource = iFrom;
-            opr::ingest::IIngestPort<ToPortIndex, edgePortType>* ingestPort = iTo;
+            opr::flow::IEmitting<edgePortType>* emittingSource = from;
+            opr::ingest::IIngestPort<ToPortIndex, edgePortType>* ingestPort = to;
 
             auto emitter = std::make_unique<opr::flow::BoundEmitter<ToPortIndex, edgePortType>>(ingestPort);
             emittingSource->setEmitter(emitter.get());
-            return std::make_unique<opr::flow::Emitter<edgePortType>>(std::move(emitter));
+            return emitter; //std::make_unique<opr::flow::Emitter<edgePortType>>(std::move(emitter));
         }
     };
 }  // namespace sierra::odyplan::v1::core::edge

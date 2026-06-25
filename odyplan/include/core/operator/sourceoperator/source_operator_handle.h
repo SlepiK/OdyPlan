@@ -12,6 +12,7 @@ namespace sierra::odyplan::v1::core::opr {
     public:
         using Input = port::NullPort;
         using Output = Operator::Output;
+        using OperatorType = Operator;
 
         explicit SourceOperatorHandle(const std::size_t index) : BaseOperatorHandle(index) {}
 
@@ -29,7 +30,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SourceOperatorHandleType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorHandleNeededFields<T> &&
         IsSourceHandle<std::remove_cvref_t<T>>::value &&
         std::same_as<typename T::Input, port::NullPort> &&
         port::PortType<typename T::Output>;

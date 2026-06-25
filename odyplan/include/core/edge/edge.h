@@ -32,7 +32,7 @@ namespace sierra::odyplan::v1::core::edge {
 
         [[nodiscard]] virtual std::type_index payloadType() const = 0;
 
-        [[nodiscard]] virtual std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* sourceOperator, opr::IOperator* targetOperator) const = 0;
+        [[nodiscard]] virtual std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* rawFrom, opr::IOperator* rawTo) const = 0;
 
     private:
         std::size_t mFrom;

@@ -2,10 +2,9 @@
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATOR_H
 
 #include "core/operator/operator.h"
-#include "core/operator/operator_handle.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    class ISourceOperator : public virtual IOperator {
+    class ISourceOperator : public IOperator {
     public:
         ISourceOperator() = default;
         ~ISourceOperator() override = default;
@@ -21,7 +20,7 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SourceOperatorType =
-        OperatorHandleHasPorts<T> &&
+        HasOperatorNeededFields<T> &&
         std::derived_from<T, ISourceOperator> &&
         std::same_as<typename T::Input, port::NullPort> &&
         port::PortType<typename T::Output>;
