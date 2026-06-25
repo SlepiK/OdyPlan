@@ -5,7 +5,7 @@
 #include "emitter.h"
 
 namespace sierra::odyplan::v1::core::opr::flow {
-    template <tuple::Tuple TOut>
+    template <port::PortType TOut>
     class IDrainable {
     public:
         IDrainable() = default;

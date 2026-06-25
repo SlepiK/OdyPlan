@@ -5,6 +5,8 @@
 
 int main() {
     sierra::odyplan::v1::core::plan::Plan plan;
+    auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
+    auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
 
     return 0;
 }

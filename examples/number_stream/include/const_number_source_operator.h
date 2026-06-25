@@ -2,20 +2,16 @@
 #define SIERRA_ODYPLAN_V1_EXAMPLE_NUMBERSTREAM_CONSTNUMBERSOURCEOPERATOR_H
 
 #include "core/operator/sourceoperator/typed_source_operator.h"
-#include "core/tuple/tuple.h"
+#include "core/port/port.h"
 #include <cstdint>
 
 namespace sierra::odyplan::v1::example::number_stream {
-    enum class NumberTupleField : std::uint8_t {
-        NUMBER
-    };
+    using OperatorPort = core::port::Port<core::port::PortField<int>>;
 
-    using NumberTuple = core::tuple::TupleT<core::tuple::TupleFieldT<int, NumberTupleField::NUMBER>>;
-
-    class ConstNumberSourceOperator final : public core::opr::TypedSourceOperator<NumberTuple> {
+    class ConstNumberSourceOperator final : public core::opr::TypedSourceOperator<OperatorPort> {
     public:
         bool produce() override {
-            emit(NumberTuple{1});
+            //emit(NumberTuple{1});
             return true;
         }
     };
