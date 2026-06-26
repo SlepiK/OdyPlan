@@ -1,0 +1,17 @@
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+find_program(CLANG_FORMAT_EXE NAMES clang-format)
+
+if(ENABLE_CLANG_TIDY)
+    if(NOT CLANG_TIDY_EXE)
+        message(FATAL_ERROR "ENABLE_CLANG_TIDY=ON but clang-tidy not found!")
+    endif()
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR})
+    message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
+endif()
+
+if(ENABLE_CLANG_FORMAT_CHECK)
+    if(NOT CLANG_FORMAT_EXE)
+        message(FATAL_ERROR "ENABLE_CLANG_FORMAT_CHECK=ON but clang-format not found!")
+    endif()
+    message(STATUS "clang-format found: ${CLANG_FORMAT_EXE}")
+endif()
