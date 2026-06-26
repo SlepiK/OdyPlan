@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 
+#include <memory>
 #include <core/operator/ingest/ingest.h>
 
 #include "core/port/port.h"
@@ -32,7 +33,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
         Emitter(Emitter&&) = delete;
         Emitter& operator=(Emitter&&) = delete;
 
-        virtual void emit(const TOut& tuple) = 0;
+        virtual void emit(const TOut::Fields& tuple) = 0;
     };
 
     template <std::size_t TargetPort, port::PortType T>
@@ -40,7 +41,7 @@ namespace sierra::odyplan::v1::core::opr::flow {
     public:
         explicit BoundEmitter(ingest::IIngestPort<TargetPort, T>* target) : mTarget(target) {}
 
-        void emit(const T& tuple) override {
+        void emit(const T::Fields& tuple) override {
             mTarget->ingest(std::integral_constant<std::size_t, TargetPort>{}, tuple);
         }
 
