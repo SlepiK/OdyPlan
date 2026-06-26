@@ -8,8 +8,14 @@
 namespace sierra::odyplan::v1::core::opr {
     class BaseOperatorHandle {
     public:
-        virtual ~BaseOperatorHandle() = default;
         explicit BaseOperatorHandle(const std::size_t index) : mIndex(index) {}
+        virtual ~BaseOperatorHandle() = default;
+
+        BaseOperatorHandle(const BaseOperatorHandle&) = delete;
+        BaseOperatorHandle& operator=(const BaseOperatorHandle&) = delete;
+
+        BaseOperatorHandle(BaseOperatorHandle&&) = delete;
+        BaseOperatorHandle& operator=(BaseOperatorHandle&&) = delete;
 
         [[nodiscard]] std::size_t index() const {
             return mIndex;
@@ -22,8 +28,7 @@ namespace sierra::odyplan::v1::core::opr {
     };
 
     template <typename T>
-    concept HasOperatorHandleNeededFields =
-        requires {
+    concept HasOperatorHandleNeededFields = requires {
         typename T::Input;
         typename T::Output;
         typename T::OperatorType;

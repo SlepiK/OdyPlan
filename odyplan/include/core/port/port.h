@@ -11,11 +11,7 @@ namespace sierra::odyplan::v1::core::port {
     };
 
     template <typename T>
-    concept PortFieldType = requires {
-        typename T::value_type;
-    } && requires(T t) {
-        t.value;
-    };
+    concept PortFieldType = requires { typename T::value_type; } && requires(T t) { t.value; };
 
     struct NullPort {};
 
@@ -25,9 +21,7 @@ namespace sierra::odyplan::v1::core::port {
     };
 
     template <typename T>
-    concept PortType = requires {
-        typename T::Fields;
-    } || std::same_as<T, NullPort>;
+    concept PortType = requires { typename T::Fields; } || std::same_as<T, NullPort>;
 
     template <PortType... Ts>
     struct Ports {

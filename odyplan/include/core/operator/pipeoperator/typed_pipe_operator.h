@@ -15,7 +15,6 @@ namespace sierra::odyplan::v1::core::opr {
         using Input = TIn;
         using Output = TOut;
 
-
         static constexpr std::size_t INPUT_PORT_COUNT = TIn::SIZE;
 
         void setEmitter(flow::Emitter<TOut>* emitter) final {

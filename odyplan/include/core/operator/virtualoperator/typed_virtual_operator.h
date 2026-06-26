@@ -4,11 +4,11 @@
 #include "core/operator/pipeoperator/typed_pipe_operator.h"
 #include "core/operator/sinkoperator/typed_sink_operator.h"
 #include "core/operator/sourceoperator/typed_source_operator.h"
-#include "core/tuple/tuple.h"
+#include "core/port/port.h"
 #include "virtual_operator.h"
 
 namespace sierra::odyplan::v1::core::opr {
-    template <tuple::Tuple TIn, tuple::Tuple TOut>
+    template <port::PortsType TIn, port::PortType TOut>
     class TypedVirtualOperator : public IVirtualOperator, public TypedPipeOperator<TIn, TOut> {};
 }  // namespace sierra::odyplan::v1::core::opr
 

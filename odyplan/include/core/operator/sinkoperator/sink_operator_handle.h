@@ -7,7 +7,7 @@
 
 namespace sierra::odyplan::v1::core::opr {
     template <typename Operator>
-        requires (std::derived_from<Operator, ISinkOperator>)
+        requires(std::derived_from<Operator, ISinkOperator>)
     class SinkOperatorHandle final : public BaseOperatorHandle {
     public:
         using Input = Operator::Input;
@@ -30,10 +30,8 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SinkOperatorHandleType =
-        HasOperatorHandleNeededFields<T> &&
-        IsSinkHandle<std::remove_cvref_t<T>>::value &&
-        port::PortType<typename T::Input> &&
-        std::same_as<typename T::Output, port::NullPort>;
+        HasOperatorHandleNeededFields<T> && IsSinkHandle<std::remove_cvref_t<T>>::value &&
+        port::PortType<typename T::Input> && std::same_as<typename T::Output, port::NullPort>;
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_SINKOPERATORHANDLE_H

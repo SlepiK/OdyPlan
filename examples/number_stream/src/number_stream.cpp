@@ -5,23 +5,27 @@
 #include "core/plan/plan_materializer.h"
 
 int main() {
-    sierra::odyplan::v1::core::plan::Plan plan;
-    const auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
-    const auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
+    try {
+        sierra::odyplan::v1::core::plan::Plan plan;
+        const auto source = plan.add<sierra::odyplan::v1::example::number_stream::ConstNumberSourceOperator>();
+        const auto sink = plan.add<sierra::odyplan::v1::example::number_stream::NumberStdoutSinkOperator>();
 
-    plan.connect(source, sink);
+        plan.connect(source, sink);
 
-    auto converter = sierra::odyplan::v1::core::plan::PlanMaterializer();
+        auto materializedPlan = sierra::odyplan::v1::core::plan::PlanMaterializer::materialize(std::move(plan));
 
-    auto materializedPlan = converter.materialize(std::move(plan));
-
-    for (auto sourceIdx : materializedPlan.getSourceOperators()) {
-        auto& rawSource = materializedPlan.operatorAt(sourceIdx);
-        auto& lowSource = static_cast<sierra::odyplan::v1::core::opr::ISourceOperator&>(rawSource);
-        lowSource.produce();
-        lowSource.produce();
-        lowSource.produce();
-        lowSource.produce();
+        for (auto sourceIdx : materializedPlan.getSourceOperators()) {
+            auto& rawSource = materializedPlan.operatorAt(sourceIdx);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
+            auto& lowSource = static_cast<sierra::odyplan::v1::core::opr::ISourceOperator&>(rawSource);
+            lowSource.produce();
+            lowSource.produce();
+            lowSource.produce();
+            lowSource.produce();
+        }
+    } catch (std::exception& e) {
+        std::cerr << e.what() << "\n";
+        return 1;
     }
 
     return 0;

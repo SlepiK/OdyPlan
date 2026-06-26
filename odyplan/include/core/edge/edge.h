@@ -1,16 +1,17 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_EDGE_EDGE_H
 #define SIERRA_ODYPLAN_V1_CORE_EDGE_EDGE_H
 
+#include <core/operator/flow/emitter.h>
+#include <core/operator/operator.h>
 #include <cstddef>
 #include <memory>
 #include <typeindex>
-#include <core/operator/operator.h>
-#include <core/operator/flow/emitter.h>
 
 namespace sierra::odyplan::v1::core::edge {
     class Edge {
     public:
-        Edge(const std::size_t from, const std::size_t to, const std::size_t toPortIndex) : mFrom(from), mTo(to), mToPortIndex(toPortIndex) {}
+        Edge(const std::size_t from, const std::size_t to, const std::size_t toPortIndex)
+            : mFrom(from), mTo(to), mToPortIndex(toPortIndex) {}
 
         virtual ~Edge() = default;
         Edge(const Edge&) = delete;
@@ -32,7 +33,8 @@ namespace sierra::odyplan::v1::core::edge {
 
         [[nodiscard]] virtual std::type_index payloadType() const = 0;
 
-        [[nodiscard]] virtual std::unique_ptr<opr::flow::IEmitter> bind(opr::IOperator* rawFrom, opr::IOperator* rawTo) const = 0;
+        [[nodiscard]] virtual std::unique_ptr<opr::flow::IEmitter>
+        bind(opr::IOperator* rawFrom, opr::IOperator* rawTo) const = 0;
 
     private:
         std::size_t mFrom;

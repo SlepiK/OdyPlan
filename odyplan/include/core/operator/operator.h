@@ -15,11 +15,10 @@ namespace sierra::odyplan::v1::core::opr {
     };
 
     template <typename T>
-    concept HasOperatorNeededFields =
-        requires {
+    concept HasOperatorNeededFields = requires {
         typename T::Input;
         typename T::Output;
-        };
+    };
 
 }  // namespace sierra::odyplan::v1::core::opr
 
