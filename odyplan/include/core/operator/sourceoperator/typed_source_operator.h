@@ -17,7 +17,7 @@ namespace sierra::odyplan::v1::core::opr {
         }
 
     protected:
-        void emit(const TOut& tuple) {
+        void emit(const TOut::Fields& tuple) {
             if (mEmitter != nullptr) {
                 mEmitter->emit(tuple);
             }

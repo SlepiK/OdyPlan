@@ -19,7 +19,7 @@ namespace sierra::odyplan::v1::core::opr::ingest {
         IIngestPort& operator=(IIngestPort&&) = delete;
 
         static constexpr std::size_t INDEX = I;
-        virtual void ingest(std::integral_constant<std::size_t, I>, const T& tuple) = 0;
+        virtual void ingest(std::integral_constant<std::size_t, I>, const T::Fields& tuple) = 0;
     };
 
     template <typename Seq, port::PortsType TInx>

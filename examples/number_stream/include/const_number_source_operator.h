@@ -11,7 +11,7 @@ namespace sierra::odyplan::v1::example::number_stream {
     class ConstNumberSourceOperator final : public core::opr::TypedSourceOperator<OperatorPort> {
     public:
         bool produce() override {
-            //emit(NumberTuple{1});
+            emit(OperatorPort::Fields{core::port::PortField<int>{42}});
             return true;
         }
     };

@@ -8,7 +8,7 @@
 namespace sierra::odyplan::v1::example::number_stream {
     class NumberStdoutSinkOperator final : public core::opr::TypedSinkOperator<OperatorPort> {
     public:
-        void ingest(std::integral_constant<std::size_t, 0>, const OperatorPort& t) override {
+        void ingest(std::integral_constant<std::size_t, 0>, const OperatorPort::Fields& t) override {
             std::cout << "Got Data\n";
         }
     };

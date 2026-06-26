@@ -14,6 +14,7 @@
 
 namespace sierra::odyplan::v1::core::plan {
     class Plan {
+        friend class PlanMaterializer;
     public:
         Plan() = default;
         ~Plan() = default;
@@ -63,20 +64,6 @@ namespace sierra::odyplan::v1::core::plan {
             mOperators.push_back(std::make_unique<OperatorType>(std::forward<Args>(args)...));
             return opr::SinkOperatorHandle<OperatorType>(index);
         }
-
-
-        /*template <typename OpT, typename... Args>
-        auto add(Args&&... args) -> opr::HandleFromOperator<OpT> {
-            static_assert(std::is_base_of_v<opr::IOperator, OpT>);
-            auto index = mOperators.size();
-            mOperators.push_back(std::make_unique<OpT>(std::forward<Args>(args)...));
-
-            if constexpr (std::is_base_of_v<opr::ISourceOperator, OpT>) {
-                mSourceOperators.push_back(index);
-            }
-
-            return opr::HandleFromOperator<OpT>(index);
-        }*/
 
     private:
         std::vector<std::unique_ptr<opr::IOperator>> mOperators;
