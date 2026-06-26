@@ -5,10 +5,11 @@
 namespace sierra::odyplan::v1::core::plan {
     class MaterializedPlan {
     public:
-        MaterializedPlan(std::vector<std::unique_ptr<opr::IOperator>> operators, std::vector<std::size_t> sourceOperatorIndices)
+        MaterializedPlan(std::vector<std::unique_ptr<opr::IOperator>> operators,
+                         std::vector<std::size_t> sourceOperatorIndices)
             : mOperators(std::move(operators)),
-            mSourceOperators(std::move(sourceOperatorIndices)) {
-        }
+              mSourceOperators(std::move(sourceOperatorIndices)) {}
+        virtual ~MaterializedPlan() = default;
 
         MaterializedPlan(const MaterializedPlan&) = delete;
         MaterializedPlan& operator=(const MaterializedPlan&) = delete;
@@ -45,14 +46,16 @@ namespace sierra::odyplan::v1::core::plan {
     public:
         PlanMaterializer() = default;
 
-        [[nodiscard]] MaterializedPlan materialize(Plan&& plan) const {
+        [[nodiscard]] static MaterializedPlan materialize(Plan&& plan) {
+            auto iPlan = std::move(plan);
             std::vector<edge::Edge*> edges;
-            edges.reserve(plan.mEdges.size());
-            for (auto& edge : plan.mEdges) {
+            edges.reserve(iPlan.mEdges.size());
+            for (auto& edge : iPlan.mEdges) {
                 edges.push_back(edge.get());
             }
 
-            MaterializedPlan materializedPlan(std::move(plan.mOperators), std::move(plan.mSourceOperators));
+            MaterializedPlan materializedPlan(std::move(iPlan.mOperators),
+                                              std::move(iPlan.mSourceOperators));
 
             for (auto* edge : edges) {
                 auto* fromOperator = &materializedPlan.operatorAt(edge->from());
@@ -61,7 +64,8 @@ namespace sierra::odyplan::v1::core::plan {
                 auto emitter = edge->bind(fromOperator, toOperator);
 
                 if (!emitter) {
-                    throw std::runtime_error("PlanMaterializer: failed to bind edge -- operator types do not match expected port payload");
+                    throw std::runtime_error("PlanMaterializer: failed to bind edge -- operator "
+                                             "types do not match expected port payload");
                 }
 
                 materializedPlan.takeOwnership(std::move(emitter));

@@ -7,7 +7,7 @@
 
 namespace sierra::odyplan::v1::core::opr {
     template <typename Operator>
-        requires (std::derived_from<Operator, IPipeOperator>)
+        requires(std::derived_from<Operator, IPipeOperator>)
     class PipeOperatorHandle final : public BaseOperatorHandle {
     public:
         using Input = Operator::Input;
@@ -22,7 +22,7 @@ namespace sierra::odyplan::v1::core::opr {
     };
 
     template <typename T>
-   struct IsPipeHandle : std::false_type {};
+    struct IsPipeHandle : std::false_type {};
 
     template <typename Operator>
         requires std::derived_from<Operator, IPipeOperator>
@@ -30,10 +30,8 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept PipeOperatorHandleType =
-        HasOperatorHandleNeededFields<T> &&
-        IsPipeHandle<std::remove_cvref_t<T>>::value &&
-        port::PortsType<typename T::Input> &&
-        port::PortType<typename T::Output>;
+        HasOperatorHandleNeededFields<T> && IsPipeHandle<std::remove_cvref_t<T>>::value &&
+        port::PortsType<typename T::Input> && port::PortType<typename T::Output>;
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_PIPEOPERATORHANDLE_H

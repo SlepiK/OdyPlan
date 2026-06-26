@@ -2,6 +2,9 @@
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_VIRTUALOPERATOR_H
 
 #include "core/operator/operator.h"
+#include "core/port/port.h"
+
+#include <concepts>
 
 namespace sierra::odyplan::v1::core::opr {
     class IVirtualOperator : public virtual IOperator {

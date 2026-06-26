@@ -1,10 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_EMITTER_H
 
-#include <memory>
-#include <core/operator/ingest/ingest.h>
-
 #include "core/port/port.h"
+
+#include <core/operator/ingest/ingest.h>
+#include <memory>
 
 namespace sierra::odyplan::v1::core::opr::flow {
     class IEmitter {

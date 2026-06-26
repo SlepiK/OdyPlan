@@ -23,23 +23,23 @@ namespace sierra::odyplan::v1::core::plan {
         Plan(Plan&&) = default;
         Plan& operator=(Plan&&) = default;
 
-        //Source -> Pipe & Pipe -> Pipe
+        // Source -> Pipe & Pipe -> Pipe
         template <std::size_t PortIndex, typename From, opr::PipeOperatorHandleType To>
-            requires (opr::SourceOperatorHandleType<From> || opr::PipeOperatorHandleType<From>)
+            requires(opr::SourceOperatorHandleType<From> || opr::PipeOperatorHandleType<From>)
         void connect(const From& from, const To& to) {
             connectImpl<PortIndex>(from, to);
         }
 
-        //Source -> Sink & Pipe -> Sink
+        // Source -> Sink & Pipe -> Sink
         template <typename From, opr::SinkOperatorHandleType To>
-            requires (opr::SourceOperatorHandleType<From> || opr::PipeOperatorHandleType<From>)
+            requires(opr::SourceOperatorHandleType<From> || opr::PipeOperatorHandleType<From>)
         void connect(const From& from, const To& to) {
             connectImpl<0>(from, to);
         }
 
-        //Source
-        template <typename OperatorType, typename ... Args>
-            requires (opr::SourceOperatorType<OperatorType>)
+        // Source
+        template <typename OperatorType, typename... Args>
+            requires(opr::SourceOperatorType<OperatorType>)
         auto add(Args&&... args) -> opr::SourceOperatorHandle<OperatorType> {
             auto index = mOperators.size();
             mOperators.push_back(std::make_unique<OperatorType>(std::forward<Args>(args)...));
@@ -47,18 +47,18 @@ namespace sierra::odyplan::v1::core::plan {
             return opr::SourceOperatorHandle<OperatorType>(index);
         }
 
-        //Pipe
-        template <typename OperatorType, typename ... Args>
-            requires (opr::PipeOperatorType<OperatorType>)
+        // Pipe
+        template <typename OperatorType, typename... Args>
+            requires(opr::PipeOperatorType<OperatorType>)
         auto add(Args&&... args) -> opr::PipeOperatorHandle<OperatorType> {
             auto index = mOperators.size();
             mOperators.push_back(std::make_unique<OperatorType>(std::forward<Args>(args)...));
             return opr::PipeOperatorHandle<OperatorType>(index);
         }
 
-        //Sink
-        template <typename OperatorType, typename ... Args>
-            requires (opr::SinkOperatorType<OperatorType>)
+        // Sink
+        template <typename OperatorType, typename... Args>
+            requires(opr::SinkOperatorType<OperatorType>)
         auto add(Args&&... args) -> opr::SinkOperatorHandle<OperatorType> {
             auto index = mOperators.size();
             mOperators.push_back(std::make_unique<OperatorType>(std::forward<Args>(args)...));
@@ -92,7 +92,10 @@ namespace sierra::odyplan::v1::core::plan {
 
         template <std::size_t PortIndex, typename From, typename To>
         void connectPorts(const From& from, const To& to) {
-            mEdges.push_back(std::make_unique<edge::TypedEdge<typename From::OperatorType, typename To::OperatorType, PortIndex>>(from.index(), to.index()));
+            mEdges.push_back(
+                std::make_unique<edge::TypedEdge<typename From::OperatorType,
+                                                 typename To::OperatorType,
+                                                 PortIndex>>(from.index(), to.index()));
         }
     };
 }  // namespace sierra::odyplan::v1::core::plan

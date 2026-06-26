@@ -1,13 +1,13 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATORHANDLE_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATORHANDLE_H
 
-#include "source_operator.h"
-#include "core/port/port.h"
 #include "core/operator/operator_handle.h"
+#include "core/port/port.h"
+#include "source_operator.h"
 
 namespace sierra::odyplan::v1::core::opr {
     template <typename Operator>
-        requires (std::derived_from<Operator, ISourceOperator>)
+        requires(std::derived_from<Operator, ISourceOperator>)
     class SourceOperatorHandle final : public BaseOperatorHandle {
     public:
         using Input = port::NullPort;
@@ -30,10 +30,8 @@ namespace sierra::odyplan::v1::core::opr {
 
     template <typename T>
     concept SourceOperatorHandleType =
-        HasOperatorHandleNeededFields<T> &&
-        IsSourceHandle<std::remove_cvref_t<T>>::value &&
-        std::same_as<typename T::Input, port::NullPort> &&
-        port::PortType<typename T::Output>;
+        HasOperatorHandleNeededFields<T> && IsSourceHandle<std::remove_cvref_t<T>>::value &&
+        std::same_as<typename T::Input, port::NullPort> && port::PortType<typename T::Output>;
 }  // namespace sierra::odyplan::v1::core::opr
 
 #endif  // SIERRA_ODYPLAN_V1_CORE_OPERATOR_SOURCEOPERATORHANDLE_H

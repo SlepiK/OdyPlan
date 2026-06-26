@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_DRAINAIBLE_H
 #define SIERRA_ODYPLAN_V1_CORE_OPERATOR_FLOW_DRAINAIBLE_H
 
-#include "core/tuple/tuple.h"
+#include "core/port/port.h"
 #include "emitter.h"
 
 namespace sierra::odyplan::v1::core::opr::flow {
