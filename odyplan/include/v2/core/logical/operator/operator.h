@@ -1,6 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_OPERATOR_H
 #define SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_OPERATOR_H
 
+#include <span>
+
+#include "v2/core/logical/port/port_type_info.h"
+
 namespace sierra::odyplan::v2::core::logical::opr {
     class IOperator {
     public:
@@ -12,6 +16,9 @@ namespace sierra::odyplan::v2::core::logical::opr {
 
         IOperator(IOperator&&) = delete;
         IOperator& operator=(IOperator&&) = delete;
+
+        [[nodiscard]] virtual std::span<const port::PortTypeInfo> inputs() const = 0;
+        [[nodiscard]] virtual std::span<const port::PortTypeInfo> outputs() const = 0;
     };
 
 }  // namespace sierra::odyplan::v2::core::logical::opr

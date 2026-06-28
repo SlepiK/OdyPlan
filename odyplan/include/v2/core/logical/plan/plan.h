@@ -13,8 +13,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
     public:
         port::OperatorId addOperator(std::unique_ptr<opr::IOperator> opr);
 
-        template <typename >
-        void connect();
+        template <typename T>
+        void connect(const port::PortRef& fromOperator, const port::PortRef& toOperator) {
+
+        };
 
     protected:
         opr::IOperator& op(port::OperatorId id) {
