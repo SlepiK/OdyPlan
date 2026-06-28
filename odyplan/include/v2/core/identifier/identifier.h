@@ -11,7 +11,7 @@ namespace sierra::odyplan::v2::core::identifier {
 
         bool operator==(const Identifier&) const = default;
 
-        operator std::size_t() const noexcept {
+        explicit operator std::size_t() const noexcept {
             return value;
         }
 
