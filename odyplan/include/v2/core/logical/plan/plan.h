@@ -15,7 +15,13 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         template <typename T>
         void connect(const port::PortRef& fromOperator, const port::PortRef& toOperator) {
+            validateConnectionRequest(fromOperator, toOperator);
 
+            if (!areConnectionTypesCompatible(fromOperator,toOperator)) {
+                throw std::runtime_error("Plan::connect: source and destination port type dont match");
+            }
+
+            //ToDo: add more
         };
 
     protected:
