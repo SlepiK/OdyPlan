@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_LOGICAL_PORT_PORTINFO_H
 #define SIERRA_ODYPLAN_V2_CORE_LOGICAL_PORT_PORTINFO_H
 
-#include "port.h"
+#include "port_value.h"
 #include "port_type_info.h"
 
 namespace sierra::odyplan::v2::core::logical::port {

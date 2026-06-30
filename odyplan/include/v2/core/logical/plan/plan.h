@@ -25,8 +25,9 @@ namespace sierra::odyplan::v2::core::logical::plan {
         };
 
     protected:
-        opr::IOperator& op(port::OperatorId id) {
-            return *mOperators.at(id);
+
+        [[nodiscard]] opr::IOperator& op(const port::OperatorId id) const {
+            return *mOperators.at(id.value);
         }
 
     private:
