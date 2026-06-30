@@ -10,6 +10,9 @@ option(ENABLE_TOOLING "Enable clang-tidy/format targets" OFF)
 option(ENABLE_CLANG_TIDY "Run clang-tidy as part of the build" OFF)
 option(ENABLE_CLANG_FORMAT_CHECK "Enable clang-format/format-check targets" OFF)
 
+option(ODYPLAN_V1 "Run OdyPlanV1 as part of the build" OFF)
+option(ODYPLAN_V2 "Run OdyPlanV2 as part of the build" ON)
+
 include(cmake/dependencies.cmake)
 
 if(ENABLE_LLVM OR ENABLE_TOOLING)
