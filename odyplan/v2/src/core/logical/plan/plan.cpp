@@ -101,7 +101,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
         return true;
     }
 
-    bool Plan::wouldCreateCycle(port::OperatorId from, port::OperatorId to) const {
+    bool Plan::wouldCreateCycle(const port::OperatorId from, const port::OperatorId to) const {
         std::unordered_set<port::OperatorId> visitedOperators;
         std::vector<port::OperatorId> operatorStack{to};
 
