@@ -9,11 +9,11 @@
 namespace sierra::odyplan::v2::core::logical::opr {
     class IPipeOperator : public IOperator {
     public:
-        bool hasInputPorts() const override {
+        [[nodiscard]] bool hasInputPorts() const override {
             return true;
         }
 
-        bool hasOutputPorts() const override {
+        [[nodiscard]] bool hasOutputPorts() const override {
             return true;
         }
     };
