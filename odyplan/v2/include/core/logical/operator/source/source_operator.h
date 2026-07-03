@@ -7,11 +7,11 @@
 namespace sierra::odyplan::v2::core::logical::opr {
     class ISourceOperator : public IOperator {
     public:
-        bool hasInputPorts() const override {
+        [[nodiscard]] bool hasInputPorts() const override {
             return false;
         }
 
-        bool hasOutputPorts() const override {
+        [[nodiscard]] bool hasOutputPorts() const override {
             return true;
         }
     };

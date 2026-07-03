@@ -4,6 +4,7 @@
 
 #include "const_number_source_operator.h"
 #include "number_stdout_sink_operator.h"
+#include "int_pipe_operator.h"
 #include "core/logical/operator/pipe/pipe_operator.h"
 
 int main() {
@@ -13,24 +14,19 @@ int main() {
 
     const auto sourceOperatorId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::ConstNumberSourceOperator>());
 
-    const auto pipeTmpOperatorId = plan.addOperator(
-        std::make_unique<sierra::odyplan::v2::core::logical::opr::TypedPipeOperator>(
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()},
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()}
-            )
-    );
+    const auto pipeTmpOperatorId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::IntPipeOperator>());
 
     const auto sinkOperatorId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::NumberStdoutSinkOperator>());
 
     try {
         plan.connect(
-            sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sourceOperatorId,.portId=0},
-            sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorId,.portId=0}
+            sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sourceOperatorId,.portId=0},
+            sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorId,.portId=0}
         );
 
         plan.connect(
-            sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorId,.portId=0},
-            sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sinkOperatorId,.portId=0}
+            sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorId,.portId=0},
+            sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sinkOperatorId,.portId=0}
         );
 
         std::cout << "OK: logical plan built [SOURCE >-PORT_0-INT-PORT_0-> PIPE >-PORT_0-INT-PORT_0-> SINK]\n";
@@ -42,15 +38,12 @@ int main() {
 
     const auto sourceOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::ConstNumberSourceOperator>());
 
-    const auto sinkOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::core::logical::opr::TypedSinkOperator>(
-            sierra::odyplan::v2::example::logical_plan::createDoublePort()
-        )
-    );
+    const auto sinkOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::DoubleNumberStdoutSinkOperator>());
 
     try {
         plan.connect(
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sourceOperatorSecId,.portId=0},
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sourceOperatorSecId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
         );
         std::cout << "Error: Type-Mismatch on Port-Level (Types) not found]\n";
     } catch (const std::exception& e) {
@@ -59,16 +52,16 @@ int main() {
 
     std::cout << "Running creation of unsuccessful pipeline - Fan-in]\n";
 
-    const auto sourceOperatorThiId = plan.addOperator(std::make_unique<sierra::odyplan::v2::core::logical::opr::TypedSourceOperator>(sierra::odyplan::v2::example::logical_plan::createDoublePort()));
+    const auto sourceOperatorThiId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::ConstDoubleNumberSourceOperator>());
 
     try {
         plan.connect(
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sourceOperatorThiId,.portId=0},
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sourceOperatorThiId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
         );
         plan.connect(
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sourceOperatorThiId,.portId=0},
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sourceOperatorThiId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
         );
         std::cout << "Error: Fan-in on Port-Level not found]\n";
     } catch (const std::exception& e) {
@@ -77,28 +70,18 @@ int main() {
 
     std::cout << "Running creation of unsuccessful pipeline - Cycle]\n";
 
-    const auto pipeTmpOperatorSecId = plan.addOperator(
-        std::make_unique<sierra::odyplan::v2::core::logical::opr::TypedPipeOperator>(
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()},
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()}
-            )
-    );
+    const auto pipeTmpOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::IntPipeOperator>());
 
-    const auto pipeTmpOperatorThiId = plan.addOperator(
-        std::make_unique<sierra::odyplan::v2::core::logical::opr::TypedPipeOperator>(
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()},
-            sierra::odyplan::v2::core::logical::port::Ports {sierra::odyplan::v2::example::logical_plan::createIntPort()}
-            )
-    );
+    const auto pipeTmpOperatorThiId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::IntPipeOperator>());
 
     try {
         plan.connect(
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorSecId,.portId=0},
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorThiId,.portId=0}
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorSecId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorThiId,.portId=0}
         );
         plan.connect(
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorThiId,.portId=0},
-        sierra::odyplan::v2::core::logical::port::PortRef {.operatorId=pipeTmpOperatorSecId,.portId=0}
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorThiId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=pipeTmpOperatorSecId,.portId=0}
         );
         std::cout << "Error: Cycle while connecting not found]\n";
     } catch (const std::exception& e) {
