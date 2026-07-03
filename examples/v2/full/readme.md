@@ -49,7 +49,7 @@ Running (press Enter to stop:
 5
 5
 ...
-'''
+```
 
 ## Example Output [NO LOOP]
 ```text
@@ -82,4 +82,4 @@ LLVM-IR: OK
 Running via LLVM-JIT...
 Running:
 5
-'''
+```
