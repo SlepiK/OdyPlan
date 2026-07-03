@@ -2,11 +2,11 @@
 #define SIERRA_ODYPLAN_V2_CORE_PHYSICAL_OPERATOR_SOURCE_SOURCEOPERATOR_H
 
 #include "core/physical/operator/operator.h"
-#include "core/physical/operator/internal/operator_ability.h"
+#include "../operator_ability.h"
 #include "core/physical/port/port.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
-    class ISourceOperator : public IOperator, public internal::IProducer {
+    class ISourceOperator : public IOperator, public IProducer {
     public:
         [[nodiscard]] bool hasInputPorts() const override {
             return false;
@@ -14,6 +14,10 @@ namespace sierra::odyplan::v2::core::physical::opr {
 
         [[nodiscard]] bool hasOutputPorts() const override {
             return true;
+        }
+
+        [[nodiscard]] OperatorRole getRole() const final {
+            return OperatorRole::SOURCE;
         }
     };
 

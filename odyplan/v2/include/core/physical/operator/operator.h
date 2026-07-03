@@ -4,6 +4,12 @@
 #include "core/physical/port/port.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
+    enum class OperatorRole : std::uint8_t {
+        SOURCE,
+        PIPE,
+        SINK
+    };
+
     class IOperator {
     public:
         IOperator() = default;
@@ -29,6 +35,8 @@ namespace sierra::odyplan::v2::core::physical::opr {
         [[nodiscard]] const port::Ports& getOutputPorts() const {
             return mOutputPorts;
         }
+
+        [[nodiscard]] virtual OperatorRole getRole() const = 0;
 
     private:
         port::Ports mInputPorts;

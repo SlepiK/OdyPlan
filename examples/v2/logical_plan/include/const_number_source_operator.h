@@ -4,8 +4,8 @@
 #include "core/logical/operator/source/source_operator.h"
 
 namespace sierra::odyplan::v2::example::logical_plan {
-    constexpr sierra::odyplan::v2::core::logical::port::PortTypeId TYPE_INT = 1;
-    constexpr sierra::odyplan::v2::core::logical::port::PortTypeId TYPE_DOUBLE = 2;
+    constexpr sierra::odyplan::v2::core::common::identifier::PortTypeId TYPE_INT = 1;
+    constexpr sierra::odyplan::v2::core::common::identifier::PortTypeId TYPE_DOUBLE = 2;
 
     inline sierra::odyplan::v2::core::logical::port::Port createIntPort() {
         return { sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId=TYPE_INT,.typeJsonName="int"} };
@@ -19,6 +19,24 @@ namespace sierra::odyplan::v2::example::logical_plan {
     public:
         ConstNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createIntPort()) {
         }
+
+        [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
+            return TYPE_ID;
+        }
+    private:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
+    };
+
+    class ConstDoubleNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
+    public:
+        ConstDoubleNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createDoublePort()) {
+        }
+
+        [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
+            return TYPE_ID;
+        }
+    private:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 3;
     };
 } // namespace sierra::odyplan::v2::example::logical_plan
 
