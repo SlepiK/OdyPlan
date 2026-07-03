@@ -26,6 +26,9 @@ llvm_map_components_to_libnames(LLVM_LIBS
         support
         irreader
         native
+        nativecodegen
+
+        orcjit
 )
 
 if(LLVM_ENABLE_ABI_BREAKING_CHECKS)
