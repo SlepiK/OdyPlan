@@ -1,3 +1,4 @@
+## Example Output
 ```text
 Building Logical Plan...
 Logical Plan: OK
