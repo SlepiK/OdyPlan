@@ -80,9 +80,9 @@ int main() {
     auto module = std::make_unique<llvm::Module>("exampleFull",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
+    llvm::outs().SetUnbuffered();
     std::cout << "\n\n";
     module->print(llvm::outs(), nullptr);
-    llvm::outs().flush();
     std::cout << "\n\n";
 
     std::cout << "LLVM-IR: OK\n";
