@@ -32,6 +32,7 @@ namespace sierra::odyplan::v2::example::full {
             }
 
             void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
+#ifdef ENABLE_LOOPED_SOURCE
                 llvm::LLVMContext& ctx = builder.getContext();
                 llvm::Function* fn = builder.GetInsertBlock()->getParent();
 
@@ -49,13 +50,14 @@ namespace sierra::odyplan::v2::example::full {
                 llvm::Value* stop = builder.CreateCall(stopFn, {});
                 builder.CreateCondBr(stop, exitBB, produceBB);
                 builder.SetInsertPoint(produceBB);
-
+#endif
                 llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
 
                 consumer(builder, {value});
-
+#ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);
+#endif
             }
         };
     }
