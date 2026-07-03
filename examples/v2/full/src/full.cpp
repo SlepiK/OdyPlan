@@ -1,6 +1,9 @@
 #include <iostream>
 #include <llvm/Support/TargetSelect.h>
 
+#include <llvm/ExecutionEngine/Orc/LLJIT.h>
+#include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
+
 #include "core/logical/plan/plan.h"
 
 #include "const_int_source_operator.h"
@@ -60,23 +63,59 @@ int main() {
         }
     );
 
-    llvm::LLVMContext ctx;
-
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, ctx);
+    auto ctx = std::make_unique<llvm::LLVMContext>();
+    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
+    auto module = std::make_unique<llvm::Module>("exampleFull",*ctx);
+    physicalPlan.codegen(*module, *ctx);
+
+    std::cout << "\n\n";
+    module->print(llvm::outs(), nullptr);
+    std::cout << "\n\n";
+
+    std::cout << "LLVM-IR: OK\n";
+    std::cout << "Running via LLVM-JIT...\n";
+
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 
-    auto module = std::make_unique<llvm::Module>("exampleFull",ctx);
-    physicalPlan.codegen(*module, ctx);
+    auto jitExpected = llvm::orc::LLJITBuilder().create();
+    if (!jitExpected) {
+        std::cerr << "Failed to create JIT: " << llvm::toString(jitExpected.takeError()) << "\n";
+        return 1;
+    }
 
-    module->print(llvm::errs(), nullptr);
+    auto& jit = *jitExpected;
 
-    std::cout << "LLVM-IR: OK\n";
+    auto& dylib = jit->getMainJITDylib();
+    llvm::orc::SymbolMap symbolMap;
+    symbolMap[jit->mangleAndIntern("odyExamplePrintUint32")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyExamplePrintUint32),llvm::JITSymbolFlags::Exported);
 
+    if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
+        std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";
+        return 1;
+    }
+
+    auto threadSafeModule = llvm::orc::ThreadSafeModule(std::move(module),std::move(ctx));
+
+    if (auto err = jit->addIRModule(std::move(threadSafeModule))) {
+        std::cerr << "Failed to add IR module: " << llvm::toString(std::move(err)) << "\n";
+        return 1;
+    }
+
+    auto mainExpected = jit->lookup("ody_main");
+
+    if (!mainExpected) {
+        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
+        return 1;
+    }
+
+    auto odyMain = mainExpected->toPtr<void(*)()>();
+    std::cout << "Running:\n";
+    odyMain();
 
     return 0;
 }

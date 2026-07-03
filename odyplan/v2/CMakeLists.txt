@@ -23,10 +23,16 @@ target_compile_definitions(OdyPlanV2 ${ODYPLAN_VIS}
         ${LLVM_DEFINITIONS}
 )
 
+target_compile_options(OdyPlanV2 ${ODYPLAN_VIS}
+        -fno-rtti
+)
+
 target_link_libraries(OdyPlanV2 ${ODYPLAN_VIS}
         nlohmann_json::nlohmann_json
         spdlog::spdlog_header_only
+        -Wl,--start-group
         ${LLVM_LIBS}
+        -Wl,--end-group
 )
 
 set(LINT_SOURCE_FILES ${SOURCES} ${HEADERS})
