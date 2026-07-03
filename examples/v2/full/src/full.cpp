@@ -10,9 +10,17 @@
 #include "print_int_sink_operator.h"
 #include "core/builder/plan_builder.h"
 
+#include <atomic>
+
+inline std::atomic<bool> atStop{false};
+
 extern "C" {
     void odyExamplePrintUint32(const std::uint32_t value) {
         std::cout << value << "\n";
+    }
+
+    bool odyStop() {
+        return atStop.load(std::memory_order_relaxed);
     }
 }
 
@@ -93,6 +101,7 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
     symbolMap[jit->mangleAndIntern("odyExamplePrintUint32")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyExamplePrintUint32),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";
@@ -114,8 +123,16 @@ int main() {
     }
 
     auto odyMain = mainExpected->toPtr<void(*)()>();
-    std::cout << "Running:\n";
-    odyMain();
+
+    std::thread mainThread([&]() {
+        odyMain();
+    });
+
+    std::cout << "Running (press Enter to stop:\n";
+
+    std::cin.get();
+    atStop.store(true);
+    mainThread.join();
 
     return 0;
 }
