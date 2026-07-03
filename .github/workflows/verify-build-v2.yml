@@ -1,4 +1,4 @@
-name: verify-build-v2.yml
+name: verify-build-v2
 on:
   pull_request:
     branches:
