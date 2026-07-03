@@ -10,6 +10,12 @@ target_include_directories(example_full PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
+if(ENABLE_LOOPED_SOURCE)
+    target_compile_definitions(example_full PRIVATE
+            ENABLE_LOOPED_SOURCE
+    )
+endif ()
+
 target_link_libraries(example_full PRIVATE
         OdyPlanV2
 )
