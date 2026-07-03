@@ -11,5 +11,5 @@ target_include_directories(example_number_stream PRIVATE
 )
 
 target_link_libraries(example_number_stream PRIVATE
-        odyplan
+        OdyPlanV1
 )
