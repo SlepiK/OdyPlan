@@ -82,6 +82,7 @@ int main() {
 
     std::cout << "\n\n";
     module->print(llvm::outs(), nullptr);
+    llvm::outs().flush();
     std::cout << "\n\n";
 
     std::cout << "LLVM-IR: OK\n";
