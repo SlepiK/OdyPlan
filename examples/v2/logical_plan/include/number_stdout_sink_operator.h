@@ -7,26 +7,26 @@
 namespace sierra::odyplan::v2::example::logical_plan {
     class NumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
     public:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
+
         NumberStdoutSinkOperator() : TypedSinkOperator(createIntPort()) {
         }
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
         }
-    private:
-        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
     };
 
     class DoubleNumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
     public:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
+
         DoubleNumberStdoutSinkOperator() : TypedSinkOperator(createDoublePort()) {
         }
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
         }
-    private:
-        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
     };
 } // namespace sierra::odyplan::v2::example::logical_plan
 

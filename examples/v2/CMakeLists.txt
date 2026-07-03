@@ -1,1 +1,2 @@
 add_subdirectory(logical_plan)
+add_subdirectory(full)
