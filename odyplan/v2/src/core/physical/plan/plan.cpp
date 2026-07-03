@@ -12,7 +12,23 @@ namespace sierra::odyplan::v2::core::physical::plan {
     }
 
     void Plan::addSegment(segment::Segment segment) {
-        //ToDo: Verify no empty segments
+        if (segment.start == nullptr) {
+            throw std::invalid_argument("Plan::addSegment: segment has no start!");
+        }
+
+        switch (segment.type) {
+            case segment::SegmentType::NORMAL:
+                if (segment.end == nullptr) {
+                    throw std::invalid_argument("Plan::addSegment: segment has no end!");
+                }
+                break;
+            case segment::SegmentType::BLOCKING:
+                if (segment.blockingTarget == nullptr) {
+                    throw std::invalid_argument("Plan::addSegment: segment has no blockingTarget!");
+                }
+                break;
+        }
+
         mSegments.push_back(std::move(segment));
     }
 
@@ -35,16 +51,34 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         llvm::IRBuilder<> builder(basicBlock);
 
-        port::PortTupleConsumer consumerChain = [](llvm::IRBuilder<>&, const port::PortTuple&) {};
+        /*port::PortTupleConsumer chain = [end = segment.end](llvm::IRBuilder<>& b, const port::PortTuple& t) {
+            end->consume(b,t,[](llvm::IRBuilder<>&, const port::PortTuple&) {});
+        };*/
 
-        for (auto *consumer : std::ranges::reverse_view(segment.midEnd)) {
-            port::PortTupleConsumer const nextConsumer = consumerChain;
-            consumerChain = [consumer, nextConsumer](llvm::IRBuilder<>& cBuilder, const port::PortTuple& cTuple) mutable {
-                consumer->consume(cBuilder, cTuple, nextConsumer);
+        port::PortTupleConsumer chain;
+
+        switch (segment.type) {
+            case segment::SegmentType::NORMAL:
+                chain = [end = segment.end] (llvm::IRBuilder<>& b, const port::PortTuple& t) {
+                    end->consume(b,t,[](llvm::IRBuilder<>&, const port::PortTuple&) {});
+                };
+                break;
+            case segment::SegmentType::BLOCKING:
+                chain = [target = segment.blockingTarget] (llvm::IRBuilder<>& b, const port::PortTuple& t) {
+                    target->consume(b, t, [](llvm::IRBuilder<>&, const port::PortTuple&) {});
+                };
+                break;
+        }
+
+        for (auto *it : std::ranges::reverse_view(segment.mid)) {
+            opr::IPipeOperator* pipe = it;
+            port::PortTupleConsumer next = chain;
+            chain = [pipe, next](llvm::IRBuilder<>& b, const port::PortTuple& t) mutable {
+                pipe->consume(b, t, next);
             };
         }
 
-        segment.start->produce(builder, std::move(consumerChain));
+        segment.start->produce(builder, std::move(chain));
 
         builder.CreateRetVoid();
         return function;

@@ -4,11 +4,11 @@
 #include <algorithm>
 
 #include "core/physical/operator/operator.h"
-#include "core/physical/operator/internal/operator_ability.h"
+#include "../operator_ability.h"
 #include "core/physical/port/port.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
-    class IPipeOperator : public IOperator, public internal::IProducer, public internal::IConsumer {
+    class IPipeOperator : public IOperator, public IConsumer {
     public:
         [[nodiscard]] bool hasInputPorts() const override {
             return true;
@@ -16,6 +16,10 @@ namespace sierra::odyplan::v2::core::physical::opr {
 
         [[nodiscard]] bool hasOutputPorts() const override {
             return true;
+        }
+
+        [[nodiscard]] OperatorRole getRole() const final {
+            return OperatorRole::PIPE;
         }
     };
 
@@ -39,18 +43,17 @@ namespace sierra::odyplan::v2::core::physical::opr {
         }
     };
 
-    class TypedBlockingPipeOperator : public TypedPipeOperator {
+    class TypedBlockingPipeOperator : public TypedPipeOperator, public IProducer {
     public:
         explicit TypedBlockingPipeOperator(port::Ports inputPorts, port::Ports outputPorts)
-            : TypedPipeOperator(std::move(inputPorts), std::move(outputPorts)),
-                mOperatorState(nullptr) {
+            : TypedPipeOperator(std::move(inputPorts), std::move(outputPorts)) {
         }
 
         [[nodiscard]] bool isSegmentBreaker() const final {
             return true;
         }
 
-        void consume(llvm::IRBuilder<> &builder, const port::PortTuple &tuple, port::PortTupleConsumer consume) final {
+        void consume(llvm::IRBuilder<> &builder, const port::PortTuple &tuple, port::PortTupleConsumer  /*consume*/) final {
             build(builder, tuple);
         }
 
@@ -66,14 +69,14 @@ namespace sierra::odyplan::v2::core::physical::opr {
         virtual void build(llvm::IRBuilder<> &builder, const port::PortTuple& tuple) = 0;
         virtual void probe(llvm::IRBuilder<> &builder, port::PortTupleConsumer consumer) = 0;
 
-        llvm::Value* mOperatorState;
+        llvm::Value* mOperatorState = nullptr;
     };
 
     class TypedWindowPipeOperator : public TypedBlockingPipeOperator {
     public:
         enum class WindowType : uint8_t {
-            Tumbling,
-            Sliding
+            TUMBLING,
+            SLIDING
         };
 
         TypedWindowPipeOperator(port::Ports inputPorts, port::Ports outputPorts) : TypedBlockingPipeOperator(std::move(inputPorts), std::move(outputPorts)) {

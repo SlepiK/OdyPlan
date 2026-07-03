@@ -1,10 +1,11 @@
 #include "core/logical/plan/plan.h"
 
 #include <algorithm>
+#include <functional>
 #include <unordered_set>
 
 namespace sierra::odyplan::v2::core::logical::plan {
-    port::OperatorId Plan::addOperator(std::unique_ptr<opr::IOperator> opr) {
+    common::identifier::OperatorId Plan::addOperator(std::unique_ptr<opr::IOperator> opr) {
         if (!opr) {
             throw std::invalid_argument("Plan::addOperator: opr must not be nullptr!");
         }
@@ -20,7 +21,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
     }
 
 
-    void Plan::connect(const port::PortRef& fromOperator, const port::PortRef& toOperator) {
+    void Plan::connect(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) {
         validateConnectionRequest(fromOperator, toOperator);
 
         if (!areConnectionTypesCompatible(fromOperator, toOperator)) {
@@ -31,15 +32,19 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::connect: connection would create a cycle in the plan");
         }
 
-        mEdges.push_back(edge::Edge(fromOperator, toOperator));
+        mEdges.push_back(common::edge::Edge(fromOperator, toOperator));
     }
 
-    [[nodiscard]] opr::IOperator& Plan::op(const port::OperatorId id) const {
+    [[nodiscard]] opr::IOperator& Plan::op(const common::identifier::OperatorId id) const {
+        if (id >= mOperators.size()) {
+            throw std::invalid_argument("Plan::op: id is out of range");
+        }
+
         return *mOperators.at(id);
     }
 
-    void Plan::validateConnectionRequest(const port::PortRef& fromOperator,
-                                         const port::PortRef& toOperator) {
+    void Plan::validateConnectionRequest(const common::port::PortRef& fromOperator,
+                                         const common::port::PortRef& toOperator) {
         if (fromOperator.operatorId >= mOperators.size()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator.operatorId out of range");
         }
@@ -69,7 +74,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         // No Fan-in # only one edge to one input port allowed!
         const bool alreadyConnected = std::ranges::any_of(
-            mEdges,[&](const edge::Edge& edge) {
+            mEdges,[&](const common::edge::Edge& edge) {
                 return edge.toOperator.operatorId == toOperator.operatorId &&
                     edge.toOperator.portId == toOperator.portId;
             }
@@ -84,7 +89,45 @@ namespace sierra::odyplan::v2::core::logical::plan {
         }
     }
 
-    bool Plan::areConnectionTypesCompatible(const port::PortRef& fromOperator, const port::PortRef& toOperator) const {
+    [[nodiscard]] std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
+        const std::size_t n = mOperators.size();
+
+        enum class State : std::uint8_t {ToDo, InProgress, Finished};
+
+        std::vector<State> state(n, State::ToDo);
+        std::vector<common::identifier::OperatorId> order;
+        order.reserve(n);
+
+        std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](common::identifier::OperatorId cId) {
+            state[cId] = State::InProgress;
+
+            for (const auto& edge : mEdges) {
+                if (edge.fromOperator.operatorId == cId) {
+                    auto next = edge.toOperator.operatorId;
+                    if (state[next] == State::InProgress) {
+                        throw std::runtime_error(
+                            "Plan::topologicalOrder: Late cycle detected - something went wrong");
+                    }
+                    if (state[next] == State::ToDo) {
+                        depthfirstsearch(next);
+                    }
+                }
+            }
+
+            state[cId] = State::Finished;
+            order.push_back(cId);
+        };
+
+        for (auto sourceOprId : mSourceOperators) {
+            depthfirstsearch(sourceOprId);
+        }
+
+        //To have the sources at the beginning
+        std::reverse(order.begin(), order.end());
+        return order;
+    }
+
+    bool Plan::areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const {
         const auto& outPort = op(fromOperator.operatorId).getOutputPorts().at(fromOperator.portId);
         const auto& inPort = op(toOperator.operatorId).getInputPorts().at(toOperator.portId);
 
@@ -101,9 +144,9 @@ namespace sierra::odyplan::v2::core::logical::plan {
         return true;
     }
 
-    bool Plan::wouldCreateCycle(const port::OperatorId from, const port::OperatorId to) const {
-        std::unordered_set<port::OperatorId> visitedOperators;
-        std::vector<port::OperatorId> operatorStack{to};
+    bool Plan::wouldCreateCycle(const common::identifier::OperatorId from, const common::identifier::OperatorId to) const {
+        std::unordered_set<common::identifier::OperatorId> visitedOperators;
+        std::vector<common::identifier::OperatorId> operatorStack{to};
 
         while (!operatorStack.empty()) {
             const auto current = operatorStack.back();
@@ -117,7 +160,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
                 continue;
             }
 
-            for (const edge::Edge& edge : mEdges) {
+            for (const common::edge::Edge& edge : mEdges) {
                 if (edge.fromOperator.operatorId == current) {
                     operatorStack.push_back(edge.toOperator.operatorId);
                 }
