@@ -3,6 +3,7 @@
 
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
+#include <llvm/Support/raw_os_ostream.h>
 
 #include "core/logical/plan/plan.h"
 
@@ -80,9 +81,10 @@ int main() {
     auto module = std::make_unique<llvm::Module>("exampleFull",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
-    llvm::outs().SetUnbuffered();
     std::cout << "\n\n";
-    module->print(llvm::outs(), nullptr);
+    llvm::raw_os_ostream ros(std::cout);
+    module->print(ros, nullptr);
+    ros.flush();
     std::cout << "\n\n";
 
     std::cout << "LLVM-IR: OK\n";
