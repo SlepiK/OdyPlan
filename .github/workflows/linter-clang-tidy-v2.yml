@@ -64,12 +64,12 @@ jobs:
           
       - name: Run clang-tidy
         run: |
-          if [[ ! -d v2/include ]]; then
+          if [[ ! -d odyplan/v2/include ]]; then
             echo "No include directory found. Skipping clang-tidy."
             exit 0
           fi
 
-          FILES=$(find v2/include -type f \( -name '*.h' -o -name '*.hpp' \))
+          FILES=$(find odyplan/v2/include -type f \( -name '*.h' -o -name '*.hpp' \))
 
           if [[ -z "$FILES" ]]; then
             echo "No header files found. Skipping clang-tidy."
