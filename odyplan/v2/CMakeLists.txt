@@ -7,29 +7,33 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 
 if(SOURCES)
     add_library(OdyPlanV2 STATIC ${SOURCES})
+    set(ODYPLAN_VIS PUBLIC)
 else()
     add_library(OdyPlanV2 INTERFACE)
+    set(ODYPLAN_VIS INTERFACE)
 endif()
 
-if(SOURCES)
-    target_include_directories(OdyPlanV2 PUBLIC
-            "include"
-    )
+target_include_directories(OdyPlanV2 ${ODYPLAN_VIS}
+        "include"
+        ${LLVM_INCLUDE_DIRS}
+        ${CLANG_INCLUDE_DIRS}
+)
 
-    target_link_libraries(OdyPlanV2 PUBLIC
-            nlohmann_json::nlohmann_json
-            spdlog::spdlog_header_only
-    )
-else()
-    target_include_directories(OdyPlanV2 INTERFACE
-            "include"
-    )
+target_compile_definitions(OdyPlanV2 ${ODYPLAN_VIS}
+        ${LLVM_DEFINITIONS}
+)
 
-    target_link_libraries(OdyPlanV2 INTERFACE
-            nlohmann_json::nlohmann_json
-            spdlog::spdlog_header_only
-    )
-endif()
+target_compile_options(OdyPlanV2 ${ODYPLAN_VIS}
+        -fno-rtti
+)
+
+target_link_libraries(OdyPlanV2 ${ODYPLAN_VIS}
+        nlohmann_json::nlohmann_json
+        spdlog::spdlog_header_only
+        -Wl,--start-group
+        ${LLVM_LIBS}
+        -Wl,--end-group
+)
 
 set(LINT_SOURCE_FILES ${SOURCES} ${HEADERS})
 
@@ -56,3 +60,6 @@ if(ENABLE_CLANG_FORMAT_CHECK AND CLANG_FORMAT_EXE AND LINT_SOURCE_FILES)
             VERBATIM
     )
 endif()
+
+unset(ODYPLAN_VIS)
+unset(LINT_SOURCE_FILES)

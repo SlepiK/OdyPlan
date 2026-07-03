@@ -1,9 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_LOGICAL_PLAN_PLAN_H
 #define SIERRA_ODYPLAN_V2_CORE_LOGICAL_PLAN_PLAN_H
 
+#include "core/common/ident.h"
 #include "core/logical/operator/operator.h"
-#include "core/logical/edge/edge.h"
-#include "core/logical/port/port_ref.h"
+#include "core/common/edge/edge.h"
+#include "core/common/port/port_ref.h"
 
 #include <memory>
 #include <vector>
@@ -11,21 +12,22 @@
 namespace sierra::odyplan::v2::core::logical::plan {
     class Plan {
     public:
-        port::OperatorId addOperator(std::unique_ptr<opr::IOperator> opr);
+        common::identifier::OperatorId addOperator(std::unique_ptr<opr::IOperator> opr);
 
-        void connect(const port::PortRef& fromOperator, const port::PortRef& toOperator);
+        void connect(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator);
 
-    protected:
-        [[nodiscard]] opr::IOperator& op(port::OperatorId id) const;
+        [[nodiscard]] std::vector<common::identifier::OperatorId> topologicalOrder() const;
+
+        [[nodiscard]] opr::IOperator& op(common::identifier::OperatorId id) const;
 
     private:
-        std::vector<port::OperatorId> mSourceOperators;
+        std::vector<common::identifier::OperatorId> mSourceOperators;
         std::vector<std::unique_ptr<opr::IOperator>> mOperators;
-        std::vector<edge::Edge> mEdges;
+        std::vector<common::edge::Edge> mEdges;
 
-        void validateConnectionRequest(const port::PortRef& fromOperator, const port::PortRef& toOperator);
-        [[nodiscard]] bool areConnectionTypesCompatible(const port::PortRef& fromOperator, const port::PortRef& toOperator) const;
-        [[nodiscard]] bool wouldCreateCycle(port::OperatorId from, port::OperatorId to) const;
+        void validateConnectionRequest(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator);
+        [[nodiscard]] bool areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const;
+        [[nodiscard]] bool wouldCreateCycle(common::identifier::OperatorId from, common::identifier::OperatorId to) const;
     };
 }  // namespace sierra::odyplan::v2::core::logical::port
 

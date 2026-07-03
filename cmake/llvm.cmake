@@ -21,6 +21,16 @@ find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
 message(STATUS "FOUND LLVM ${LLVM_VERSION}: ${LLVM_DIR}")
 message(STATUS "FOUND Clang ${Clang_VERSION}: ${Clang_DIR}")
 
+llvm_map_components_to_libnames(LLVM_LIBS
+        core
+        support
+        irreader
+        native
+        nativecodegen
+
+        orcjit
+)
+
 if(LLVM_ENABLE_ABI_BREAKING_CHECKS)
     add_definitions(-DLLVM_ENABLE_ABI_BREAKING_CHECKS=1)
 else()
