@@ -32,9 +32,30 @@ namespace sierra::odyplan::v2::example::full {
             }
 
             void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
+                llvm::LLVMContext& ctx = builder.getContext();
+                llvm::Function* fn = builder.GetInsertBlock()->getParent();
+
+                auto* loopBB = llvm::BasicBlock::Create(ctx, "loop", fn);
+                auto* produceBB = llvm::BasicBlock::Create(ctx, "produce", fn);
+                auto* exitBB = llvm::BasicBlock::Create(ctx, "exit", fn);
+
+                builder.CreateBr(loopBB);
+                builder.SetInsertPoint(loopBB);
+
+                auto* stopFnType = llvm::FunctionType::get(
+                    llvm::Type::getInt1Ty(ctx), {}, false);
+
+                llvm::FunctionCallee stopFn = builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
+                llvm::Value* stop = builder.CreateCall(stopFn, {});
+                builder.CreateCondBr(stop, exitBB, produceBB);
+                builder.SetInsertPoint(produceBB);
+
                 llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
 
                 consumer(builder, {value});
+
+                builder.CreateBr(loopBB);
+                builder.SetInsertPoint(exitBB);
             }
         };
     }
