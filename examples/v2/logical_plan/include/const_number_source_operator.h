@@ -17,26 +17,26 @@ namespace sierra::odyplan::v2::example::logical_plan {
 
     class ConstNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
     public:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
+
         ConstNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createIntPort()) {
         }
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
         }
-    private:
-        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
     };
 
     class ConstDoubleNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
     public:
+        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 3;
+
         ConstDoubleNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createDoublePort()) {
         }
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
         }
-    private:
-        static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 3;
     };
 } // namespace sierra::odyplan::v2::example::logical_plan
 
