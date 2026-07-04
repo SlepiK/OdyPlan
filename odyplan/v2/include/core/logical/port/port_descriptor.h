@@ -5,10 +5,12 @@
 
 namespace sierra::odyplan::v2::core::logical::port {
     using PortTypeJsonName = std::string;
+    using PortFieldName = std::string;
 
     struct PortDescriptor {
         common::identifier::PortTypeId typeId;
         PortTypeJsonName typeJsonName;
+        PortFieldName fieldName;
     };
 }  // namespace sierra::odyplan::v2::core::logical::port
 
