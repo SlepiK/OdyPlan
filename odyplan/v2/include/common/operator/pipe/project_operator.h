@@ -1,6 +1,9 @@
 #ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_PROJECTOPERATOR_H
 #define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_PROJECTOPERATOR_H
 
+#include <string>
+#include <vector>
+
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "core/common/port/port_ref.h"
@@ -10,14 +13,56 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     namespace logical {
         class ProjectOperator : public core::logical::opr::TypedPipeOperator {
         public:
+            using IndexMapping = std::vector<std::size_t>;
+            using NameMapping = std::vector<std::string>;
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 20;
 
-            ProjectOperator(core::logical::port::Port inputPort, core::logical::port::Port outputPort)
-                : TypedPipeOperator(core::logical::port::Ports{std::move(inputPort)},core::logical::port::Ports{std::move(outputPort)}) {
+            ProjectOperator(core::logical::port::Port inputPort, core::logical::port::Port outputPort, IndexMapping mapping)
+                : TypedPipeOperator(core::logical::port::Ports{std::move(inputPort)},core::logical::port::Ports{std::move(outputPort)}),
+                    mMapping(std::move(mapping)){
+                if (mMapping.empty()) {
+                    throw std::invalid_argument("ProjectOperator: mapping is empty");
+                }
+                if (mMapping.size() != getOutputPorts().at(0).size()) {
+                    throw std::invalid_argument("ProjectOperator: mapping size must match outputPort");
+                }
+                for (const auto map : mMapping) {
+                    if (map >= getInputPorts().at(0).size()) {
+                        throw std::invalid_argument("ProjectOperator: map index out of range");
+                    }
+                }
+            }
+
+            ProjectOperator(const core::logical::port::Port &inputPort, core::logical::port::Port outputPort, NameMapping mapping)
+                : ProjectOperator(inputPort,std::move(outputPort),resolveNameMapping(inputPort,std::move(mapping))){
             }
 
             [[nodiscard]] core::common::identifier::OperatorTypeId getTypeId() const override {
                 return TYPE_ID;
+            }
+
+            [[nodiscard]] const IndexMapping& getMapping() const {
+                return mMapping;
+            }
+        private:
+            IndexMapping mMapping;
+
+            static IndexMapping resolveNameMapping(const core::logical::port::Port& inputPort, const NameMapping& nameMapping) {
+                IndexMapping mapping;
+                mapping.reserve(nameMapping.size());
+
+                for (const auto& name : nameMapping) {
+                    auto iter = std::ranges::find_if(inputPort,
+                                                     [&](const core::logical::port::PortDescriptor& pd) {
+                                                         return pd.fieldName == name;
+                    });
+                    if (iter == inputPort.end()) {
+                        throw std::invalid_argument("ProjectOperator: name not found in inputOperator");
+                    }
+                    mapping.push_back(static_cast<std::size_t>(std::distance(inputPort.begin(), iter)));
+                }
+
+                return mapping;
             }
         };
     }
@@ -25,6 +70,28 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     namespace physical {
         class ProjectOperator : public core::physical::opr::TypedPipeOperator{
         public:
+            using Mapping = std::vector<std::size_t>;
+
+            ProjectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, Mapping mapping)
+                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
+                    mMapping(std::move(mapping)){
+            }
+
+            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+                core::physical::port::PortTuple projected;
+                projected.reserve(mMapping.size());
+
+                for (const auto index : mMapping) {
+                    if (index >= tuple.size()) {
+                        throw std::invalid_argument("ProjectOperator: index out of range");
+                    }
+                    projected.push_back(tuple[index]);
+                }
+
+                consumer(builder, projected);
+            }
+        private:
+            Mapping mMapping;
         };
     }
 }
