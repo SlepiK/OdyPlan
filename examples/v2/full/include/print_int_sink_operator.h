@@ -40,7 +40,7 @@ namespace sierra::odyplan::v2::example::full {
 
                 llvm::FunctionCallee callee = module->getOrInsertFunction("odyExamplePrintUint32", functionType);
 
-                builder.CreateCall(callee, tuple);
+                builder.CreateCall(callee, tuple.at(0));
             }
         };
     }
