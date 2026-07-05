@@ -5,22 +5,6 @@
 #include <unordered_set>
 
 namespace sierra::odyplan::v2::core::logical::plan {
-    common::identifier::OperatorId Plan::addOperator(std::unique_ptr<opr::IOperator> opr) {
-        if (!opr) {
-            throw std::invalid_argument("Plan::addOperator: opr must not be nullptr!");
-        }
-
-        const auto id = mOperators.size();
-
-        if (!opr->hasInputPorts()) {
-            mSourceOperators.push_back(id);
-        }
-
-        mOperators.push_back(std::move(opr));
-        return id;
-    }
-
-
     void Plan::connect(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) {
         validateConnectionRequest(fromOperator, toOperator);
 
@@ -54,11 +38,18 @@ namespace sierra::odyplan::v2::core::logical::plan {
         }
 
         const auto& from = op(fromOperator.operatorId);
-        const auto& to = op(toOperator.operatorId);
 
         if (!from.hasOutputPorts()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output ports");
         }
+
+        if (std::ranges::find(mSourceOperators, toOperator.operatorId) != mSourceOperators.end()) {
+            throw std::invalid_argument("Plan::validateConnectionRequest: source operator cant get a connection");
+        }
+
+        const auto& to = op(toOperator.operatorId);
+
+        mBindables.at(toOperator.operatorId)->bindInput(toOperator.portId, from.getOutputPorts().at(fromOperator.portId));
 
         if (!to.hasInputPorts()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: toOperator has no input ports");

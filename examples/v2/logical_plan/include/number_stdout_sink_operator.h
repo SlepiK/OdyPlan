@@ -9,11 +9,14 @@ namespace sierra::odyplan::v2::example::logical_plan {
     public:
         static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
 
-        NumberStdoutSinkOperator() : TypedSinkOperator(createIntPort()) {
-        }
+        NumberStdoutSinkOperator() = default;
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
+        }
+
+    protected:
+        void validate() override {
         }
     };
 
@@ -21,11 +24,14 @@ namespace sierra::odyplan::v2::example::logical_plan {
     public:
         static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 1;
 
-        DoubleNumberStdoutSinkOperator() : TypedSinkOperator(createDoublePort()) {
-        }
+        DoubleNumberStdoutSinkOperator() = default;
 
         [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
             return TYPE_ID;
+        }
+
+    protected:
+        void validate() override {
         }
     };
 } // namespace sierra::odyplan::v2::example::logical_plan
