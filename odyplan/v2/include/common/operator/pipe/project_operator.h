@@ -17,20 +17,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             using NameMapping = std::vector<std::string>;
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 20;
 
-            ProjectOperator(core::logical::port::Port inputPort, core::logical::port::Port outputPort, IndexMapping mapping)
-                : TypedPipeOperator(core::logical::port::Ports{std::move(inputPort)},core::logical::port::Ports{std::move(outputPort)}),
-                    mMapping(std::move(mapping)){
-                if (mMapping.empty()) {
-                    throw std::invalid_argument("ProjectOperator: mapping is empty");
-                }
-                if (mMapping.size() != getOutputPorts().at(0).size()) {
-                    throw std::invalid_argument("ProjectOperator: mapping size must match outputPort");
-                }
-                for (const auto map : mMapping) {
-                    if (map >= getInputPorts().at(0).size()) {
-                        throw std::invalid_argument("ProjectOperator: map index out of range");
-                    }
-                }
+            ProjectOperator(IndexMapping mapping)
+                : mMapping(std::move(mapping)){
             }
 
             ProjectOperator(const core::logical::port::Port &inputPort, core::logical::port::Port outputPort, NameMapping mapping)
@@ -44,6 +32,22 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             [[nodiscard]] const IndexMapping& getMapping() const {
                 return mMapping;
             }
+
+        protected:
+            void validate() override {
+                if (mMapping.empty()) {
+                    throw std::invalid_argument("ProjectOperator: mapping is empty");
+                }
+                if (mMapping.size() != getOutputPorts().at(0).size()) {
+                    throw std::invalid_argument("ProjectOperator: mapping size must match outputPort");
+                }
+                for (const auto map : mMapping) {
+                    if (map >= getInputPorts().at(0).size()) {
+                        throw std::invalid_argument("ProjectOperator: map index out of range");
+                    }
+                }
+            }
+
         private:
             IndexMapping mMapping;
 

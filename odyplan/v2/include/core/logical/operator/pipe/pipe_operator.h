@@ -25,21 +25,27 @@ namespace sierra::odyplan::v2::core::logical::opr {
                 inputPorts.resize(portId + 1);
             }
 
-            inputPorts.at(portId) = std::move(input);
+            inputPorts.at(portId) = input;
+
+            auto& outputPorts = getOutputPortsRef();
+
+            if (outputPorts.empty()) {
+                outputPorts.resize(1);
+            }
+
+            auto& outputPort = outputPorts.at(0);
+            outputPort.insert(
+                outputPort.end(),
+                std::make_move_iterator(input.begin()),
+                std::make_move_iterator(input.end())
+                );
+
         }
     };
 
     class TypedPipeOperator : public IPipeOperator {
     public:
-        explicit TypedPipeOperator(port::Ports outputPorts) {
-            if (outputPorts.empty()) {
-                throw std::invalid_argument("TypedPipeOperator: outputPorts must not be empty");
-            }
-            if (std::ranges::any_of(outputPorts, [](const port::Port& port) {return port.empty();})) {
-                throw std::invalid_argument("TypedPipeOperator: no empty output port allowed");
-            }
-            getOutputPortsRef() = std::move(outputPorts);
-        }
+        explicit TypedPipeOperator() = default;
     };
 }  // namespace sierra::odyplan::v2::core::logical::opr
 
