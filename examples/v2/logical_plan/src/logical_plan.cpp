@@ -34,24 +34,9 @@ int main() {
         std::cout << "Error: " << e.what() << "\n";
     }
 
-    std::cout << "Running creation of unsuccessful pipeline - type-mismatch]\n";
-
-    const auto sourceOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::ConstNumberSourceOperator>());
-
-    const auto sinkOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::DoubleNumberStdoutSinkOperator>());
-
-    try {
-        plan.connect(
-        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sourceOperatorSecId,.portId=0},
-        sierra::odyplan::v2::core::common::port::PortRef {.operatorId=sinkOperatorSecId,.portId=0}
-        );
-        std::cout << "Error: Type-Mismatch on Port-Level (Types) not found]\n";
-    } catch (const std::exception& e) {
-        std::cout << "OK (Type-Mismatch found): " << e.what() << "\n";
-    }
-
     std::cout << "Running creation of unsuccessful pipeline - Fan-in]\n";
 
+    const auto sinkOperatorSecId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::DoubleNumberStdoutSinkOperator>());
     const auto sourceOperatorThiId = plan.addOperator(std::make_unique<sierra::odyplan::v2::example::logical_plan::ConstDoubleNumberSourceOperator>());
 
     try {

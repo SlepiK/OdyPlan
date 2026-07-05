@@ -5,7 +5,7 @@
 #include "core/logical/port/port.h"
 
 namespace sierra::odyplan::v2::core::logical::opr {
-    class ISinkOperator : public IOperator {
+    class ISinkOperator : public IOperator, public IBindable {
     public:
         [[nodiscard]] bool hasInputPorts() const override {
             return true;
@@ -14,16 +14,27 @@ namespace sierra::odyplan::v2::core::logical::opr {
         [[nodiscard]] bool hasOutputPorts() const override {
             return false;
         }
+
+    protected:
+        void bindInput(const common::identifier::PortId portId, port::Port input) override {
+            auto& inputPorts = getInputPortsRef();
+
+            if (inputPorts.size() == 1) {
+                throw std::runtime_error("ISinkOperator: cant bind more than one input");
+            }
+
+            if (inputPorts.size() <= portId) {
+                inputPorts.resize(portId + 1);
+            }
+
+            inputPorts.at(portId) = std::move(input);
+        }
+
     };
 
     class TypedSinkOperator : public ISinkOperator {
     public:
-        explicit TypedSinkOperator(port::Port inputPort) {
-            if (inputPort.empty()) {
-                throw std::invalid_argument("TypedSinkOperator: inputPort must not be empty");
-            }
-            getInputPortsRef().push_back(std::move(inputPort));
-        }
+        explicit TypedSinkOperator() = default;
     };
 }  // namespace sierra::odyplan::v2::core::logical::opr
 

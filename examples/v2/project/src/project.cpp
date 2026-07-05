@@ -16,8 +16,28 @@
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
-    void odyExamplePrint(const std::uint32_t value, const char* dataRaw, const std::uint64_t dataLength) {
-        std::cout << value << " " <<  std::string_view(dataRaw, dataLength) << "\n";
+    void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
+        std::cout << std::string_view(dataRaw, dataLength);
+    }
+
+    void rtOdyPrintDouble(const double value) {
+        std::cout << value;
+    }
+
+    void rtOdyPrintFloat(const float value) {
+        std::cout << value;
+    }
+
+    void rtOdyPrintInt(const int value) {
+        std::cout << value;
+    }
+
+    void rtOdyPrintSeperator() {
+        std::cout << " ";
+    }
+
+    void rtOdyPrintNewline() {
+        std::cout << "\n";
     }
 
     bool odyStop() {

@@ -7,7 +7,7 @@
 #include "core/logical/port/port.h"
 
 namespace sierra::odyplan::v2::core::logical::opr {
-    class IPipeOperator : public IOperator {
+    class IPipeOperator : public IOperator, public IBindable {
     public:
         [[nodiscard]] bool hasInputPorts() const override {
             return true;
@@ -16,24 +16,28 @@ namespace sierra::odyplan::v2::core::logical::opr {
         [[nodiscard]] bool hasOutputPorts() const override {
             return true;
         }
+
+    protected:
+        void bindInput(const common::identifier::PortId portId, port::Port input) override {
+            auto& inputPorts = getInputPortsRef();
+
+            if (inputPorts.size() <= portId) {
+                inputPorts.resize(portId + 1);
+            }
+
+            inputPorts.at(portId) = std::move(input);
+        }
     };
 
     class TypedPipeOperator : public IPipeOperator {
     public:
-        explicit TypedPipeOperator(port::Ports inputPorts, port::Ports outputPorts) {
-            if (inputPorts.empty()) {
-                throw std::invalid_argument("TypedPipeOperator: inputPorts must not be empty");
-            }
+        explicit TypedPipeOperator(port::Ports outputPorts) {
             if (outputPorts.empty()) {
                 throw std::invalid_argument("TypedPipeOperator: outputPorts must not be empty");
-            }
-            if (std::ranges::any_of(inputPorts, [](const port::Port& port) {return port.empty();})) {
-                throw std::invalid_argument("TypedPipeOperator: no empty input port allowed");
             }
             if (std::ranges::any_of(outputPorts, [](const port::Port& port) {return port.empty();})) {
                 throw std::invalid_argument("TypedPipeOperator: no empty output port allowed");
             }
-            getInputPortsRef() = std::move(inputPorts);
             getOutputPortsRef() = std::move(outputPorts);
         }
     };
