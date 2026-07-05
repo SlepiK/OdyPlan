@@ -64,6 +64,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             PortFieldNameV mPortFieldNames;
         };
     }
+
     namespace physical {
         class PrintOperator : public core::physical::opr::TypedSinkOperator {
         public:
