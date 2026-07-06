@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_EXAMPLE_PROJECT_CONSTINTSOURCEOPERATOR_H
 #define SIERRA_ODYPLAN_V2_EXAMPLE_PROJECT_CONSTINTSOURCEOPERATOR_H
 
+#include "core/common/type/type.h"
 #include "core/logical/operator/source/source_operator.h"
 #include "core/physical/operator/source/source_operator.h"
 
@@ -8,23 +9,19 @@ namespace sierra::odyplan::v2::example::project {
     constexpr core::common::identifier::PortTypeId TYPE_INT = 1;
     constexpr core::common::identifier::PortTypeId TYPE_STRING = 2;
 
-    inline core::logical::port::Port createProjectTestPort() {
-        return {
-            core::logical::port::PortDescriptor {.typeId=TYPE_INT,.typeJsonName="int32",.fieldName="field_1"},
-            core::logical::port::PortDescriptor {.typeId=TYPE_STRING,.typeJsonName="string",.fieldName="field_2"},
-            core::logical::port::PortDescriptor {.typeId=TYPE_INT,.typeJsonName="int32",.fieldName="field_3"}
-        };
+    inline core::logical::port::Port createIntPort() {
+        return { core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"} };
     }
 
     namespace logical {
         class ConstantIntSourceOperator final : public core::logical::opr::TypedSourceOperator {
         public:
-            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 0;
+            static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
 
-            explicit ConstantIntSourceOperator() : TypedSourceOperator(std::move(createProjectTestPort())) {
+            explicit ConstantIntSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
             }
 
-            [[nodiscard]] core::common::identifier::OperatorTypeId getTypeId() const override {
+            [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
                 return TYPE_ID;
             }
         };
@@ -56,24 +53,9 @@ namespace sierra::odyplan::v2::example::project {
                 builder.CreateCondBr(stop, exitBB, produceBB);
                 builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
+                llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
 
-                std::string const literal = "ProjectOperator_Test";
-                llvm::GlobalVariable* stringRaw = builder.CreateGlobalString(literal);
-                llvm::StructType* stringType = llvm::StructType::get(builder.getContext(), {
-                    llvm::PointerType::get(builder.getContext(), 0),
-                    llvm::Type::getInt64Ty(builder.getContext())
-                });
-
-                llvm::Value* stringLength = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),literal.size());
-
-                llvm::Value* valueField2 = llvm::PoisonValue::get(stringType);
-                valueField2 = builder.CreateInsertValue(valueField2, stringRaw, {0});
-                valueField2 = builder.CreateInsertValue(valueField2, stringLength, {1});
-
-                llvm::Value* valueField3 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),15);
-
-                consumer(builder, {valueField1,valueField2,valueField3});
+                consumer(builder, {value});
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);
