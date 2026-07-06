@@ -49,7 +49,7 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator>());
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
         sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
@@ -76,14 +76,14 @@ int main() {
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator::TYPE_ID,
+        sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator::TYPE_ID,
         [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::full::physical::ConstantIntSourceOperator>(outputPorts.front()));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::project::physical::ConstantIntSourceOperator>(outputPorts.front()));
             return ot;
         }
     );
@@ -107,7 +107,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("exampleFull",*ctx);
+    auto module = std::make_unique<llvm::Module>("exampleProject",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
