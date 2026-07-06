@@ -36,7 +36,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
 
         protected:
             void validate() override {
-                if (!mPortFieldNames.empty()) {
+                if (!mPortFieldNames.empty() && mPortFieldIndices.empty()) {
                     PortFieldIndexV indices;
                     indices.reserve(mPortFieldNames.size());
 
@@ -75,13 +75,13 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     mPortFieldIndices(std::move(indices)) {
             }
 
-            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
                 llvm::Module* module = builder.GetInsertBlock()->getModule();
                 if (tuple.size() < mPortFieldIndices.size()) {
                     throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
                 }
                 for (std::size_t i = 0; i < mPortFieldIndices.size(); ++i) {
-                    std::size_t fieldIndex = mPortFieldIndices[i];
+                    std::size_t const fieldIndex = mPortFieldIndices[i];
                     codegenPrintField(builder, module, getInputPorts().at(0).at(fieldIndex).typeId, tuple.at(fieldIndex));
 
                     if (i + 1 < mPortFieldIndices.size()) {

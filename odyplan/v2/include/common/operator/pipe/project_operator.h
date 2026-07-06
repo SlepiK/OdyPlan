@@ -17,12 +17,12 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             using NameMapping = std::vector<std::string>;
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 20;
 
-            ProjectOperator(IndexMapping mapping)
+            explicit ProjectOperator(IndexMapping mapping)
                 : mMapping(std::move(mapping)){
             }
 
-            ProjectOperator(const core::logical::port::Port &inputPort, core::logical::port::Port outputPort, NameMapping mapping)
-                : ProjectOperator(inputPort,std::move(outputPort),resolveNameMapping(inputPort,std::move(mapping))){
+            explicit ProjectOperator(NameMapping mapping)
+                : mNameMapping(std::move(mapping)) {
             }
 
             [[nodiscard]] core::common::identifier::OperatorTypeId getTypeId() const override {
@@ -35,21 +35,33 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
         protected:
             void validate() override {
+                if (!mNameMapping.empty() && mMapping.empty()) {
+                    mMapping = resolveNameMapping(getInputPorts().at(0), mNameMapping);
+                }
                 if (mMapping.empty()) {
                     throw std::invalid_argument("ProjectOperator: mapping is empty");
                 }
+
+                core::logical::port::Port output;
+                auto& outputRef = getOutputPortsRef().at(0);
+                for (const auto& index : mMapping) {
+                    if (index >= outputRef.size()) {
+                        throw std::invalid_argument("ProjectOperator: index out of range");
+                    }
+
+                    output.push_back(std::move(outputRef.at(index)));
+                }
+
+                outputRef = std::move(output);
+
                 if (mMapping.size() != getOutputPorts().at(0).size()) {
                     throw std::invalid_argument("ProjectOperator: mapping size must match outputPort");
-                }
-                for (const auto map : mMapping) {
-                    if (map >= getInputPorts().at(0).size()) {
-                        throw std::invalid_argument("ProjectOperator: map index out of range");
-                    }
                 }
             }
 
         private:
             IndexMapping mMapping;
+            NameMapping mNameMapping;
 
             static IndexMapping resolveNameMapping(const core::logical::port::Port& inputPort, const NameMapping& nameMapping) {
                 IndexMapping mapping;

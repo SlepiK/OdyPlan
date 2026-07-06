@@ -47,9 +47,13 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::validateConnectionRequest: source operator cant get a connection");
         }
 
-        const auto& to = op(toOperator.operatorId);
+        const auto& bindable = mBindables.at(toOperator.operatorId);
 
-        mBindables.at(toOperator.operatorId)->bindInput(toOperator.portId, from.getOutputPorts().at(fromOperator.portId));
+        bindable->bindInput(toOperator.portId, from.getOutputPorts().at(fromOperator.portId));
+
+        bindable->validate();
+
+        const auto& to = op(toOperator.operatorId);
 
         if (!to.hasInputPorts()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: toOperator has no input ports");

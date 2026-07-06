@@ -13,6 +13,8 @@
 
 #include <atomic>
 
+#include "common/operator/pipe/project_operator.h"
+
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
@@ -52,12 +54,20 @@ int main() {
 
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantSourceOperator>());
 
+    auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::pipe::logical::ProjectOperator>(
+        sierra::odyplan::v2::common::opr::pipe::logical::ProjectOperator::IndexMapping {1}
+    ));
+
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
-        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1}
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
     ));
 
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=pipeId,.portId=0});
+
+    logicalPlan.connect(
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=pipeId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
 
     std::cout << "Logical Plan: OK\n";
@@ -98,6 +108,20 @@ int main() {
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
+            return ot;
+        }
+    );
+
+
+    builder.registerOperatorTransformation(
+        sierra::odyplan::v2::common::opr::pipe::logical::ProjectOperator::TYPE_ID,
+        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+            const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
+            const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::ProjectOperator&>(op);
+
+            sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::ProjectOperator>(inputPorts.front(), outputPorts.front(), concrete.getMapping()));
             return ot;
         }
     );
