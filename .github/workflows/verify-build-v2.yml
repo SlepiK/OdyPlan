@@ -68,7 +68,7 @@ jobs:
 
       - name: Run v2 examples
         run: |
-          find build/examples/v2 -maxdepth 2 -type f -name 'example_*' -executable -print0 |
+          failed=0
           while IFS= read -r -d '' bin; do
             echo "::group::Running $bin"
             "$bin"
@@ -76,7 +76,8 @@ jobs:
             echo "::endgroup::"
             if [ $status -ne 0 ]; then
               echo "$bin failed with exit code $status"
-              exit $status
+              failed=$status
             fi
-          done
+          done < <(find build/examples/v2 -maxdepth 2 -type f -name 'example_*' -executable -print0)
+          exit $failed
 
