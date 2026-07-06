@@ -14,11 +14,11 @@ namespace sierra::odyplan::v2::example::project {
     }
 
     namespace logical {
-        class ConstantIntSourceOperator final : public core::logical::opr::TypedSourceOperator {
+        class ConstantSourceOperator final : public core::logical::opr::TypedSourceOperator {
         public:
             static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
 
-            explicit ConstantIntSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
+            explicit ConstantSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
             }
 
             [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
@@ -28,9 +28,9 @@ namespace sierra::odyplan::v2::example::project {
     }
 
     namespace physical {
-        class ConstantIntSourceOperator final : public core::physical::opr::TypedSourceOperator {
+        class ConstantSourceOperator final : public core::physical::opr::TypedSourceOperator {
         public:
-            explicit ConstantIntSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
+            explicit ConstantSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
             }
 
             void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {

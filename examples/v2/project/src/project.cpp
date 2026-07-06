@@ -8,7 +8,7 @@
 #include "common/operator/sink/print_operator.h"
 #include "core/logical/plan/plan.h"
 
-#include "const_int_source_operator.h"
+#include "const_source_operator.h"
 #include "core/builder/plan_builder.h"
 
 #include <atomic>
@@ -50,7 +50,7 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantSourceOperator>());
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
         sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
@@ -77,14 +77,14 @@ int main() {
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator::TYPE_ID,
+        sierra::odyplan::v2::example::project::logical::ConstantSourceOperator::TYPE_ID,
         [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::example::project::logical::ConstantSourceOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::project::physical::ConstantIntSourceOperator>(outputPorts.front()));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::project::physical::ConstantSourceOperator>(outputPorts.front()));
             return ot;
         }
     );
