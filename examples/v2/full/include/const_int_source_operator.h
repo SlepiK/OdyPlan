@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_EXAMPLE_FULL_CONSTINTSOURCEOPERATOR_H
 #define SIERRA_ODYPLAN_V2_EXAMPLE_FULL_CONSTINTSOURCEOPERATOR_H
 
+#include "core/common/type/type.h"
 #include "core/logical/operator/source/source_operator.h"
 #include "core/physical/operator/source/source_operator.h"
 
@@ -8,7 +9,7 @@ namespace sierra::odyplan::v2::example::full {
     constexpr core::common::identifier::PortTypeId TYPE_INT = 1;
 
     inline core::logical::port::Port createIntPort() {
-        return { core::logical::port::PortDescriptor {.typeId=TYPE_INT,.typeJsonName="int32"} };
+        return { core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"} };
     }
 
     namespace logical {

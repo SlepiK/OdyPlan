@@ -3,8 +3,29 @@
 
 #include "core/logical/port/port.h"
 
+namespace sierra::odyplan::v2::core::logical::plan {
+    class Plan;
+}
+
 namespace sierra::odyplan::v2::core::logical::opr {
+    class IBindable {
+        friend class plan::Plan;
+    public:
+        IBindable() = default;
+        virtual ~IBindable() = default;
+
+        IBindable(const IBindable&) = delete;
+        IBindable& operator=(const IBindable&) = delete;
+
+        IBindable(IBindable&&) = delete;
+        IBindable& operator=(IBindable&&) = delete;
+    protected:
+        virtual void bindInput(common::identifier::PortId portId, port::Port input) = 0;
+        virtual void validate() = 0;
+    };
+
     class IOperator {
+        friend class plan::Plan;
     public:
         IOperator() = default;
         virtual ~IOperator() = default;
