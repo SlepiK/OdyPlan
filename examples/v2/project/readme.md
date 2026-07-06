@@ -1,5 +1,8 @@
 ## Info
-Dont run the looped-version as check for building the library ;) 
+Running a three operator based pipeline.
+First a operator creating two const values 5 (number) and "ProjectOperator_Test" (string).
+Second a project operator to project to only the second incoming field
+Third a print operator to print a specific field (after project the original second field is at its view the first one)
 
 ## Example Output [LOOP]
 ```text
@@ -10,8 +13,10 @@ Physical Plan: OK
 Building LLVM-IR...
 
 
-; ModuleID = 'exampleFull'
-source_filename = "exampleFull"
+; ModuleID = 'exampleProject'
+source_filename = "exampleProject"
+
+@0 = private unnamed_addr constant [21 x i8] c"ProjectOperator_Test\00", align 1
 
 define void @ody_segment_0() {
 basicEntry:
@@ -22,7 +27,8 @@ loop:                                             ; preds = %produce, %basicEntr
   br i1 %0, label %exit, label %produce
 
 produce:                                          ; preds = %loop
-  call void @odyExamplePrintUint32(i32 5)
+  call void @rtOdyPrintString(ptr @0, i64 20)
+  call void @rtOdyPrintNewline()
   br label %loop
 
 exit:                                             ; preds = %loop
@@ -31,7 +37,9 @@ exit:                                             ; preds = %loop
 
 declare i1 @odyStop()
 
-declare void @odyExamplePrintUint32(i32)
+declare void @rtOdyPrintString(ptr, i64)
+
+declare void @rtOdyPrintNewline()
 
 define void @ody_main() {
 basicEntry:
@@ -43,12 +51,11 @@ basicEntry:
 LLVM-IR: OK
 Running via LLVM-JIT...
 Running (press Enter to stop:
-5
-5
-5
-5
-5
-...
+ProjectOperator_Test
+ProjectOperator_Test
+ProjectOperator_Test
+ProjectOperator_Test
+ProjectOperator_Test
 ```
 
 ## Example Output [NO LOOP]
@@ -60,26 +67,31 @@ Physical Plan: OK
 Building LLVM-IR...
 
 
-; ModuleID = 'exampleFull'
-source_filename = "exampleFull"
+; ModuleID = 'exampleProject'
+source_filename = "exampleProject"
+
+@0 = private unnamed_addr constant [21 x i8] c"ProjectOperator_Test\00", align 1
 
 define void @ody_segment_0() {
 basicEntry:
-call void @odyExamplePrintUint32(i32 5)
-ret void
+  call void @rtOdyPrintString(ptr @0, i64 20)
+  call void @rtOdyPrintNewline()
+  ret void
 }
 
-declare void @odyExamplePrintUint32(i32)
+declare void @rtOdyPrintString(ptr, i64)
+
+declare void @rtOdyPrintNewline()
 
 define void @ody_main() {
 basicEntry:
-call void @ody_segment_0()
-ret void
+  call void @ody_segment_0()
+  ret void
 }
 
 
 LLVM-IR: OK
 Running via LLVM-JIT...
-Running:
-5
+ProjectOperator_Test
+
 ```
