@@ -153,9 +153,11 @@ int main() {
     }
 
     auto odyMain = mainExpected->toPtr<void(*)()>();
-
+#ifdef ENABLE_LOOPED_SOURCE
     std::thread mainThread([&]() {
+#endif
         odyMain();
+#ifdef ENABLE_LOOPED_SOURCE
     });
 
     std::cout << "Running (press Enter to stop:\n";
@@ -163,6 +165,7 @@ int main() {
     std::cin.get();
     atStop.store(true);
     mainThread.join();
+#endif
 
     return 0;
 }
