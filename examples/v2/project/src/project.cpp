@@ -64,8 +64,8 @@ int main() {
 
     std::cout << "Building Physical Plan...\n";
     sierra::odyplan::v2::core::physical::port::PortTypeRegistry typeRegistry;
-    typeRegistry.registerType(sierra::odyplan::v2::example::project::TYPE_INT, [](llvm::LLVMContext& ctx) {return llvm::Type::getInt32Ty(ctx);});
-    typeRegistry.registerType(sierra::odyplan::v2::example::project::TYPE_STRING, [](llvm::LLVMContext& ctx) {
+    typeRegistry.registerType(sierra::odyplan::v2::core::common::type::INT, [](llvm::LLVMContext& ctx) {return llvm::Type::getInt32Ty(ctx);});
+    typeRegistry.registerType(sierra::odyplan::v2::core::common::type::STRING, [](llvm::LLVMContext& ctx) {
         return llvm::StructType::get(ctx, {
             //data_raw
             llvm::PointerType::get(ctx, 0),
