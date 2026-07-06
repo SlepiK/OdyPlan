@@ -6,11 +6,12 @@
 #include "core/physical/operator/source/source_operator.h"
 
 namespace sierra::odyplan::v2::example::project {
-    constexpr core::common::identifier::PortTypeId TYPE_INT = 1;
-    constexpr core::common::identifier::PortTypeId TYPE_STRING = 2;
 
     inline core::logical::port::Port createIntPort() {
-        return { core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"} };
+        return {
+            core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"},
+            core::logical::port::PortDescriptor {.typeId= core::common::type::STRING,.typeJsonName="string"},
+        };
     }
 
     namespace logical {
@@ -53,9 +54,24 @@ namespace sierra::odyplan::v2::example::project {
                 builder.CreateCondBr(stop, exitBB, produceBB);
                 builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
+                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
 
-                consumer(builder, {value});
+                std::string const exampleString = "ProjectOperator_Test";
+                llvm::GlobalVariable* stringRaw = builder.CreateGlobalString(exampleString);
+                llvm::StructType* stringType = llvm::StructType::get(builder.getContext(), {
+                    llvm::PointerType::get(builder.getContext(), 0),
+                    llvm::Type::getInt64Ty(builder.getContext())
+                });
+
+                llvm::Value* stringLength = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), exampleString.size());
+
+                llvm::Value* valueField2 = llvm::PoisonValue::get(stringType);
+                valueField2 = builder.CreateInsertValue(valueField2, stringRaw, {0});
+                valueField2 = builder.CreateInsertValue(valueField2, stringLength, {1});
+
+
+
+                consumer(builder, {valueField1, valueField2});
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);
