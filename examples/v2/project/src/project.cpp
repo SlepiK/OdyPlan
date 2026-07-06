@@ -8,7 +8,6 @@
 #include "core/logical/plan/plan.h"
 
 #include "const_int_source_operator.h"
-#include "print_int_sink_operator.h"
 #include "core/builder/plan_builder.h"
 
 #include <atomic>
@@ -50,9 +49,11 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator>());
 
-    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::PrintIntSinkOperator>());
+    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
+    ));
 
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
@@ -75,27 +76,27 @@ int main() {
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator::TYPE_ID,
+        sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator::TYPE_ID,
         [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::example::project::logical::ConstantIntSourceOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::example::full::logical::ConstantIntSourceOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::project::physical::ConstantIntSourceOperator>(outputPorts.front()));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::full::physical::ConstantIntSourceOperator>(outputPorts.front()));
             return ot;
         }
     );
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::example::project::logical::PrintIntSinkOperator::TYPE_ID,
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::TYPE_ID,
         [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports&) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::example::project::logical::PrintIntSinkOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::sink::logical::PrintOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::project::physical::PrintIntSinkOperator>(inputPorts.front()));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
             return ot;
         }
     );
@@ -131,7 +132,12 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
-    symbolMap[jit->mangleAndIntern("odyExamplePrint")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyExamplePrint),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintString),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
