@@ -5,6 +5,7 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
+#include "common/operator/sink/print_operator.h"
 #include "core/logical/plan/plan.h"
 
 #include "const_int_source_operator.h"
