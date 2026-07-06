@@ -7,12 +7,31 @@
 #include "core/common/port/port_ref.h"
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace sierra::odyplan::v2::core::logical::plan {
     class Plan {
     public:
-        common::identifier::OperatorId addOperator(std::unique_ptr<opr::IOperator> opr);
+        template <typename T>
+        common::identifier::OperatorId addOperator(std::unique_ptr<T> opr) {
+            if (!opr) {
+                throw std::invalid_argument("Plan::addOperator: opr must not be nullptr!");
+            }
+
+            const auto id = mOperators.size();
+
+            if (!opr->hasInputPorts()) {
+                mSourceOperators.push_back(id);
+            }
+
+            if constexpr (std::derived_from<T, opr::IBindable>) {
+                mBindables[id] = opr.get();
+            }
+
+            mOperators.push_back(std::move(opr));
+            return id;
+        }
 
         void connect(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator);
 
@@ -24,6 +43,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
         std::vector<common::identifier::OperatorId> mSourceOperators;
         std::vector<std::unique_ptr<opr::IOperator>> mOperators;
         std::vector<common::edge::Edge> mEdges;
+        std::unordered_map<common::identifier::OperatorId, opr::IBindable*> mBindables;
 
         void validateConnectionRequest(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator);
         [[nodiscard]] bool areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const;
