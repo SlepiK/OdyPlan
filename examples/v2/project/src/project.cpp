@@ -53,7 +53,7 @@ int main() {
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::project::logical::ConstantSourceOperator>());
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
-        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1}
     ));
 
     logicalPlan.connect(
