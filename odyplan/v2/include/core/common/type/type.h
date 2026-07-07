@@ -8,7 +8,7 @@
 namespace sierra::odyplan::v2::core::common::type {
     using TypeId = std::size_t;
 
-    enum class TYPE : TypeId {
+    enum class Type : TypeId {
         INT = 1,
         FLOAT = 2,
         DOUBLE = 3,
@@ -17,8 +17,8 @@ namespace sierra::odyplan::v2::core::common::type {
     };
 
     inline bool isPrintable(const TypeId typeId) {
-        auto type = static_cast<TYPE>(typeId);
-        return type == TYPE::INT || type == TYPE::FLOAT || type == TYPE::DOUBLE || type == TYPE::STRING;
+        auto type = static_cast<Type>(typeId);
+        return type == Type::INT || type == Type::FLOAT || type == Type::DOUBLE || type == Type::STRING;
     }
 }  // namespace sierra::odyplan::v2::core::common::type
 

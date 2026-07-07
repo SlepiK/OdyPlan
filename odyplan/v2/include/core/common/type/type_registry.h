@@ -53,7 +53,7 @@ namespace sierra::odyplan::v2::core::common::type {
 
         void registerDefaults() {
             registerType(
-                sierra::odyplan::v2::core::common::type::INT, "int",
+                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::INT), "int",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
                 },
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
             );
             registerType(
-                sierra::odyplan::v2::core::common::type::STRING, "string",
+                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::STRING), "string",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::StructType::get(ctx, {
                         //data_raw
