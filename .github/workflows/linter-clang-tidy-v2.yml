@@ -8,7 +8,7 @@ on:
 jobs:
   clang-tidy:
     name: clang-tidy check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
