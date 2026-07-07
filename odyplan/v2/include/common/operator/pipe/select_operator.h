@@ -8,6 +8,7 @@
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "core/common/port/port_ref.h"
 #include "core/common/expression/expression.h"
+#include "core/common/type/type_registry.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
@@ -43,14 +44,19 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     namespace physical {
         class SelectOperator : public core::physical::opr::TypedPipeOperator {
         public:
-            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
-                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
+            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const core::common::expression::IExpression& predicate, const core::common::type::TypeRegistry& typeRegistry)
+                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
+                    mPredicate(predicate),
+                    mRegistry(typeRegistry) {
             }
 
             void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
 
             }
+
         private:
+            const core::common::expression::IExpression& mPredicate;
+            const core::common::type::TypeRegistry& mRegistry;
         };
     }
 }
