@@ -15,7 +15,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             using IndexMapping = std::vector<std::size_t>;
             using NameMapping = std::vector<std::string>;
-            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 20;
+            static constexpr core::common::type::TypeId TYPE_ID = 20;
 
             explicit ProjectOperator(IndexMapping mapping)
                 : mMapping(std::move(mapping)){
@@ -25,7 +25,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 : mNameMapping(std::move(mapping)) {
             }
 
-            [[nodiscard]] core::common::identifier::OperatorTypeId getTypeId() const override {
+            [[nodiscard]] core::common::type::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
 

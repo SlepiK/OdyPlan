@@ -63,7 +63,7 @@ int main() {
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
-    sierra::odyplan::v2::core::physical::port::PortTypeRegistry typeRegistry;
+    sierra::odyplan::v2::core::common::type::TypeRegistry typeRegistry;
     typeRegistry.registerType(sierra::odyplan::v2::example::full::TYPE_INT, [](llvm::LLVMContext& ctx) {return llvm::Type::getInt32Ty(ctx);});
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
