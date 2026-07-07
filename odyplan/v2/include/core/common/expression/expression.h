@@ -73,7 +73,7 @@ namespace sierra::odyplan::v2::core::common::expression {
             GE, //GREATER_THAN_OR_EQUAL
         };
 
-        explicit CompareExpression(std::unique_ptr<IExpression> leftPart, CompareOp opr, std::unique_ptr<IExpression> rightPart)
+        explicit CompareExpression(std::unique_ptr<IExpression> leftPart, const CompareOp opr, std::unique_ptr<IExpression> rightPart)
             : mLeftPart(std::move(leftPart)),
                 mRightPart(std::move(rightPart)),
                 mOpr(opr) {
@@ -101,6 +101,118 @@ namespace sierra::odyplan::v2::core::common::expression {
         CompareOp mOpr;
     };
 
+    class LogicalExpression : public IExpression {
+    public:
+        enum class LogicalOp {
+            AND,
+            OR,
+            NOT,
+        };
+
+        LogicalExpression(std::unique_ptr<IExpression> leftPart, const LogicalOp opr, std::unique_ptr<IExpression> rightPart)
+            : mLeftPart(std::move(leftPart)),
+                mRightPart(std::move(rightPart)),
+                mOpr(opr) {
+        }
+
+        LogicalExpression(const LogicalOp opr, std::unique_ptr<IExpression> oprAffected)
+            : mLeftPart(std::move(oprAffected)),
+                mRightPart(nullptr),
+                mOpr(opr) {
+        }
+
+        [[nodiscard]] ExpressionType getExpressionType() const override {
+            return ExpressionType::LOGICAL;
+        }
+
+        [[nodiscard]] const IExpression& getLeftPart() const {
+            return *mLeftPart;
+        }
+
+        [[nodiscard]] const IExpression* getRightPart() const {
+            return mRightPart.get();
+        }
+
+        [[nodiscard]] LogicalOp getOpr() const {
+            return mOpr;
+        }
+
+        [[nodiscard]] bool isUnary() const {
+            return mRightPart == nullptr;
+        }
+
+    private:
+        std::unique_ptr<IExpression> mLeftPart;
+        std::unique_ptr<IExpression> mRightPart;
+        LogicalOp mOpr;
+    };
+
+    // Helpers
+    inline std::unique_ptr<IExpression> field(std::size_t fieldIndex) {
+        return std::make_unique<FieldReferenceExpression>(fieldIndex);
+    }
+
+    inline std::unique_ptr<IExpression> constant(type::TypeId typeId, const std::string& value) {
+        return std::make_unique<ConstantExpression>(typeId, value);
+    }
+
+    inline std::unique_ptr<IExpression> cInt(const int value) {
+        return constant(static_cast<type::TypeId>(type::Type::INT), std::to_string(value));
+    }
+
+    inline std::unique_ptr<IExpression> cFloat(const float value) {
+        return constant(static_cast<type::TypeId>(type::Type::FLOAT), std::to_string(value));
+    }
+
+    inline std::unique_ptr<IExpression> cDouble(const double value) {
+        return constant(static_cast<type::TypeId>(type::Type::DOUBLE), std::to_string(value));
+    }
+
+    inline std::unique_ptr<IExpression> cBool(const bool value) {
+        return constant(static_cast<type::TypeId>(type::Type::BOOL), std::to_string(value));
+    }
+
+    inline std::unique_ptr<IExpression> cString(const std::string& value) {
+        return constant(static_cast<type::TypeId>(type::Type::STRING), value);
+    }
+
+    //
+
+    inline std::unique_ptr<IExpression> EQ(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::EQ, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> NE(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::NE, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> LT(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::LT, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> LE(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::LE, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> GT(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::GT, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> GE(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::GE, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> AND(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<LogicalExpression>(std::move(leftPart), LogicalExpression::LogicalOp::AND, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> OR(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
+        return std::make_unique<LogicalExpression>(std::move(leftPart), LogicalExpression::LogicalOp::OR, std::move(rightPart));
+    }
+
+    inline std::unique_ptr<IExpression> NOT(std::unique_ptr<IExpression> oprAffected) {
+        return std::make_unique<LogicalExpression>(LogicalExpression::LogicalOp::NOT, std::move(oprAffected));
+    }
 
 }  // namespace sierra::odyplan::v2::core::common::expression
 
