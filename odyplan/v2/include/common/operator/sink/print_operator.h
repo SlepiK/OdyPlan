@@ -105,8 +105,8 @@ namespace sierra::odyplan::v2::common::opr::sink {
 
             static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::type::TypeId typeId, llvm::Value* value) {
                 llvm::LLVMContext& ctx = builder.getContext();
-                switch (typeId) {
-                    case core::common::type::TYPE::INT: {
+                switch (static_cast<core::common::type::Type>(typeId)) {
+                    case core::common::type::Type::INT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -116,7 +116,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::FLOAT: {
+                    case core::common::type::Type::FLOAT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -126,7 +126,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::DOUBLE: {
+                    case core::common::type::Type::DOUBLE: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -136,7 +136,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::STRING: {
+                    case core::common::type::Type::STRING: {
                         llvm::Value* stringPtr = builder.CreateExtractValue(value, {0});
                         llvm::Value* stringLen = builder.CreateExtractValue(value, {1});
                         auto* fnType = llvm::FunctionType::get(
