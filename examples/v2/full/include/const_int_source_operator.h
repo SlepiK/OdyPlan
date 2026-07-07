@@ -6,7 +6,7 @@
 #include "core/physical/operator/source/source_operator.h"
 
 namespace sierra::odyplan::v2::example::full {
-    constexpr core::common::identifier::PortTypeId TYPE_INT = 1;
+    constexpr core::common::type::TypeId TYPE_INT = 1;
 
     inline core::logical::port::Port createIntPort() {
         return { core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"} };
@@ -15,12 +15,12 @@ namespace sierra::odyplan::v2::example::full {
     namespace logical {
         class ConstantIntSourceOperator final : public core::logical::opr::TypedSourceOperator {
         public:
-            static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
+            static constexpr sierra::odyplan::v2::core::common::type::TypeId TYPE_ID = 0;
 
             explicit ConstantIntSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
             }
 
-            [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
+            [[nodiscard]] sierra::odyplan::v2::core::common::type::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
         };

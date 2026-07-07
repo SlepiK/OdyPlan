@@ -11,11 +11,34 @@
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
     namespace logical {
+        class SelectOperator : public core::logical::opr::TypedPipeOperator {
+        public:
+            static constexpr core::common::type::TypeId TYPE_ID = 21;
 
+            explicit SelectOperator() {
+            }
+
+            [[nodiscard]] core::common::type::TypeId getTypeId() const override {
+                return TYPE_ID;
+            }
+        protected:
+            void validate() override {
+            }
+        };
     }
 
     namespace physical {
+        class SelectOperator : public core::physical::opr::TypedPipeOperator {
+        public:
+            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
+                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
+            }
 
+            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+
+            }
+        private:
+        };
     }
 }
 
