@@ -16,8 +16,10 @@ namespace sierra::odyplan::v2::core::common::type {
         using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
         using ConstantFactory = std::function<llvm::Value*(llvm::IRBuilder<>&, const std::string&)>;
 
-        TypeRegistry() {
-            registerDefaults();
+        static TypeRegistry withDefaults() {
+            TypeRegistry registry;
+            registry.registerDefaults();
+            return registry;
         }
 
         void registerType(TypeId id, std::string name, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {

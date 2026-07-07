@@ -73,7 +73,7 @@ int main() {
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
-    sierra::odyplan::v2::core::common::type::TypeRegistry const typeRegistry;
+    auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
 
     /*typeRegistry.registerType(sierra::odyplan::v2::core::common::type::INT, [](llvm::LLVMContext& ctx) {return llvm::Type::getInt32Ty(ctx);});
     typeRegistry.registerType(sierra::odyplan::v2::core::common::type::STRING, [](llvm::LLVMContext& ctx) {
