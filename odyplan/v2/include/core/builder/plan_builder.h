@@ -3,7 +3,6 @@
 
 #include "core/logical/plan/plan.h"
 #include "core/physical/plan/plan.h"
-#include "core/physical/port/port_type_registry.h"
 #include "core/common/type/type_registry.h"
 #include "core/physical/transformation/operator_transformation.h"
 #include "core/physical/operator/source/source_operator.h"

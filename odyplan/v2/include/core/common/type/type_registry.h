@@ -16,8 +16,12 @@ namespace sierra::odyplan::v2::core::common::type {
         using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
         using ConstantFactory = std::function<llvm::Value*(llvm::IRBuilder<>&, const std::string&)>;
 
+        TypeRegistry() {
+            registerDefaults();
+        }
+
         void registerType(TypeId id, std::string name, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
-            mTypeStorage.emplace(id, TypeRegistryEntry {std::move(name), std::move(typeFactory), std::move(constantFactory)});
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory)});
         }
 
         [[nodiscard]] llvm::Type* resolveType(const TypeId id, llvm::LLVMContext& ctx) const {
@@ -43,6 +47,46 @@ namespace sierra::odyplan::v2::core::common::type {
                 throw std::invalid_argument("TypeRegistry: unknown typeId " + std::to_string(id));
             }
             return iter->second;
+        }
+
+        void registerDefaults() {
+            registerType(
+                sierra::odyplan::v2::core::common::type::INT, "int",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getInt32Ty(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt32Ty(b.getContext()), std::stoi(v));
+                }
+            );
+            registerType(
+                sierra::odyplan::v2::core::common::type::STRING, "string",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::StructType::get(ctx, {
+                        //data_raw
+                        llvm::PointerType::get(ctx, 0),
+                        //data_length
+                        llvm::Type::getInt64Ty(ctx)
+                    });
+                },
+                [](llvm::IRBuilder<>&b, const std::string& v) {
+                    auto& ctx = b.getContext();
+                    llvm::Value* ptr = b.CreateGlobalString(v, "string_const");
+                    llvm::Value* len = llvm::ConstantInt::get(
+                        llvm::Type::getInt64Ty(ctx),
+                        v.size()
+                    );
+                    llvm::Type* structType = llvm::StructType::get(ctx, {
+                        llvm::PointerType::get(ctx, 0),
+                        llvm::Type::getInt64Ty(ctx)
+                    });
+                    llvm::Value* strStruct = llvm::UndefValue::get(structType);
+                    strStruct = b.CreateInsertValue(strStruct, ptr, 0);
+                    strStruct = b.CreateInsertValue(strStruct, len, 1);
+                    return strStruct;
+                }
+            );
         }
     };
 }
