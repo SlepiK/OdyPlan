@@ -7,6 +7,7 @@
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "core/common/port/port_ref.h"
+#include "core/common/expression/expression.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
@@ -15,15 +16,27 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             static constexpr core::common::type::TypeId TYPE_ID = 21;
 
-            explicit SelectOperator() {
+            explicit SelectOperator(std::unique_ptr<core::common::expression::IExpression> predicate)
+                : mPredicate(std::move(predicate)) {
             }
 
             [[nodiscard]] core::common::type::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
+
+            [[nodiscard]] const core::common::expression::IExpression& getPredicate() const {
+                return *mPredicate;
+            }
+
         protected:
             void validate() override {
+                if (mPredicate == nullptr) {
+                    throw std::invalid_argument("SelectOperator: predicate must be non-null");
+                }
             }
+
+        private:
+            std::unique_ptr<core::common::expression::IExpression> mPredicate;
         };
     }
 
