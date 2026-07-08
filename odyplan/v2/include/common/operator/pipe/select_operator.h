@@ -57,6 +57,73 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         private:
             const core::common::expression::IExpression& mPredicate;
             const core::common::type::TypeRegistry& mRegistry;
+
+            llvm::Value* codegenExpression(llvm::IRBuilder<>& builder, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
+                switch (expression.getExpressionType()) {
+                    case core::common::expression::ExpressionType::FIELDREFERENCE: {
+                        const auto& fieldRefExpression = static_cast<const core::common::expression::FieldReferenceExpression&>(expression);
+                        if (fieldRefExpression.getFieldIndex() >= tuple.size()) {
+                            throw std::out_of_range("SelectOperator: field index out of range");
+                        }
+                        return tuple[fieldRefExpression.getFieldIndex()];
+                    }
+                    case core::common::expression::ExpressionType::CONSTANT: {
+                        const auto& constExpression = static_cast<const core::common::expression::ConstantExpression&>(expression);
+                        return mRegistry.compileConstant(constExpression.getTypeId(), builder, constExpression.getSerializedValue());
+                    }
+                    case core::common::expression::ExpressionType::COMPARE: {
+                        const auto& compareExpression = static_cast<const core::common::expression::CompareExpression&>(expression);
+                        llvm::Value* left = codegenExpression(builder, tuple, compareExpression.getLeftPart());
+                        llvm::Value* right = codegenExpression(builder, tuple, compareExpression.getRightPart());
+                        return codegenCompare(builder, left, right, compareExpression.getOpr());
+                    }
+                    case core::common::expression::ExpressionType::LOGICAL: {
+                        const auto& logicalExpression = static_cast<const core::common::expression::LogicalExpression&>(expression);
+                        llvm::Value* left = codegenExpression(builder, tuple, logicalExpression.getLeftPart());
+                        if (logicalExpression.isUnary())
+                            return builder.CreateNot(left, "not");
+                        llvm::Value* right = codegenExpression(builder, tuple, *logicalExpression.getRightPart());
+                        switch (logicalExpression.getOpr()) {
+                            case core::common::expression::LogicalExpression::LogicalOp::AND: {
+                                return builder.CreateAnd(left, right, "and");
+                            }
+                            case core::common::expression::LogicalExpression::LogicalOp::OR: {
+                                return builder.CreateOr(left, right, "or");
+                            }
+                            default:
+                                throw std::invalid_argument("SelectOperator: unsupported logical expression type");
+                        }
+                    }
+                    default:
+                        throw std::invalid_argument("SelectOperator: unsupported expression type");
+                }
+            }
+
+            llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, core::common::expression::CompareExpression::CompareOp opr) {
+                bool isFloat = left->getType()->isFloatingPointTy();
+                switch (opr) {
+                    case core::common::expression::CompareExpression::CompareOp::EQ: {
+                        return isFloat ? builder.CreateFCmpOEQ(left, right, "eq") : builder.CreateICmpEQ(left, right, "eq");
+                    }
+                    case core::common::expression::CompareExpression::CompareOp::NE: {
+                        return isFloat ? builder.CreateFCmpONE(left, right, "ne") : builder.CreateICmpNE(left, right, "ne");
+                    }
+                    case core::common::expression::CompareExpression::CompareOp::LT: {
+                        return isFloat ? builder.CreateFCmpOLT(left, right, "lt") : builder.CreateICmpSLT(left, right, "lt");
+                    }
+                    case core::common::expression::CompareExpression::CompareOp::LE: {
+                        return isFloat ? builder.CreateFCmpOLE(left, right, "le") : builder.CreateICmpSLE(left, right, "le");
+                    }
+                    case core::common::expression::CompareExpression::CompareOp::GT: {
+                        return isFloat ? builder.CreateFCmpOGT(left, right, "gt") : builder.CreateICmpSGT(left, right, "gt");
+                    }
+                    case core::common::expression::CompareExpression::CompareOp::GE: {
+                        return isFloat ? builder.CreateFCmpOGE(left, right, "ge") : builder.CreateICmpSGE(left, right, "ge");
+                    }
+                    default:
+                        throw std::invalid_argument("SelectOperator: unsupported compare type");
+                }
+            }
         };
     }
 }
