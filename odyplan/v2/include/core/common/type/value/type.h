@@ -1,11 +1,9 @@
-#ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPE_H
-#define SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPE_H
+#ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPE_H
+#define SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPE_H
 
-#include <string_view>
+#include <cstddef>
 
-#include "core/common/ident.h"
-
-namespace sierra::odyplan::v2::core::common::type {
+namespace sierra::odyplan::v2::core::common::type::value {
     using TypeId = std::size_t;
 
     enum class Type : TypeId {
@@ -20,6 +18,6 @@ namespace sierra::odyplan::v2::core::common::type {
         auto type = static_cast<Type>(typeId);
         return type == Type::INT || type == Type::FLOAT || type == Type::DOUBLE || type == Type::STRING;
     }
-}  // namespace sierra::odyplan::v2::core::common::type
+}  // namespace sierra::odyplan::v2::core::common::type::value
 
-#endif  // SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPE_H
+#endif  // SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPE_H

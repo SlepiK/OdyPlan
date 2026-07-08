@@ -47,7 +47,7 @@ namespace sierra::odyplan::v2::core::logical::opr {
             return mOutputPorts;
         }
 
-        [[nodiscard]] virtual common::type::TypeId getTypeId() const = 0;
+        [[nodiscard]] virtual common::type::value::TypeId getTypeId() const = 0;
 
     private:
         port::Ports mInputPorts;
