@@ -13,6 +13,8 @@
 
 #include <atomic>
 
+#include "common/operator/pipe/select_operator.h"
+
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
@@ -89,6 +91,19 @@ int main() {
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
+            return ot;
+        }
+    );
+
+    builder.registerOperatorTransformation(
+        sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator::TYPE_ID,
+        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+            const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
+            const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator&>(op);
+
+            sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate(), typeRegistry));
             return ot;
         }
     );
