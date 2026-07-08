@@ -3,11 +3,11 @@
 
 #include <llvm/IR/Type.h>
 #include "core/common/ident.h"
-#include "core/common/type/type.h"
+#include "../../common/type/value/type.h"
 
 namespace sierra::odyplan::v2::core::physical::port {
     struct PortDescriptor {
-        common::type::TypeId typeId;
+        common::type::value::TypeId typeId;
         llvm::Type* llvmType;
     };
 }  // namespace sierra::odyplan::v2::core::physical::port

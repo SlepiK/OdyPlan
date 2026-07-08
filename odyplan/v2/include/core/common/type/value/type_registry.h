@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPEREGISTRY_H
-#define SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPEREGISTRY_H
+#ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPEREGISTRY_H
+#define SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPEREGISTRY_H
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
@@ -10,7 +10,7 @@
 
 #include "type.h"
 
-namespace sierra::odyplan::v2::core::common::type {
+namespace sierra::odyplan::v2::core::common::type::value {
     class TypeRegistry {
     public:
         using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
@@ -53,7 +53,7 @@ namespace sierra::odyplan::v2::core::common::type {
 
         void registerDefaults() {
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::INT), "int",
+                std::to_underlying(sierra::odyplan::v2::core::common::type::value::Type::INT), "int",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
                 },
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
             );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::STRING), "string",
+                std::to_underlying(sierra::odyplan::v2::core::common::type::value::Type::STRING), "string",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::StructType::get(ctx, {
                         //data_raw
@@ -93,4 +93,4 @@ namespace sierra::odyplan::v2::core::common::type {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPEREGISTRY_H
+#endif //SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPEREGISTRY_H

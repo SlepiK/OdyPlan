@@ -4,7 +4,7 @@
 #include <llvm/IR/Module.h>
 
 #include "core/common/ident.h"
-#include "core/common/type/type.h"
+#include "../../../core/common/type/value/type.h"
 #include "core/logical/operator/sink/sink_operator.h"
 #include "core/physical/operator/sink/sink_operator.h"
 
@@ -15,7 +15,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             using PortFieldIndexV = std::vector<std::size_t>;
             using PortFieldNameV = std::vector<std::string>;
 
-            static constexpr core::common::type::TypeId TYPE_ID = 30;
+            static constexpr core::common::type::value::TypeId TYPE_ID = 30;
 
             explicit PrintOperator(PortFieldIndexV indices)
                 : mPortFieldIndices(std::move(indices)) {
@@ -26,7 +26,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
 
             }
 
-            [[nodiscard]] core::common::type::TypeId getTypeId() const override {
+            [[nodiscard]] core::common::type::value::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
 
@@ -45,7 +45,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     for (const auto& name : mPortFieldNames) {
                         auto iter = std::ranges::find_if(inputPort,
                         [&](const core::logical::port::PortDescriptor& pd) {
-                            return pd.fieldName == name && core::common::type::isPrintable(pd.typeId);
+                            return pd.fieldName == name && core::common::type::value::isPrintable(pd.typeId);
                         });
 
                         if (iter == inputPort.end()) {
@@ -103,10 +103,10 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 builder.CreateCall(module->getOrInsertFunction(name, fnType), {});
             }
 
-            static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::type::TypeId typeId, llvm::Value* value) {
+            static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::type::value::TypeId typeId, llvm::Value* value) {
                 llvm::LLVMContext& ctx = builder.getContext();
-                switch (static_cast<core::common::type::Type>(typeId)) {
-                    case core::common::type::Type::INT: {
+                switch (static_cast<core::common::type::value::Type>(typeId)) {
+                    case core::common::type::value::Type::INT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -116,7 +116,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::Type::FLOAT: {
+                    case core::common::type::value::Type::FLOAT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -126,7 +126,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::Type::DOUBLE: {
+                    case core::common::type::value::Type::DOUBLE: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -136,7 +136,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::Type::STRING: {
+                    case core::common::type::value::Type::STRING: {
                         llvm::Value* stringPtr = builder.CreateExtractValue(value, {0});
                         llvm::Value* stringLen = builder.CreateExtractValue(value, {1});
                         auto* fnType = llvm::FunctionType::get(

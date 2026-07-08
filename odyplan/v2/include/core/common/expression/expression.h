@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <memory>
 
-#include "core/common/type/type.h"
+#include "../type/value/type.h"
 
 namespace sierra::odyplan::v2::core::common::expression {
     enum class ExpressionType {
@@ -40,7 +40,7 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     class ConstantExpression : public IExpression {
     public:
-        explicit ConstantExpression(type::TypeId typeId, std::string serializedValue)
+        explicit ConstantExpression(type::value::TypeId typeId, std::string serializedValue)
             : mTypeId(typeId),
                 mSerializedValue(std::move(serializedValue)) {
         }
@@ -49,7 +49,7 @@ namespace sierra::odyplan::v2::core::common::expression {
             return ExpressionType::CONSTANT;
         }
 
-        [[nodiscard]] type::TypeId getTypeId() const {
+        [[nodiscard]] type::value::TypeId getTypeId() const {
             return mTypeId;
         }
 
@@ -58,7 +58,7 @@ namespace sierra::odyplan::v2::core::common::expression {
         }
 
     private:
-        type::TypeId mTypeId;
+        type::value::TypeId mTypeId;
         std::string mSerializedValue;
     };
 
@@ -152,28 +152,28 @@ namespace sierra::odyplan::v2::core::common::expression {
         return std::make_unique<FieldReferenceExpression>(fieldIndex);
     }
 
-    inline std::unique_ptr<IExpression> constant(type::TypeId typeId, const std::string& value) {
+    inline std::unique_ptr<IExpression> constant(type::value::TypeId typeId, const std::string& value) {
         return std::make_unique<ConstantExpression>(typeId, value);
     }
 
     inline std::unique_ptr<IExpression> cInt(const int value) {
-        return constant(static_cast<type::TypeId>(type::Type::INT), std::to_string(value));
+        return constant(static_cast<type::value::TypeId>(type::value::Type::INT), std::to_string(value));
     }
 
     inline std::unique_ptr<IExpression> cFloat(const float value) {
-        return constant(static_cast<type::TypeId>(type::Type::FLOAT), std::to_string(value));
+        return constant(static_cast<type::value::TypeId>(type::value::Type::FLOAT), std::to_string(value));
     }
 
     inline std::unique_ptr<IExpression> cDouble(const double value) {
-        return constant(static_cast<type::TypeId>(type::Type::DOUBLE), std::to_string(value));
+        return constant(static_cast<type::value::TypeId>(type::value::Type::DOUBLE), std::to_string(value));
     }
 
     inline std::unique_ptr<IExpression> cBool(const bool value) {
-        return constant(static_cast<type::TypeId>(type::Type::BOOL), std::to_string(value));
+        return constant(static_cast<type::value::TypeId>(type::value::Type::BOOL), std::to_string(value));
     }
 
     inline std::unique_ptr<IExpression> cString(const std::string& value) {
-        return constant(static_cast<type::TypeId>(type::Type::STRING), value);
+        return constant(static_cast<type::value::TypeId>(type::value::Type::STRING), value);
     }
 
     //

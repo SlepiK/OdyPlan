@@ -1,7 +1,7 @@
 #include "core/builder/plan_builder.h"
 
 namespace sierra::odyplan::v2::core::builder {
-    void PlanBuilder::registerOperatorTransformation(common::type::TypeId lId,
+    void PlanBuilder::registerOperatorTransformation(common::type::value::TypeId lId,
         physical::transformation::OperatorTransformationFactory factory) {
         mFactories.emplace(lId, std::move(factory));
     }
