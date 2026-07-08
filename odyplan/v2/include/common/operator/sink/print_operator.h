@@ -15,7 +15,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             using PortFieldIndexV = std::vector<std::size_t>;
             using PortFieldNameV = std::vector<std::string>;
 
-            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 30;
+            static constexpr core::common::type::TypeId TYPE_ID = 30;
 
             explicit PrintOperator(PortFieldIndexV indices)
                 : mPortFieldIndices(std::move(indices)) {
@@ -26,7 +26,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
 
             }
 
-            [[nodiscard]] core::common::identifier::OperatorTypeId getTypeId() const override {
+            [[nodiscard]] core::common::type::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
 
@@ -103,10 +103,10 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 builder.CreateCall(module->getOrInsertFunction(name, fnType), {});
             }
 
-            static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::identifier::PortTypeId typeId, llvm::Value* value) {
+            static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::type::TypeId typeId, llvm::Value* value) {
                 llvm::LLVMContext& ctx = builder.getContext();
-                switch (typeId) {
-                    case core::common::type::TYPE::INT: {
+                switch (static_cast<core::common::type::Type>(typeId)) {
+                    case core::common::type::Type::INT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -116,7 +116,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::FLOAT: {
+                    case core::common::type::Type::FLOAT: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -126,7 +126,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::DOUBLE: {
+                    case core::common::type::Type::DOUBLE: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},
@@ -136,7 +136,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         builder.CreateCall(fn, {value});
                         break;
                     }
-                    case core::common::type::TYPE::STRING: {
+                    case core::common::type::Type::STRING: {
                         llvm::Value* stringPtr = builder.CreateExtractValue(value, {0});
                         llvm::Value* stringLen = builder.CreateExtractValue(value, {1});
                         auto* fnType = llvm::FunctionType::get(

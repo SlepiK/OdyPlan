@@ -9,20 +9,20 @@ namespace sierra::odyplan::v2::example::project {
 
     inline core::logical::port::Port createIntPort() {
         return {
-            core::logical::port::PortDescriptor {.typeId= core::common::type::INT,.typeJsonName="int"},
-            core::logical::port::PortDescriptor {.typeId= core::common::type::STRING,.typeJsonName="string"},
+            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::type::Type::INT),.typeJsonName="int"},
+            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::type::Type::STRING),.typeJsonName="string"},
         };
     }
 
     namespace logical {
         class ConstantSourceOperator final : public core::logical::opr::TypedSourceOperator {
         public:
-            static constexpr sierra::odyplan::v2::core::common::identifier::OperatorTypeId TYPE_ID = 0;
+            static constexpr sierra::odyplan::v2::core::common::type::TypeId TYPE_ID = 0;
 
             explicit ConstantSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
             }
 
-            [[nodiscard]] sierra::odyplan::v2::core::common::identifier::OperatorTypeId getTypeId() const override {
+            [[nodiscard]] sierra::odyplan::v2::core::common::type::TypeId getTypeId() const override {
                 return TYPE_ID;
             }
         };
