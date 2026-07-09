@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-#include "type.h"
+#include "core/common/identifier/type.h"
 
 namespace sierra::odyplan::v2::core::common::type {
     class TypeRegistry {
@@ -22,15 +22,15 @@ namespace sierra::odyplan::v2::core::common::type {
             return registry;
         }
 
-        void registerType(TypeId id, std::string name, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
+        void registerType(identifier::TypeId id, std::string name, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
             mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory)});
         }
 
-        [[nodiscard]] llvm::Type* resolveType(const TypeId id, llvm::LLVMContext& ctx) const {
+        [[nodiscard]] llvm::Type* resolveType(const identifier::TypeId id, llvm::LLVMContext& ctx) const {
             return get(id).typeFactory(ctx);
         }
 
-        [[nodiscard]] llvm::Value* compileConstant(const TypeId id, llvm::IRBuilder<>& builder, const std::string& value) const {
+        [[nodiscard]] llvm::Value* compileConstant(const identifier::TypeId id, llvm::IRBuilder<>& builder, const std::string& value) const {
             return get(id).constantFactory(builder, value);
         }
 
@@ -41,9 +41,9 @@ namespace sierra::odyplan::v2::core::common::type {
             ConstantFactory constantFactory;
         };
 
-        std::unordered_map<TypeId, TypeRegistryEntry> mTypeStorage;
+        std::unordered_map<identifier::TypeId, TypeRegistryEntry> mTypeStorage;
 
-        [[nodiscard]] const TypeRegistryEntry& get(TypeId id) const {
+        [[nodiscard]] const TypeRegistryEntry& get(identifier::TypeId id) const {
             const auto iter = mTypeStorage.find(id);
             if (iter == mTypeStorage.end()) {
                 throw std::invalid_argument("TypeRegistry: unknown typeId " + std::to_string(id));
@@ -53,7 +53,7 @@ namespace sierra::odyplan::v2::core::common::type {
 
         void registerDefaults() {
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::INT), "int",
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT), "int",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
                 },
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
             );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::type::Type::STRING), "string",
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::StructType::get(ctx, {
                         //data_raw

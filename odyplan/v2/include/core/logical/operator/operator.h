@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_OPERATOR_H
 #define SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_OPERATOR_H
 
+#include "core/common/identifier/operator.h"
 #include "core/logical/port/port.h"
 
 namespace sierra::odyplan::v2::core::logical::plan {
@@ -47,7 +48,7 @@ namespace sierra::odyplan::v2::core::logical::opr {
             return mOutputPorts;
         }
 
-        [[nodiscard]] virtual common::type::TypeId getTypeId() const = 0;
+        [[nodiscard]] virtual common::identifier::OperatorTypeId getOperatorTypeId() const = 0;
 
     private:
         port::Ports mInputPorts;
