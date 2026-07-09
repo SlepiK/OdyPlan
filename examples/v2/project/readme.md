@@ -93,5 +93,4 @@ basicEntry:
 LLVM-IR: OK
 Running via LLVM-JIT...
 ProjectOperator_Test
-
 ```
