@@ -29,12 +29,12 @@ namespace sierra::odyplan::v2::example::logical_plan {
 
     class ConstDoubleNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::identifier::TypeId TYPE_ID = 3;
+        static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 3;
 
         ConstDoubleNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createDoublePort()) {
         }
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::identifier::TypeId getTypeId() const override {
+        [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
     };
