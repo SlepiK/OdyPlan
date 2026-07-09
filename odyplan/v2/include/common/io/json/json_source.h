@@ -8,7 +8,7 @@
 namespace sierra::odyplan::v2::common::io {
     class JsonSource : public IIOSource{
     public:
-        explicit JsonSource(const std::string& path) {
+        explicit JsonSource(const std::string& path) : mIndex(0) {
             std::ifstream file(path);
 
             if (!file.is_open()) {
