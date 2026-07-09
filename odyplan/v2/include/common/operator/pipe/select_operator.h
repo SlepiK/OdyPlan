@@ -8,20 +8,20 @@
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "core/common/port/port_ref.h"
 #include "core/common/expression/expression.h"
-#include "../../../core/common/type/value/type_registry.h"
+#include "../../../core/common/type/type_registry.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
     namespace logical {
         class SelectOperator : public core::logical::opr::TypedPipeOperator {
         public:
-            static constexpr core::common::type::value::TypeId TYPE_ID = 21;
+            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::SELECT);
 
             explicit SelectOperator(std::unique_ptr<core::common::expression::IExpression> predicate)
                 : mPredicate(std::move(predicate)) {
             }
 
-            [[nodiscard]] core::common::type::value::TypeId getTypeId() const override {
+            [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
 
@@ -44,7 +44,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     namespace physical {
         class SelectOperator : public core::physical::opr::TypedPipeOperator {
         public:
-            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const core::common::expression::IExpression& predicate, const core::common::type::value::TypeRegistry& typeRegistry)
+            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const core::common::expression::IExpression& predicate, const core::common::type::TypeRegistry& typeRegistry)
                 : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
                     mPredicate(predicate),
                     mRegistry(typeRegistry) {
@@ -70,7 +70,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
         private:
             const core::common::expression::IExpression& mPredicate;
-            const core::common::type::value::TypeRegistry& mRegistry;
+            const core::common::type::TypeRegistry& mRegistry;
 
             llvm::Value* codegenExpression(llvm::IRBuilder<>& builder, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
                 switch (expression.getExpressionType()) {

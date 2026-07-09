@@ -1,7 +1,7 @@
 #include "core/builder/plan_builder.h"
 
 namespace sierra::odyplan::v2::core::builder {
-    void PlanBuilder::registerOperatorTransformation(common::type::value::TypeId lId,
+    void PlanBuilder::registerOperatorTransformation(common::identifier::TypeId lId,
         physical::transformation::OperatorTransformationFactory factory) {
         mFactories.emplace(lId, std::move(factory));
     }
@@ -16,9 +16,9 @@ namespace sierra::odyplan::v2::core::builder {
             auto inputPorts = resolvePorts(lOpr.getInputPorts(), ctx);
             auto outputPorts = resolvePorts(lOpr.getOutputPorts(), ctx);
 
-            auto it = mFactories.find(lOpr.getTypeId());
+            auto it = mFactories.find(lOpr.getOperatorTypeId());
             if (it == mFactories.end()) {
-                throw std::invalid_argument("PlanBuilder::build: no transformation registered for typeid " + std::to_string(lOpr.getTypeId()));
+                throw std::invalid_argument("PlanBuilder::build: no transformation registered for typeid " + std::to_string(lOpr.getOperatorTypeId()));
             }
 
             physical::transformation::OperatorTransformation transform = it->second(lOpr, inputPorts, outputPorts);

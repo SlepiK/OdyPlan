@@ -65,7 +65,7 @@ int main() {
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
-    auto typeRegistry = sierra::odyplan::v2::core::common::type::value::TypeRegistry::withDefaults();
+    auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
