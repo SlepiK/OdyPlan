@@ -7,11 +7,11 @@
 namespace sierra::odyplan::v2::example::logical_plan {
     class NumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::type::TypeId TYPE_ID = 1;
+        static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 1;
 
         NumberStdoutSinkOperator() = default;
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::type::TypeId getTypeId() const override {
+        [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
 
@@ -22,11 +22,11 @@ namespace sierra::odyplan::v2::example::logical_plan {
 
     class DoubleNumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::type::TypeId TYPE_ID = 1;
+        static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 1;
 
         DoubleNumberStdoutSinkOperator() = default;
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::type::TypeId getTypeId() const override {
+        [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
 

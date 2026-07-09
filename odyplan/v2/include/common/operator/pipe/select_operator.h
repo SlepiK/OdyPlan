@@ -8,20 +8,20 @@
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "core/common/port/port_ref.h"
 #include "core/common/expression/expression.h"
-#include "core/common/type/type_registry.h"
+#include "../../../core/common/type/type_registry.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
     namespace logical {
         class SelectOperator : public core::logical::opr::TypedPipeOperator {
         public:
-            static constexpr core::common::type::TypeId TYPE_ID = 21;
+            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::SELECT);
 
             explicit SelectOperator(std::unique_ptr<core::common::expression::IExpression> predicate)
                 : mPredicate(std::move(predicate)) {
             }
 
-            [[nodiscard]] core::common::type::TypeId getTypeId() const override {
+            [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
 
