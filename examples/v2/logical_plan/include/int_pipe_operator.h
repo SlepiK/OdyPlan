@@ -7,11 +7,11 @@
 namespace sierra::odyplan::v2::example::logical_plan {
     class IntPipeOperator final : public core::logical::opr::TypedPipeOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_ID = 2;
+        static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 2;
 
         IntPipeOperator() = default;
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::type::value::TypeId getTypeId() const override {
+        [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
 

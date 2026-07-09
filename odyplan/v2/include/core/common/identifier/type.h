@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace sierra::odyplan::v2::core::common::type::value {
+namespace sierra::odyplan::v2::core::common::identifier {
     using TypeId = std::size_t;
 
     enum class Type : TypeId {
@@ -18,6 +18,6 @@ namespace sierra::odyplan::v2::core::common::type::value {
         auto type = static_cast<Type>(typeId);
         return type == Type::INT || type == Type::FLOAT || type == Type::DOUBLE || type == Type::STRING;
     }
-}  // namespace sierra::odyplan::v2::core::common::type::value
+}  // namespace sierra::odyplan::v2::core::common::identifier
 
 #endif  // SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_VALUE_TYPE_H

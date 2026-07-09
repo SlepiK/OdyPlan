@@ -4,8 +4,8 @@
 #include "core/logical/operator/source/source_operator.h"
 
 namespace sierra::odyplan::v2::example::logical_plan {
-    constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_INT = 1;
-    constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_DOUBLE = 2;
+    constexpr sierra::odyplan::v2::core::common::identifier::TypeId TYPE_INT = 1;
+    constexpr sierra::odyplan::v2::core::common::identifier::TypeId TYPE_DOUBLE = 2;
 
     inline sierra::odyplan::v2::core::logical::port::Port createIntPort() {
         return { sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId=TYPE_INT,.typeJsonName="int"} };
@@ -17,24 +17,24 @@ namespace sierra::odyplan::v2::example::logical_plan {
 
     class ConstNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_ID = 0;
+        static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 0;
 
         ConstNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createIntPort()) {
         }
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::type::value::TypeId getTypeId() const override {
+        [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
     };
 
     class ConstDoubleNumberSourceOperator final : public core::logical::opr::TypedSourceOperator {
     public:
-        static constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_ID = 3;
+        static constexpr sierra::odyplan::v2::core::common::identifier::TypeId TYPE_ID = 3;
 
         ConstDoubleNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createDoublePort()) {
         }
 
-        [[nodiscard]] sierra::odyplan::v2::core::common::type::value::TypeId getTypeId() const override {
+        [[nodiscard]] sierra::odyplan::v2::core::common::identifier::TypeId getTypeId() const override {
             return TYPE_ID;
         }
     };

@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_EXAMPLE_PROJECT_CONSTINTSOURCEOPERATOR_H
 #define SIERRA_ODYPLAN_V2_EXAMPLE_PROJECT_CONSTINTSOURCEOPERATOR_H
 
-#include "../../../../odyplan/v2/include/core/common/type/value/type.h"
+#include "../../../../odyplan/v2/include/core/common/identifier/type.h"
 #include "core/logical/operator/source/source_operator.h"
 #include "core/physical/operator/source/source_operator.h"
 
@@ -9,20 +9,20 @@ namespace sierra::odyplan::v2::example::project {
 
     inline core::logical::port::Port createIntPort() {
         return {
-            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::type::value::Type::INT),.typeJsonName="int"},
-            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::type::value::Type::STRING),.typeJsonName="string"},
+            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::INT),.typeJsonName="int"},
+            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::STRING),.typeJsonName="string"},
         };
     }
 
     namespace logical {
         class ConstantSourceOperator final : public core::logical::opr::TypedSourceOperator {
         public:
-            static constexpr sierra::odyplan::v2::core::common::type::value::TypeId TYPE_ID = 0;
+            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 0;
 
             explicit ConstantSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
             }
 
-            [[nodiscard]] sierra::odyplan::v2::core::common::type::value::TypeId getTypeId() const override {
+            [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
         };
