@@ -45,7 +45,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     for (const auto& name : mPortFieldNames) {
                         auto iter = std::ranges::find_if(inputPort,
                         [&](const core::logical::port::PortDescriptor& pd) {
-                            return pd.fieldName == name && core::common::identifier::isPrintable(pd.typeId);
+                            return pd.fieldName == name && core::common::identifier::isTypePrintable(pd.typeId);
                         });
 
                         if (iter == inputPort.end()) {
