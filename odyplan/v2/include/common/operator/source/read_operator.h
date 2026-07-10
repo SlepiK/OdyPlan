@@ -27,7 +27,7 @@ namespace sierra::odyplan::v2::common::opr::source {
             [[nodiscard]] const std::shared_ptr<io::IIOSource> getDataSource() const {
                 return mDataSource;
             }
-        protected:
+
         private:
             std::shared_ptr<io::IIOSource> mDataSource;
         };
@@ -46,7 +46,7 @@ namespace sierra::odyplan::v2::common::opr::source {
             void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
 
             }
-        protected:
+
         private:
             std::shared_ptr<io::IIOSource> mIOSource;
             const core::common::type::TypeRegistry& mTypeRegistry;
