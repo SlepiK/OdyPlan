@@ -157,7 +157,7 @@ namespace sierra::odyplan::v2::core::common::expression {
     }
 
     inline std::unique_ptr<IExpression> cInt(const int value) {
-        return constant(static_cast<identifier::TypeId>(identifier::Type::INT), std::to_string(value));
+        return constant(static_cast<identifier::TypeId>(identifier::Type::INT32), std::to_string(value));
     }
 
     inline std::unique_ptr<IExpression> cFloat(const float value) {

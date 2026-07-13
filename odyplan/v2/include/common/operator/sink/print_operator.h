@@ -106,7 +106,47 @@ namespace sierra::odyplan::v2::common::opr::sink {
             static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module* module, const core::common::identifier::TypeId typeId, llvm::Value* value) {
                 llvm::LLVMContext& ctx = builder.getContext();
                 switch (static_cast<core::common::identifier::Type>(typeId)) {
-                    case core::common::identifier::Type::INT: {
+                    case core::common::identifier::Type::BOOL: {
+                        auto* fnType = llvm::FunctionType::get(
+                          llvm::Type::getVoidTy(ctx),
+                          {value->getType()},
+                          false
+                          );
+                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        builder.CreateCall(fn, {value});
+                        break;
+                    }
+                    case core::common::identifier::Type::INT8: {
+                        auto* fnType = llvm::FunctionType::get(
+                          llvm::Type::getVoidTy(ctx),
+                          {value->getType()},
+                          false
+                          );
+                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        builder.CreateCall(fn, {value});
+                        break;
+                    }
+                    case core::common::identifier::Type::INT16: {
+                        auto* fnType = llvm::FunctionType::get(
+                          llvm::Type::getVoidTy(ctx),
+                          {value->getType()},
+                          false
+                          );
+                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        builder.CreateCall(fn, {value});
+                        break;
+                    }
+                    case core::common::identifier::Type::INT32: {
+                        auto* fnType = llvm::FunctionType::get(
+                          llvm::Type::getVoidTy(ctx),
+                          {value->getType()},
+                          false
+                          );
+                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        builder.CreateCall(fn, {value});
+                        break;
+                    }
+                    case core::common::identifier::Type::INT64: {
                         auto* fnType = llvm::FunctionType::get(
                           llvm::Type::getVoidTy(ctx),
                           {value->getType()},

@@ -53,13 +53,73 @@ namespace sierra::odyplan::v2::core::common::type {
 
         void registerDefaults() {
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT), "int",
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::BOOL), "bool",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getInt1Ty(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt1Ty(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT8), "int8",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getInt8Ty(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt8Ty(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT16), "int16",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getInt16Ty(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt16Ty(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT32), "int32",
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
                 },
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt32Ty(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64), "int64",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getInt64Ty(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getInt64Ty(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::FLOAT), "float",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getFloatTy(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getFloatTy(b.getContext()), std::stoi(v));
+                }
+                );
+            registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE), "double",
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::Type::getDoubleTy(ctx);
+                },
+                [](const llvm::IRBuilder<>&b, const std::string& v) {
+                return llvm::ConstantInt::get(
+                    llvm::Type::getDoubleTy(b.getContext()), std::stoi(v));
                 }
             );
             registerType(

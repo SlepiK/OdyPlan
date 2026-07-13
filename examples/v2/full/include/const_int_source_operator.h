@@ -9,7 +9,7 @@ namespace sierra::odyplan::v2::example::full {
     constexpr core::common::identifier::TypeId TYPE_INT = 1;
 
     inline core::logical::port::Port createIntPort() {
-        return { core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::INT),.typeJsonName="int"} };
+        return { core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::INT32),.typeJsonName="int"} };
     }
 
     namespace logical {
