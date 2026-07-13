@@ -43,6 +43,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output ports");
         }
 
+        if (from.getOutputPorts().empty()) {
+            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output schema");
+        }
+
         if (std::ranges::find(mSourceOperators, toOperator.operatorId) != mSourceOperators.end()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: source operator cant get a connection");
         }
