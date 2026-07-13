@@ -1,8 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_SOURCE_READOPERATOR_H
 #define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_SOURCE_READOPERATOR_H
 #include <llvm/IR/Module.h>
+#include <nlohmann/json.hpp>
 
 #include "common/io/io_data.h"
+#include "common/io/io_format.h"
 #include "common/io/io_source.h"
 #include "core/common/type/type_registry.h"
 #include "core/logical/operator/source/source_operator.h"
@@ -14,45 +16,55 @@ namespace sierra::odyplan::v2::common::opr::source {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::READ);
 
-            ReadOperator(core::logical::port::Port outputPort, std::shared_ptr<io::IIOSource> dataSource)
+            ReadOperator(core::logical::port::Port outputPort, const io::IOFormat ioFormat, nlohmann::json ioConfig)
                 : TypedSourceOperator(std::move(outputPort)),
-                    mDataSource(std::move(dataSource)) {
-                if (!mDataSource) {
-                    throw std::invalid_argument("ReadOperator: dataSource must not be null");
-                }
+                    mIOFormat(ioFormat),
+                    mIOConfig(std::move(ioConfig)) {
             }
 
             [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
 
-            [[nodiscard]] const std::shared_ptr<io::IIOSource> getDataSource() const {
-                return mDataSource;
+            [[nodiscard]] io::IOFormat getIOFormat() const {
+                return mIOFormat;
+            }
+
+            [[nodiscard]] const nlohmann::json& getIOConfig() const {
+                return mIOConfig;
             }
 
         private:
-            std::shared_ptr<io::IIOSource> mDataSource;
+            io::IOFormat mIOFormat;
+            nlohmann::json mIOConfig;
         };
     }
 
     namespace physical {
         class ReadOperator : core::physical::opr::TypedSourceOperator {
         public:
-            ReadOperator(core::physical::port::Port outputPort, std::shared_ptr<common::io::IIOSource> ioSource,
-                const core::common::type::TypeRegistry& typeRegistry)
+            ReadOperator(core::physical::port::Port outputPort, std::unique_ptr<io::IIOSource> ioSource,
+                const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
                     : TypedSourceOperator(std::move(outputPort)),
                     mIOSource(std::move(ioSource)),
-                    mTypeRegistry(typeRegistry){
+                    mTypeRegistry(typeRegistry),
+                    mDataSchema(std::move(dataSchema)) {
+                if (!mIOSource) {
+                    throw std::invalid_argument("ReadOperator: ioSource must not be null");
+                }
+                if (mDataSchema.empty()) {
+                    throw std::invalid_argument("ReadOperator: dataSchema is empty");
+                }
             }
 
             void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
                 llvm::LLVMContext& ctx = builder.getContext();
+                llvm::Module* module = builder.GetInsertBlock()->getModule();
                 llvm::Function* fn = builder.GetInsertBlock()->getParent();
 
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i1Ty = llvm::Type::getInt1Ty(ctx);
-                auto* module = builder.GetInsertBlock()->getModule();
 
                 auto* loopBB = llvm::BasicBlock::Create(ctx, "read_loop", fn);
                 auto* produceBB = llvm::BasicBlock::Create(ctx, "read_produce", fn);
@@ -67,25 +79,25 @@ namespace sierra::odyplan::v2::common::opr::source {
 
                 builder.SetInsertPoint(produceBB);
 
-                auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(i1Ty, {ptrTy}, false));
+                auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {ptrTy}, false));
 
                 core::physical::port::PortTuple tuple;
                 tuple.reserve(mDataSchema.size());
 
                 for (const auto& dataField : mDataSchema) {
-                    llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName);
+                    llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
                     llvm::Value* strValue = builder.CreateCall(getFieldFn, {fieldName});
                     tuple.push_back(codegenField(builder, strValue, dataField.typeId));
                 }
 
                 consumer(builder, tuple);
-
                 builder.CreateBr(loopBB);
+
                 builder.SetInsertPoint(exitBB);
             }
 
         private:
-            std::shared_ptr<io::IIOSource> mIOSource;
+            std::unique_ptr<io::IIOSource> mIOSource;
             const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 
@@ -94,53 +106,48 @@ namespace sierra::odyplan::v2::common::opr::source {
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING))
                     return stringValue;
 
-                std::string fnName;
-                llvm::Type* rType = nullptr;
                 llvm::LLVMContext& ctx = builder.getContext();
+                llvm::Module* module = builder.GetInsertBlock()->getModule();
+                auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+
+                std::string fnName;
+                llvm::Type* retTy = mTypeRegistry.resolveType(typeId, ctx);
 
                 switch (typeId) {
                     case std::to_underlying(core::common::identifier::Type::BOOL): {
                         fnName = "rtParseBool";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::INT8): {
                         fnName = "rtParseInt8";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::INT16): {
                         fnName = "rtParseInt16";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::INT32): {
                         fnName = "rtParseInt32";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::INT64): {
                         fnName = "rtParseInt64";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::FLOAT): {
                         fnName = "rtParseFloat";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     case std::to_underlying(core::common::identifier::Type::DOUBLE): {
                         fnName = "rtParseDouble";
-                        rType = mTypeRegistry.resolveType(typeId, ctx);
                         break;
                     }
                     default:
                         throw std::invalid_argument("ReadOperator: cant parse given type with typeid " + std::to_string(typeId));
                 }
 
-                auto* ptrType = llvm::PointerType::getUnqual(ctx);
-                auto* fnType = llvm::FunctionType::get(rType, { ptrType }, false);
-                auto fn = builder.GetInsertBlock()->getModule()->getOrInsertFunction(fnName, fnType);
+                auto* fnType = llvm::FunctionType::get(retTy, { ptrTy }, false);
+                auto fn = module->getOrInsertFunction(fnName, fnType);
                 return builder.CreateCall(fn, { stringValue });
             }
         };
