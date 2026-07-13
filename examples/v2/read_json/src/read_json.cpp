@@ -8,12 +8,13 @@
 #include "common/operator/sink/print_operator.h"
 #include "core/logical/plan/plan.h"
 
-#include "const_int_source_operator.h"
 #include "core/builder/plan_builder.h"
 
 #include <atomic>
 
+#include "common/io/io_registry.h"
 #include "common/operator/pipe/select_operator.h"
+#include "common/operator/source/read_operator.h"
 
 inline std::atomic<bool> atStop{false};
 
@@ -52,7 +53,13 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::select::logical::ConstantIntSourceOperator>());
+    auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
+
+    auto sourceOutput = sierra::odyplan::v2::core::logical::port::Port {
+        sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId= std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING),.typeJsonName="int"}
+    };
+
+    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::source::logical::ReadOperator>(sourceOutput, sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "read.json"}}));
 
     auto selectPredicate = sierra::odyplan::v2::core::common::expression::LE(sierra::odyplan::v2::core::common::expression::field(0), sierra::odyplan::v2::core::common::expression::cInt(6));
 
@@ -80,14 +87,19 @@ int main() {
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::example::select::logical::ConstantIntSourceOperator::TYPE_ID,
-        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        sierra::odyplan::v2::common::opr::source::logical::ReadOperator::TYPE_ID,
+        [&typeRegistry, &ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::example::select::logical::ConstantIntSourceOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::source::logical::ReadOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::example::select::physical::ConstantIntSourceOperator>(outputPorts.front()));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::source::physical::ReadOperator>(
+                outputPorts.front(),
+                ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig()),
+                typeRegistry,
+                concrete.getOutputPorts().at(0)
+                ));
             return ot;
         }
     );

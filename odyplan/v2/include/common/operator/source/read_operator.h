@@ -12,7 +12,7 @@
 
 namespace sierra::odyplan::v2::common::opr::source {
     namespace logical {
-        class ReadOperator : core::logical::opr::TypedSourceOperator {
+        class ReadOperator : public core::logical::opr::TypedSourceOperator {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::READ);
 
@@ -41,7 +41,7 @@ namespace sierra::odyplan::v2::common::opr::source {
     }
 
     namespace physical {
-        class ReadOperator : core::physical::opr::TypedSourceOperator {
+        class ReadOperator : public core::physical::opr::TypedSourceOperator {
         public:
             ReadOperator(core::physical::port::Port outputPort, std::unique_ptr<io::IIOSource> ioSource,
                 const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
