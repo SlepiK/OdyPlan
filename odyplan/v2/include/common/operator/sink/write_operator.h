@@ -75,8 +75,6 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     codegenField(builder, fieldName, tuple.at(i), dataField.typeId);
                 }
 
-                auto writeFieldFn = module->getOrInsertFunction("rtIOSinkWriteData", llvm::FunctionType::get(voidTy, {i8Ptr, i8Ptr, i8Ptr}, false));
-
                 auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, {}, false));
                 builder.CreateCall(endFn, {});
             }
@@ -87,17 +85,19 @@ namespace sierra::odyplan::v2::common::opr::sink {
             core::logical::port::Port mDataSchema;
 
             void codegenField(llvm::IRBuilder<>& builder, llvm::Value* fieldName, llvm::Value* fieldValue,
-                core::common::identifier::TypeId typeId) {
+                const core::common::identifier::TypeId typeId) {
 
                 llvm::LLVMContext& ctx = builder.getContext();
                 llvm::Module* module = builder.GetInsertBlock()->getModule();
 
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+                auto* idTy = llvm::Type::getInt64Ty(ctx);
+                llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
-                    auto fn = module->getOrInsertFunction("rtIOSinkWriteString", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false));
-                    builder.CreateCall(fn, {fieldName, fieldValue});
+                    auto fn = module->getOrInsertFunction("rtIOSinkWriteString", llvm::FunctionType::get(voidTy, {idTy, ptrTy, ptrTy}, false));
+                    builder.CreateCall(fn, {index, fieldName, fieldValue});
                     return;
                 }
 
@@ -137,9 +137,9 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         throw std::invalid_argument("ReadOperator: cant parse given type with typeid " + std::to_string(typeId));
                 }
 
-                auto* fnType = llvm::FunctionType::get(voidTy, { ptrTy, valueTy }, false);
+                auto* fnType = llvm::FunctionType::get(voidTy, { idTy, ptrTy, valueTy }, false);
                 auto fn = module->getOrInsertFunction(fnName, fnType);
-                builder.CreateCall(fn, { fieldName, fieldValue });
+                builder.CreateCall(fn, { index, fieldName, fieldValue });
             }
         };
     }

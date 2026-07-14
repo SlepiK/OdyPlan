@@ -71,8 +71,7 @@ jobs:
           failed=0
           while IFS= read -r -d '' bin; do
             echo "::group::Running $bin"
-      
-      
+            
             dir=$(dirname "$bin")
             exe=$(basename "$bin")
           

@@ -60,7 +60,6 @@ namespace sierra::odyplan::v2::common::opr::source {
                 llvm::Function* fn = builder.GetInsertBlock()->getParent();
 
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-                auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i1Ty = llvm::Type::getInt1Ty(ctx);
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
 

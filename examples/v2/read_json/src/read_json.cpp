@@ -170,18 +170,6 @@ extern "C" {
         return value;
     }
 
-    /*void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
-        //gSinks.at(index)->
-    }
-
-    void rtIOSinkWriteData(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, int32_t value) {
-
-    }
-
-    void rtIOSinkEndData(sierra::odyplan::v2::common::io::IOSinkId index) {
-
-    }*/
-
     void rtOdyPrintString(const char* data) {
         std::cout << data;
     }
