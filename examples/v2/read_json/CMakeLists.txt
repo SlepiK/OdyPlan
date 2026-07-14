@@ -20,10 +20,8 @@ target_link_libraries(example_read_json PRIVATE
         OdyPlanV2
 )
 
-add_custom_command(
-        TARGET example_read_json POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
-            $<TARGET_FILE_DIR:example_read_json>/read.json
-        COMMENT "Copying read.json to output directory"
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
+        ${CMAKE_CURRENT_BINARY_DIR}/read.json
+        COPYONLY
 )
