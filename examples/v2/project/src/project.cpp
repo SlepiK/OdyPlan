@@ -18,8 +18,8 @@
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
-    void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
-        std::cout << std::string_view(dataRaw, dataLength);
+    void rtOdyPrintString(const char* data) {
+        std::cout << data;
     }
 
     void rtOdyPrintDouble(const double value) {

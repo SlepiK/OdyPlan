@@ -59,17 +59,118 @@ extern "C" {
         }
     }
 
-    /*
-     *rtParseBool
-     *rtParseInt8
-     *rtParseInt16
-     *rtParseInt32
-     *rtParseInt64
-     *rtParseFloat
-     *rtParseDouble
-     **/
+    bool rtParseBool(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseBool: invalid argument");
+        }
 
-    void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
+        if (std::strcmp(str, "true") == 0 || std::strcmp(str, "1") == 0) {
+            return true;
+        }
+        if (std::strcmp(str, "false") == 0 || std::strcmp(str, "0") == 0) {
+            return false;
+        }
+
+        throw std::invalid_argument("rtParseBool: invalid argument");
+    }
+
+    std::int8_t rtParseInt8(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseInt8: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const long value = std::strtol(str, &end, 10);
+
+        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int8_t>::min() || value > std::numeric_limits<std::int8_t>::max()) {
+            throw std::invalid_argument("rtParseInt8: invalid argument or out of range");
+        }
+
+        return static_cast<std::int8_t>(value);
+    }
+
+    std::int16_t rtParseInt16(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseInt16: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const long value = std::strtol(str, &end, 10);
+
+        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int16_t>::min() || value > std::numeric_limits<std::int16_t>::max()) {
+            throw std::invalid_argument("rtParseInt16: invalid argument or out of range");
+        }
+
+        return static_cast<std::int16_t>(value);
+    }
+
+    std::int32_t rtParseInt32(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseInt32: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const long value = std::strtol(str, &end, 10);
+
+        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int32_t>::min() || value > std::numeric_limits<std::int32_t>::max()) {
+            throw std::invalid_argument("rtParseInt32: invalid argument or out of range");
+        }
+
+        return static_cast<std::int32_t>(value);
+    }
+
+    std::int64_t rtParseInt64(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseInt64: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const long value = std::strtol(str, &end, 10);
+
+        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int64_t>::min() || value > std::numeric_limits<std::int64_t>::max()) {
+            throw std::invalid_argument("rtParseInt64: invalid argument or out of range");
+        }
+
+        return static_cast<std::int64_t>(value);
+    }
+
+    std::float_t rtParseFloat(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseFloat: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const std::float_t value = std::strtof(str, &end);
+
+        if (end == str || *end != '\0' || errno == ERANGE) {
+            throw std::invalid_argument("rtParseFloat: invalid argument");
+        }
+
+        return value;
+    }
+
+    std::double_t rtParseDouble(const char* str) {
+        if (str == nullptr) {
+            throw std::invalid_argument("rtParseDouble: invalid argument");
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        const std::double_t value = std::strtod(str, &end);
+
+        if (end == str || *end != '\0' || errno == ERANGE) {
+            throw std::invalid_argument("rtParseDouble: invalid argument");
+        }
+
+        return value;
+    }
+
+    /*void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
         //gSinks.at(index)->
     }
 
@@ -79,10 +180,10 @@ extern "C" {
 
     void rtIOSinkEndData(sierra::odyplan::v2::common::io::IOSinkId index) {
 
-    }
+    }*/
 
-    void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
-        std::cout << std::string_view(dataRaw, dataLength);
+    void rtOdyPrintString(const char* data) {
+        std::cout << data;
     }
 
     void rtOdyPrintDouble(const double value) {
@@ -116,36 +217,31 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
-
     auto sourceOutput = sierra::odyplan::v2::core::logical::port::Port {
-        sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId= std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING),.typeJsonName="int"}
+        sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId= std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64),.typeJsonName="int", .fieldName = "id"},
+        sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId= std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE),.typeJsonName="double", .fieldName = "value"},
+        sierra::odyplan::v2::core::logical::port::PortDescriptor {.typeId= std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING),.typeJsonName="string", .fieldName = "name"}
     };
 
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::source::logical::ReadOperator>(sourceOutput, sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "read.json"}}));
 
-    auto selectPredicate = sierra::odyplan::v2::core::common::expression::LE(sierra::odyplan::v2::core::common::expression::field(0), sierra::odyplan::v2::core::common::expression::cInt(6));
-
-    auto selectId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator>(
-        std::move(selectPredicate)
-    ));
-
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
-        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0}
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1,2}
     ));
 
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0});
-
-    logicalPlan.connect(
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
+
+    /*logicalPlan.connect(
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});*/
 
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
     auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
+    auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
@@ -159,7 +255,7 @@ int main() {
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::source::physical::ReadOperator>(
                 outputPorts.front(),
-                ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig()),
+                registerSource(ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig())),
                 typeRegistry,
                 concrete.getOutputPorts().at(0)
                 ));
@@ -199,7 +295,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("exampleSelect",*ctx);
+    auto module = std::make_unique<llvm::Module>("example_read_json",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
@@ -224,6 +320,19 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+
+    symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOSourceReset")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceReset),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseBool")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseBool),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseInt8")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseInt8),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseInt16")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseInt16),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseInt32")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseInt32),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseInt64")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseInt64),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseFloat),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtParseDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseDouble),llvm::JITSymbolFlags::Exported);
+
+
     symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintString),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);

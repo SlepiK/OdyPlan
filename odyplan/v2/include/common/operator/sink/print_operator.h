@@ -177,15 +177,13 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         break;
                     }
                     case core::common::identifier::Type::STRING: {
-                        llvm::Value* stringPtr = builder.CreateExtractValue(value, {0});
-                        llvm::Value* stringLen = builder.CreateExtractValue(value, {1});
                         auto* fnType = llvm::FunctionType::get(
                             llvm::Type::getVoidTy(ctx),
-                            {stringPtr->getType(), stringLen->getType()},
+                            {llvm::PointerType::getUnqual(ctx)},
                             false
                             );
                         llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintString", fnType);
-                        builder.CreateCall(fn, {stringPtr, stringLen});
+                        builder.CreateCall(fn, {value});
                         break;
                     }
                     default:

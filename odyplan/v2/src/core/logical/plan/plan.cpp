@@ -1,6 +1,7 @@
 #include "core/logical/plan/plan.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <unordered_set>
 

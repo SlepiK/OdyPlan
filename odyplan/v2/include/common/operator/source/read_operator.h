@@ -102,9 +102,10 @@ namespace sierra::odyplan::v2::common::opr::source {
             core::logical::port::Port mDataSchema;
 
             llvm::Value* codegenField(llvm::IRBuilder<>& builder, llvm::Value* stringValue,
-                core::common::identifier::TypeId typeId) {
-                if (typeId == std::to_underlying(core::common::identifier::Type::STRING))
+                const core::common::identifier::TypeId typeId) {
+                if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
                     return stringValue;
+                }
 
                 llvm::LLVMContext& ctx = builder.getContext();
                 llvm::Module* module = builder.GetInsertBlock()->getModule();
