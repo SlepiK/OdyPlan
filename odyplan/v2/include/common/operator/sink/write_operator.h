@@ -50,14 +50,11 @@ namespace sierra::odyplan::v2::common::opr::sink {
     namespace physical {
         class WriteOperator : public core::physical::opr::TypedSinkOperator {
         public:
-            WriteOperator(const core::physical::port::Port &inputPort, std::unique_ptr<io::IIOSink> ioSink ,const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
+            WriteOperator(const core::physical::port::Port &inputPort, const io::IOSinkId ioSinkId ,const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
                 : TypedSinkOperator(inputPort),
-                    mIOSink(std::move(ioSink)),
+                    mIOSinkId(ioSinkId),
                     mTypeRegistry(typeRegistry),
                     mDataSchema(std::move(dataSchema)) {
-                if (!mIOSink) {
-                    throw std::invalid_argument("WriteOperator: dataSink must not be null");
-                }
                 if (mDataSchema.empty()) {
                     throw std::invalid_argument("WriteOperator: dataSchema is empty");
                 }
@@ -85,7 +82,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             }
         protected:
         private:
-            std::unique_ptr<io::IIOSink> mIOSink;
+            io::IOSinkId mIOSinkId;
             const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 

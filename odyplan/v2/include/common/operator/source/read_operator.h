@@ -43,15 +43,12 @@ namespace sierra::odyplan::v2::common::opr::source {
     namespace physical {
         class ReadOperator : public core::physical::opr::TypedSourceOperator {
         public:
-            ReadOperator(core::physical::port::Port outputPort, std::unique_ptr<io::IIOSource> ioSource,
+            ReadOperator(core::physical::port::Port outputPort, const io::IOSourceId ioSourceId,
                 const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
                     : TypedSourceOperator(std::move(outputPort)),
-                    mIOSource(std::move(ioSource)),
+                    mIOSourceId(ioSourceId),
                     mTypeRegistry(typeRegistry),
                     mDataSchema(std::move(dataSchema)) {
-                if (!mIOSource) {
-                    throw std::invalid_argument("ReadOperator: ioSource must not be null");
-                }
                 if (mDataSchema.empty()) {
                     throw std::invalid_argument("ReadOperator: dataSchema is empty");
                 }
@@ -65,6 +62,9 @@ namespace sierra::odyplan::v2::common::opr::source {
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+                auto* idTy = llvm::Type::getInt64Ty(ctx);
+
+                llvm::Value* sourceId = llvm::ConstantInt::get(idTy, mIOSourceId);
 
                 auto* loopBB = llvm::BasicBlock::Create(ctx, "read_loop", fn);
                 auto* produceBB = llvm::BasicBlock::Create(ctx, "read_produce", fn);
@@ -73,20 +73,20 @@ namespace sierra::odyplan::v2::common::opr::source {
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(loopBB);
 
-                auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {}, false));
-                llvm::Value* hasNext = builder.CreateCall(hasNextFn, {});
+                auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {idTy}, false));
+                llvm::Value* hasNext = builder.CreateCall(hasNextFn, {sourceId});
                 builder.CreateCondBr(hasNext, produceBB, exitBB);
 
                 builder.SetInsertPoint(produceBB);
 
-                auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {ptrTy}, false));
+                auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {idTy, ptrTy}, false));
 
                 core::physical::port::PortTuple tuple;
                 tuple.reserve(mDataSchema.size());
 
                 for (const auto& dataField : mDataSchema) {
                     llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                    llvm::Value* strValue = builder.CreateCall(getFieldFn, {fieldName});
+                    llvm::Value* strValue = builder.CreateCall(getFieldFn, {sourceId, fieldName});
                     tuple.push_back(codegenField(builder, strValue, dataField.typeId));
                 }
 
@@ -97,7 +97,7 @@ namespace sierra::odyplan::v2::common::opr::source {
             }
 
         private:
-            std::unique_ptr<io::IIOSource> mIOSource;
+            io::IOSourceId mIOSourceId;
             const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 

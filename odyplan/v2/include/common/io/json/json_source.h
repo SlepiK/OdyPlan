@@ -22,9 +22,9 @@ namespace sierra::odyplan::v2::common::io {
             }
         }
 
-        [[nodiscard]] std::optional<IOData> next() override {
+        [[nodiscard]] bool available() override {
             if (mIndex >= mData.size()) {
-                return std::nullopt;
+                return false;
             }
 
             const auto& dataObj = mData[mIndex++];
@@ -32,21 +32,28 @@ namespace sierra::odyplan::v2::common::io {
                 throw std::runtime_error("JsonSource: expected JSON object");
             }
 
-            IOData data;
+            mCurrentData.clear();
             for (const auto& [key, value] : dataObj.items()) {
-                data.emplace(key, value.dump());
+                mCurrentData.emplace(key, value.dump());
             }
 
-            return data;
+            return true;
+
+        }
+
+        [[nodiscard]] const IOData& current() const override {
+            return mCurrentData;
         }
 
         void reset() override {
             mIndex = 0;
+            mCurrentData.clear();
         }
 
     private:
         nlohmann::json mData;
         std::size_t mIndex;
+        IOData mCurrentData;
     };
 }
 

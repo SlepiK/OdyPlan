@@ -18,7 +18,69 @@
 
 inline std::atomic<bool> atStop{false};
 
+inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
+inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink>> gSinks;
+
+inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
+    gSources.push_back(std::move(source));
+    return gSources.size() - 1;
+}
+
+inline sierra::odyplan::v2::common::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink> sink) {
+    gSinks.push_back(std::move(sink));
+    return gSinks.size() - 1;
+}
+
 extern "C" {
+    bool rtIOSourceHasNext(const sierra::odyplan::v2::common::io::IOSourceId index) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index >= gSources.size()) {
+            return false;
+        }
+
+        return gSources.at(index)->available();
+    }
+
+    const char* rtIOSourceGetField(const sierra::odyplan::v2::common::io::IOSourceId index, const char* fieldName) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index >= gSources.size() || fieldName == nullptr) {
+            return nullptr;
+        }
+
+        const sierra::odyplan::v2::common::io::IOData& current = gSources.at(index)->current();
+        const auto iter = current.find(fieldName);
+        return iter != current.end() ? iter->second.c_str() : nullptr;
+    }
+
+    void rtIOSourceReset(const sierra::odyplan::v2::common::io::IOSourceId index) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index < gSources.size()) {
+            gSources.at(index)->reset();
+        }
+    }
+
+    /*
+     *rtParseBool
+     *rtParseInt8
+     *rtParseInt16
+     *rtParseInt32
+     *rtParseInt64
+     *rtParseFloat
+     *rtParseDouble
+     **/
+
+    void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
+        //gSinks.at(index)->
+    }
+
+    void rtIOSinkWriteData(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, int32_t value) {
+
+    }
+
+    void rtIOSinkEndData(sierra::odyplan::v2::common::io::IOSinkId index) {
+
+    }
+
     void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
         std::cout << std::string_view(dataRaw, dataLength);
     }
@@ -47,6 +109,7 @@ extern "C" {
         return atStop.load(std::memory_order_relaxed);
     }
 }
+
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
