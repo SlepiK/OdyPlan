@@ -172,44 +172,49 @@ extern "C" {
     }
 
     void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
-
+        gSinks.at(index)->begin();
     }
 
-    void rtIOSinkWriteString(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const char* value) {
-
+    void rtIOSinkWriteString(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const char* value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), &value);
     }
 
-    void rtIOSinkWriteBool(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, bool value) {
-
+    void rtIOSinkWriteBool(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const bool value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::BOOL), &value);
     }
 
-    void rtIOSinkWriteInt8(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::int8_t value) {
-
+    void rtIOSinkWriteInt8(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int8_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT8), &value);
     }
 
-    void rtIOSinkWriteInt16(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::int16_t value) {
-
+    void rtIOSinkWriteInt16(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int16_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT16), &value);
     }
 
-    void rtIOSinkWriteInt32(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::int32_t value) {
-
+    void rtIOSinkWriteInt32(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int32_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT32), &value);
     }
 
-    void rtIOSinkWriteInt64(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::int64_t value) {
-
+    void rtIOSinkWriteInt64(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int64_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64), &value);
     }
 
-    void rtIOSinkWriteFloat(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::float_t value) {
-
+    void rtIOSinkWriteFloat(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::float_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::FLOAT), &value);
     }
 
-    void rtIOSinkWriteDouble(sierra::odyplan::v2::common::io::IOSinkId index, const char* key, std::double_t value) {
-
+    void rtIOSinkWriteDouble(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::double_t value) {
+        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE), &value);
     }
 
-    void rtIOSinkEndData(sierra::odyplan::v2::common::io::IOSinkId index) {
-
+    void rtIOSinkEndData(const sierra::odyplan::v2::common::io::IOSinkId index) {
+        gSinks.at(index)->end();
     }
+
+    void rtIOSinkFlush(const sierra::odyplan::v2::common::io::IOSinkId index) {
+        gSinks.at(index)->flush();
+    }
+
     void rtOdyPrintString(const char* data) {
         std::cout << data;
     }

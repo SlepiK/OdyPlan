@@ -21,14 +21,46 @@ namespace sierra::odyplan::v2::common::io {
             }
         }
 
-        void write(const IOData &data) override {
-            nlohmann::json jsonObj;
+        void begin() override {
+            mCurrent = nlohmann::json::object();
+        }
 
-            for (const auto& [key, value] : data) {
-                jsonObj[key] = value;
+        void write(const char* key, core::common::identifier::TypeId typeId, const void* rawData) override {
+            using T = core::common::identifier::Type;
+
+            switch (typeId) {
+                case std::to_underlying(T::BOOL):
+                    mCurrent[key] = *static_cast<const bool*>(rawData);
+                    break;
+                case std::to_underlying(T::INT8):
+                    mCurrent[key] = *static_cast<const std::int8_t*>(rawData);
+                    break;
+                case std::to_underlying(T::INT16):
+                    mCurrent[key] = *static_cast<const std::int16_t*>(rawData);
+                    break;
+                case std::to_underlying(T::INT32):
+                    mCurrent[key] = *static_cast<const std::int32_t*>(rawData);
+                    break;
+                case std::to_underlying(T::INT64):
+                    mCurrent[key] = *static_cast<const std::int64_t*>(rawData);
+                    break;
+                case std::to_underlying(T::FLOAT):
+                    mCurrent[key] = *static_cast<const std::float_t*>(rawData);
+                    break;
+                case std::to_underlying(T::DOUBLE):
+                    mCurrent[key] = *static_cast<const std::double_t*>(rawData);
+                    break;
+                case std::to_underlying(T::STRING):
+                    mCurrent[key] = *static_cast<const char*>(rawData);
+                    break;
+                default:
+                    throw std::invalid_argument("JsonSink: Unknown typeId");
             }
+        }
 
-            mData.push_back(std::move(jsonObj));
+        void end() override {
+            mData.push_back(mCurrent);
+            mCurrent.clear();
         }
 
         void flush() override {
@@ -44,6 +76,7 @@ namespace sierra::odyplan::v2::common::io {
     private:
         std::string mPath;
         nlohmann::json mData;
+        nlohmann::json mCurrent;
     };
 }
 

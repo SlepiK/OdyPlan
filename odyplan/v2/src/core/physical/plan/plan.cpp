@@ -96,6 +96,13 @@ namespace sierra::odyplan::v2::core::physical::plan {
             builder.CreateCall(function, {});
         }
 
+        //ToDo: do we need it and should it part here?
+        /*auto* flushSinkFn = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {llvm::Type::getInt64Ty(ctx)}, false);
+        for (std::uint64_t i = 0; i < gSinks.size(); ++i)
+        {
+            builder.CreateCall(flushSinkFn, { llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), i) });
+        }*/
+
         builder.CreateRetVoid();
     }
 }  // namespace sierra::odyplan::v2::core::physical::plan

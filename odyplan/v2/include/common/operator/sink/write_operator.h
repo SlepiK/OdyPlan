@@ -65,18 +65,20 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 llvm::Module* module = builder.GetInsertBlock()->getModule();
 
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
+                auto* idTy = llvm::Type::getInt64Ty(ctx);
+                llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
-                auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, {}, false));
-                builder.CreateCall(beginFn, {});
+                auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                builder.CreateCall(beginFn, {index});
 
                 for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
                     const auto& dataField = mDataSchema.at(i);
                     llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                    codegenField(builder, fieldName, tuple.at(i), dataField.typeId);
+                    codegenField(builder, index, fieldName, tuple.at(i), dataField.typeId);
                 }
 
-                auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, {}, false));
-                builder.CreateCall(endFn, {});
+                auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                builder.CreateCall(endFn, {index});
             }
         protected:
         private:
@@ -84,7 +86,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 
-            void codegenField(llvm::IRBuilder<>& builder, llvm::Value* fieldName, llvm::Value* fieldValue,
+            void codegenField(llvm::IRBuilder<>& builder, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
                 const core::common::identifier::TypeId typeId) {
 
                 llvm::LLVMContext& ctx = builder.getContext();
@@ -93,7 +95,6 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
-                llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
                     auto fn = module->getOrInsertFunction("rtIOSinkWriteString", llvm::FunctionType::get(voidTy, {idTy, ptrTy, ptrTy}, false));
@@ -137,8 +138,10 @@ namespace sierra::odyplan::v2::common::opr::sink {
                         throw std::invalid_argument("ReadOperator: cant parse given type with typeid " + std::to_string(typeId));
                 }
 
-                auto* fnType = llvm::FunctionType::get(voidTy, { idTy, ptrTy, valueTy }, false);
-                auto fn = module->getOrInsertFunction(fnName, fnType);
+                auto fn = module->getOrInsertFunction(
+                    fnName,
+                    llvm::FunctionType::get(voidTy, { idTy, ptrTy, valueTy }, false)
+                );
                 builder.CreateCall(fn, { index, fieldName, fieldValue });
             }
         };
