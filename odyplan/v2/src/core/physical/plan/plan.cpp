@@ -86,9 +86,9 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
     void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& functions) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
-        auto* mainFunction = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
+        auto* mainFn = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
 
-        auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", mainFunction);
+        auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", mainFn);
 
         llvm::IRBuilder<> builder(basicBlock);
 
@@ -96,12 +96,8 @@ namespace sierra::odyplan::v2::core::physical::plan {
             builder.CreateCall(function, {});
         }
 
-        //ToDo: do we need it and should it part here?
-        /*auto* flushSinkFn = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {llvm::Type::getInt64Ty(ctx)}, false);
-        for (std::uint64_t i = 0; i < gSinks.size(); ++i)
-        {
-            builder.CreateCall(flushSinkFn, { llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), i) });
-        }*/
+        auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
+        builder.CreateCall(endFn, {});
 
         builder.CreateRetVoid();
     }

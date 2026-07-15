@@ -11,6 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "common/io/io_sink.h"
+
 namespace sierra::odyplan::v2::core::physical::plan {
     class Plan {
     public:

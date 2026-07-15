@@ -19,19 +19,16 @@
 inline std::atomic<bool> atStop{false};
 
 inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink>> gSinks;
 
 inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
     gSources.push_back(std::move(source));
     return gSources.size() - 1;
 }
 
-inline sierra::odyplan::v2::common::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink> sink) {
-    gSinks.push_back(std::move(sink));
-    return gSinks.size() - 1;
-}
-
 extern "C" {
+    void rtEnd() {
+    }
+
     bool rtIOSourceHasNext(const sierra::odyplan::v2::common::io::IOSourceId index) {
         assert(index < gSources.size() && "invalid IOSource");
         if (index >= gSources.size()) {
@@ -328,6 +325,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";

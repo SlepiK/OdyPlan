@@ -18,6 +18,9 @@
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
+    void rtEnd() {
+    }
+
     void rtOdyPrintString(const char* data) {
         std::cout << data;
     }
@@ -146,6 +149,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";
