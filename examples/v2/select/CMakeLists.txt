@@ -11,8 +11,8 @@ target_include_directories(example_select PRIVATE
 )
 
 if(ENABLE_LOOPED_SOURCE)
-    target_compile_definitions(example_full PRIVATE
-            example_select
+    target_compile_definitions(example_select PRIVATE
+            ENABLE_LOOPED_SOURCE
     )
 endif ()
 

@@ -7,16 +7,19 @@ namespace sierra::odyplan::v2::core::common::identifier {
     using TypeId = std::size_t;
 
     enum class Type : TypeId {
-        INT = 1,
-        FLOAT = 2,
-        DOUBLE = 3,
-        STRING = 4,
-        BOOL = 5
+        BOOL = 0,
+        INT8 = 1,
+        INT16 = 2,
+        INT32 = 3,
+        INT64 = 4,
+        FLOAT = 10,
+        DOUBLE = 11,
+        STRING = 20
     };
 
     inline bool isTypePrintable(const TypeId typeId) {
         auto type = static_cast<Type>(typeId);
-        return type == Type::INT || type == Type::FLOAT || type == Type::DOUBLE || type == Type::STRING;
+        return type == Type::BOOL || type == Type::INT8 || type == Type::INT16 || type == Type::INT32 || type == Type::INT64 || type == Type::FLOAT || type == Type::DOUBLE || type == Type::STRING;
     }
 }  // namespace sierra::odyplan::v2::core::common::identifier
 

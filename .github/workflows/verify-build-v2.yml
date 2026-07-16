@@ -71,9 +71,18 @@ jobs:
           failed=0
           while IFS= read -r -d '' bin; do
             echo "::group::Running $bin"
-            "$bin"
+            
+            dir=$(dirname "$bin")
+            exe=$(basename "$bin")
+          
+            (
+              cd "$dir"
+              "./$exe"
+            )
+          
             status=$?
             echo "::endgroup::"
+          
             if [ $status -ne 0 ]; then
               echo "$bin failed with exit code $status"
               failed=$status

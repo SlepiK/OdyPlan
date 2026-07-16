@@ -10,6 +10,8 @@ namespace sierra::odyplan::v2::core::common::identifier {
         PROJECT = 10,
         SELECT = 11,
         PRINT = 20,
+        READ = 21,
+        WRITE = 22,
     };
 }  // namespace sierra::odyplan::v2::core::common::identifier
 
