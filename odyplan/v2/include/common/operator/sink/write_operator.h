@@ -99,21 +99,19 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
                 auto* typeIdTy = llvm::Type::getInt64Ty(ctx);
 
-                llvm::Type* valueTy = segmentCtx.typeRegistry.resolveType(typeId, ctx);
-
                 llvm::Value* ptrFieldValue = nullptr;
 
                 if (fieldValue->getType()->isPointerTy()) {
                     ptrFieldValue = fieldValue;
                 } else {
-                    auto* alca = segmentCtx.builder.CreateAlloca(fieldValue->getType());
-                    segmentCtx.builder.CreateStore(fieldValue, alca);
-                    ptrFieldValue = alca;
+                    auto* slot = segmentCtx.storage.get(typeId);
+                    segmentCtx.builder.CreateStore(fieldValue, slot);
+                    ptrFieldValue = slot;
                 }
 
                 auto fn = module->getOrInsertFunction(
                     "rtIOSinkWrite",
-                    llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, valueTy }, false)
+                    llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, ptrTy }, false)
                 );
 
                 segmentCtx.builder.CreateCall(fn, { index, llvm::ConstantInt::get(idTy, typeId), fieldName, ptrFieldValue });

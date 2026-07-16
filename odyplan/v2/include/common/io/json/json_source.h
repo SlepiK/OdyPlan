@@ -34,7 +34,11 @@ namespace sierra::odyplan::v2::common::io {
 
             mCurrentData.clear();
             for (const auto& [key, value] : dataObj.items()) {
-                mCurrentData.emplace(key, value.dump());
+                if (value.is_string()) {
+                    mCurrentData.emplace(key, value.get<std::string>());
+                } else {
+                    mCurrentData.emplace(key, value.dump());
+                }
             }
 
             return true;

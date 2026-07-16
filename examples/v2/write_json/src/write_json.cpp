@@ -260,7 +260,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v2::common::opr::source::logical::ReadOperator::TYPE_ID,
-        [&typeRegistry, &ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        [&ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::source::logical::ReadOperator&>(op);
@@ -269,7 +269,6 @@ int main() {
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::source::physical::ReadOperator>(
                 outputPorts.front(),
                 registerSource(ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig())),
-                typeRegistry,
                 concrete.getOutputPorts().at(0)
                 ));
             return ot;
@@ -278,7 +277,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v2::common::opr::sink::logical::WriteOperator::TYPE_ID,
-        [&typeRegistry, &ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        [&ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports&) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::sink::logical::WriteOperator&>(op);
@@ -287,7 +286,6 @@ int main() {
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::WriteOperator>(
                 inputPorts.front(),
                 registerSink(ioRegistry.createSinkIO(concrete.getIOFormat(), concrete.getIOConfig())),
-                typeRegistry,
                 concrete.getInputPorts().at(0)
                 ));
             return ot;
@@ -300,7 +298,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("example_read_json",*ctx);
+    auto module = std::make_unique<llvm::Module>("example_write_json",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
