@@ -9,7 +9,7 @@ namespace sierra::odyplan::v2::example::project {
 
     inline core::logical::port::Port createIntPort() {
         return {
-            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::INT),.typeJsonName="int"},
+            core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::INT32),.typeJsonName="int"},
             core::logical::port::PortDescriptor {.typeId= std::to_underlying(core::common::identifier::Type::STRING),.typeJsonName="string"},
         };
     }
@@ -34,44 +34,42 @@ namespace sierra::odyplan::v2::example::project {
             explicit ConstantSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
             }
 
-            void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
 #ifdef ENABLE_LOOPED_SOURCE
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Function* fn = builder.GetInsertBlock()->getParent();
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
                 auto* loopBB = llvm::BasicBlock::Create(ctx, "loop", fn);
                 auto* produceBB = llvm::BasicBlock::Create(ctx, "produce", fn);
                 auto* exitBB = llvm::BasicBlock::Create(ctx, "exit", fn);
 
-                builder.CreateBr(loopBB);
-                builder.SetInsertPoint(loopBB);
+                segmentCtx.builder.CreateBr(loopBB);
+                segmentCtx.builder.SetInsertPoint(loopBB);
 
                 auto* stopFnType = llvm::FunctionType::get(
                     llvm::Type::getInt1Ty(ctx), {}, false);
 
-                llvm::FunctionCallee stopFn = builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
-                llvm::Value* stop = builder.CreateCall(stopFn, {});
-                builder.CreateCondBr(stop, exitBB, produceBB);
-                builder.SetInsertPoint(produceBB);
+                llvm::FunctionCallee stopFn = segmentCtx.builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
+                llvm::Value* stop = segmentCtx.builder.CreateCall(stopFn, {});
+                segmentCtx.builder.CreateCondBr(stop, exitBB, produceBB);
+                segmentCtx.builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
+                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
 
                 std::string const exampleString = "ProjectOperator_Test";
-                llvm::GlobalVariable* stringRaw = builder.CreateGlobalString(exampleString);
-                llvm::StructType* stringType = llvm::StructType::get(builder.getContext(), {
-                    llvm::PointerType::get(builder.getContext(), 0),
-                    llvm::Type::getInt64Ty(builder.getContext())
+                llvm::GlobalVariable* stringRaw = segmentCtx.builder.CreateGlobalString(exampleString);
+                llvm::StructType* stringType = llvm::StructType::get(segmentCtx.builder.getContext(), {
+                    llvm::PointerType::get(segmentCtx.builder.getContext(), 0),
+                    llvm::Type::getInt64Ty(segmentCtx.builder.getContext())
                 });
 
-                llvm::Value* stringLength = llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), exampleString.size());
+                llvm::Value* stringLength = llvm::ConstantInt::get(llvm::Type::getInt64Ty(segmentCtx.builder.getContext()), exampleString.size());
 
                 llvm::Value* valueField2 = llvm::PoisonValue::get(stringType);
-                valueField2 = builder.CreateInsertValue(valueField2, stringRaw, {0});
-                valueField2 = builder.CreateInsertValue(valueField2, stringLength, {1});
+                valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringRaw, {0});
+                valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringLength, {1});
 
-
-
-                consumer(builder, {valueField1, valueField2});
+                consumer(segmentCtx, {valueField1, valueField2});
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);

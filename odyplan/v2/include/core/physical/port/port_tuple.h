@@ -5,9 +5,11 @@
 #include <llvm/IR/IRBuilder.h>
 #include <vector>
 
+#include "core/physical/segment/segment_context.h"
+
 namespace sierra::odyplan::v2::core::physical::port {
     using PortTuple = std::vector<llvm::Value*>;
-    using PortTupleConsumer = std::function<void(llvm::IRBuilder<>&, const PortTuple&)>;
+    using PortTupleConsumer = std::function<void(segment::SegmentContext& , const PortTuple&)>;
 }  // namespace sierra::odyplan::v2::core::physical::port
 
 #endif  // SIERRA_ODYPLAN_V2_CORE_PHYSICAL_PORT_PORTTUPLE_H

@@ -18,8 +18,11 @@
 inline std::atomic<bool> atStop{false};
 
 extern "C" {
-    void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
-        std::cout << std::string_view(dataRaw, dataLength);
+    void rtEnd() {
+    }
+
+    void rtOdyPrintString(const char* data) {
+        std::cout << data;
     }
 
     void rtOdyPrintDouble(const double value) {
@@ -97,13 +100,13 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator::TYPE_ID,
-        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate(), typeRegistry));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate()));
             return ot;
         }
     );
@@ -146,6 +149,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";

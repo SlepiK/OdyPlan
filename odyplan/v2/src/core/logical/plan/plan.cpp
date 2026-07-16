@@ -1,6 +1,7 @@
 #include "core/logical/plan/plan.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <unordered_set>
 
@@ -41,6 +42,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         if (!from.hasOutputPorts()) {
             throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output ports");
+        }
+
+        if (from.getOutputPorts().empty()) {
+            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output schema");
         }
 
         if (std::ranges::find(mSourceOperators, toOperator.operatorId) != mSourceOperators.end()) {
