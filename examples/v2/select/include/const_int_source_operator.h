@@ -32,29 +32,29 @@ namespace sierra::odyplan::v2::example::select {
             explicit ConstantIntSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
             }
 
-            void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
 #ifdef ENABLE_LOOPED_SOURCE
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Function* fn = builder.GetInsertBlock()->getParent();
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
                 auto* loopBB = llvm::BasicBlock::Create(ctx, "loop", fn);
                 auto* produceBB = llvm::BasicBlock::Create(ctx, "produce", fn);
                 auto* exitBB = llvm::BasicBlock::Create(ctx, "exit", fn);
 
-                builder.CreateBr(loopBB);
-                builder.SetInsertPoint(loopBB);
+                segmentCtx.builder.CreateBr(loopBB);
+                segmentCtx.builder.SetInsertPoint(loopBB);
 
                 auto* stopFnType = llvm::FunctionType::get(
                     llvm::Type::getInt1Ty(ctx), {}, false);
 
-                llvm::FunctionCallee stopFn = builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
-                llvm::Value* stop = builder.CreateCall(stopFn, {});
-                builder.CreateCondBr(stop, exitBB, produceBB);
-                builder.SetInsertPoint(produceBB);
+                llvm::FunctionCallee stopFn = segmentCtx.builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
+                llvm::Value* stop = segmentCtx.builder.CreateCall(stopFn, {});
+                segmentCtx.builder.CreateCondBr(stop, exitBB, produceBB);
+                segmentCtx.builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
+                llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
 
-                consumer(builder, {value});
+                consumer(segmentCtx, {value});
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);

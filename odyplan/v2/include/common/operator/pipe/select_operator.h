@@ -54,7 +54,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
-                llvm::Value* cnd = codegenExpression(segmentCtx.builder, tuple, mPredicate);
+                llvm::Value* cnd = codegenExpression(segmentCtx, tuple, mPredicate);
 
                 auto* passBB = llvm::BasicBlock::Create(ctx, "select_pass", fn);
                 auto* mergeBB = llvm::BasicBlock::Create(ctx, "select_merge", fn);
@@ -72,7 +72,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             const core::common::expression::IExpression& mPredicate;
             const core::common::type::TypeRegistry& mRegistry;
 
-            llvm::Value* codegenExpression(llvm::IRBuilder<>& builder, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
+            llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
                 switch (expression.getExpressionType()) {
                     case core::common::expression::ExpressionType::FIELDREFERENCE: {
                         const auto& fieldRefExpression = static_cast<const core::common::expression::FieldReferenceExpression&>(expression);
@@ -83,26 +83,26 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     }
                     case core::common::expression::ExpressionType::CONSTANT: {
                         const auto& constExpression = static_cast<const core::common::expression::ConstantExpression&>(expression);
-                        return mRegistry.compileConstant(constExpression.getTypeId(), builder, constExpression.getSerializedValue());
+                        return mRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder, constExpression.getSerializedValue());
                     }
                     case core::common::expression::ExpressionType::COMPARE: {
                         const auto& compareExpression = static_cast<const core::common::expression::CompareExpression&>(expression);
-                        llvm::Value* left = codegenExpression(builder, tuple, compareExpression.getLeftPart());
-                        llvm::Value* right = codegenExpression(builder, tuple, compareExpression.getRightPart());
-                        return codegenCompare(builder, left, right, compareExpression.getOpr());
+                        llvm::Value* left = codegenExpression(segmentCtx, tuple, compareExpression.getLeftPart());
+                        llvm::Value* right = codegenExpression(segmentCtx, tuple, compareExpression.getRightPart());
+                        return codegenCompare(segmentCtx.builder, left, right, compareExpression.getOpr());
                     }
                     case core::common::expression::ExpressionType::LOGICAL: {
                         const auto& logicalExpression = static_cast<const core::common::expression::LogicalExpression&>(expression);
-                        llvm::Value* left = codegenExpression(builder, tuple, logicalExpression.getLeftPart());
+                        llvm::Value* left = codegenExpression(segmentCtx, tuple, logicalExpression.getLeftPart());
                         if (logicalExpression.isUnary())
-                            return builder.CreateNot(left, "not");
-                        llvm::Value* right = codegenExpression(builder, tuple, *logicalExpression.getRightPart());
+                            return segmentCtx.builder.CreateNot(left, "not");
+                        llvm::Value* right = codegenExpression(segmentCtx, tuple, *logicalExpression.getRightPart());
                         switch (logicalExpression.getOpr()) {
                             case core::common::expression::LogicalExpression::LogicalOp::AND: {
-                                return builder.CreateAnd(left, right, "and");
+                                return segmentCtx.builder.CreateAnd(left, right, "and");
                             }
                             case core::common::expression::LogicalExpression::LogicalOp::OR: {
-                                return builder.CreateOr(left, right, "or");
+                                return segmentCtx.builder.CreateOr(left, right, "or");
                             }
                             default:
                                 throw std::invalid_argument("SelectOperator: unsupported logical expression type");
