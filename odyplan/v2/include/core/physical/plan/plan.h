@@ -11,11 +11,15 @@
 #include <memory>
 #include <vector>
 
-#include "common/io/io_sink.h"
+#include "core/common/type/type_registry.h"
 
 namespace sierra::odyplan::v2::core::physical::plan {
     class Plan {
     public:
+        explicit Plan(const common::type::TypeRegistry& typeRegistry)
+            : mTypeRegistry(typeRegistry) {
+        }
+
         void addOperator(std::unique_ptr<opr::IOperator> opr);
 
         void addSegment(segment::Segment segment);
@@ -25,6 +29,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
     private:
         std::vector<std::unique_ptr<opr::IOperator>> mOperators;
         std::vector<segment::Segment> mSegments;
+        const common::type::TypeRegistry& mTypeRegistry;
 
         llvm::Function* codegenSegment(const segment::Segment& segment, llvm::Module& module, llvm::LLVMContext& ctx, std::size_t index);
 

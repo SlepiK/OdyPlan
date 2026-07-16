@@ -50,22 +50,22 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mRegistry(typeRegistry) {
             }
 
-            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Function* fn = builder.GetInsertBlock()->getParent();
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
-                llvm::Value* cnd = codegenExpression(builder, tuple, mPredicate);
+                llvm::Value* cnd = codegenExpression(segmentCtx.builder, tuple, mPredicate);
 
                 auto* passBB = llvm::BasicBlock::Create(ctx, "select_pass", fn);
                 auto* mergeBB = llvm::BasicBlock::Create(ctx, "select_merge", fn);
 
-                builder.CreateCondBr(cnd, passBB, mergeBB);
+                segmentCtx.builder.CreateCondBr(cnd, passBB, mergeBB);
 
-                builder.SetInsertPoint(passBB);
-                consumer(builder, tuple);
-                builder.CreateBr(mergeBB);
+                segmentCtx.builder.SetInsertPoint(passBB);
+                consumer(segmentCtx, tuple);
+                segmentCtx.builder.CreateBr(mergeBB);
 
-                builder.SetInsertPoint(mergeBB);
+                segmentCtx.builder.SetInsertPoint(mergeBB);
             }
 
         private:

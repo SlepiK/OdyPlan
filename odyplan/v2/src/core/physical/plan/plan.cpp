@@ -2,6 +2,8 @@
 
 #include <ranges>
 
+#include "core/physical/segment/segment_context.h"
+
 namespace sierra::odyplan::v2::core::physical::plan {
     void Plan::addOperator(std::unique_ptr<opr::IOperator> opr) {
         if (!opr) {
@@ -49,23 +51,19 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", function);
 
-        llvm::IRBuilder<> builder(basicBlock);
-
-        /*port::PortTupleConsumer chain = [end = segment.end](llvm::IRBuilder<>& b, const port::PortTuple& t) {
-            end->consume(b,t,[](llvm::IRBuilder<>&, const port::PortTuple&) {});
-        };*/
+        segment::SegmentContext segmentCtx(function, basicBlock, ctx, mTypeRegistry);
 
         port::PortTupleConsumer chain;
 
         switch (segment.type) {
             case segment::SegmentType::NORMAL:
-                chain = [end = segment.end] (llvm::IRBuilder<>& b, const port::PortTuple& t) {
-                    end->consume(b,t,[](llvm::IRBuilder<>&, const port::PortTuple&) {});
+                chain = [end = segment.end] (segment::SegmentContext& sCtx, const port::PortTuple& t) {
+                    end->consume(sCtx,t,[](segment::SegmentContext&, const port::PortTuple&) {});
                 };
                 break;
             case segment::SegmentType::BLOCKING:
-                chain = [target = segment.blockingTarget] (llvm::IRBuilder<>& b, const port::PortTuple& t) {
-                    target->consume(b, t, [](llvm::IRBuilder<>&, const port::PortTuple&) {});
+                chain = [target = segment.blockingTarget] (segment::SegmentContext& sCtx, const port::PortTuple& t) {
+                    target->consume(sCtx, t, [](segment::SegmentContext&, const port::PortTuple&) {});
                 };
                 break;
         }
@@ -73,14 +71,14 @@ namespace sierra::odyplan::v2::core::physical::plan {
         for (auto *it : std::ranges::reverse_view(segment.mid)) {
             opr::IPipeOperator* pipe = it;
             port::PortTupleConsumer next = chain;
-            chain = [pipe, next](llvm::IRBuilder<>& b, const port::PortTuple& t) mutable {
-                pipe->consume(b, t, next);
+            chain = [pipe, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
+                pipe->consume(sCtx, t, next);
             };
         }
 
-        segment.start->produce(builder, std::move(chain));
+        segment.start->produce(segmentCtx, std::move(chain));
 
-        builder.CreateRetVoid();
+        segmentCtx.builder.CreateRetVoid();
         return function;
     }
 

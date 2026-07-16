@@ -16,7 +16,9 @@ namespace sierra::odyplan::v2::common::io {
 
         ~JsonSink() override {
             try {
-                JsonSink::flush();
+                if (!mData.empty()) {
+                    JsonSink::flush();
+                }
             } catch (...) {
             }
         }
@@ -51,7 +53,7 @@ namespace sierra::odyplan::v2::common::io {
                     mCurrent[key] = *static_cast<const std::double_t*>(rawData);
                     break;
                 case std::to_underlying(T::STRING):
-                    mCurrent[key] = *static_cast<const char*>(rawData);
+                    mCurrent[key] = static_cast<const char*>(rawData);
                     break;
                 default:
                     throw std::invalid_argument("JsonSink: Unknown typeId");
@@ -71,6 +73,8 @@ namespace sierra::odyplan::v2::common::io {
             }
 
             file << mData.dump(2);
+
+            mData.clear();
         }
 
     private:

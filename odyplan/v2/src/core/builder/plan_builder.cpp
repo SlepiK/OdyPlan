@@ -7,7 +7,7 @@ namespace sierra::odyplan::v2::core::builder {
     }
 
     [[nodiscard]] physical::plan::Plan PlanBuilder::build(const logical::plan::Plan& lPlan, llvm::LLVMContext& ctx) {
-        physical::plan::Plan pPlan;
+        physical::plan::Plan pPlan = physical::plan::Plan(mRegistry);
         physical::segment::Segment currentSegment;
 
         for (auto lOprId : lPlan.topologicalOrder()) {

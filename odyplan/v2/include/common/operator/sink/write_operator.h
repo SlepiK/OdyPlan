@@ -41,6 +41,10 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 return mIOConfig;
             }
 
+        protected:
+            void validate() override {
+            }
+
         private:
             io::IOFormat mIOFormat;
             nlohmann::json mIOConfig;
@@ -60,27 +64,27 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 }
             }
 
-            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Module* module = builder.GetInsertBlock()->getModule();
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
                 llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
                 auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
-                builder.CreateCall(beginFn, {index});
+                segmentCtx.builder.CreateCall(beginFn, {index});
 
                 for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
                     const auto& dataField = mDataSchema.at(i);
-                    llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                    codegenField(builder, index, fieldName, tuple.at(i), dataField.typeId);
+                    llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
+                    codegenField(segmentCtx.builder, index, fieldName, tuple.at(i), dataField.typeId);
                 }
 
                 auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
-                builder.CreateCall(endFn, {index});
+                segmentCtx.builder.CreateCall(endFn, {index});
             }
-        protected:
+
         private:
             io::IOSinkId mIOSinkId;
             const core::common::type::TypeRegistry& mTypeRegistry;
@@ -95,54 +99,26 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
+                auto* typeIdTy = llvm::Type::getInt64Ty(ctx);
 
-                if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
-                    auto fn = module->getOrInsertFunction("rtIOSinkWriteString", llvm::FunctionType::get(voidTy, {idTy, ptrTy, ptrTy}, false));
-                    builder.CreateCall(fn, {index, fieldName, fieldValue});
-                    return;
-                }
-
-                std::string fnName;
                 llvm::Type* valueTy = mTypeRegistry.resolveType(typeId, ctx);
 
-                switch (typeId) {
-                    case std::to_underlying(core::common::identifier::Type::BOOL): {
-                        fnName = "rtIOSinkWriteBool";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::INT8): {
-                        fnName = "rtIOSinkWriteInt8";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::INT16): {
-                        fnName = "rtIOSinkWriteInt16";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::INT32): {
-                        fnName = "rtIOSinkWriteInt32";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::INT64): {
-                        fnName = "rtIOSinkWriteInt64";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::FLOAT): {
-                        fnName = "rtIOSinkWriteFloat";
-                        break;
-                    }
-                    case std::to_underlying(core::common::identifier::Type::DOUBLE): {
-                        fnName = "rtIOSinkWriteDouble";
-                        break;
-                    }
-                    default:
-                        throw std::invalid_argument("ReadOperator: cant parse given type with typeid " + std::to_string(typeId));
+                llvm::Value* ptrFieldValue = nullptr;
+
+                if (fieldValue->getType()->isPointerTy()) {
+                    ptrFieldValue = fieldValue;
+                } else {
+                    auto* alca = builder.CreateAlloca(fieldValue->getType());
+                    builder.CreateStore(fieldValue, alca);
+                    ptrFieldValue = alca;
                 }
 
                 auto fn = module->getOrInsertFunction(
-                    fnName,
-                    llvm::FunctionType::get(voidTy, { idTy, ptrTy, valueTy }, false)
+                    "rtIOSinkWrite",
+                    llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, valueTy }, false)
                 );
-                builder.CreateCall(fn, { index, fieldName, fieldValue });
+
+                builder.CreateCall(fn, { index, llvm::ConstantInt::get(idTy, typeId), fieldName, ptrFieldValue });
             }
         };
     }

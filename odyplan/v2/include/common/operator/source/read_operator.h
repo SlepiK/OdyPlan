@@ -54,10 +54,10 @@ namespace sierra::odyplan::v2::common::opr::source {
                 }
             }
 
-            void produce(llvm::IRBuilder<>& builder, core::physical::port::PortTupleConsumer consumer) override {
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Module* module = builder.GetInsertBlock()->getModule();
-                llvm::Function* fn = builder.GetInsertBlock()->getParent();
+            void produce(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* i1Ty = llvm::Type::getInt1Ty(ctx);
@@ -69,14 +69,14 @@ namespace sierra::odyplan::v2::common::opr::source {
                 auto* produceBB = llvm::BasicBlock::Create(ctx, "read_produce", fn);
                 auto* exitBB = llvm::BasicBlock::Create(ctx, "read_exit", fn);
 
-                builder.CreateBr(loopBB);
-                builder.SetInsertPoint(loopBB);
+                segmentCtx.builder.CreateBr(loopBB);
+                segmentCtx.builder.SetInsertPoint(loopBB);
 
                 auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {idTy}, false));
-                llvm::Value* hasNext = builder.CreateCall(hasNextFn, {sourceId});
-                builder.CreateCondBr(hasNext, produceBB, exitBB);
+                llvm::Value* hasNext = segmentCtx.builder.CreateCall(hasNextFn, {sourceId});
+                segmentCtx.builder.CreateCondBr(hasNext, produceBB, exitBB);
 
-                builder.SetInsertPoint(produceBB);
+                segmentCtx.builder.SetInsertPoint(produceBB);
 
                 auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {idTy, ptrTy}, false));
 
@@ -84,15 +84,15 @@ namespace sierra::odyplan::v2::common::opr::source {
                 tuple.reserve(mDataSchema.size());
 
                 for (const auto& dataField : mDataSchema) {
-                    llvm::Value* fieldName = builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                    llvm::Value* strValue = builder.CreateCall(getFieldFn, {sourceId, fieldName});
-                    tuple.push_back(codegenField(builder, strValue, dataField.typeId));
+                    llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
+                    llvm::Value* strValue = segmentCtx.builder.CreateCall(getFieldFn, {sourceId, fieldName});
+                    tuple.push_back(codegenField(segmentCtx.builder, strValue, dataField.typeId));
                 }
 
-                consumer(builder, tuple);
-                builder.CreateBr(loopBB);
+                consumer(segmentCtx, tuple);
+                segmentCtx.builder.CreateBr(loopBB);
 
-                builder.SetInsertPoint(exitBB);
+                segmentCtx.builder.SetInsertPoint(exitBB);
             }
 
         private:

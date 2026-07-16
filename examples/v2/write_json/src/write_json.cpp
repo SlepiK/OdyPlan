@@ -175,36 +175,8 @@ extern "C" {
         gSinks.at(index)->begin();
     }
 
-    void rtIOSinkWriteString(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const char* value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), &value);
-    }
-
-    void rtIOSinkWriteBool(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const bool value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::BOOL), &value);
-    }
-
-    void rtIOSinkWriteInt8(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int8_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT8), &value);
-    }
-
-    void rtIOSinkWriteInt16(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int16_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT16), &value);
-    }
-
-    void rtIOSinkWriteInt32(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int32_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT32), &value);
-    }
-
-    void rtIOSinkWriteInt64(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::int64_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64), &value);
-    }
-
-    void rtIOSinkWriteFloat(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::float_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::FLOAT), &value);
-    }
-
-    void rtIOSinkWriteDouble(const sierra::odyplan::v2::common::io::IOSinkId index, const char* key, const std::double_t value) {
-        gSinks.at(index)->write(key, std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE), &value);
+    void rtIOSinkWrite(const sierra::odyplan::v2::common::io::IOSinkId index, const sierra::odyplan::v2::core::common::identifier::TypeId typeId, const char* key, const void* value) {
+        gSinks.at(index)->write(key, typeId, value);
     }
 
     void rtIOSinkEndData(const sierra::odyplan::v2::common::io::IOSinkId index) {
@@ -268,11 +240,7 @@ int main() {
 
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::source::logical::ReadOperator>(sourceOutput, sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "read.json"}}));
 
-    auto sinkId2 = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::WriteOperator>(sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "write.json"}}));
-
-    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
-        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1,2}
-    ));
+    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::WriteOperator>(sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "write.json"}}));
 
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
@@ -309,27 +277,19 @@ int main() {
     );
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::TYPE_ID,
-        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        sierra::odyplan::v2::common::opr::sink::logical::WriteOperator::TYPE_ID,
+        [&typeRegistry, &ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports&) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::sink::logical::PrintOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::sink::logical::WriteOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
-            return ot;
-        }
-    );
-
-    builder.registerOperatorTransformation(
-        sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator::TYPE_ID,
-        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
-            const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator&>(op);
-
-            sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate(), typeRegistry));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::WriteOperator>(
+                inputPorts.front(),
+                registerSink(ioRegistry.createSinkIO(concrete.getIOFormat(), concrete.getIOConfig())),
+                typeRegistry,
+                concrete.getInputPorts().at(0)
+                ));
             return ot;
         }
     );
@@ -365,6 +325,10 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+
+    symbolMap[jit->mangleAndIntern("rtIOSinkBeginData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSinkBeginData),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOSinkWrite")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSinkWrite),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOSinkEndData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSinkEndData),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);

@@ -75,20 +75,20 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     mPortFieldIndices(std::move(indices)) {
             }
 
-            void consume(llvm::IRBuilder<> &builder, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
-                llvm::Module* module = builder.GetInsertBlock()->getModule();
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 if (tuple.size() < mPortFieldIndices.size()) {
                     throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
                 }
                 for (std::size_t i = 0; i < mPortFieldIndices.size(); ++i) {
                     std::size_t const fieldIndex = mPortFieldIndices[i];
-                    codegenPrintField(builder, module, getInputPorts().at(0).at(fieldIndex).typeId, tuple.at(fieldIndex));
+                    codegenPrintField(segmentCtx.builder, module, getInputPorts().at(0).at(fieldIndex).typeId, tuple.at(fieldIndex));
 
                     if (i + 1 < mPortFieldIndices.size()) {
-                        codegenPrint(builder, module, "rtOdyPrintSeperator");
+                        codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
                     }
                 }
-                codegenPrint(builder, module, "rtOdyPrintNewline");
+                codegenPrint(segmentCtx.builder, module, "rtOdyPrintNewline");
             }
 
         private:

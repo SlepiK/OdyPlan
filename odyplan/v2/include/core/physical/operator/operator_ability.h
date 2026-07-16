@@ -4,18 +4,19 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include "core/physical/port/port_tuple.h"
+#include "core/physical/segment/segment_context.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
     class IProducer {
     public:
         virtual ~IProducer() = default;
-        virtual void produce(llvm::IRBuilder<>& builder, port::PortTupleConsumer consumer) = 0;
+        virtual void produce(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
     };
 
     class IConsumer {
     public:
         virtual ~IConsumer() = default;
-        virtual void consume(llvm::IRBuilder<>& builder, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
+        virtual void consume(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
     };
 }  // namespace sierra::odyplan::v2::core::physical::opr
 
