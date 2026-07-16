@@ -10,11 +10,13 @@ namespace sierra::odyplan::v2::core::physical::segment {
         llvm::Function* function;
         llvm::IRBuilder<> builder;
         common::storage::Storage storage;
+        const common::type::TypeRegistry& typeRegistry;
 
         SegmentContext(llvm::Function* fn, llvm::BasicBlock* block, llvm::LLVMContext& ctx, const common::type::TypeRegistry& typeRegistry)
             : function(fn),
                 builder(block),
-                storage(*fn, ctx, typeRegistry) {
+                storage(*fn, ctx, typeRegistry),
+                typeRegistry(typeRegistry) {
         }
     };
 }  // namespace sierra::odyplan::v2::core::physical::segment

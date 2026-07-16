@@ -44,10 +44,9 @@ namespace sierra::odyplan::v2::common::opr::source {
         class ReadOperator : public core::physical::opr::TypedSourceOperator {
         public:
             ReadOperator(core::physical::port::Port outputPort, const io::IOSourceId ioSourceId,
-                const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
+                core::logical::port::Port dataSchema)
                     : TypedSourceOperator(std::move(outputPort)),
                     mIOSourceId(ioSourceId),
-                    mTypeRegistry(typeRegistry),
                     mDataSchema(std::move(dataSchema)) {
                 if (mDataSchema.empty()) {
                     throw std::invalid_argument("ReadOperator: dataSchema is empty");
@@ -86,7 +85,7 @@ namespace sierra::odyplan::v2::common::opr::source {
                 for (const auto& dataField : mDataSchema) {
                     llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
                     llvm::Value* strValue = segmentCtx.builder.CreateCall(getFieldFn, {sourceId, fieldName});
-                    tuple.push_back(codegenField(segmentCtx.builder, strValue, dataField.typeId));
+                    tuple.push_back(codegenField(segmentCtx, strValue, dataField.typeId));
                 }
 
                 consumer(segmentCtx, tuple);
@@ -97,21 +96,20 @@ namespace sierra::odyplan::v2::common::opr::source {
 
         private:
             io::IOSourceId mIOSourceId;
-            const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 
-            llvm::Value* codegenField(llvm::IRBuilder<>& builder, llvm::Value* stringValue,
+            llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* stringValue,
                 const core::common::identifier::TypeId typeId) {
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
                     return stringValue;
                 }
 
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Module* module = builder.GetInsertBlock()->getModule();
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
                 std::string fnName;
-                llvm::Type* retTy = mTypeRegistry.resolveType(typeId, ctx);
+                llvm::Type* retTy = segmentCtx.typeRegistry.resolveType(typeId, ctx);
 
                 switch (typeId) {
                     case std::to_underlying(core::common::identifier::Type::BOOL): {
@@ -148,7 +146,7 @@ namespace sierra::odyplan::v2::common::opr::source {
 
                 auto* fnType = llvm::FunctionType::get(retTy, { ptrTy }, false);
                 auto fn = module->getOrInsertFunction(fnName, fnType);
-                return builder.CreateCall(fn, { stringValue });
+                return segmentCtx.builder.CreateCall(fn, { stringValue });
             }
         };
     }

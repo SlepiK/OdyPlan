@@ -54,10 +54,9 @@ namespace sierra::odyplan::v2::common::opr::sink {
     namespace physical {
         class WriteOperator : public core::physical::opr::TypedSinkOperator {
         public:
-            WriteOperator(const core::physical::port::Port &inputPort, const io::IOSinkId ioSinkId ,const core::common::type::TypeRegistry& typeRegistry, core::logical::port::Port dataSchema)
+            WriteOperator(const core::physical::port::Port &inputPort, const io::IOSinkId ioSinkId, core::logical::port::Port dataSchema)
                 : TypedSinkOperator(inputPort),
                     mIOSinkId(ioSinkId),
-                    mTypeRegistry(typeRegistry),
                     mDataSchema(std::move(dataSchema)) {
                 if (mDataSchema.empty()) {
                     throw std::invalid_argument("WriteOperator: dataSchema is empty");
@@ -78,7 +77,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
                     const auto& dataField = mDataSchema.at(i);
                     llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                    codegenField(segmentCtx.builder, index, fieldName, tuple.at(i), dataField.typeId);
+                    codegenField(segmentCtx, index, fieldName, tuple.at(i), dataField.typeId);
                 }
 
                 auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
@@ -87,29 +86,28 @@ namespace sierra::odyplan::v2::common::opr::sink {
 
         private:
             io::IOSinkId mIOSinkId;
-            const core::common::type::TypeRegistry& mTypeRegistry;
             core::logical::port::Port mDataSchema;
 
-            void codegenField(llvm::IRBuilder<>& builder, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
+            void codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
                 const core::common::identifier::TypeId typeId) {
 
-                llvm::LLVMContext& ctx = builder.getContext();
-                llvm::Module* module = builder.GetInsertBlock()->getModule();
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
                 auto* typeIdTy = llvm::Type::getInt64Ty(ctx);
 
-                llvm::Type* valueTy = mTypeRegistry.resolveType(typeId, ctx);
+                llvm::Type* valueTy = segmentCtx.typeRegistry.resolveType(typeId, ctx);
 
                 llvm::Value* ptrFieldValue = nullptr;
 
                 if (fieldValue->getType()->isPointerTy()) {
                     ptrFieldValue = fieldValue;
                 } else {
-                    auto* alca = builder.CreateAlloca(fieldValue->getType());
-                    builder.CreateStore(fieldValue, alca);
+                    auto* alca = segmentCtx.builder.CreateAlloca(fieldValue->getType());
+                    segmentCtx.builder.CreateStore(fieldValue, alca);
                     ptrFieldValue = alca;
                 }
 
@@ -118,7 +116,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, valueTy }, false)
                 );
 
-                builder.CreateCall(fn, { index, llvm::ConstantInt::get(idTy, typeId), fieldName, ptrFieldValue });
+                segmentCtx.builder.CreateCall(fn, { index, llvm::ConstantInt::get(idTy, typeId), fieldName, ptrFieldValue });
             }
         };
     }

@@ -44,10 +44,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     namespace physical {
         class SelectOperator : public core::physical::opr::TypedPipeOperator {
         public:
-            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const core::common::expression::IExpression& predicate, const core::common::type::TypeRegistry& typeRegistry)
+            SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const core::common::expression::IExpression& predicate)
                 : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
-                    mPredicate(predicate),
-                    mRegistry(typeRegistry) {
+                    mPredicate(predicate) {
             }
 
             void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
@@ -70,7 +69,6 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
         private:
             const core::common::expression::IExpression& mPredicate;
-            const core::common::type::TypeRegistry& mRegistry;
 
             llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
                 switch (expression.getExpressionType()) {
@@ -83,7 +81,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     }
                     case core::common::expression::ExpressionType::CONSTANT: {
                         const auto& constExpression = static_cast<const core::common::expression::ConstantExpression&>(expression);
-                        return mRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder, constExpression.getSerializedValue());
+                        return segmentCtx.typeRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder, constExpression.getSerializedValue());
                     }
                     case core::common::expression::ExpressionType::COMPARE: {
                         const auto& compareExpression = static_cast<const core::common::expression::CompareExpression&>(expression);

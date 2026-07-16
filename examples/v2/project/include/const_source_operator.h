@@ -54,7 +54,7 @@ namespace sierra::odyplan::v2::example::project {
                 segmentCtx.builder.CreateCondBr(stop, exitBB, produceBB);
                 segmentCtx.builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(builder.getContext()),5);
+                llvm::Value* valueField1 = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
 
                 std::string const exampleString = "ProjectOperator_Test";
                 llvm::GlobalVariable* stringRaw = segmentCtx.builder.CreateGlobalString(exampleString);

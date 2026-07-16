@@ -218,10 +218,6 @@ int main() {
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
 
-    /*logicalPlan.connect(
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0},
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});*/
-
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
@@ -232,7 +228,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v2::common::opr::source::logical::ReadOperator::TYPE_ID,
-        [&typeRegistry, &ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        [&ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::source::logical::ReadOperator&>(op);
@@ -241,7 +237,6 @@ int main() {
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::source::physical::ReadOperator>(
                 outputPorts.front(),
                 registerSource(ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig())),
-                typeRegistry,
                 concrete.getOutputPorts().at(0)
                 ));
             return ot;
@@ -257,19 +252,6 @@ int main() {
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
             ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::sink::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
-            return ot;
-        }
-    );
-
-    builder.registerOperatorTransformation(
-        sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator::TYPE_ID,
-        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
-            const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator&>(op);
-
-            sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate(), typeRegistry));
             return ot;
         }
     );
