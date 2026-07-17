@@ -12,6 +12,7 @@ namespace sierra::odyplan::v2::core::common::identifier {
         PRINT = 20,
         READ = 21,
         WRITE = 22,
+        WINDOW = 30,
     };
 }  // namespace sierra::odyplan::v2::core::common::identifier
 

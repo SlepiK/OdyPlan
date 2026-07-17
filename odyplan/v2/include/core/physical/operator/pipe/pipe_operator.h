@@ -71,19 +71,6 @@ namespace sierra::odyplan::v2::core::physical::opr {
 
         llvm::Value* mOperatorState = nullptr;
     };
-
-    class TypedWindowPipeOperator : public TypedBlockingPipeOperator {
-    public:
-        enum class WindowType : uint8_t {
-            TUMBLING,
-            SLIDING
-        };
-
-        TypedWindowPipeOperator(port::Ports inputPorts, port::Ports outputPorts) : TypedBlockingPipeOperator(std::move(inputPorts), std::move(outputPorts)) {
-        }
-
-        [[nodiscard]] virtual WindowType getWindowType() const = 0;
-    };
 }  // namespace sierra::odyplan::v2::core::physical::opr
 
 #endif  // SIERRA_ODYPLAN_V2_CORE_PHYSICAL_OPERATOR_PIPE_PIPEOPERATOR_H
