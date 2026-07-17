@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPEREGISTRY_H
 #define SIERRA_ODYPLAN_V2_CORE_COMMON_TYPE_TYPEREGISTRY_H
 
+#include <cmath>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/LLVMContext.h>
@@ -22,8 +23,8 @@ namespace sierra::odyplan::v2::core::common::type {
             return registry;
         }
 
-        void registerType(identifier::TypeId id, std::string name, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
-            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory)});
+        void registerType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory)});
         }
 
         [[nodiscard]] llvm::Type* resolveType(const identifier::TypeId id, llvm::LLVMContext& ctx) const {
@@ -34,9 +35,14 @@ namespace sierra::odyplan::v2::core::common::type {
             return get(id).constantFactory(builder, value);
         }
 
+        [[nodiscard]] std::size_t getByteSize(const identifier::TypeId id) const {
+            return get(id).byteSize;
+        }
+
     private:
         struct TypeRegistryEntry {
             std::string name;
+            std::size_t byteSize;
             LLVMTypeFactory typeFactory;
             ConstantFactory constantFactory;
         };
@@ -54,6 +60,7 @@ namespace sierra::odyplan::v2::core::common::type {
         void registerDefaults() {
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::BOOL), "bool",
+                sizeof(bool),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt1Ty(ctx);
                 },
@@ -64,6 +71,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT8), "int8",
+                sizeof(std::int8_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt8Ty(ctx);
                 },
@@ -74,6 +82,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT16), "int16",
+                sizeof(std::int16_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt16Ty(ctx);
                 },
@@ -84,6 +93,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT32), "int32",
+                sizeof(std::int32_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
                 },
@@ -94,6 +104,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64), "int64",
+                sizeof(std::int64_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt64Ty(ctx);
                 },
@@ -104,6 +115,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::FLOAT), "float",
+                sizeof(std::float_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getFloatTy(ctx);
                 },
@@ -114,6 +126,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE), "double",
+                sizeof(std::double_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getDoubleTy(ctx);
                 },
@@ -124,6 +137,17 @@ namespace sierra::odyplan::v2::core::common::type {
             );
             registerType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
+                sizeof(const char*),
+                [](llvm::LLVMContext& ctx) {
+                    return llvm::PointerType::getUnqual(ctx);
+                },
+                [](llvm::IRBuilder<>&b, const std::string& v) {
+                    return b.CreateGlobalString(v, "string_const");
+                }
+            );
+            /*registerType(
+                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
+                sizeof(const char*),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::StructType::get(ctx, {
                         //data_raw
@@ -148,7 +172,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     strStruct = b.CreateInsertValue(strStruct, len, 1);
                     return strStruct;
                 }
-            );
+            );*/
         }
     };
 }
