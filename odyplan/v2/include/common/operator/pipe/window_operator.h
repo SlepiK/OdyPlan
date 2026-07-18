@@ -3,6 +3,7 @@
 
 #include <llvm/IR/Module.h>
 
+#include "common/window/window_config.h"
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
 
@@ -15,49 +16,19 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 SLIDING,
             };
 
-            enum class WindowTrigger : std::uint8_t {
-                COUNT,
-                TIME,
-            };
-
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::WINDOW);
 
-            WindowOperator(const WindowType windowType, const WindowTrigger windowTrigger, const std::uint64_t size, const std::uint64_t slide)
-                : mWindowType(windowType),
-                    mWindowTrigger(windowTrigger),
-                    mSize(size),
-                    mSlide(slide) {
-                if (size == 0) {
-                    throw std::invalid_argument("WindowOperator: size cannot be 0.");
-                }
-
-                if (windowType == WindowType::TUMBLING && slide != size) {
-                    throw std::invalid_argument("WindowOperator: tumbling requires slide equal to size");
-                }
-
-                if (windowType == WindowType::SLIDING && (slide == 0 || slide > size)) {
-                    throw std::invalid_argument("WindowOperator: sliding requires 0 < slide <= size");
-                }
+            explicit WindowOperator(window::WindowConfig config)
+                : mWindowConfig(std::move(config)) {
+                std::visit([](const auto& wConfig) {checkConfig(wConfig); }, mWindowConfig);
             }
 
             [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
 
-            [[nodiscard]] WindowType getWindowType() const {
-                return mWindowType;
-            }
-
-            [[nodiscard]] WindowTrigger getWindowTrigger() const {
-                return mWindowTrigger;
-            }
-
-            [[nodiscard]] std::uint64_t getSize() const {
-                return mSize;
-            }
-
-            [[nodiscard]] std::uint64_t getSlide() const {
-                return mSlide;
+            [[nodiscard]] const window::WindowConfig& getWindowConfig() const {
+                return mWindowConfig;
             }
 
         protected:
@@ -65,10 +36,30 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
         private:
-            WindowType mWindowType;
-            WindowTrigger mWindowTrigger;
-            std::uint64_t mSize;
-            std::uint64_t mSlide;
+            window::WindowConfig mWindowConfig;
+
+            template <typename T>
+            static void checkCommonConfig(const WindowType windowType, const T windowSize, const T windowSlide) {
+                if (windowSize == T{0}) {
+                    throw std::invalid_argument("window size cant be 0");
+                }
+
+                if (windowType == WindowType::TUMBLING && windowSlide != windowSize) {
+                    throw std::invalid_argument("window size and slide must be equal for TUMBLING");
+                }
+
+                if (windowType == WindowType::SLIDING && (windowSlide == T{0} || windowSlide > windowSize)) {
+                    throw std::invalid_argument("sliding requires 0 < slide <= size");
+                }
+            }
+
+            static void checkConfig(const window::CountWindowConfig& config) {
+                checkCommonConfig(config.type, config.size, config.slide);
+            }
+
+            static void checkConfig(const window::TimeWindowConfig& config) {
+                checkCommonConfig(config.type, config.size, config.slide);
+            }
         };
     }
 
@@ -98,8 +89,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     codegenPush(segmentCtx, wHandle, tuple.at(i), getOutputPorts().at(0).at(i).typeId);
                 }
 
-                auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty }, false));
-                segmentCtx.builder.CreateCall(endWindowFn, { wHandle });
+                auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty, i64Ty }, false));
+                segmentCtx.builder.CreateCall(endWindowFn, { wHandle, llvm::ConstantInt::get(i64Ty, 0) });
             }
             //produce
             void probe(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
@@ -110,6 +101,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i1Ty = llvm::Type::getInt1Ty(ctx);
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+                auto* ptrTy = llvm::PointerType::getUnqual(ctx);
                 llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
 
                 auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
@@ -149,7 +141,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 llvm::Value* wRowIndex = segmentCtx.builder.CreateLoad(i64Ty, windowRowIndex);
                 llvm::Value* wRowCond = segmentCtx.builder.CreateICmpSLT(wRowIndex, wRowCount);
-                segmentCtx.builder.CreateCondBr(wCond, wRowBodyBB, wRowExitBB);
+                segmentCtx.builder.CreateCondBr(wRowCond, wRowBodyBB, wRowExitBB);
 
                 segmentCtx.builder.SetInsertPoint(wRowBodyBB);
 

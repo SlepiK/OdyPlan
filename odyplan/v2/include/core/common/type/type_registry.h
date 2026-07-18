@@ -142,37 +142,9 @@ namespace sierra::odyplan::v2::core::common::type {
                     return llvm::PointerType::getUnqual(ctx);
                 },
                 [](llvm::IRBuilder<>&b, const std::string& v) {
-                    return b.CreateGlobalString(v, "string_const");
+                    return b.CreateGlobalString(v);
                 }
             );
-            /*registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
-                sizeof(const char*),
-                [](llvm::LLVMContext& ctx) {
-                    return llvm::StructType::get(ctx, {
-                        //data_raw
-                        llvm::PointerType::get(ctx, 0),
-                        //data_length
-                        llvm::Type::getInt64Ty(ctx)
-                    });
-                },
-                [](llvm::IRBuilder<>&b, const std::string& v) {
-                    auto& ctx = b.getContext();
-                    llvm::Value* ptr = b.CreateGlobalString(v, "string_const");
-                    llvm::Value* len = llvm::ConstantInt::get(
-                        llvm::Type::getInt64Ty(ctx),
-                        v.size()
-                    );
-                    llvm::Type* structType = llvm::StructType::get(ctx, {
-                        llvm::PointerType::get(ctx, 0),
-                        llvm::Type::getInt64Ty(ctx)
-                    });
-                    llvm::Value* strStruct = llvm::UndefValue::get(structType);
-                    strStruct = b.CreateInsertValue(strStruct, ptr, 0);
-                    strStruct = b.CreateInsertValue(strStruct, len, 1);
-                    return strStruct;
-                }
-            );*/
         }
     };
 }

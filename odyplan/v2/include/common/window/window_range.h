@@ -5,7 +5,7 @@
 namespace sierra::odyplan::v2::common::window {
     struct WindowRange {
         std::uint64_t start;
-        std::uint64_t end;
+        std::uint64_t count;
     };
 }
 

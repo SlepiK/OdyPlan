@@ -16,6 +16,7 @@
 #include "common/operator/pipe/select_operator.h"
 #include "common/operator/pipe/window_operator.h"
 #include "common/operator/source/read_operator.h"
+#include "common/window/window_buffer.h"
 
 inline std::atomic<bool> atStop{false};
 
@@ -26,8 +27,39 @@ inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_pt
     return gSources.size() - 1;
 }
 
+inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::WindowBuffer>> gWindows;
+
 
 extern "C" {
+
+    void rtWindowBeginRow(const std::uint64_t handle) {
+        gWindows.at(handle)->begin();
+    }
+
+    void rtWindowPush(const std::uint64_t handle, const std::uint64_t index, const void* rawData) {
+        gWindows.at(handle)->push(index, rawData);
+    }
+
+    void rtWindowEndRow(const std::uint64_t handle) {
+        gWindows.at(handle)->end(nowMillis());
+    }
+
+    void rtWindowCompile(const std::uint64_t handle) {
+        gWindows.at(handle)->compute();
+    }
+
+    std::uint64_t rtWindowGetCount(const std::uint64_t handle) {
+        return gWindows.at(handle)->getWindowCount();
+    }
+
+    std::uint64_t rtWindowGetRowCountInWindow(const std::uint64_t handle, const std::uint64_t index) {
+        return gWindows.at(handle)->getRowCountInWindow(index);
+    }
+
+    void rtWindowGetData(const std::uint64_t handle, const uint64_t index, const uint64_t rowIndex, const uint64_t dataIndex, void* outBuffer) {
+        gWindows.at(handle).get(index, rowIndex, dataIndex, outBuffer);
+    }
+
     void rtEnd() {
     }
 
