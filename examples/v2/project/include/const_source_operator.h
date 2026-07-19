@@ -34,7 +34,7 @@ namespace sierra::odyplan::v2::example::project {
             explicit ConstantSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
             }
 
-            void produce(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumer consumer) override {
 #ifdef ENABLE_LOOPED_SOURCE
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();

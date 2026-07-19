@@ -8,6 +8,7 @@ if(NOT spdlog_FOUND)
             spdlog
             GIT_REPOSITORY https://github.com/gabime/spdlog.git
             GIT_TAG v1.17.0
+            SYSTEM
     )
     FetchContent_MakeAvailable(
             spdlog
@@ -24,6 +25,7 @@ if(NOT nlohmann_json_FOUND)
             nlohmann_json
             GIT_REPOSITORY https://github.com/nlohmann/json.git
             GIT_TAG v3.12.0
+            SYSTEM
     )
     FetchContent_MakeAvailable(nlohmann_json)
 endif()

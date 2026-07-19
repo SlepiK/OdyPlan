@@ -3,7 +3,6 @@
 #include <llvm/IR/Module.h>
 #include <nlohmann/json.hpp>
 
-#include "common/io/io_data.h"
 #include "common/io/io_format.h"
 #include "common/io/io_source.h"
 #include "core/common/type/type_registry.h"
@@ -53,7 +52,7 @@ namespace sierra::odyplan::v2::common::opr::source {
                 }
             }
 
-            void produce(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumer consumer) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
@@ -71,10 +70,10 @@ namespace sierra::odyplan::v2::common::opr::source {
                 segmentCtx.builder.CreateBr(loopBB);
                 segmentCtx.builder.SetInsertPoint(loopBB);
 
-                auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {idTy}, false));
+                const auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {idTy}, false));
                 llvm::Value* hasNext = segmentCtx.builder.CreateCall(hasNextFn, {sourceId});
 
-                auto stopFn = module->getOrInsertFunction("odyStop", llvm::FunctionType::get(i1Ty, {}, false));
+                const auto stopFn = module->getOrInsertFunction("odyStop", llvm::FunctionType::get(i1Ty, {}, false));
                 llvm::Value* stopped = segmentCtx.builder.CreateCall(stopFn, {});
                 llvm::Value* notStopped = segmentCtx.builder.CreateNot(stopped);
                 llvm::Value* shouldContinue = segmentCtx.builder.CreateAnd(hasNext, notStopped);
@@ -83,7 +82,7 @@ namespace sierra::odyplan::v2::common::opr::source {
 
                 segmentCtx.builder.SetInsertPoint(produceBB);
 
-                auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {idTy, ptrTy}, false));
+                const auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {idTy, ptrTy}, false));
 
                 core::physical::port::PortTuple tuple;
                 tuple.reserve(mDataSchema.size());
@@ -104,7 +103,7 @@ namespace sierra::odyplan::v2::common::opr::source {
             io::IOSourceId mIOSourceId;
             core::logical::port::Port mDataSchema;
 
-            llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* stringValue,
+            static llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* stringValue,
                 const core::common::identifier::TypeId typeId) {
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
                     return stringValue;
@@ -151,7 +150,7 @@ namespace sierra::odyplan::v2::common::opr::source {
                 }
 
                 auto* fnType = llvm::FunctionType::get(retTy, { ptrTy }, false);
-                auto fn = module->getOrInsertFunction(fnName, fnType);
+                const auto fn = module->getOrInsertFunction(fnName, fnType);
                 return segmentCtx.builder.CreateCall(fn, { stringValue });
             }
         };

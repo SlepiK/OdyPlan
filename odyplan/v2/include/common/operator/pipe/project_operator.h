@@ -6,7 +6,6 @@
 
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
-#include "core/common/port/port_ref.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111207/Project+operator)
@@ -93,7 +92,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mMapping(std::move(mapping)){
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) override {
                 core::physical::port::PortTuple projected;
                 projected.reserve(mMapping.size());
 
@@ -101,7 +100,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     if (index >= tuple.size()) {
                         throw std::invalid_argument("ProjectOperator: index out of range");
                     }
-                    projected.push_back(tuple[index]);
+                    projected.push_back(tuple.at(index));
                 }
 
                 consumer(segmentCtx, projected);

@@ -1,14 +1,12 @@
 #ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_SELECTOPERATOR_H
 #define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_SELECTOPERATOR_H
 
-#include <string>
 #include <vector>
 
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
-#include "core/common/port/port_ref.h"
 #include "core/common/expression/expression.h"
-#include "../../../core/common/type/type_registry.h"
+#include "core/common/type/type_registry.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     //ToDo: Mapping from Odysseus-Operator Project (https://wiki.odysseus.informatik.uni-oldenburg.de/spaces/ODYSSEUS/pages/7111226/Select+operator)
@@ -49,7 +47,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mPredicate(predicate) {
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
@@ -73,30 +71,35 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         private:
             const core::common::expression::IExpression& mPredicate;
 
-            llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
+            static llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
                 switch (expression.getExpressionType()) {
-                    case core::common::expression::ExpressionType::FIELDREFERENCE: {
+                    case core::common::expression::ExpressionType::FIELD_REFERENCE: {
+                        // NOLINTNEXTLINE
                         const auto& fieldRefExpression = static_cast<const core::common::expression::FieldReferenceExpression&>(expression);
                         if (fieldRefExpression.getFieldIndex() >= tuple.size()) {
                             throw std::out_of_range("SelectOperator: field index out of range");
                         }
-                        return tuple[fieldRefExpression.getFieldIndex()];
+                        return tuple.at(fieldRefExpression.getFieldIndex());
                     }
                     case core::common::expression::ExpressionType::CONSTANT: {
+                        // NOLINTNEXTLINE
                         const auto& constExpression = static_cast<const core::common::expression::ConstantExpression&>(expression);
                         return segmentCtx.typeRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder, constExpression.getSerializedValue());
                     }
                     case core::common::expression::ExpressionType::COMPARE: {
+                        // NOLINTNEXTLINE
                         const auto& compareExpression = static_cast<const core::common::expression::CompareExpression&>(expression);
                         llvm::Value* left = codegenExpression(segmentCtx, tuple, compareExpression.getLeftPart());
                         llvm::Value* right = codegenExpression(segmentCtx, tuple, compareExpression.getRightPart());
                         return codegenCompare(segmentCtx.builder, left, right, compareExpression.getOpr());
                     }
                     case core::common::expression::ExpressionType::LOGICAL: {
+                        // NOLINTNEXTLINE
                         const auto& logicalExpression = static_cast<const core::common::expression::LogicalExpression&>(expression);
                         llvm::Value* left = codegenExpression(segmentCtx, tuple, logicalExpression.getLeftPart());
-                        if (logicalExpression.isUnary())
+                        if (logicalExpression.isUnary()) {
                             return segmentCtx.builder.CreateNot(left, "not");
+                        }
                         llvm::Value* right = codegenExpression(segmentCtx, tuple, *logicalExpression.getRightPart());
                         switch (logicalExpression.getOpr()) {
                             case core::common::expression::LogicalExpression::LogicalOp::AND: {
@@ -114,8 +117,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 }
             }
 
-            llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, core::common::expression::CompareExpression::CompareOp opr) {
-                bool isFloat = left->getType()->isFloatingPointTy();
+            static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, const core::common::expression::CompareExpression::CompareOp opr) {
+                const bool isFloat = left->getType()->isFloatingPointTy();
+                // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
                 switch (opr) {
                     case core::common::expression::CompareExpression::CompareOp::EQ: {
                         return isFloat ? builder.CreateFCmpOEQ(left, right, "eq") : builder.CreateICmpEQ(left, right, "eq");
@@ -138,6 +142,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     default:
                         throw std::invalid_argument("SelectOperator: unsupported compare type");
                 }
+                // NOLINTEND(clang-analyzer-security.ArrayBound)
             }
         };
     }

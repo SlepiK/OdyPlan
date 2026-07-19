@@ -2,13 +2,14 @@
 #define SIERRA_ODYPLAN_V2_CORE_COMMON_EXPRESSION_EXPRESSION_H
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 
 #include "../identifier/type.h"
 
 namespace sierra::odyplan::v2::core::common::expression {
-    enum class ExpressionType {
-        FIELDREFERENCE,
+    enum class ExpressionType : std::uint8_t {
+        FIELD_REFERENCE,
         CONSTANT,
         COMPARE,
         LOGICAL
@@ -16,18 +17,23 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     class IExpression {
     public:
+        IExpression() = default;
         virtual ~IExpression() = default;
+        IExpression(IExpression const&) = delete;
+        IExpression& operator =(IExpression const&) = delete;
+        IExpression(IExpression&&) = delete;
+        IExpression& operator=(IExpression&&) = delete;
         [[nodiscard]] virtual ExpressionType getExpressionType() const = 0;
     };
 
     class FieldReferenceExpression : public IExpression {
     public:
-        explicit FieldReferenceExpression(std::size_t fieldIndex)
+        explicit FieldReferenceExpression(const std::size_t fieldIndex)
             : mFieldIndex(fieldIndex) {
         }
 
         [[nodiscard]] ExpressionType getExpressionType() const override {
-            return ExpressionType::FIELDREFERENCE;
+            return ExpressionType::FIELD_REFERENCE;
         }
 
         [[nodiscard]] std::size_t getFieldIndex() const {
@@ -40,7 +46,7 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     class ConstantExpression : public IExpression {
     public:
-        explicit ConstantExpression(identifier::TypeId typeId, std::string serializedValue)
+        explicit ConstantExpression(const identifier::TypeId typeId, std::string serializedValue)
             : mTypeId(typeId),
                 mSerializedValue(std::move(serializedValue)) {
         }
@@ -64,7 +70,7 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     class CompareExpression : public IExpression {
     public:
-        enum class CompareOp {
+        enum class CompareOp : std::uint8_t {
             EQ, //EQUAL
             NE, //NOT_EQUAL
             LT, //LESS_THAN
@@ -103,7 +109,7 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     class LogicalExpression : public IExpression {
     public:
-        enum class LogicalOp {
+        enum class LogicalOp : std::uint8_t {
             AND,
             OR,
             NOT,
@@ -169,7 +175,7 @@ namespace sierra::odyplan::v2::core::common::expression {
     }
 
     inline std::unique_ptr<IExpression> cBool(const bool value) {
-        return constant(static_cast<identifier::TypeId>(identifier::Type::BOOL), std::to_string(value));
+        return constant(static_cast<identifier::TypeId>(identifier::Type::BOOL), std::to_string(static_cast<int>(value)));
     }
 
     inline std::unique_ptr<IExpression> cString(const std::string& value) {
@@ -178,6 +184,7 @@ namespace sierra::odyplan::v2::core::common::expression {
 
     //
 
+    // NOLINTBEGIN
     inline std::unique_ptr<IExpression> EQ(std::unique_ptr<IExpression> leftPart, std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(std::move(leftPart), CompareExpression::CompareOp::EQ, std::move(rightPart));
     }
@@ -213,6 +220,7 @@ namespace sierra::odyplan::v2::core::common::expression {
     inline std::unique_ptr<IExpression> NOT(std::unique_ptr<IExpression> oprAffected) {
         return std::make_unique<LogicalExpression>(LogicalExpression::LogicalOp::NOT, std::move(oprAffected));
     }
+    // NOLINTEND
 
 }  // namespace sierra::odyplan::v2::core::common::expression
 

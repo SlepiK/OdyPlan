@@ -3,6 +3,7 @@
 
 #include "core/logical/operator/operator.h"
 #include "core/logical/port/port.h"
+#include "core/common/ident.h"
 
 namespace sierra::odyplan::v2::core::logical::opr {
     class ISinkOperator : public IOperator, public IBindable {

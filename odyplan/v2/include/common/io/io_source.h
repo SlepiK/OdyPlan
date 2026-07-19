@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V2_COMMON_IO_IOSOURCE_H
 
 #include <cstdint>
-#include <optional>
 #include "io_data.h"
 
 namespace sierra::odyplan::v2::common::io {
@@ -10,7 +9,12 @@ namespace sierra::odyplan::v2::common::io {
 
     class IIOSource {
     public:
+        IIOSource() = default;
         virtual ~IIOSource() = default;
+        IIOSource(IIOSource const&) = delete;
+        IIOSource& operator =(IIOSource const&) = delete;
+        IIOSource(IIOSource&&) = delete;
+        IIOSource& operator=(IIOSource&&) = delete;
 
         [[nodiscard]] virtual bool available() = 0;
 

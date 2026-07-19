@@ -6,7 +6,12 @@
 namespace sierra::odyplan::v2::common::window {
     class IWindowBuffer {
     public:
+        IWindowBuffer() = default;
         virtual ~IWindowBuffer() = default;
+        IWindowBuffer(IWindowBuffer const&) = delete;
+        IWindowBuffer& operator =(IWindowBuffer const&) = delete;
+        IWindowBuffer(IWindowBuffer&&) = delete;
+        IWindowBuffer& operator=(IWindowBuffer&&) = delete;
 
         virtual void begin() = 0;
 

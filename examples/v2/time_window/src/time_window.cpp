@@ -14,35 +14,34 @@
 #include <sys/socket.h>
 
 #include "common/io/io_registry.h"
-#include "common/operator/pipe/select_operator.h"
-#include "../../../../odyplan/v2/include/common/operator/pipe/window/count_window_operator.h"
 #include "common/operator/pipe/window/time_window_operator.h"
 #include "common/operator/source/read_operator.h"
 #include "common/window/window_buffer.h"
-#include "common/window/count/count_window_buffer.h"
 #include "common/window/time/time_window_buffer.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic atStop{false};
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
 
-inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
-    gSources.push_back(std::move(source));
-    return gSources.size() - 1;
-}
-
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer>> gWindows;
-
-inline std::uint64_t registerWindow(std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer> window) {
-    gWindows.push_back(std::move(window));
-    return gWindows.size() - 1;
-}
-
-inline void shutdownWindows() {
-    for (const auto &window : gWindows) {
-        window->close();
+    sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
+        gSources.push_back(std::move(source));
+        return gSources.size() - 1;
     }
-    gWindows.clear();
+
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer>> gWindows;
+
+    std::uint64_t registerWindow(std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer> window) {
+        gWindows.push_back(std::move(window));
+        return gWindows.size() - 1;
+    }
+
+    void shutdownWindows() {
+        for (const auto &window : gWindows) {
+            window->close();
+        }
+        gWindows.clear();
+    }
 }
 
 extern "C" {
@@ -56,7 +55,7 @@ extern "C" {
     }
 
     void rtWindowEndRow(const std::uint64_t handle, const std::int64_t timestamp) {
-        gWindows.at(handle)->end(std::chrono::sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(timestamp)));
+        gWindows.at(handle)->end(std::chrono::sys_time(std::chrono::milliseconds(timestamp)));
     }
 
     void rtWindowCompute(const std::uint64_t handle) {
@@ -76,7 +75,7 @@ extern "C" {
     }
 
     const void* rtWindowGetData(const std::uint64_t handle, const uint64_t windowIndex, const uint64_t rowIndex, const uint64_t fieldIndex) {
-        return static_cast<const void*>(gWindows.at(handle)->getData(windowIndex, rowIndex, fieldIndex));
+        return gWindows.at(handle)->getData(windowIndex, rowIndex, fieldIndex);
     }
 
     void rtEnd() {
@@ -185,7 +184,7 @@ extern "C" {
             throw std::invalid_argument("rtParseInt64: invalid argument or out of range");
         }
 
-        return static_cast<std::int64_t>(value);
+        return value;
     }
 
     std::float_t rtParseFloat(const char* str) {
@@ -294,7 +293,7 @@ int main() {
     auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
     auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
 
-    WindowShutdownGuard windowShutdownGuard;
+    WindowShutdownGuard const windowShutdownGuard;
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
@@ -345,7 +344,7 @@ int main() {
     );
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v2::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";

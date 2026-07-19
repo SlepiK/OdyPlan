@@ -4,13 +4,14 @@
 #include <fstream>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <utility>
 #include "common/io/io_sink.h"
 
 namespace sierra::odyplan::v2::common::io {
     class JsonSink : public IIOSink {
     public:
-        explicit JsonSink(const std::string& path)
-            : mPath(path),
+        explicit JsonSink(std::string  path)
+            : mPath(std::move(path)),
                 mData(nlohmann::json::array()) {
         }
 
@@ -20,16 +21,23 @@ namespace sierra::odyplan::v2::common::io {
                     JsonSink::flush();
                 }
             } catch (...) {
+                std::fputs("JsonSink: flush failed in destructor (unknown exception)\n", stderr);
             }
         }
+
+        JsonSink(JsonSink const&) = delete;
+        JsonSink& operator =(JsonSink const&) = delete;
+        JsonSink(JsonSink&&) = delete;
+        JsonSink& operator=(JsonSink&&) = delete;
 
         void begin() override {
             mCurrent = nlohmann::json::object();
         }
 
-        void write(const char* key, core::common::identifier::TypeId typeId, const void* rawData) override {
+        void write(const char* key, const core::common::identifier::TypeId typeId, const void* rawData) override {
             using T = core::common::identifier::Type;
 
+            // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             switch (typeId) {
                 case std::to_underlying(T::BOOL):
                     mCurrent[key] = *static_cast<const bool*>(rawData);
@@ -58,6 +66,7 @@ namespace sierra::odyplan::v2::common::io {
                 default:
                     throw std::invalid_argument("JsonSink: Unknown typeId");
             }
+            // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
         }
 
         void end() override {

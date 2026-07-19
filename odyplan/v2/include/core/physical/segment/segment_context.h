@@ -1,6 +1,6 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_PHYSICAL_SEGMENT_SEGMENTCONTEXT_H
 #define SIERRA_ODYPLAN_V2_CORE_PHYSICAL_SEGMENT_SEGMENTCONTEXT_H
-#include <llvm/IR/Function.h>
+
 #include <llvm/IR/IRBuilder.h>
 
 #include "core/common/storage/storage.h"
