@@ -9,13 +9,23 @@
 namespace sierra::odyplan::v2::core::physical::opr {
     class IProducer {
     public:
+        IProducer() = default;
         virtual ~IProducer() = default;
+        IProducer(IProducer const&) = delete;
+        IProducer& operator =(IProducer const&) = delete;
+        IProducer(IProducer&&) = delete;
+        IProducer& operator=(IProducer&&) = delete;
         virtual void produce(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
     };
 
     class IConsumer {
     public:
+        IConsumer() = default;
         virtual ~IConsumer() = default;
+        IConsumer(IConsumer const&) = delete;
+        IConsumer& operator =(IConsumer const&) = delete;
+        IConsumer(IConsumer&&) = delete;
+        IConsumer& operator=(IConsumer&&) = delete;
         virtual void consume(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
         virtual void end(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
     };
