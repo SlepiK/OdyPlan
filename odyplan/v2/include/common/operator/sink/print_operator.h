@@ -91,6 +91,9 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 codegenPrint(segmentCtx.builder, module, "rtOdyPrintNewline");
             }
 
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            }
+
         private:
             PortFieldIndexV mPortFieldIndices;
 

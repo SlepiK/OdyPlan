@@ -29,10 +29,10 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     }
 
     namespace physical {
-        class WindowOperatorBase : public core::physical::opr::TypedBlockingPipeOperator {
+        class WindowOperatorBase : public core::physical::opr::TypedPipeOperator {
         public:
             WindowOperatorBase(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const std::uint64_t windowHandle)
-                : TypedBlockingPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
+                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
                     mWindowHandle(windowHandle) {
             }
 
@@ -41,7 +41,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
             virtual llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, llvm::Type* i64Ty) = 0;
 
-            void build(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple) final {
+            void consume(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -61,65 +61,81 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty, i64Ty }, false));
                 segmentCtx.builder.CreateCall(endWindowFn, { wHandle, timestamp });
-            }
-
-
-            void probe(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
-                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
-                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
-                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
-
-                auto* voidTy = llvm::Type::getVoidTy(ctx);
-                auto* i1Ty = llvm::Type::getInt1Ty(ctx);
-                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-                auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-                llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
 
                 auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(computeWindowFn, { wHandle });
 
+                drainWindows(segmentCtx, wHandle, consumer, "wc");
+            }
+
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+                auto* voidTy = llvm::Type::getVoidTy(ctx);
+                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+
+                llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
+
+                auto flushFn = module->getOrInsertFunction("rtWindowFlush", llvm::FunctionType::get(voidTy, { i64Ty }, false));
+                segmentCtx.builder.CreateCall(flushFn, { wHandle });
+
+                drainWindows(segmentCtx, wHandle, consumer, "wf");
+            }
+
+        private:
+            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer, const char* labelPrefix) {
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+
                 auto windowCountFn = module->getOrInsertFunction("rtWindowGetCount", llvm::FunctionType::get(i64Ty, { i64Ty }, false));
-                llvm::Value* wCount = segmentCtx.builder.CreateCall(windowCountFn, { wHandle });
+                llvm::Value* wCount = segmentCtx.builder.CreateCall(windowCountFn, { windowHandle });
 
                 auto* windowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
                 segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowIndex);
 
-                auto* wHeaderBB = llvm::BasicBlock::Create(ctx, "windowHeader", fn);
-                auto* wBodyBB = llvm::BasicBlock::Create(ctx, "windowBody", fn);
-                auto* wExitBB = llvm::BasicBlock::Create(ctx, "windowExit", fn);
+                auto* wHeaderBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Header", fn);
+                auto* wBodyBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Body", fn);
+                auto* wExitBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Exit", fn);
 
                 segmentCtx.builder.CreateBr(wHeaderBB);
                 segmentCtx.builder.SetInsertPoint(wHeaderBB);
 
                 llvm::Value* wIndex = segmentCtx.builder.CreateLoad(i64Ty, windowIndex);
                 llvm::Value* wCond = segmentCtx.builder.CreateICmpSLT(wIndex, wCount);
+
                 segmentCtx.builder.CreateCondBr(wCond, wBodyBB, wExitBB);
 
                 segmentCtx.builder.SetInsertPoint(wBodyBB);
 
                 auto windowRowCountFn = module->getOrInsertFunction("rtWindowGetRowCountInWindow",llvm::FunctionType::get(i64Ty, { i64Ty, i64Ty }, false));
-                llvm::Value* wRowCount = segmentCtx.builder.CreateCall(windowRowCountFn, { wHandle, wIndex });
+                llvm::Value* wRowCount = segmentCtx.builder.CreateCall(windowRowCountFn, { windowHandle, wIndex });
 
                 auto* windowRowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
                 segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowRowIndex);
 
-                auto* wRowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
-                auto* wRowBodyBB = llvm::BasicBlock::Create(ctx, "windowRowBody", fn);
-                auto* wRowExitBB = llvm::BasicBlock::Create(ctx, "windowRowExit", fn);
+                auto* wRowHeaderBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowHeader", fn);
+                auto* wRowBodyBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowBody", fn);
+                auto* wRowExitBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowExit", fn);
 
                 segmentCtx.builder.CreateBr(wRowHeaderBB);
                 segmentCtx.builder.SetInsertPoint(wRowHeaderBB);
 
                 llvm::Value* wRowIndex = segmentCtx.builder.CreateLoad(i64Ty, windowRowIndex);
                 llvm::Value* wRowCond = segmentCtx.builder.CreateICmpSLT(wRowIndex, wRowCount);
+
                 segmentCtx.builder.CreateCondBr(wRowCond, wRowBodyBB, wRowExitBB);
 
                 segmentCtx.builder.SetInsertPoint(wRowBodyBB);
 
                 core::physical::port::PortTuple emit;
+
                 emit.reserve(getOutputPorts().at(0).size());
                 for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
-                    emit.push_back(codegenGet(segmentCtx, wHandle, wIndex, wRowIndex, llvm::ConstantInt::get(i64Ty, i), getOutputPorts().at(0).at(i).typeId));
+                    emit.push_back(codegenGet(segmentCtx, windowHandle, wIndex, wRowIndex, llvm::ConstantInt::get(i64Ty, i), getOutputPorts().at(0).at(i).typeId));
                 }
 
                 consumer(segmentCtx, emit);
@@ -131,12 +147,12 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 segmentCtx.builder.SetInsertPoint(wRowExitBB);
                 llvm::Value* wNext = segmentCtx.builder.CreateAdd(wIndex, llvm::ConstantInt::get(i64Ty, 1));
                 segmentCtx.builder.CreateStore(wNext, windowIndex);
+
                 segmentCtx.builder.CreateBr(wHeaderBB);
 
                 segmentCtx.builder.SetInsertPoint(wExitBB);
             }
 
-        private:
             void codegenPush(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* value, const core::common::identifier::TypeId typeId, const std::size_t fieldIndex) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();

@@ -11,6 +11,7 @@
 #include "core/builder/plan_builder.h"
 
 #include <atomic>
+#include <sys/socket.h>
 
 #include "common/io/io_registry.h"
 #include "common/operator/pipe/select_operator.h"
@@ -52,12 +53,16 @@ extern "C" {
         gWindows.at(handle)->push(fieldIndex, rawData);
     }
 
-    void rtWindowEndRow(const std::uint64_t handle, std::int64_t timestamp) {
+    void rtWindowEndRow(const std::uint64_t handle, const std::int64_t timestamp) {
         gWindows.at(handle)->end(std::chrono::sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(timestamp)));
     }
 
     void rtWindowCompute(const std::uint64_t handle) {
         gWindows.at(handle)->compute();
+    }
+
+    void rtWindowFlush(const std::uint64_t handle) {
+        gWindows.at(handle)->flush();
     }
 
     std::uint64_t rtWindowGetCount(const std::uint64_t handle) {
@@ -242,6 +247,11 @@ extern "C" {
     }
 }
 
+struct WindowShutdownGuard {
+    ~WindowShutdownGuard() {
+        shutdownWindows();
+    }
+};
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
@@ -277,6 +287,8 @@ int main() {
     std::cout << "Building Physical Plan...\n";
     auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
     auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
+
+    WindowShutdownGuard windowShutdownGuard;
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
@@ -332,7 +344,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("example_window",*ctx);
+    auto module = std::make_unique<llvm::Module>("example_count_window",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
@@ -366,6 +378,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtWindowCompute")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowCompute),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtWindowPush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowPush),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtWindowEndRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowEndRow),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowFlush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowFlush),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
@@ -421,8 +434,6 @@ int main() {
     atStop.store(true);
     mainThread.join();
 #endif
-
-    shutdownWindows();
 
     return 0;
 }

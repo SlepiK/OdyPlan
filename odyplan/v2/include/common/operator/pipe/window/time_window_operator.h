@@ -39,9 +39,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     }
 
     namespace physical {
-        class TimeWindowOperator final : WindowOperatorBase {
+        class TimeWindowOperator final : public WindowOperatorBase {
         public:
-            TimeWindowOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, std::uint64_t windowHandle, std::size_t timestampIndex)
+            TimeWindowOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const std::uint64_t windowHandle, const std::size_t timestampIndex)
                 : WindowOperatorBase(std::move(inputPort), std::move(outputPort), windowHandle),
                     mTimestampIndex(timestampIndex) {
             }

@@ -106,6 +106,10 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 consumer(segmentCtx, projected);
             }
+
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            }
+
         private:
             Mapping mMapping;
         };
