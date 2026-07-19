@@ -3,7 +3,6 @@
 #include <llvm/IR/Module.h>
 #include <nlohmann/json.hpp>
 
-#include "common/io/io_data.h"
 #include "common/io/io_format.h"
 #include "common/io/io_source.h"
 #include "core/common/type/type_registry.h"

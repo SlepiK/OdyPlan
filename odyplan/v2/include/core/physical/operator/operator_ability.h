@@ -1,8 +1,6 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_PHYSICAL_OPERATOR_OPERATORABILITY_H
 #define SIERRA_ODYPLAN_V2_CORE_PHYSICAL_OPERATOR_OPERATORABILITY_H
 
-#include <llvm/IR/IRBuilder.h>
-
 #include "core/physical/port/port_tuple.h"
 #include "core/physical/segment/segment_context.h"
 

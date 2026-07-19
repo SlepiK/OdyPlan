@@ -1,8 +1,6 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_PIPE_PIPEOPERATOR_H
 #define SIERRA_ODYPLAN_V2_CORE_LOGICAL_OPERATOR_PIPE_PIPEOPERATOR_H
 
-#include <algorithm>
-
 #include "core/logical/operator/operator.h"
 #include "core/logical/port/port.h"
 

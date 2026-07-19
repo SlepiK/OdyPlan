@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V2_COMMON_IO_JSON_JSONSINK_H
 
 #include <fstream>
-#include <print>
 #include <string>
 #include <nlohmann/json.hpp>
 #include <utility>

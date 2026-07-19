@@ -13,7 +13,6 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
-#include "common/operator/pipe/select_operator.h"
 #include "common/operator/source/read_operator.h"
 
 namespace {

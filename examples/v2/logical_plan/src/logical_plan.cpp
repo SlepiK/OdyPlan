@@ -5,7 +5,6 @@
 #include "const_number_source_operator.h"
 #include "number_stdout_sink_operator.h"
 #include "int_pipe_operator.h"
-#include "core/logical/operator/pipe/pipe_operator.h"
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan plan;

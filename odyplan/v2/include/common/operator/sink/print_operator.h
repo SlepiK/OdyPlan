@@ -3,8 +3,7 @@
 
 #include <llvm/IR/Module.h>
 
-#include "core/common/ident.h"
-#include "../../../core/common/identifier/type.h"
+#include "core/common/identifier/type.h"
 #include "core/logical/operator/sink/sink_operator.h"
 #include "core/physical/operator/sink/sink_operator.h"
 

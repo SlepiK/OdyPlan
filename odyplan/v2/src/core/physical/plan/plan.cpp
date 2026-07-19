@@ -66,8 +66,8 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 break;
         }
 
-        port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& segmentCtx, const port::PortTuple& tuple) {
-            target->consume(segmentCtx, tuple, noopConsumer);
+        port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& sCtx, const port::PortTuple& tuple) {
+            target->consume(sCtx, tuple, noopConsumer);
         };
 
         struct EndEntry {
@@ -78,11 +78,10 @@ namespace sierra::odyplan::v2::core::physical::plan {
         std::vector<EndEntry> endEntries;
 
         for (auto *it : std::ranges::reverse_view(segment.mid)) {
-            opr::IPipeOperator* pipeOpr = it;
             port::PortTupleConsumer const next = chain;
-            endEntries.push_back(EndEntry{.pipe=pipeOpr, .downstream=next});
-            chain = [pipeOpr, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
-                pipeOpr->consume(sCtx, t, next);
+            endEntries.push_back(EndEntry{.pipe=it, .downstream=next});
+            chain = [it, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
+                it->consume(sCtx, t, next);
             };
         }
 

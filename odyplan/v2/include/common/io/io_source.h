@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V2_COMMON_IO_IOSOURCE_H
 
 #include <cstdint>
-#include <optional>
 #include "io_data.h"
 
 namespace sierra::odyplan::v2::common::io {

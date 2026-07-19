@@ -14,8 +14,7 @@
 #include <sys/socket.h>
 
 #include "common/io/io_registry.h"
-#include "common/operator/pipe/select_operator.h"
-#include "../../../../odyplan/v2/include/common/operator/pipe/window/count_window_operator.h"
+#include "common/operator/pipe/window/count_window_operator.h"
 #include "common/operator/source/read_operator.h"
 #include "common/window/window_buffer.h"
 #include "common/window/count/count_window_buffer.h"

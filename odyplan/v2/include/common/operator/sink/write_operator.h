@@ -12,7 +12,6 @@
 #include "common/io/io_sink.h"
 #include "core/common/identifier/operator.h"
 #include "core/common/identifier/type.h"
-#include "core/common/type/type_registry.h"
 #include "core/logical/operator/sink/sink_operator.h"
 #include "core/logical/port/port.h"
 #include "core/physical/operator/sink/sink_operator.h"

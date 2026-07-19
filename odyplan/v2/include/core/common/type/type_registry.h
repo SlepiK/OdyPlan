@@ -79,7 +79,7 @@ namespace sierra::odyplan::v2::core::common::type {
         }
 
         static ReleaseFn defaultRelease() {
-            return [](void* ptr) {};
+            return [](void*) {};
         }
 
         [[nodiscard]] const TypeRegistryEntry& get(const identifier::TypeId id) const {
