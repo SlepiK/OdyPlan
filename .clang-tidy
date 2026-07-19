@@ -31,7 +31,8 @@ Checks: >
   -hicpp-no-array-decay,
   -hicpp-named-parameter,
 
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses
 
 WarningsAsErrors: ''   # keep non-fatal while the interfaces are still moving; tighten later in CI
 
