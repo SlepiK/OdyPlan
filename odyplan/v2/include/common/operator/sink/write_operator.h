@@ -84,6 +84,9 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 segmentCtx.builder.CreateCall(endFn, {index});
             }
 
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            }
+
         private:
             io::IOSinkId mIOSinkId;
             core::logical::port::Port mDataSchema;

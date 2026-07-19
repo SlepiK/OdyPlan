@@ -27,7 +27,7 @@ namespace sierra::odyplan::v2::common::io {
                 return false;
             }
 
-            const auto& dataObj = mData[mIndex++];
+            const auto& dataObj = mData.at(mIndex++);
             if (!dataObj.is_object()) {
                 throw std::runtime_error("JsonSource: expected JSON object");
             }
