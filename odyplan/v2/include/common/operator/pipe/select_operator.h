@@ -71,7 +71,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         private:
             const core::common::expression::IExpression& mPredicate;
 
-            llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
+            static llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, const core::common::expression::IExpression& expression) {
                 switch (expression.getExpressionType()) {
                     case core::common::expression::ExpressionType::FIELD_REFERENCE: {
                         // NOLINTNEXTLINE

@@ -22,7 +22,7 @@ namespace sierra::odyplan::v2::common::io {
                     JsonSink::flush();
                 }
             } catch (...) {
-                std::println(stderr, "JsonSink: flush failed in destructor (unknown exception)");
+                std::fputs("JsonSink: flush failed in destructor (unknown exception)\n", stderr);
             }
         }
 

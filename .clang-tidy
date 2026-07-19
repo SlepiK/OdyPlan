@@ -37,6 +37,7 @@ WarningsAsErrors: ''   # keep non-fatal while the interfaces are still moving; t
 
 #HeaderFilterRegex: '.*/(include|src)/.*\.(hpp|h)$'
 HeaderFilterRegex: '^.*/odyplan/.*|^.*/examples/.*'
+ExcludeHeaderFilterRegex: '.*/llvm-22/include/.*'
 
 FormatStyle: file   # defer to .clang-format for any --fix output
 
