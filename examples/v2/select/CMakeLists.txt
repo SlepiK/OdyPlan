@@ -19,3 +19,9 @@ endif ()
 target_link_libraries(example_select PRIVATE
         OdyPlanV2
 )
+
+enable_clang_tidy_on_target(example_select)
+
+if(ENABLE_TOOLING)
+    register_lint_sources(${SOURCES})
+endif()

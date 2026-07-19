@@ -13,3 +13,9 @@ target_include_directories(example_logical_plan PRIVATE
 target_link_libraries(example_logical_plan PRIVATE
         OdyPlanV2
 )
+
+enable_clang_tidy_on_target(example_logical_plan)
+
+if(ENABLE_TOOLING)
+    register_lint_sources(${SOURCES})
+endif()

@@ -20,8 +20,14 @@ target_link_libraries(example_time_window PRIVATE
         OdyPlanV2
 )
 
+enable_clang_tidy_on_target(example_time_window)
+
 configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
         ${CMAKE_CURRENT_BINARY_DIR}/read.json
         COPYONLY
 )
+
+if(ENABLE_TOOLING)
+    register_lint_sources(${SOURCES})
+endif()

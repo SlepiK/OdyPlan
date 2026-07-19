@@ -15,6 +15,9 @@ endif()
 
 target_include_directories(OdyPlanV2 ${ODYPLAN_VIS}
         "include"
+)
+
+target_include_directories(OdyPlanV2 SYSTEM ${ODYPLAN_VIS}
         ${LLVM_INCLUDE_DIRS}
         ${CLANG_INCLUDE_DIRS}
 )
@@ -35,31 +38,13 @@ target_link_libraries(OdyPlanV2 ${ODYPLAN_VIS}
         -Wl,--end-group
 )
 
+enable_clang_tidy_on_target(OdyPlanV2)
+
 set(LINT_SOURCE_FILES ${SOURCES} ${HEADERS})
 
-if(ENABLE_CLANG_TIDY AND CLANG_TIDY_EXE AND LINT_SOURCE_FILES)
-    add_custom_target(tidy
-            COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${LINT_SOURCE_FILES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Running clang-tidy over project sources/headers"
-            VERBATIM
-    )
-endif()
-
-if(ENABLE_CLANG_FORMAT_CHECK AND CLANG_FORMAT_EXE AND LINT_SOURCE_FILES)
-    add_custom_target(format
-            COMMAND ${CLANG_FORMAT_EXE} -i ${LINT_SOURCE_FILES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Running clang-format in-place"
-            VERBATIM
-    )
-    add_custom_target(format-check
-            COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror ${LINT_SOURCE_FILES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Checking clang-format compliance"
-            VERBATIM
-    )
-endif()
+if(ENABLE_TOOLING)
+    register_lint_sources(${LINT_SOURCE_FILES})
+endif ()
 
 unset(ODYPLAN_VIS)
 unset(LINT_SOURCE_FILES)
