@@ -6,7 +6,6 @@
 #include <common/window/window_buffer.h>
 #include <common/window/window_row_layout.h>
 #include <common/window/count/count_window_config.h>
-
 #include "common/window/window_range.h"
 
 namespace sierra::odyplan::v2::common::window::count {
@@ -21,6 +20,11 @@ namespace sierra::odyplan::v2::common::window::count {
             assert(mClosed && "CountWindowBuffer::close() was never called");
         }
 
+        CountWindowBuffer(CountWindowBuffer const&) = delete;
+        CountWindowBuffer& operator =(CountWindowBuffer const&) = delete;
+        CountWindowBuffer(CountWindowBuffer&&) = delete;
+        CountWindowBuffer& operator=(CountWindowBuffer&&) = delete;
+
         void begin() override {
             mRowLayout.begin();
         }
@@ -29,7 +33,7 @@ namespace sierra::odyplan::v2::common::window::count {
             mRowLayout.push(index, rawData);
         }
 
-        void end(std::chrono::sys_time<std::chrono::milliseconds> timestamp) override {
+        void end(std::chrono::sys_time<std::chrono::milliseconds>  /*timestamp*/) override {
             mRows.push_back(mRowLayout.pop());
             ++mTotalPushed;
         }
@@ -48,9 +52,8 @@ namespace sierra::odyplan::v2::common::window::count {
             evict();
             mWindows.clear();
 
-            const std::uint64_t remaining = mTotalPushed - mNextWindowStart;
-            if (remaining > 0) {
-                mWindows.push_back(WindowRange{mNextWindowStart, remaining});
+            if (const std::uint64_t remaining = mTotalPushed - mNextWindowStart; remaining > 0) {
+                mWindows.push_back(WindowRange{.start=mNextWindowStart, .count=remaining});
                 mNextWindowStart = mTotalPushed;
             }
         }

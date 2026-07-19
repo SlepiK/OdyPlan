@@ -6,6 +6,7 @@
 #include <common/window/window_buffer.h>
 #include <common/window/time/time_window_config.h>
 #include <common/window/window_row_layout.h>
+#include <common/window/window_range.h>
 
 namespace sierra::odyplan::v2::common::window::time {
     class TimeWindowBuffer final : public IWindowBuffer {
