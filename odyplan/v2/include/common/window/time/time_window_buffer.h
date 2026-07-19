@@ -65,8 +65,9 @@ namespace sierra::odyplan::v2::common::window::time {
             const auto watermark = *mWatermark - mConfig.allowedLateness;
 
             while (mNextWindowStart.has_value() &&  mNextWindowStart.value() + mConfig.size <= watermark) {
-                emit(mNextWindowStart.value());
-                mNextWindowStart.value() += mConfig.slide;
+                const auto current = mNextWindowStart.value();
+                emit(current);
+                mNextWindowStart = current + mConfig.slide;
             }
         }
 
@@ -85,8 +86,9 @@ namespace sierra::odyplan::v2::common::window::time {
             const auto lastTimestamp = mRows.back().timestamp;
 
             while (mNextWindowStart.has_value() && mNextWindowStart.value() <= lastTimestamp) {
-                emit(mNextWindowStart.value());
-                mNextWindowStart.value() += mConfig.slide;
+                const auto current = mNextWindowStart.value();
+                emit(current);
+                mNextWindowStart = current + mConfig.slide;
             }
 
         }

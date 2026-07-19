@@ -2,15 +2,17 @@
 #define SIERRA_ODYPLAN_V2_COMMON_IO_JSON_JSONSINK_H
 
 #include <fstream>
+#include <print>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <utility>
 #include "common/io/io_sink.h"
 
 namespace sierra::odyplan::v2::common::io {
     class JsonSink : public IIOSink {
     public:
-        explicit JsonSink(const std::string& path)
-            : mPath(path),
+        explicit JsonSink(std::string  path)
+            : mPath(std::move(path)),
                 mData(nlohmann::json::array()) {
         }
 
@@ -20,6 +22,7 @@ namespace sierra::odyplan::v2::common::io {
                     JsonSink::flush();
                 }
             } catch (...) {
+                std::println(stderr, "JsonSink: flush failed in destructor (unknown exception)");
             }
         }
 
