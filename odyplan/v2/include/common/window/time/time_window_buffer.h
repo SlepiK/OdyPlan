@@ -11,7 +11,7 @@ namespace sierra::odyplan::v2::common::window::time {
     public:
         using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
 
-        TimeWindowBuffer(TimeWindowConfig config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
+        TimeWindowBuffer(const TimeWindowConfig &config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mConfig(config),
                 mRowLayout(std::move(mDataSchema), typeRegistry) {
         }

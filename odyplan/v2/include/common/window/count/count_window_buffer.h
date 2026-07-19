@@ -12,7 +12,7 @@
 namespace sierra::odyplan::v2::common::window::count {
     class CountWindowBuffer final : public IWindowBuffer {
     public:
-        CountWindowBuffer(CountWindowConfig config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
+        CountWindowBuffer(const CountWindowConfig &config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mConfig(config),
                 mRowLayout(std::move(mDataSchema), typeRegistry) {
         }
