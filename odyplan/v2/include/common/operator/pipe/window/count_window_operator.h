@@ -10,7 +10,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::WINDOW_COUNT);
 
-            explicit CountWindowOperator(window::count::CountWindowConfig windowConfig)
+            explicit CountWindowOperator(const window::count::CountWindowConfig &windowConfig)
                 : mWindowConfig(windowConfig) {
                 checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide);
             }

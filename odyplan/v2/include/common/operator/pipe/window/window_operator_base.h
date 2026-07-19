@@ -12,7 +12,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         class WindowOperatorBase : public core::logical::opr::TypedPipeOperator {
         protected:
             template <typename T>
-            void checkBaseConfig(const window::WindowType windowType, const T windowSize, const T windowSlide) {
+            static void checkBaseConfig(const window::WindowType windowType, const T windowSize, const T windowSlide) {
                 if (windowSize == T{0}) {
                     throw std::invalid_argument("window size cant be 0");
                 }
@@ -36,12 +36,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mWindowHandle(windowHandle) {
             }
 
-        protected:
-            std::uint64_t mWindowHandle;
 
-            virtual llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, llvm::Type* i64Ty) = 0;
-
-            void consume(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override final {
+            void consume(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -50,7 +46,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
 
-                auto beginWindowFn = module->getOrInsertFunction("rtWindowBeginRow", llvm::FunctionType::get(voidTy, { i64Ty }, false));
+                const auto beginWindowFn = module->getOrInsertFunction("rtWindowBeginRow", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(beginWindowFn, { wHandle });
 
                 for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
@@ -59,17 +55,17 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 llvm::Value* timestamp = getTimestampValue(segmentCtx, tuple, i64Ty);
 
-                auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty, i64Ty }, false));
+                const auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty, i64Ty }, false));
                 segmentCtx.builder.CreateCall(endWindowFn, { wHandle, timestamp });
 
-                auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
+                const auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(computeWindowFn, { wHandle });
 
                 llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
                 segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -78,17 +74,22 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
 
-                auto flushFn = module->getOrInsertFunction("rtWindowFlush", llvm::FunctionType::get(voidTy, { i64Ty }, false));
+                const auto flushFn = module->getOrInsertFunction("rtWindowFlush", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(flushFn, { wHandle });
 
                 llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
                 segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
+        protected:
+
+            virtual llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, llvm::Type* i64Ty) = 0;
+
         private:
+            std::uint64_t mWindowHandle;
             llvm::Function* mDrainFn = nullptr;
 
-            llvm::Function* getOrCreateDrainFn(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer& consumer) {
+            llvm::Function* getOrCreateDrainFn(const core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer& consumer) {
                 if (mDrainFn != nullptr) {
                     return mDrainFn;
                 }
@@ -99,7 +100,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
 
-                auto drainFn = llvm::Function::Create(llvm::FunctionType::get(voidTy, { i64Ty }, false), llvm::Function::InternalLinkage, "ody_window_drain_" + std::to_string(mWindowHandle), module);
+                auto* drainFn = llvm::Function::Create(llvm::FunctionType::get(voidTy, { i64Ty }, false), llvm::Function::InternalLinkage, "ody_window_drain_" + std::to_string(mWindowHandle), module);
 
                 drainFn->getArg(0)->setName("windowHandle");
 
@@ -118,14 +119,14 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
 
-            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer) {
+            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer) const {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
 
-                auto windowCountFn = module->getOrInsertFunction("rtWindowGetCount", llvm::FunctionType::get(i64Ty, { i64Ty }, false));
+                const auto windowCountFn = module->getOrInsertFunction("rtWindowGetCount", llvm::FunctionType::get(i64Ty, { i64Ty }, false));
                 llvm::Value* wCount = segmentCtx.builder.CreateCall(windowCountFn, { windowHandle });
 
                 auto* windowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
@@ -145,7 +146,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 segmentCtx.builder.SetInsertPoint(wBodyBB);
 
-                auto windowRowCountFn = module->getOrInsertFunction("rtWindowGetRowCountInWindow",llvm::FunctionType::get(i64Ty, { i64Ty, i64Ty }, false));
+                const auto windowRowCountFn = module->getOrInsertFunction("rtWindowGetRowCountInWindow",llvm::FunctionType::get(i64Ty, { i64Ty, i64Ty }, false));
                 llvm::Value* wRowCount = segmentCtx.builder.CreateCall(windowRowCountFn, { windowHandle, wIndex });
 
                 auto* windowRowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
@@ -187,7 +188,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 segmentCtx.builder.SetInsertPoint(wExitBB);
             }
 
-            void codegenPush(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* value, const core::common::identifier::TypeId typeId, const std::size_t fieldIndex) {
+            static void codegenPush(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* value, const core::common::identifier::TypeId typeId, const std::size_t fieldIndex) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -198,18 +199,18 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 llvm::Value* slot = segmentCtx.storage.get(typeId);
                 segmentCtx.builder.CreateStore(value, slot);
 
-                auto fn = module->getOrInsertFunction("rtWindowPush", llvm::FunctionType::get(voidTy, {i64Ty, i64Ty, ptrTy }, false));
+                const auto fn = module->getOrInsertFunction("rtWindowPush", llvm::FunctionType::get(voidTy, {i64Ty, i64Ty, ptrTy }, false));
                 segmentCtx.builder.CreateCall(fn, {windowHandle, llvm::ConstantInt::get(i64Ty, fieldIndex), slot});
             }
 
-            llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* windowIndex, llvm::Value* rowIndex, llvm::Value* dataIndex, core::common::identifier::TypeId typeId) {
+            static llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* windowIndex, llvm::Value* rowIndex, llvm::Value* dataIndex, core::common::identifier::TypeId typeId) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
-                auto fn = module->getOrInsertFunction("rtWindowGetData", llvm::FunctionType::get(ptrTy, {i64Ty, i64Ty, i64Ty, i64Ty}, false));
+                const auto fn = module->getOrInsertFunction("rtWindowGetData", llvm::FunctionType::get(ptrTy, {i64Ty, i64Ty, i64Ty, i64Ty}, false));
                 llvm::Value* ret = segmentCtx.builder.CreateCall(fn, { windowHandle, windowIndex, rowIndex, dataIndex });
 
                 llvm::Type* dataTy = segmentCtx.typeRegistry.resolveType(typeId, ctx);
