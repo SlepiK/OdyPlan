@@ -119,7 +119,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
 
-            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer) const {
+            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, const core::physical::port::PortTupleConsumer& consumer) const {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
@@ -203,7 +203,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 segmentCtx.builder.CreateCall(fn, {windowHandle, llvm::ConstantInt::get(i64Ty, fieldIndex), slot});
             }
 
-            static llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* windowIndex, llvm::Value* rowIndex, llvm::Value* dataIndex, core::common::identifier::TypeId typeId) {
+            static llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* windowIndex, llvm::Value* rowIndex, llvm::Value* dataIndex, const core::common::identifier::TypeId typeId) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 

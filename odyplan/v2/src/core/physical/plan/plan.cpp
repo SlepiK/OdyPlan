@@ -114,7 +114,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
             builder.CreateCall(function, {});
         }
 
-        auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
+        const auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
         builder.CreateCall(endFn, {});
 
         builder.CreateRetVoid();

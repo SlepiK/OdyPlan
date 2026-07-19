@@ -22,7 +22,7 @@ namespace sierra::odyplan::v2::core::builder {
         const common::type::TypeRegistry* mRegistry;
         std::unordered_map<common::identifier::TypeId, physical::transformation::OperatorTransformationFactory> mFactories;
 
-        [[nodiscard]] physical::port::Ports resolvePorts(const logical::port::Ports& lPorts, llvm::LLVMContext& ctx);
+        [[nodiscard]] physical::port::Ports resolvePorts(const logical::port::Ports& lPorts, llvm::LLVMContext& ctx) const;
     };
 }  // namespace sierra::odyplan::v2::core::builder
 

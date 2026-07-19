@@ -171,7 +171,7 @@ extern "C" {
         return value;
     }
 
-    void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
+    void rtIOSinkBeginData(const sierra::odyplan::v2::common::io::IOSinkId index) {
         gSinks.at(index)->begin();
     }
 

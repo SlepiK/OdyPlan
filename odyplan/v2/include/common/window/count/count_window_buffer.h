@@ -67,8 +67,8 @@ namespace sierra::odyplan::v2::common::window::count {
         }
 
         [[nodiscard]] const std::byte* getData(const std::size_t windowIndex, const std::size_t rowIndex, const std::size_t fieldIndex) const override {
-            const auto& range = mWindows.at(windowIndex);
-            const auto relIndex = range.start - mBaseIndex + rowIndex;
+            const auto&[start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
             return mRows.at(relIndex).data() + mRowLayout.offsetOf(fieldIndex);
         }
 

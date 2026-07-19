@@ -93,7 +93,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mMapping(std::move(mapping)){
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer consumer) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) override {
                 core::physical::port::PortTuple projected;
                 projected.reserve(mMapping.size());
 

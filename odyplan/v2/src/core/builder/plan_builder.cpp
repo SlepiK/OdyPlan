@@ -7,10 +7,10 @@ namespace sierra::odyplan::v2::core::builder {
     }
 
     [[nodiscard]] physical::plan::Plan PlanBuilder::build(const logical::plan::Plan& lPlan, llvm::LLVMContext& ctx) {
-        physical::plan::Plan pPlan = physical::plan::Plan(*mRegistry);
+        auto pPlan = physical::plan::Plan(*mRegistry);
         physical::segment::Segment currentSegment;
 
-        for (auto lOprId : lPlan.topologicalOrder()) {
+        for (const auto lOprId : lPlan.topologicalOrder()) {
             const logical::opr::IOperator& lOpr = lPlan.op(lOprId);
 
             auto inputPorts = resolvePorts(lOpr.getInputPorts(), ctx);
@@ -21,9 +21,9 @@ namespace sierra::odyplan::v2::core::builder {
                 throw std::invalid_argument("PlanBuilder::build: no transformation registered for typeid " + std::to_string(lOpr.getOperatorTypeId()));
             }
 
-            physical::transformation::OperatorTransformation transform = it->second(lOpr, inputPorts, outputPorts);
+            auto [oprs, edges] = it->second(lOpr, inputPorts, outputPorts);
 
-            for (auto& op : transform.oprs) {
+            for (auto& op : oprs) {
                 switch (op->getRole()) {
                     case physical::opr::OperatorRole::SOURCE: {
                         auto* source = static_cast<physical::opr::TypedSourceOperator*>(op.get());
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::core::builder {
         return pPlan;
     }
 
-    [[nodiscard]] physical::port::Ports PlanBuilder::resolvePorts(const logical::port::Ports& lPorts, llvm::LLVMContext& ctx) {
+    [[nodiscard]] physical::port::Ports PlanBuilder::resolvePorts(const logical::port::Ports& lPorts, llvm::LLVMContext& ctx) const {
         physical::port::Ports ret;
         ret.reserve(lPorts.size());
 

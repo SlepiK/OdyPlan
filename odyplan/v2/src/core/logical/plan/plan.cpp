@@ -101,9 +101,9 @@ namespace sierra::odyplan::v2::core::logical::plan {
         std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](const common::identifier::OperatorId cId) {
             state.at(cId) = State::IN_PROGRESS;
 
-            for (const auto& edge : mEdges) {
-                if (edge.fromOperator.operatorId == cId) {
-                    const auto next = edge.toOperator.operatorId;
+            for (const auto&[fromOperator, toOperator] : mEdges) {
+                if (fromOperator.operatorId == cId) {
+                    const auto next = toOperator.operatorId;
                     if (state.at(next) == State::IN_PROGRESS) {
                         throw std::runtime_error(
                             "Plan::topologicalOrder: Late cycle detected - something went wrong");

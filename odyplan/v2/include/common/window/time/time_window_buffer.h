@@ -102,14 +102,14 @@ namespace sierra::odyplan::v2::common::window::time {
         }
 
         [[nodiscard]] const std::byte* getData(const std::size_t windowIndex, const std::size_t rowIndex, const std::size_t fieldIndex) const override {
-            const auto& range = mWindows.at(windowIndex);
-            const auto relIndex = range.start - mBaseIndex + rowIndex;
+            const auto&[start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
             return mRows.at(relIndex).values.data() + mRowLayout.offsetOf(fieldIndex);
         }
 
         void close() override {
-            for (auto& row : mRows) {
-                mRowLayout.releaseRow(row.values);
+            for (auto&[values, timestamp] : mRows) {
+                mRowLayout.releaseRow(values);
             }
 
             mRows.clear();

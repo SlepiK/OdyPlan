@@ -71,7 +71,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
                 llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
-                auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                const auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
                 segmentCtx.builder.CreateCall(beginFn, {index});
 
                 for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
@@ -80,7 +80,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     codegenField(segmentCtx, index, fieldName, tuple.at(i), dataField.typeId);
                 }
 
-                auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                const auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
                 segmentCtx.builder.CreateCall(endFn, {index});
             }
 
