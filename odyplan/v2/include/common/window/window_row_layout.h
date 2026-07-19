@@ -55,6 +55,11 @@ namespace sierra::odyplan::v2::common::window {
             }
         }
 
+        void discardCurrentRow() {
+            releaseRow(mCurrentRow);
+            mCurrentRow.clear();
+        }
+
     private:
         core::logical::port::Port mDataSchema;
         const core::common::type::TypeRegistry* mTypeRegistry; //ToDo: do we need that here in that way?

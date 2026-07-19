@@ -9,6 +9,7 @@ namespace sierra::odyplan::v2::common::window::time {
         std::chrono::milliseconds size;
         std::chrono::milliseconds slide;
         std::size_t timestampIndex;
+        std::chrono::milliseconds allowedLateness{0};
     };
 }
 

@@ -29,11 +29,18 @@ namespace sierra::odyplan::v2::common::window::time {
         }
 
         void end(std::chrono::sys_time<std::chrono::milliseconds> timestamp) override {
-            insertAndSort(timestamp, mRowLayout.pop());
-
             if (!mWatermark || timestamp > *mWatermark) {
                 mWatermark = timestamp;
             }
+
+            if (mNextWindowStart && timestamp < *mNextWindowStart) {
+                ++mDroppedLateRows;
+                mRowLayout.discardCurrentRow();
+                return;
+            }
+
+            insertAndSort(timestamp, mRowLayout.pop());
+
         }
 
         void compute() override {
@@ -48,7 +55,9 @@ namespace sierra::odyplan::v2::common::window::time {
                 mNextWindowStart = mRows.front().timestamp;
             }
 
-            while (*mNextWindowStart + mConfig.size <= *mWatermark) {
+            const auto watermark = *mWatermark - mConfig.allowedLateness;
+
+            while (*mNextWindowStart + mConfig.size <= watermark) {
                 emit(*mNextWindowStart);
                 *mNextWindowStart += mConfig.slide;
             }
@@ -113,6 +122,7 @@ namespace sierra::odyplan::v2::common::window::time {
         std::uint64_t mBaseIndex = 0;
         std::optional<Timestamp> mWatermark;
         std::optional<Timestamp> mNextWindowStart;
+        std::uint64_t mDroppedLateRows = 0;
         bool mClosed = false;
 
         void evict() {

@@ -24,6 +24,11 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
         protected:
             void validate() override {
+
+                if (mWindowConfig.allowedLateness.count() < 0) {
+                    throw std::invalid_argument("allowedLateness must be non-negative");
+                }
+
                 if (mWindowConfig.timestampIndex >= getInputPorts().at(0).size()) {
                     throw std::invalid_argument("timestamp index out of range");
                 }
