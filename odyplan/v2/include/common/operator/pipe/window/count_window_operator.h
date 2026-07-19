@@ -11,7 +11,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::WINDOW_COUNT);
 
             explicit CountWindowOperator(window::count::CountWindowConfig windowConfig)
-                : mWindowConfig(std::move(windowConfig)) {
+                : mWindowConfig(windowConfig) {
                 checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide);
             }
 
@@ -37,7 +37,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             using WindowOperatorBase::WindowOperatorBase;
 
         protected:
-            llvm::Value* getTimestampValue(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, llvm::Type *i64Ty) override {
+            llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& /*segmentCtx*/, const core::physical::port::PortTuple& /*tuple*/, llvm::Type *i64Ty) override {
                 return llvm::ConstantInt::get(i64Ty, 0);
             }
         };

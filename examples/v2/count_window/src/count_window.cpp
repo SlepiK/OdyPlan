@@ -20,27 +20,29 @@
 #include "common/window/window_buffer.h"
 #include "common/window/count/count_window_buffer.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic<bool> atStop{false};
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
 
-inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
-    gSources.push_back(std::move(source));
-    return gSources.size() - 1;
-}
-
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer>> gWindows;
-
-inline std::uint64_t registerWindow(std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer> window) {
-    gWindows.push_back(std::move(window));
-    return gWindows.size() - 1;
-}
-
-inline void shutdownWindows() {
-    for (const auto &window : gWindows) {
-        window->close();
+    inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
+        gSources.push_back(std::move(source));
+        return gSources.size() - 1;
     }
-    gWindows.clear();
+
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer>> gWindows;
+
+    inline std::uint64_t registerWindow(std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer> window) {
+        gWindows.push_back(std::move(window));
+        return gWindows.size() - 1;
+    }
+
+    inline void shutdownWindows() {
+        for (const auto &window : gWindows) {
+            window->close();
+        }
+        gWindows.clear();
+    }
 }
 
 extern "C" {
