@@ -35,6 +35,7 @@ namespace sierra::odyplan::v2::common::io {
         void write(const char* key, core::common::identifier::TypeId typeId, const void* rawData) override {
             using T = core::common::identifier::Type;
 
+            // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             switch (typeId) {
                 case std::to_underlying(T::BOOL):
                     mCurrent[key] = *static_cast<const bool*>(rawData);
@@ -63,6 +64,7 @@ namespace sierra::odyplan::v2::common::io {
                 default:
                     throw std::invalid_argument("JsonSink: Unknown typeId");
             }
+            // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
         }
 
         void end() override {

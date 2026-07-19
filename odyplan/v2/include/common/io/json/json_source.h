@@ -8,7 +8,7 @@
 namespace sierra::odyplan::v2::common::io {
     class JsonSource : public IIOSource{
     public:
-        explicit JsonSource(const std::string& path) : mIndex(0) {
+        explicit JsonSource(const std::string& path) {
             std::ifstream file(path);
 
             if (!file.is_open()) {
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::common::io {
 
     private:
         nlohmann::json mData;
-        std::size_t mIndex;
+        std::size_t mIndex{0};
         IOData mCurrentData;
     };
 }

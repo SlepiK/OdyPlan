@@ -101,7 +101,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     if (index >= tuple.size()) {
                         throw std::invalid_argument("ProjectOperator: index out of range");
                     }
-                    projected.push_back(tuple[index]);
+                    projected.push_back(tuple.at(index));
                 }
 
                 consumer(segmentCtx, projected);
