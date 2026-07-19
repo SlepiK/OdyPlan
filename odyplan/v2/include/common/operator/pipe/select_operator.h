@@ -119,34 +119,30 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
             static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, const core::common::expression::CompareExpression::CompareOp opr) {
                 const bool isFloat = left->getType()->isFloatingPointTy();
+                // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
                 switch (opr) {
                     case core::common::expression::CompareExpression::CompareOp::EQ: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpOEQ(left, right, "eq") : builder.CreateICmpEQ(left, right, "eq");
                     }
                     case core::common::expression::CompareExpression::CompareOp::NE: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpONE(left, right, "ne") : builder.CreateICmpNE(left, right, "ne");
                     }
                     case core::common::expression::CompareExpression::CompareOp::LT: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpOLT(left, right, "lt") : builder.CreateICmpSLT(left, right, "lt");
                     }
                     case core::common::expression::CompareExpression::CompareOp::LE: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpOLE(left, right, "le") : builder.CreateICmpSLE(left, right, "le");
                     }
                     case core::common::expression::CompareExpression::CompareOp::GT: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpOGT(left, right, "gt") : builder.CreateICmpSGT(left, right, "gt");
                     }
                     case core::common::expression::CompareExpression::CompareOp::GE: {
-                        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
                         return isFloat ? builder.CreateFCmpOGE(left, right, "ge") : builder.CreateICmpSGE(left, right, "ge");
                     }
                     default:
                         throw std::invalid_argument("SelectOperator: unsupported compare type");
                 }
+                // NOLINTEND(clang-analyzer-security.ArrayBound)
             }
         };
     }
