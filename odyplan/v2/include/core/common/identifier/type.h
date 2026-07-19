@@ -1,10 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V2_CORE_COMMON_IDENTIFIER_TYPE_H
 #define SIERRA_ODYPLAN_V2_CORE_COMMON_IDENTIFIER_TYPE_H
 
-#include <cstddef>
+#include <cstdint>
 
 namespace sierra::odyplan::v2::core::common::identifier {
-    using TypeId = std::size_t;
+    using TypeId = std::uint8_t;
 
     enum class Type : TypeId {
         BOOL = 0,
