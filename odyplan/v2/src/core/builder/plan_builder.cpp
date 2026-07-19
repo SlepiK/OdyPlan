@@ -7,7 +7,7 @@ namespace sierra::odyplan::v2::core::builder {
     }
 
     [[nodiscard]] physical::plan::Plan PlanBuilder::build(const logical::plan::Plan& lPlan, llvm::LLVMContext& ctx) {
-        physical::plan::Plan pPlan = physical::plan::Plan(mRegistry);
+        physical::plan::Plan pPlan = physical::plan::Plan(*mRegistry);
         physical::segment::Segment currentSegment;
 
         for (auto lOprId : lPlan.topologicalOrder()) {
@@ -74,7 +74,7 @@ namespace sierra::odyplan::v2::core::builder {
             for (const auto& lPortDescriptor : lPort) {
                 pPort.push_back(physical::port::PortDescriptor{
                     lPortDescriptor.typeId,
-                    mRegistry.resolveType(lPortDescriptor.typeId,ctx)
+                    mRegistry->resolveType(lPortDescriptor.typeId,ctx)
                 });
             }
 

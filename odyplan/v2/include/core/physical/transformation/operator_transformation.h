@@ -5,6 +5,7 @@
 #include <memory>
 #include "core/physical/operator/operator.h"
 #include "core/common/edge/edge.h"
+#include "core/logical/operator/operator.h"
 
 namespace sierra::odyplan::v2::core::physical::transformation {
     struct OperatorTransformation {
