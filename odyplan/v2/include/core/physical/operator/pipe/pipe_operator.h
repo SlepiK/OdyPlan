@@ -32,10 +32,10 @@ namespace sierra::odyplan::v2::core::physical::opr {
             if (outputPorts.empty()) {
                 throw std::invalid_argument("TypedPipeOperator: outputPorts must not be empty");
             }
-            if (std::ranges::any_of(inputPorts, [](const port::Port& port) {return port.empty();})) {
+            if (std::ranges::any_of(inputPorts, [](const port::Port &port) { return port.empty(); })) {
                 throw std::invalid_argument("TypedPipeOperator: no empty input port allowed");
             }
-            if (std::ranges::any_of(outputPorts, [](const port::Port& port) {return port.empty();})) {
+            if (std::ranges::any_of(outputPorts, [](const port::Port &port) { return port.empty(); })) {
                 throw std::invalid_argument("TypedPipeOperator: no empty output port allowed");
             }
             getInputPortsRef() = std::move(inputPorts);
@@ -69,6 +69,7 @@ namespace sierra::odyplan::v2::core::physical::opr {
         virtual void build(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple) = 0;
         virtual void probe(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
 
+    private:
         llvm::Value* mOperatorState = nullptr;
     };
 }  // namespace sierra::odyplan::v2::core::physical::opr

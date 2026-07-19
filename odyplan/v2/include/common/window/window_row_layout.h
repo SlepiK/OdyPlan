@@ -7,7 +7,7 @@ namespace sierra::odyplan::v2::common::window {
     class WindowRowLayout {
     public:
         WindowRowLayout(const core::logical::port::Port &dataSchema, const core::common::type::TypeRegistry& typeRegistry)
-            : mDataSchema(std::move(dataSchema)),
+            : mDataSchema(dataSchema),
                 mTypeRegistry(&typeRegistry) {
             std::size_t offset = 0;
             mOffset.reserve(mDataSchema.size());
@@ -26,10 +26,10 @@ namespace sierra::odyplan::v2::common::window {
             const auto typeId = mDataSchema.at(index).typeId;
             void* dst = mCurrentRow.data() + mOffset.at(index);
             if (mTypeRegistry->isPointerType(typeId)) {
-                void* ori;
-                std::memcpy(&ori, rawData, sizeof(ori));
-                void* own = mTypeRegistry->retain(typeId, ori);
-                std::memcpy(dst, &own, sizeof(own));
+                void* ori = nullptr;
+                std::memcpy(static_cast<void*>(&ori), rawData, sizeof(ori));
+                const void* own = mTypeRegistry->retain(typeId, ori);
+                std::memcpy(dst, static_cast<const void*>(&own), sizeof(own));
             } else {
                 std::memcpy(dst, rawData, mTypeRegistry->getByteSize(typeId));
             }
@@ -40,7 +40,7 @@ namespace sierra::odyplan::v2::common::window {
         }
 
         [[nodiscard]] std::size_t offsetOf(const std::size_t field) const {
-            return mOffset[field];
+            return mOffset.at(field);
         }
 
         void releaseRow(const std::vector<std::byte>& row) const {
@@ -49,8 +49,8 @@ namespace sierra::odyplan::v2::common::window {
                 if (!mTypeRegistry->isPointerType(typeId)) {
                     continue;
                 }
-                void* own;
-                std::memcpy(&own, row.data() + mOffset.at(i), sizeof(own));
+                void* own = nullptr;
+                std::memcpy(static_cast<void*>(&own), row.data() + mOffset.at(i), sizeof(own));
                 mTypeRegistry->release(typeId, own);
             }
         }
