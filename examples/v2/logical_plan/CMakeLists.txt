@@ -2,20 +2,27 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
-add_executable(example_logical_plan
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+)
+
+set(TARGET_NAME example_logical_plan)
+
+add_executable(${TARGET_NAME}
         ${SOURCES}
 )
 
-target_include_directories(example_logical_plan PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+target_include_directories(${TARGET_NAME} PRIVATE
+        ${HEADERS}
 )
 
-target_link_libraries(example_logical_plan PRIVATE
+target_link_libraries(${TARGET_NAME} PRIVATE
         OdyPlanV2
 )
 
-enable_clang_tidy_on_target(example_logical_plan)
+enable_clang_tidy_on_target(${TARGET_NAME})
 
 if(ENABLE_TOOLING)
-    register_lint_sources(${SOURCES})
+    register_lint_sources(${SOURCES} ${HEADERS})
+    register_tidy_sources(${SOURCES})
 endif()

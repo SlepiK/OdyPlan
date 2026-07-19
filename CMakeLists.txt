@@ -13,10 +13,22 @@ option(ODYPLAN_V1 "Run OdyPlanV1 as part of the build" OFF)
 option(ODYPLAN_V2 "Run OdyPlanV2 as part of the build" ON)
 
 define_property(GLOBAL PROPERTY LINT_SOURCE_FILES_GLOBAL
-        BRIEF_DOCS "Aggregated list of soruce and header files for linting"
+        BRIEF_DOCS "Aggregated list of source and header files for linting"
         FULL_DOCS "..."
 )
 set_property(GLOBAL PROPERTY LINT_SOURCE_FILES_GLOBAL "")
+
+define_property(GLOBAL PROPERTY TIDY_SOURCE_FILES_GLOBAL
+        BRIEF_DOCS "Aggregated .cpp files for clang-tidy (NO headers!)"
+        FULL_DOCS "..."
+)
+set_property(GLOBAL PROPERTY TIDY_SOURCE_FILES_GLOBAL "")
+
+define_property(GLOBAL PROPERTY TIDY_HEADER_TARGETS_GLOBAL
+        BRIEF_DOCS "Names of header-check object targets for clang-tidy"
+        FULL_DOCS "..."
+)
+set_property(GLOBAL PROPERTY TIDY_HEADER_TARGETS_GLOBAL "")
 
 include(cmake/dependencies.cmake)
 

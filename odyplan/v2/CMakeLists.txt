@@ -40,11 +40,16 @@ target_link_libraries(OdyPlanV2 ${ODYPLAN_VIS}
 
 enable_clang_tidy_on_target(OdyPlanV2)
 
-set(LINT_SOURCE_FILES ${SOURCES} ${HEADERS})
-
 if(ENABLE_TOOLING)
-    register_lint_sources(${LINT_SOURCE_FILES})
+    register_lint_sources(${SOURCES} ${HEADERS})
+    register_tidy_sources(${SOURCES})
+
+    if(ENABLE_CLANG_TIDY)
+        add_header_tidy_check(odyplan_header_check
+                HEADERS ${HEADERS}
+                LINK_LIBS OdyPlanV2
+        )
+    endif()
 endif ()
 
 unset(ODYPLAN_VIS)
-unset(LINT_SOURCE_FILES)

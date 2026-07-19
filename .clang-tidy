@@ -35,7 +35,8 @@ Checks: >
 
 WarningsAsErrors: ''   # keep non-fatal while the interfaces are still moving; tighten later in CI
 
-HeaderFilterRegex: '.*/(include|src)/.*\.(hpp|h)$'
+#HeaderFilterRegex: '.*/(include|src)/.*\.(hpp|h)$'
+HeaderFilterRegex: '^.*/odyplan/.*|^.*/examples/.*'
 
 FormatStyle: file   # defer to .clang-format for any --fix output
 
