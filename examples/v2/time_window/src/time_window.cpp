@@ -293,7 +293,7 @@ int main() {
     auto typeRegistry = sierra::odyplan::v2::core::common::type::TypeRegistry::withDefaults();
     auto ioRegistry = sierra::odyplan::v2::common::io::IORegistry::withDefaults();
 
-    WindowShutdownGuard windowShutdownGuard;
+    WindowShutdownGuard const windowShutdownGuard;
 
     sierra::odyplan::v2::core::builder::PlanBuilder builder(typeRegistry);
 
@@ -344,7 +344,7 @@ int main() {
     );
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v2::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";

@@ -39,7 +39,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
         functions.reserve(mSegments.size());
 
         for (std::size_t i = 0; i < mSegments.size(); ++i) {
-            functions.push_back(codegenSegment(mSegments[i], module, ctx, i));
+            functions.push_back(codegenSegment(mSegments.at(i), module, ctx, i));
         }
 
         codegenMain(module, ctx, functions);

@@ -71,8 +71,8 @@ namespace sierra::odyplan::v2::core::builder {
 
             for (const auto& lPortDescriptor : lPort) {
                 pPort.push_back(physical::port::PortDescriptor{
-                    lPortDescriptor.typeId,
-                    mRegistry->resolveType(lPortDescriptor.typeId,ctx)
+                    .typeId=lPortDescriptor.typeId,
+                    .llvmType=mRegistry->resolveType(lPortDescriptor.typeId,ctx)
                 });
             }
 

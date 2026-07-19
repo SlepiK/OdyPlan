@@ -19,7 +19,7 @@ namespace sierra::odyplan::v2::example::logical_plan {
     public:
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 0;
 
-        ConstNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createIntPort()) {
+        ConstNumberSourceOperator() : TypedSourceOperator(createIntPort()) {
         }
 
         [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
@@ -31,7 +31,7 @@ namespace sierra::odyplan::v2::example::logical_plan {
     public:
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 3;
 
-        ConstDoubleNumberSourceOperator() : core::logical::opr::TypedSourceOperator(createDoublePort()) {
+        ConstDoubleNumberSourceOperator() : TypedSourceOperator(createDoublePort()) {
         }
 
         [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
