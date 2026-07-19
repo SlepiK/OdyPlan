@@ -29,7 +29,7 @@ namespace sierra::odyplan::v2::common::window::count {
             mRowLayout.begin();
         }
 
-        void push(std::size_t index, const void *rawData) override {
+        void push(const std::size_t index, const void *rawData) override {
             mRowLayout.push(index, rawData);
         }
 
@@ -43,7 +43,7 @@ namespace sierra::odyplan::v2::common::window::count {
             mWindows.clear();
 
             while (mNextWindowStart + mConfig.size <= mTotalPushed) {
-                mWindows.push_back(WindowRange{mNextWindowStart, mConfig.size});
+                mWindows.push_back(WindowRange{.start=mNextWindowStart, .count=mConfig.size});
                 mNextWindowStart += mConfig.slide;
             }
         }
