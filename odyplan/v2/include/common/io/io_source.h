@@ -10,7 +10,12 @@ namespace sierra::odyplan::v2::common::io {
 
     class IIOSource {
     public:
+        IIOSource() = default;
         virtual ~IIOSource() = default;
+        IIOSource(IIOSource const&) = delete;
+        IIOSource& operator =(IIOSource const&) = delete;
+        IIOSource(IIOSource&&) = delete;
+        IIOSource& operator=(IIOSource&&) = delete;
 
         [[nodiscard]] virtual bool available() = 0;
 

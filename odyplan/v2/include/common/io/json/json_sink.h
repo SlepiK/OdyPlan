@@ -23,6 +23,11 @@ namespace sierra::odyplan::v2::common::io {
             }
         }
 
+        JsonSink(JsonSink const&) = delete;
+        JsonSink& operator =(JsonSink const&) = delete;
+        JsonSink(JsonSink&&) = delete;
+        JsonSink& operator=(JsonSink&&) = delete;
+
         void begin() override {
             mCurrent = nlohmann::json::object();
         }

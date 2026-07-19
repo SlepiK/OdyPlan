@@ -22,6 +22,13 @@ namespace sierra::odyplan::v2::common::io {
             }
         }
 
+        ~JsonSource() override = default;
+
+        JsonSource(JsonSource const&) = delete;
+        JsonSource& operator =(JsonSource const&) = delete;
+        JsonSource(JsonSource&&) = delete;
+        JsonSource& operator=(JsonSource&&) = delete;
+
         [[nodiscard]] bool available() override {
             if (mIndex >= mData.size()) {
                 return false;
