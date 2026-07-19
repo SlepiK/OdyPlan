@@ -6,7 +6,7 @@
 namespace sierra::odyplan::v2::common::window {
     class WindowRowLayout {
     public:
-        WindowRowLayout(const core::logical::port::Port dataSchema, const core::common::type::TypeRegistry& typeRegistry)
+        WindowRowLayout(const core::logical::port::Port &dataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mDataSchema(std::move(dataSchema)),
                 mTypeRegistry(&typeRegistry) {
             std::size_t offset = 0;
@@ -43,7 +43,7 @@ namespace sierra::odyplan::v2::common::window {
             return mOffset[field];
         }
 
-        void releaseRow(const std::vector<std::byte>& row) {
+        void releaseRow(const std::vector<std::byte>& row) const {
             for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
                 const auto typeId = mDataSchema.at(i).typeId;
                 if (!mTypeRegistry->isPointerType(typeId)) {
@@ -62,7 +62,7 @@ namespace sierra::odyplan::v2::common::window {
 
     private:
         core::logical::port::Port mDataSchema;
-        const core::common::type::TypeRegistry* mTypeRegistry; //ToDo: do we need that here in that way?
+        const core::common::type::TypeRegistry* mTypeRegistry;
         std::vector<std::size_t> mOffset;
         std::size_t mRowByteSize = 0;
         std::vector<std::byte> mCurrentRow;

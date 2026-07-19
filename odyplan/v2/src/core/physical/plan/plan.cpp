@@ -34,7 +34,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
         mSegments.push_back(std::move(segment));
     }
 
-    void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) {
+    void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
         std::vector<llvm::Function*> functions;
         functions.reserve(mSegments.size());
 
@@ -45,15 +45,15 @@ namespace sierra::odyplan::v2::core::physical::plan {
         codegenMain(module, ctx, functions);
     }
 
-    llvm::Function* Plan::codegenSegment(const segment::Segment& segment, llvm::Module& module, llvm::LLVMContext& ctx, const std::size_t index) {
+    llvm::Function* Plan::codegenSegment(const segment::Segment& segment, llvm::Module& module, llvm::LLVMContext& ctx, const std::size_t index) const {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_segment_" + std::to_string(index), &module);
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", function);
 
-        segment::SegmentContext segmentCtx(function, basicBlock, ctx, mTypeRegistry);
+        segment::SegmentContext segmentCtx(function, basicBlock, ctx, *mTypeRegistry);
 
-        port::PortTupleConsumer noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
+        port::PortTupleConsumer const noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
 
         opr::IConsumer* target = nullptr;
 
@@ -90,11 +90,13 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         segment.start->produce(segmentCtx, chain);
 
-        for (const auto& entry : endEntries) {
-            entry.pipe->end(segmentCtx, entry.downstream);
+        for (const auto&[pipe, downstream] : endEntries) {
+            pipe->end(segmentCtx, downstream);
         }
 
-        target->end(segmentCtx, noopConsumer);
+        if (target != nullptr) {
+            target->end(segmentCtx, noopConsumer);
+        }
 
         segmentCtx.builder.CreateRetVoid();
         return function;
