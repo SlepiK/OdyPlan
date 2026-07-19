@@ -65,7 +65,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(computeWindowFn, { wHandle });
 
-                drainWindows(segmentCtx, wHandle, consumer, "wc");
+                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
+                segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
             void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
@@ -80,11 +81,44 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto flushFn = module->getOrInsertFunction("rtWindowFlush", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(flushFn, { wHandle });
 
-                drainWindows(segmentCtx, wHandle, consumer, "wf");
+                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
+                segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
         private:
-            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer, const char* labelPrefix) {
+            llvm::Function* mDrainFn = nullptr;
+
+            llvm::Function* getOrCreateDrainFn(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer& consumer) {
+                if (mDrainFn != nullptr) {
+                    return mDrainFn;
+                }
+
+                llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+                auto* voidTy = llvm::Type::getVoidTy(ctx);
+                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+
+                auto drainFn = llvm::Function::Create(llvm::FunctionType::get(voidTy, { i64Ty }, false), llvm::Function::InternalLinkage, "ody_window_drain_" + std::to_string(mWindowHandle), module);
+
+                drainFn->getArg(0)->setName("windowHandle");
+
+                auto* entryBB = llvm::BasicBlock::Create(ctx, "drainEntry", drainFn);
+
+                core::physical::segment::SegmentContext drainCtx(drainFn, entryBB, ctx, segmentCtx.typeRegistry);
+
+                llvm::Value* wHandle = drainFn->getArg(0);
+                drainWindows(drainCtx, wHandle, consumer);
+
+                drainCtx.builder.CreateRetVoid();
+
+                mDrainFn = drainFn;
+
+                return drainFn;
+            }
+
+
+            void drainWindows(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, core::physical::port::PortTupleConsumer& consumer) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
@@ -97,9 +131,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* windowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
                 segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowIndex);
 
-                auto* wHeaderBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Header", fn);
-                auto* wBodyBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Body", fn);
-                auto* wExitBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "Exit", fn);
+                auto* wHeaderBB = llvm::BasicBlock::Create(ctx, "windowHeader", fn);
+                auto* wBodyBB = llvm::BasicBlock::Create(ctx, "windowBody", fn);
+                auto* wExitBB = llvm::BasicBlock::Create(ctx, "windowExit", fn);
 
                 segmentCtx.builder.CreateBr(wHeaderBB);
                 segmentCtx.builder.SetInsertPoint(wHeaderBB);
@@ -117,9 +151,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* windowRowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
                 segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowRowIndex);
 
-                auto* wRowHeaderBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowHeader", fn);
-                auto* wRowBodyBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowBody", fn);
-                auto* wRowExitBB = llvm::BasicBlock::Create(ctx, std::string(labelPrefix) + "RowExit", fn);
+                auto* wRowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
+                auto* wRowBodyBB = llvm::BasicBlock::Create(ctx, "windowRowBody", fn);
+                auto* wRowExitBB = llvm::BasicBlock::Create(ctx, "windowRowExit", fn);
 
                 segmentCtx.builder.CreateBr(wRowHeaderBB);
                 segmentCtx.builder.SetInsertPoint(wRowHeaderBB);
