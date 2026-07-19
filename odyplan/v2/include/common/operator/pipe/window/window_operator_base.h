@@ -89,7 +89,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             std::uint64_t mWindowHandle;
             llvm::Function* mDrainFn = nullptr;
 
-            llvm::Function* getOrCreateDrainFn(const core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer& consumer) {
+            llvm::Function* getOrCreateDrainFn(const core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumer& consumer) {
                 if (mDrainFn != nullptr) {
                     return mDrainFn;
                 }

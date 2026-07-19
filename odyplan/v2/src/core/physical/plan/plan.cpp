@@ -78,11 +78,11 @@ namespace sierra::odyplan::v2::core::physical::plan {
         std::vector<EndEntry> endEntries;
 
         for (auto *it : std::ranges::reverse_view(segment.mid)) {
-            opr::IPipeOperator* pipe = it;
-            port::PortTupleConsumer next = chain;
-            endEntries.push_back(EndEntry{pipe, next});
-            chain = [pipe, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
-                pipe->consume(sCtx, t, next);
+            opr::IPipeOperator* pipeOpr = it;
+            port::PortTupleConsumer const next = chain;
+            endEntries.push_back(EndEntry{.pipe=pipeOpr, .downstream=next});
+            chain = [pipeOpr, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
+                pipeOpr->consume(sCtx, t, next);
             };
         }
 

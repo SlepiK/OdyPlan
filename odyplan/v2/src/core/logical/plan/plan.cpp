@@ -160,9 +160,9 @@ namespace sierra::odyplan::v2::core::logical::plan {
                 continue;
             }
 
-            for (const common::edge::Edge& edge : mEdges) {
-                if (edge.fromOperator.operatorId == current) {
-                    operatorStack.push_back(edge.toOperator.operatorId);
+            for (const auto&[fromOperator, toOperator] : mEdges) {
+                if (fromOperator.operatorId == current) {
+                    operatorStack.push_back(toOperator.operatorId);
                 }
             }
         }
