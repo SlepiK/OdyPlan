@@ -40,7 +40,7 @@ namespace sierra::odyplan::v2::common::window::time {
                 mWatermark = timestamp;
             }
 
-            if (mNextWindowStart && timestamp < *mNextWindowStart) {
+            if (mNextWindowStart && timestamp < mNextWindowStart.value()) {
                 ++mDroppedLateRows;
                 mRowLayout.discardCurrentRow();
                 return;
@@ -64,9 +64,9 @@ namespace sierra::odyplan::v2::common::window::time {
 
             const auto watermark = *mWatermark - mConfig.allowedLateness;
 
-            while (mNextWindowStart.has_value() && *mNextWindowStart + mConfig.size <= watermark) {
-                emit(*mNextWindowStart);
-                *mNextWindowStart += mConfig.slide;
+            while (mNextWindowStart.value() + mConfig.size <= watermark) {
+                emit(mNextWindowStart.value());
+                mNextWindowStart.value() += mConfig.slide;
             }
         }
 
@@ -84,9 +84,9 @@ namespace sierra::odyplan::v2::common::window::time {
 
             const auto lastTimestamp = mRows.back().timestamp;
 
-            while (mNextWindowStart.has_value() && *mNextWindowStart <= lastTimestamp) {
-                emit(*mNextWindowStart);
-                *mNextWindowStart += mConfig.slide;
+            while (mNextWindowStart.value() <= lastTimestamp) {
+                emit(mNextWindowStart.value());
+                mNextWindowStart.value() += mConfig.slide;
             }
 
         }
@@ -137,7 +137,7 @@ namespace sierra::odyplan::v2::common::window::time {
                 return;
             }
 
-            while (!mRows.empty() && mRows.front().timestamp < *mNextWindowStart) {
+            while (!mRows.empty() && mRows.front().timestamp < mNextWindowStart.value()) {
                 mRowLayout.releaseRow(mRows.front().values);
                 mRows.pop_front();
                 ++mBaseIndex;

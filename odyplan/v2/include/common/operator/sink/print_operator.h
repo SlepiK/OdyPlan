@@ -81,7 +81,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
                 }
                 for (std::size_t i = 0; i < mPortFieldIndices.size(); ++i) {
-                    std::size_t const fieldIndex = mPortFieldIndices[i];
+                    std::size_t const fieldIndex = mPortFieldIndices.at(i);
                     codegenPrintField(segmentCtx.builder, module, getInputPorts().at(0).at(fieldIndex).typeId, tuple.at(fieldIndex));
 
                     if (i + 1 < mPortFieldIndices.size()) {
@@ -115,7 +115,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -125,7 +125,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -135,7 +135,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -145,7 +145,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -155,7 +155,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintInt", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -165,7 +165,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintFloat", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintFloat", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -175,7 +175,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                           {value->getType()},
                           false
                           );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintDouble", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintDouble", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
@@ -185,7 +185,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                             {llvm::PointerType::getUnqual(ctx)},
                             false
                             );
-                        llvm::FunctionCallee fn = module->getOrInsertFunction("rtOdyPrintString", fnType);
+                        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintString", fnType);
                         builder.CreateCall(fn, {value});
                         break;
                     }
