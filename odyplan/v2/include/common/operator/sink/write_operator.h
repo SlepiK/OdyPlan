@@ -91,7 +91,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             io::IOSinkId mIOSinkId;
             core::logical::port::Port mDataSchema;
 
-            void codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
+            static void codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
                 const core::common::identifier::TypeId typeId) {
 
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
@@ -112,7 +112,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     ptrFieldValue = slot;
                 }
 
-                auto fn = module->getOrInsertFunction(
+                const auto fn = module->getOrInsertFunction(
                     "rtIOSinkWrite",
                     llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, ptrTy }, false)
                 );

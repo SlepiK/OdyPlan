@@ -104,7 +104,7 @@ namespace sierra::odyplan::v2::common::opr::source {
             io::IOSourceId mIOSourceId;
             core::logical::port::Port mDataSchema;
 
-            llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* stringValue,
+            static llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* stringValue,
                 const core::common::identifier::TypeId typeId) {
                 if (typeId == std::to_underlying(core::common::identifier::Type::STRING)) {
                     return stringValue;
