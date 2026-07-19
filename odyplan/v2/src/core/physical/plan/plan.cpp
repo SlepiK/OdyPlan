@@ -53,30 +53,48 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         segment::SegmentContext segmentCtx(function, basicBlock, ctx, mTypeRegistry);
 
-        port::PortTupleConsumer chain;
+        port::PortTupleConsumer noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
+
+        opr::IConsumer* target = nullptr;
 
         switch (segment.type) {
             case segment::SegmentType::NORMAL:
-                chain = [end = segment.end] (segment::SegmentContext& sCtx, const port::PortTuple& t) {
-                    end->consume(sCtx,t,[](segment::SegmentContext&, const port::PortTuple&) {});
-                };
+                target = segment.end;
                 break;
             case segment::SegmentType::BLOCKING:
-                chain = [target = segment.blockingTarget] (segment::SegmentContext& sCtx, const port::PortTuple& t) {
-                    target->consume(sCtx, t, [](segment::SegmentContext&, const port::PortTuple&) {});
-                };
+                target = segment.blockingTarget;
                 break;
         }
+
+        port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& segmentCtx, const port::PortTuple& tuple) {
+            target->consume(segmentCtx, tuple, noopConsumer);
+        };
+
+        struct EndEntry {
+            opr::IPipeOperator* pipe;
+            port::PortTupleConsumer downstream;
+        };
+
+        std::vector<EndEntry> endEntries;
 
         for (auto *it : std::ranges::reverse_view(segment.mid)) {
             opr::IPipeOperator* pipe = it;
             port::PortTupleConsumer next = chain;
+            endEntries.push_back(EndEntry{pipe, next});
             chain = [pipe, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
                 pipe->consume(sCtx, t, next);
             };
         }
 
-        segment.start->produce(segmentCtx, std::move(chain));
+        std::ranges::reverse(endEntries);
+
+        segment.start->produce(segmentCtx, chain);
+
+        for (const auto& entry : endEntries) {
+            entry.pipe->end(segmentCtx, entry.downstream);
+        }
+
+        target->end(segmentCtx, noopConsumer);
 
         segmentCtx.builder.CreateRetVoid();
         return function;

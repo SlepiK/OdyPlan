@@ -73,7 +73,13 @@ namespace sierra::odyplan::v2::common::opr::source {
 
                 auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext", llvm::FunctionType::get(i1Ty, {idTy}, false));
                 llvm::Value* hasNext = segmentCtx.builder.CreateCall(hasNextFn, {sourceId});
-                segmentCtx.builder.CreateCondBr(hasNext, produceBB, exitBB);
+
+                auto stopFn = module->getOrInsertFunction("odyStop", llvm::FunctionType::get(i1Ty, {}, false));
+                llvm::Value* stopped = segmentCtx.builder.CreateCall(stopFn, {});
+                llvm::Value* notStopped = segmentCtx.builder.CreateNot(stopped);
+                llvm::Value* shouldContinue = segmentCtx.builder.CreateAnd(hasNext, notStopped);
+
+                segmentCtx.builder.CreateCondBr(shouldContinue, produceBB, exitBB);
 
                 segmentCtx.builder.SetInsertPoint(produceBB);
 

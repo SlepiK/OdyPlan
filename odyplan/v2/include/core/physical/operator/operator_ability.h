@@ -17,6 +17,7 @@ namespace sierra::odyplan::v2::core::physical::opr {
     public:
         virtual ~IConsumer() = default;
         virtual void consume(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
+        virtual void end(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
     };
 }  // namespace sierra::odyplan::v2::core::physical::opr
 
