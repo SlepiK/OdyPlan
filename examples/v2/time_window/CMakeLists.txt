@@ -13,7 +13,7 @@ add_executable(${TARGET_NAME}
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-        ${HEADERS}
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
 if(ENABLE_LOOPED_SOURCE)
