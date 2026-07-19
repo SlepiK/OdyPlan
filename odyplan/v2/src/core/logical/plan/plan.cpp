@@ -92,38 +92,38 @@ namespace sierra::odyplan::v2::core::logical::plan {
     [[nodiscard]] std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
         const std::size_t n = mOperators.size();
 
-        enum class State : std::uint8_t {ToDo, InProgress, Finished};
+        enum class State : std::uint8_t {TO_DO, IN_PROGRESS, FINISHED};
 
-        std::vector<State> state(n, State::ToDo);
+        std::vector<State> state(n, State::TO_DO);
         std::vector<common::identifier::OperatorId> order;
         order.reserve(n);
 
-        std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](common::identifier::OperatorId cId) {
-            state[cId] = State::InProgress;
+        std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](const common::identifier::OperatorId cId) {
+            state.at(cId) = State::IN_PROGRESS;
 
             for (const auto& edge : mEdges) {
                 if (edge.fromOperator.operatorId == cId) {
-                    auto next = edge.toOperator.operatorId;
-                    if (state[next] == State::InProgress) {
+                    const auto next = edge.toOperator.operatorId;
+                    if (state.at(next) == State::IN_PROGRESS) {
                         throw std::runtime_error(
                             "Plan::topologicalOrder: Late cycle detected - something went wrong");
                     }
-                    if (state[next] == State::ToDo) {
+                    if (state.at(next) == State::TO_DO) {
                         depthfirstsearch(next);
                     }
                 }
             }
 
-            state[cId] = State::Finished;
+            state.at(cId) = State::FINISHED;
             order.push_back(cId);
         };
 
-        for (auto sourceOprId : mSourceOperators) {
+        for (const auto sourceOprId : mSourceOperators) {
             depthfirstsearch(sourceOprId);
         }
 
         //To have the sources at the beginning
-        std::reverse(order.begin(), order.end());
+        std::ranges::reverse(order);
         return order;
     }
 
