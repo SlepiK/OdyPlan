@@ -102,7 +102,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 llvm::Value* ptrFieldValue = nullptr;
 
                 if (fieldValue->getType()->isPointerTy()) {
-                    ptrFieldValue = fieldValue;
+                    ptrFieldValue = fieldVahmm,lue;
                 } else {
                     auto* slot = segmentCtx.storage.get(typeId);
                     segmentCtx.builder.CreateStore(fieldValue, slot);

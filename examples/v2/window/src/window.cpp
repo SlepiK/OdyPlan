@@ -14,9 +14,10 @@
 
 #include "common/io/io_registry.h"
 #include "common/operator/pipe/select_operator.h"
-#include "common/operator/pipe/window_operator.h"
+#include "../../../../odyplan/v2/include/common/operator/pipe/window/count_window_operator.h"
 #include "common/operator/source/read_operator.h"
 #include "common/window/window_buffer.h"
+#include "common/window/count/count_window_buffer.h"
 
 inline std::atomic<bool> atStop{false};
 
@@ -27,8 +28,19 @@ inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_pt
     return gSources.size() - 1;
 }
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::WindowBuffer>> gWindows;
+inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer>> gWindows;
 
+inline std::uint64_t registerWindow(std::unique_ptr<sierra::odyplan::v2::common::window::IWindowBuffer> window) {
+    gWindows.push_back(std::move(window));
+    return gWindows.size() - 1;
+}
+
+inline void shutdownWindows() {
+    for (const auto &window : gWindows) {
+        window->close();
+    }
+    gWindows.clear();
+}
 
 extern "C" {
 
@@ -36,15 +48,15 @@ extern "C" {
         gWindows.at(handle)->begin();
     }
 
-    void rtWindowPush(const std::uint64_t handle, const std::uint64_t index, const void* rawData) {
-        gWindows.at(handle)->push(index, rawData);
+    void rtWindowPush(const std::uint64_t handle, const std::uint64_t fieldIndex, const void* rawData) {
+        gWindows.at(handle)->push(fieldIndex, rawData);
     }
 
-    void rtWindowEndRow(const std::uint64_t handle) {
-        gWindows.at(handle)->end(nowMillis());
+    void rtWindowEndRow(const std::uint64_t handle, std::int64_t timestamp) {
+        gWindows.at(handle)->end(std::chrono::sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(timestamp)));
     }
 
-    void rtWindowCompile(const std::uint64_t handle) {
+    void rtWindowCompute(const std::uint64_t handle) {
         gWindows.at(handle)->compute();
     }
 
@@ -52,12 +64,12 @@ extern "C" {
         return gWindows.at(handle)->getWindowCount();
     }
 
-    std::uint64_t rtWindowGetRowCountInWindow(const std::uint64_t handle, const std::uint64_t index) {
-        return gWindows.at(handle)->getRowCountInWindow(index);
+    std::uint64_t rtWindowGetRowCountInWindow(const std::uint64_t handle, const std::uint64_t windowIndex) {
+        return gWindows.at(handle)->getRowCountInWindow(windowIndex);
     }
 
-    void rtWindowGetData(const std::uint64_t handle, const uint64_t index, const uint64_t rowIndex, const uint64_t dataIndex, void* outBuffer) {
-        gWindows.at(handle).get(index, rowIndex, dataIndex, outBuffer);
+    const void* rtWindowGetData(const std::uint64_t handle, const uint64_t windowIndex, const uint64_t rowIndex, const uint64_t fieldIndex) {
+        return static_cast<const void*>(gWindows.at(handle)->getData(windowIndex, rowIndex, fieldIndex));
     }
 
     void rtEnd() {
@@ -244,11 +256,8 @@ int main() {
 
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::source::logical::ReadOperator>(sourceOutput, sierra::odyplan::v2::common::io::IOFormat::JSON, nlohmann::json{{"path", "read.json"}}));
 
-    auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::pipe::logical::WindowOperator>(
-        sierra::odyplan::v2::common::opr::pipe::logical::WindowOperator::WindowType::SLIDING,
-        sierra::odyplan::v2::common::opr::pipe::logical::WindowOperator::WindowTrigger::COUNT,
-        1,
-        1
+    auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::pipe::logical::CountWindowOperator>(
+        sierra::odyplan::v2::common::window::count::CountWindowConfig{.type = sierra::odyplan::v2::common::window::WindowType::SLIDING, .size = 1, .slide = 1}
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
@@ -289,14 +298,17 @@ int main() {
     );
 
     builder.registerOperatorTransformation(
-        sierra::odyplan::v2::common::opr::pipe::logical::WindowOperator::TYPE_ID,
-        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        sierra::odyplan::v2::common::opr::pipe::logical::CountWindowOperator::TYPE_ID,
+        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::WindowOperator&>(op);
+            const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::CountWindowOperator&>(op);
+            const auto& config = concrete.getWindowConfig();
+
+            auto windowHandle = registerWindow(std::make_unique<sierra::odyplan::v2::common::window::count::CountWindowBuffer>(config, concrete.getOutputPorts().at(0), typeRegistry));
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::WindowOperator>(inputPorts.front(), outputPorts.front(),1));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::CountWindowOperator>(inputPorts.front(), outputPorts.front(), windowHandle));
             return ot;
         }
     );
@@ -345,6 +357,15 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+
+
+    symbolMap[jit->mangleAndIntern("rtWindowGetRowCountInWindow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetRowCountInWindow),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetData),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowBeginRow),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetCount")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetCount),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowCompute")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowCompute),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowPush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowPush),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowEndRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowEndRow),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
@@ -400,6 +421,8 @@ int main() {
     atStop.store(true);
     mainThread.join();
 #endif
+
+    shutdownWindows();
 
     return 0;
 }

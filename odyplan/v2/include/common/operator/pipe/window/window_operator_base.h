@@ -1,98 +1,69 @@
-#ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOWOPERATOR_H
-#define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOWOPERATOR_H
+#ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOW_WINDOWOPERATORBASE_H
+#define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOW_WINDOWOPERATORBASE_H
 
 #include <llvm/IR/Module.h>
 
-#include "common/window/window_config.h"
+#include "common/window/window_type.h"
 #include "core/logical/operator/pipe/pipe_operator.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe {
     namespace logical {
-        class WindowOperator : public core::logical::opr::TypedPipeOperator {
-        public:
-            enum class WindowType : std::uint8_t {
-                TUMBLING,
-                SLIDING,
-            };
-
-            static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::WINDOW);
-
-            explicit WindowOperator(window::WindowConfig config)
-                : mWindowConfig(std::move(config)) {
-                std::visit([](const auto& wConfig) {checkConfig(wConfig); }, mWindowConfig);
-            }
-
-            [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
-                return TYPE_ID;
-            }
-
-            [[nodiscard]] const window::WindowConfig& getWindowConfig() const {
-                return mWindowConfig;
-            }
-
+        class WindowOperatorBase : public core::logical::opr::TypedPipeOperator {
         protected:
-            void validate() override {
-            }
-
-        private:
-            window::WindowConfig mWindowConfig;
-
             template <typename T>
-            static void checkCommonConfig(const WindowType windowType, const T windowSize, const T windowSlide) {
+            void checkBaseConfig(const window::WindowType windowType, const T windowSize, const T windowSlide) {
                 if (windowSize == T{0}) {
                     throw std::invalid_argument("window size cant be 0");
                 }
 
-                if (windowType == WindowType::TUMBLING && windowSlide != windowSize) {
+                if (windowType == window::WindowType::TUMBLING && windowSlide != windowSize) {
                     throw std::invalid_argument("window size and slide must be equal for TUMBLING");
                 }
 
-                if (windowType == WindowType::SLIDING && (windowSlide == T{0} || windowSlide > windowSize)) {
+                if (windowType == window::WindowType::SLIDING && (windowSlide == T{0} || windowSlide > windowSize)) {
                     throw std::invalid_argument("sliding requires 0 < slide <= size");
                 }
-            }
-
-            static void checkConfig(const window::CountWindowConfig& config) {
-                checkCommonConfig(config.type, config.size, config.slide);
-            }
-
-            static void checkConfig(const window::TimeWindowConfig& config) {
-                checkCommonConfig(config.type, config.size, config.slide);
             }
         };
     }
 
     namespace physical {
-        class WindowOperator : public core::physical::opr::TypedBlockingPipeOperator {
+        class WindowOperatorBase : public core::physical::opr::TypedBlockingPipeOperator {
         public:
-            explicit WindowOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort,
-                const std::uint64_t windowHandle)
+            WindowOperatorBase(core::physical::port::Port inputPort, core::physical::port::Port outputPort, const std::uint64_t windowHandle)
                 : TypedBlockingPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}),
                     mWindowHandle(windowHandle) {
             }
 
         protected:
-            //consume
-            void build(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple) override {
+            std::uint64_t mWindowHandle;
+
+            virtual llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, llvm::Type* i64Ty) = 0;
+
+            void build(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+
                 llvm::Value* wHandle = llvm::ConstantInt::get(i64Ty, mWindowHandle);
 
                 auto beginWindowFn = module->getOrInsertFunction("rtWindowBeginRow", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(beginWindowFn, { wHandle });
 
                 for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
-                    codegenPush(segmentCtx, wHandle, tuple.at(i), getOutputPorts().at(0).at(i).typeId);
+                    codegenPush(segmentCtx, wHandle, tuple.at(i), getOutputPorts().at(0).at(i).typeId, i);
                 }
 
+                llvm::Value* timestamp = getTimestampValue(segmentCtx, tuple, i64Ty);
+
                 auto endWindowFn = module->getOrInsertFunction("rtWindowEndRow", llvm::FunctionType::get(voidTy, { i64Ty, i64Ty }, false));
-                segmentCtx.builder.CreateCall(endWindowFn, { wHandle, llvm::ConstantInt::get(i64Ty, 0) });
+                segmentCtx.builder.CreateCall(endWindowFn, { wHandle, timestamp });
             }
-            //produce
+
+
             void probe(core::physical::segment::SegmentContext& segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
@@ -107,7 +78,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(computeWindowFn, { wHandle });
 
-                auto windowCountFn = module->getOrInsertFunction("rtWindowCount", llvm::FunctionType::get(i64Ty, { i64Ty }, false));
+                auto windowCountFn = module->getOrInsertFunction("rtWindowGetCount", llvm::FunctionType::get(i64Ty, { i64Ty }, false));
                 llvm::Value* wCount = segmentCtx.builder.CreateCall(windowCountFn, { wHandle });
 
                 auto* windowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
@@ -126,7 +97,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 segmentCtx.builder.SetInsertPoint(wBodyBB);
 
-                auto windowRowCountFn = module->getOrInsertFunction("rtWindowRowCount",llvm::FunctionType::get(i64Ty, { i64Ty, i64Ty }, false));
+                auto windowRowCountFn = module->getOrInsertFunction("rtWindowGetRowCountInWindow",llvm::FunctionType::get(i64Ty, { i64Ty, i64Ty }, false));
                 llvm::Value* wRowCount = segmentCtx.builder.CreateCall(windowRowCountFn, { wHandle, wIndex });
 
                 auto* windowRowIndex = segmentCtx.storage.get(std::to_underlying(core::common::identifier::Type::INT64));
@@ -164,10 +135,9 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
                 segmentCtx.builder.SetInsertPoint(wExitBB);
             }
-        private:
-            std::uint64_t mWindowHandle;
 
-            void codegenPush(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* value, const core::common::identifier::TypeId typeId) {
+        private:
+            void codegenPush(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* value, const core::common::identifier::TypeId typeId, const std::size_t fieldIndex) {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -175,8 +145,11 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
+                llvm::Value* slot = segmentCtx.storage.get(typeId);
+                segmentCtx.builder.CreateStore(value, slot);
+
                 auto fn = module->getOrInsertFunction("rtWindowPush", llvm::FunctionType::get(voidTy, {i64Ty, i64Ty, ptrTy }, false));
-                segmentCtx.builder.CreateCall(fn, {windowHandle, llvm::ConstantInt::get(i64Ty, typeId), value});
+                segmentCtx.builder.CreateCall(fn, {windowHandle, llvm::ConstantInt::get(i64Ty, fieldIndex), slot});
             }
 
             llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* windowHandle, llvm::Value* windowIndex, llvm::Value* rowIndex, llvm::Value* dataIndex, core::common::identifier::TypeId typeId) {
@@ -186,12 +159,15 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
                 auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
-                auto fn = module->getOrInsertFunction("rtWindowGet", llvm::FunctionType::get(ptrTy, {i64Ty, i64Ty, i64Ty, i64Ty}, false));
+                auto fn = module->getOrInsertFunction("rtWindowGetData", llvm::FunctionType::get(ptrTy, {i64Ty, i64Ty, i64Ty, i64Ty}, false));
                 llvm::Value* ret = segmentCtx.builder.CreateCall(fn, { windowHandle, windowIndex, rowIndex, dataIndex });
-                return segmentCtx.builder.CreateLoad(segmentCtx.typeRegistry.resolveType(typeId, ctx), ret);
+
+                llvm::Type* dataTy = segmentCtx.typeRegistry.resolveType(typeId, ctx);
+                return segmentCtx.builder.CreateLoad(dataTy, ret);
             }
+
         };
     }
 }
 
-#endif //SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOWOPERATOR_H
+#endif //SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOW_WINDOWOPERATORBASE_H

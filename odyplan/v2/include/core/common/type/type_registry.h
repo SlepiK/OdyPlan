@@ -8,6 +8,7 @@
 #include <llvm/IR/Type.h>
 #include <functional>
 #include <string>
+#include <utility>
 
 #include "core/common/identifier/type.h"
 
@@ -17,6 +18,9 @@ namespace sierra::odyplan::v2::core::common::type {
         using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
         using ConstantFactory = std::function<llvm::Value*(llvm::IRBuilder<>&, const std::string&)>;
 
+        using RetainFn = std::function<void*(void* ori)>;
+        using ReleaseFn = std::function<void(void* own)>;
+
         static TypeRegistry withDefaults() {
             TypeRegistry registry;
             registry.registerDefaults();
@@ -24,7 +28,11 @@ namespace sierra::odyplan::v2::core::common::type {
         }
 
         void registerType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
-            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory)});
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = false, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=defaultRetain(), .release=defaultRelease()});
+        }
+
+        void registerPtrType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, RetainFn retain = defaultRetain(), ReleaseFn release = defaultRelease()) {
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = true, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=std::move(retain), .release=std::move(release)});
         }
 
         [[nodiscard]] llvm::Type* resolveType(const identifier::TypeId id, llvm::LLVMContext& ctx) const {
@@ -39,15 +47,40 @@ namespace sierra::odyplan::v2::core::common::type {
             return get(id).byteSize;
         }
 
+        [[nodiscard]] bool isPointerType(const identifier::TypeId id) const {
+            return get(id).isPointerType;
+        }
+
+        [[nodiscard]] void* retain(const identifier::TypeId id, void* ori) const {
+            return get(id).retain(ori);
+        }
+
+        void release(const identifier::TypeId id, void* own) const {
+            get(id).release(own);
+        }
+
     private:
         struct TypeRegistryEntry {
             std::string name;
             std::size_t byteSize;
+            bool isPointerType;
             LLVMTypeFactory typeFactory;
             ConstantFactory constantFactory;
+            RetainFn retain;
+            ReleaseFn release;
         };
 
         std::unordered_map<identifier::TypeId, TypeRegistryEntry> mTypeStorage;
+
+        static RetainFn defaultRetain() {
+            return [](void* ptr) {
+                return ptr;
+            };
+        }
+
+        static ReleaseFn defaultRelease() {
+            return [](void* ptr) {};
+        }
 
         [[nodiscard]] const TypeRegistryEntry& get(identifier::TypeId id) const {
             const auto iter = mTypeStorage.find(id);
@@ -135,7 +168,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getDoubleTy(b.getContext()), std::stoi(v));
                 }
             );
-            registerType(
+            registerPtrType(
                 std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
                 sizeof(const char*),
                 [](llvm::LLVMContext& ctx) {
@@ -143,6 +176,17 @@ namespace sierra::odyplan::v2::core::common::type {
                 },
                 [](llvm::IRBuilder<>&b, const std::string& v) {
                     return b.CreateGlobalString(v);
+                },
+                [](void* ori) -> void* {
+                    const char* source = static_cast<const char*>(ori);
+                    auto* cpy = strdup(source);
+                    if (!cpy) {
+                        throw std::bad_alloc();
+                    }
+                    return static_cast<void*>(cpy);
+                },
+                [](void* own) {
+                    free(own);
                 }
             );
         }
