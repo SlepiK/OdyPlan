@@ -12,7 +12,6 @@
 #include "common/io/io_sink.h"
 #include "core/common/identifier/operator.h"
 #include "core/common/identifier/type.h"
-#include "core/common/type/type_registry.h"
 #include "core/logical/operator/sink/sink_operator.h"
 #include "core/logical/port/port.h"
 #include "core/physical/operator/sink/sink_operator.h"
@@ -71,7 +70,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 auto* idTy = llvm::Type::getInt64Ty(ctx);
                 llvm::Value* index = llvm::ConstantInt::get(idTy, mIOSinkId);
 
-                auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                const auto beginFn = module->getOrInsertFunction("rtIOSinkBeginData", llvm::FunctionType::get(voidTy, { idTy }, false));
                 segmentCtx.builder.CreateCall(beginFn, {index});
 
                 for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
@@ -80,7 +79,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     codegenField(segmentCtx, index, fieldName, tuple.at(i), dataField.typeId);
                 }
 
-                auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
+                const auto endFn = module->getOrInsertFunction("rtIOSinkEndData", llvm::FunctionType::get(voidTy, { idTy }, false));
                 segmentCtx.builder.CreateCall(endFn, {index});
             }
 
@@ -91,7 +90,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
             io::IOSinkId mIOSinkId;
             core::logical::port::Port mDataSchema;
 
-            void codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
+            static void codegenField(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* index, llvm::Value* fieldName, llvm::Value* fieldValue,
                 const core::common::identifier::TypeId typeId) {
 
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
@@ -112,7 +111,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     ptrFieldValue = slot;
                 }
 
-                auto fn = module->getOrInsertFunction(
+                const auto fn = module->getOrInsertFunction(
                     "rtIOSinkWrite",
                     llvm::FunctionType::get(voidTy, { idTy, typeIdTy, ptrTy, ptrTy }, false)
                 );

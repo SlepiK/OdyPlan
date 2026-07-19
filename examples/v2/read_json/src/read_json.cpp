@@ -13,16 +13,17 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
-#include "common/operator/pipe/select_operator.h"
 #include "common/operator/source/read_operator.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic atStop{false};
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
 
-inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
-    gSources.push_back(std::move(source));
-    return gSources.size() - 1;
+    sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
+        gSources.push_back(std::move(source));
+        return gSources.size() - 1;
+    }
 }
 
 extern "C" {
@@ -132,7 +133,7 @@ extern "C" {
             throw std::invalid_argument("rtParseInt64: invalid argument or out of range");
         }
 
-        return static_cast<std::int64_t>(value);
+        return value;
     }
 
     std::float_t rtParseFloat(const char* str) {
@@ -231,6 +232,7 @@ int main() {
         [&ioRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports&,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
+            // NOLINTNEXTLINE
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::source::logical::ReadOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
@@ -248,6 +250,7 @@ int main() {
         [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports&) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
+            // NOLINTNEXTLINE
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::sink::logical::PrintOperator&>(op);
 
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
@@ -257,7 +260,7 @@ int main() {
     );
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v2::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";

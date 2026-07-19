@@ -8,7 +8,7 @@
 namespace sierra::odyplan::v2::common::io {
     class JsonSource : public IIOSource{
     public:
-        explicit JsonSource(const std::string& path) : mIndex(0) {
+        explicit JsonSource(const std::string& path) {
             std::ifstream file(path);
 
             if (!file.is_open()) {
@@ -21,6 +21,13 @@ namespace sierra::odyplan::v2::common::io {
                 throw std::invalid_argument("JsonSource: root of the json source must be a json array");
             }
         }
+
+        ~JsonSource() override = default;
+
+        JsonSource(JsonSource const&) = delete;
+        JsonSource& operator =(JsonSource const&) = delete;
+        JsonSource(JsonSource&&) = delete;
+        JsonSource& operator=(JsonSource&&) = delete;
 
         [[nodiscard]] bool available() override {
             if (mIndex >= mData.size()) {
@@ -56,7 +63,7 @@ namespace sierra::odyplan::v2::common::io {
 
     private:
         nlohmann::json mData;
-        std::size_t mIndex;
+        std::size_t mIndex{0};
         IOData mCurrentData;
     };
 }

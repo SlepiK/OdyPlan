@@ -13,23 +13,25 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
-#include "common/operator/pipe/select_operator.h"
 #include "common/operator/source/read_operator.h"
 #include "common/operator/sink/write_operator.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic atStop{false};
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
-inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink>> gSinks;
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
 
-inline sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
-    gSources.push_back(std::move(source));
-    return gSources.size() - 1;
-}
+    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink>> gSinks;
 
-inline sierra::odyplan::v2::common::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink> sink) {
-    gSinks.push_back(std::move(sink));
-    return gSinks.size() - 1;
+    sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
+        gSources.push_back(std::move(source));
+        return gSources.size() - 1;
+    }
+
+    sierra::odyplan::v2::common::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink> sink) {
+        gSinks.push_back(std::move(sink));
+        return gSinks.size() - 1;
+    }
 }
 
 extern "C" {
@@ -136,7 +138,7 @@ extern "C" {
             throw std::invalid_argument("rtParseInt64: invalid argument or out of range");
         }
 
-        return static_cast<std::int64_t>(value);
+        return value;
     }
 
     std::float_t rtParseFloat(const char* str) {
@@ -171,7 +173,7 @@ extern "C" {
         return value;
     }
 
-    void rtIOSinkBeginData(sierra::odyplan::v2::common::io::IOSinkId index) {
+    void rtIOSinkBeginData(const sierra::odyplan::v2::common::io::IOSinkId index) {
         gSinks.at(index)->begin();
     }
 
@@ -293,7 +295,7 @@ int main() {
     );
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v2::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";

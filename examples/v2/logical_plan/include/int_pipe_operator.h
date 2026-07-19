@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V2_EXAMPLE_LOGICALPLAN_INTPIPEOPERATOR_H
 
 #include "core/logical/operator/pipe/pipe_operator.h"
-#include "const_number_source_operator.h"
 
 namespace sierra::odyplan::v2::example::logical_plan {
     class IntPipeOperator final : public core::logical::opr::TypedPipeOperator {

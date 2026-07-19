@@ -34,26 +34,26 @@ namespace sierra::odyplan::v2::core::physical::plan {
         mSegments.push_back(std::move(segment));
     }
 
-    void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) {
+    void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
         std::vector<llvm::Function*> functions;
         functions.reserve(mSegments.size());
 
         for (std::size_t i = 0; i < mSegments.size(); ++i) {
-            functions.push_back(codegenSegment(mSegments[i], module, ctx, i));
+            functions.push_back(codegenSegment(mSegments.at(i), module, ctx, i));
         }
 
         codegenMain(module, ctx, functions);
     }
 
-    llvm::Function* Plan::codegenSegment(const segment::Segment& segment, llvm::Module& module, llvm::LLVMContext& ctx, const std::size_t index) {
+    llvm::Function* Plan::codegenSegment(const segment::Segment& segment, llvm::Module& module, llvm::LLVMContext& ctx, const std::size_t index) const {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_segment_" + std::to_string(index), &module);
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", function);
 
-        segment::SegmentContext segmentCtx(function, basicBlock, ctx, mTypeRegistry);
+        segment::SegmentContext segmentCtx(function, basicBlock, ctx, *mTypeRegistry);
 
-        port::PortTupleConsumer noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
+        port::PortTupleConsumer const noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
 
         opr::IConsumer* target = nullptr;
 
@@ -66,8 +66,8 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 break;
         }
 
-        port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& segmentCtx, const port::PortTuple& tuple) {
-            target->consume(segmentCtx, tuple, noopConsumer);
+        port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& sCtx, const port::PortTuple& tuple) {
+            target->consume(sCtx, tuple, noopConsumer);
         };
 
         struct EndEntry {
@@ -78,11 +78,10 @@ namespace sierra::odyplan::v2::core::physical::plan {
         std::vector<EndEntry> endEntries;
 
         for (auto *it : std::ranges::reverse_view(segment.mid)) {
-            opr::IPipeOperator* pipe = it;
-            port::PortTupleConsumer next = chain;
-            endEntries.push_back(EndEntry{pipe, next});
-            chain = [pipe, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
-                pipe->consume(sCtx, t, next);
+            port::PortTupleConsumer const next = chain;
+            endEntries.push_back(EndEntry{.pipe=it, .downstream=next});
+            chain = [it, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
+                it->consume(sCtx, t, next);
             };
         }
 
@@ -90,11 +89,13 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         segment.start->produce(segmentCtx, chain);
 
-        for (const auto& entry : endEntries) {
-            entry.pipe->end(segmentCtx, entry.downstream);
+        for (const auto&[pipe, downstream] : endEntries) {
+            pipe->end(segmentCtx, downstream);
         }
 
-        target->end(segmentCtx, noopConsumer);
+        if (target != nullptr) {
+            target->end(segmentCtx, noopConsumer);
+        }
 
         segmentCtx.builder.CreateRetVoid();
         return function;
@@ -106,13 +107,13 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", mainFn);
 
-        llvm::IRBuilder<> builder(basicBlock);
+        llvm::IRBuilder builder(basicBlock);
 
         for (auto* function : functions) {
             builder.CreateCall(function, {});
         }
 
-        auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
+        const auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
         builder.CreateCall(endFn, {});
 
         builder.CreateRetVoid();

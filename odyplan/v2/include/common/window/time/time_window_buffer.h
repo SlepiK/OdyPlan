@@ -2,16 +2,18 @@
 #define SIERRA_ODYPLAN_V2_COMMON_WINDOW_TIME_WINDOWBUFFER_H
 
 #include <deque>
+#include <algorithm>
 #include <common/window/window_buffer.h>
 #include <common/window/time/time_window_config.h>
 #include <common/window/window_row_layout.h>
+#include <common/window/window_range.h>
 
 namespace sierra::odyplan::v2::common::window::time {
     class TimeWindowBuffer final : public IWindowBuffer {
     public:
         using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
 
-        TimeWindowBuffer(TimeWindowConfig config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
+        TimeWindowBuffer(const TimeWindowConfig &config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mConfig(config),
                 mRowLayout(std::move(mDataSchema), typeRegistry) {
         }
@@ -20,11 +22,16 @@ namespace sierra::odyplan::v2::common::window::time {
             assert(mClosed && "TimeWindowBuffer::close() was never called");
         }
 
+        TimeWindowBuffer(TimeWindowBuffer const&) = delete;
+        TimeWindowBuffer& operator =(TimeWindowBuffer const&) = delete;
+        TimeWindowBuffer(TimeWindowBuffer&&) = delete;
+        TimeWindowBuffer& operator=(TimeWindowBuffer&&) = delete;
+
         void begin() override {
             mRowLayout.begin();
         }
 
-        void push(std::size_t index, const void *rawData) override {
+        void push(const std::size_t index, const void *rawData) override {
             mRowLayout.push(index, rawData);
         }
 
@@ -33,7 +40,7 @@ namespace sierra::odyplan::v2::common::window::time {
                 mWatermark = timestamp;
             }
 
-            if (mNextWindowStart && timestamp < *mNextWindowStart) {
+            if (mNextWindowStart && timestamp < mNextWindowStart.value()) {
                 ++mDroppedLateRows;
                 mRowLayout.discardCurrentRow();
                 return;
@@ -57,9 +64,10 @@ namespace sierra::odyplan::v2::common::window::time {
 
             const auto watermark = *mWatermark - mConfig.allowedLateness;
 
-            while (*mNextWindowStart + mConfig.size <= watermark) {
-                emit(*mNextWindowStart);
-                *mNextWindowStart += mConfig.slide;
+            while (mNextWindowStart.has_value() &&  mNextWindowStart.value() + mConfig.size <= watermark) {
+                const auto current = mNextWindowStart.value();
+                emit(current);
+                mNextWindowStart = current + mConfig.slide;
             }
         }
 
@@ -77,9 +85,10 @@ namespace sierra::odyplan::v2::common::window::time {
 
             const auto lastTimestamp = mRows.back().timestamp;
 
-            while (*mNextWindowStart <= lastTimestamp) {
-                emit(*mNextWindowStart);
-                *mNextWindowStart += mConfig.slide;
+            while (mNextWindowStart.has_value() && mNextWindowStart.value() <= lastTimestamp) {
+                const auto current = mNextWindowStart.value();
+                emit(current);
+                mNextWindowStart = current + mConfig.slide;
             }
 
         }
@@ -88,19 +97,19 @@ namespace sierra::odyplan::v2::common::window::time {
             return mWindows.size();
         }
 
-        [[nodiscard]] size_t getRowCountInWindow(std::size_t index) const override {
+        [[nodiscard]] size_t getRowCountInWindow(const std::size_t index) const override {
             return mWindows.at(index).count;
         }
 
         [[nodiscard]] const std::byte* getData(const std::size_t windowIndex, const std::size_t rowIndex, const std::size_t fieldIndex) const override {
-            const auto& range = mWindows.at(windowIndex);
-            const auto relIndex = range.start - mBaseIndex + rowIndex;
+            const auto&[start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
             return mRows.at(relIndex).values.data() + mRowLayout.offsetOf(fieldIndex);
         }
 
         void close() override {
-            for (auto& row : mRows) {
-                mRowLayout.releaseRow(row.values);
+            for (auto&[values, timestamp] : mRows) {
+                mRowLayout.releaseRow(values);
             }
 
             mRows.clear();
@@ -130,7 +139,7 @@ namespace sierra::odyplan::v2::common::window::time {
                 return;
             }
 
-            while (!mRows.empty() && mRows.front().timestamp < *mNextWindowStart) {
+            while (!mRows.empty() && mRows.front().timestamp < mNextWindowStart.value()) {
                 mRowLayout.releaseRow(mRows.front().values);
                 mRows.pop_front();
                 ++mBaseIndex;
@@ -139,20 +148,18 @@ namespace sierra::odyplan::v2::common::window::time {
 
         void emit(const Timestamp start) {
             const auto end = start + mConfig.size;
-            const auto iterStart = std::lower_bound(mRows.begin(), mRows.end(), start, [](const Row& rw, const Timestamp& ts) {return rw.timestamp < ts;});
-            const auto iterEnd = std::lower_bound(mRows.begin(), mRows.end(), end, [](const Row& rw, const Timestamp& ts) {return rw.timestamp < ts;});
+            const auto iterStart = std::ranges::lower_bound(mRows, start, {}, &Row::timestamp);
+            const auto iterEnd = std::ranges::lower_bound(mRows, end, {}, &Row::timestamp);
 
-            const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd));
-
-            if (count > 0) {
+            if (const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd)); count > 0) {
                 const auto startIndex = static_cast<std::uint64_t>(std::distance(mRows.begin(), iterStart)) + mBaseIndex;
-                mWindows.push_back(WindowRange{startIndex, count});
+                mWindows.push_back(WindowRange{.start=startIndex, .count=count});
             }
         }
 
         void insertAndSort(const Timestamp timestamp, std::vector<std::byte>&& values) {
-            const auto position = std::upper_bound(mRows.begin(), mRows.end(), timestamp, [](const Timestamp& ts, const Row& rw) {return ts < rw.timestamp;});
-            mRows.insert(position, Row{std::move(values), timestamp});
+            const auto position = std::ranges::upper_bound(mRows, timestamp, {}, &Row::timestamp);
+            mRows.insert(position, Row{.values=std::move(values), .timestamp=timestamp});
         }
     };
 }

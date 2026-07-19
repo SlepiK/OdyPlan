@@ -6,13 +6,12 @@
 #include <common/window/window_buffer.h>
 #include <common/window/window_row_layout.h>
 #include <common/window/count/count_window_config.h>
-
 #include "common/window/window_range.h"
 
 namespace sierra::odyplan::v2::common::window::count {
     class CountWindowBuffer final : public IWindowBuffer {
     public:
-        CountWindowBuffer(CountWindowConfig config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
+        CountWindowBuffer(const CountWindowConfig &config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mConfig(config),
                 mRowLayout(std::move(mDataSchema), typeRegistry) {
         }
@@ -21,15 +20,20 @@ namespace sierra::odyplan::v2::common::window::count {
             assert(mClosed && "CountWindowBuffer::close() was never called");
         }
 
+        CountWindowBuffer(CountWindowBuffer const&) = delete;
+        CountWindowBuffer& operator =(CountWindowBuffer const&) = delete;
+        CountWindowBuffer(CountWindowBuffer&&) = delete;
+        CountWindowBuffer& operator=(CountWindowBuffer&&) = delete;
+
         void begin() override {
             mRowLayout.begin();
         }
 
-        void push(std::size_t index, const void *rawData) override {
+        void push(const std::size_t index, const void *rawData) override {
             mRowLayout.push(index, rawData);
         }
 
-        void end(std::chrono::sys_time<std::chrono::milliseconds> timestamp) override {
+        void end(std::chrono::sys_time<std::chrono::milliseconds>  /*timestamp*/) override {
             mRows.push_back(mRowLayout.pop());
             ++mTotalPushed;
         }
@@ -39,7 +43,7 @@ namespace sierra::odyplan::v2::common::window::count {
             mWindows.clear();
 
             while (mNextWindowStart + mConfig.size <= mTotalPushed) {
-                mWindows.push_back(WindowRange{mNextWindowStart, mConfig.size});
+                mWindows.push_back(WindowRange{.start=mNextWindowStart, .count=mConfig.size});
                 mNextWindowStart += mConfig.slide;
             }
         }
@@ -48,9 +52,8 @@ namespace sierra::odyplan::v2::common::window::count {
             evict();
             mWindows.clear();
 
-            const std::uint64_t remaining = mTotalPushed - mNextWindowStart;
-            if (remaining > 0) {
-                mWindows.push_back(WindowRange{mNextWindowStart, remaining});
+            if (const std::uint64_t remaining = mTotalPushed - mNextWindowStart; remaining > 0) {
+                mWindows.push_back(WindowRange{.start=mNextWindowStart, .count=remaining});
                 mNextWindowStart = mTotalPushed;
             }
         }
@@ -64,8 +67,8 @@ namespace sierra::odyplan::v2::common::window::count {
         }
 
         [[nodiscard]] const std::byte* getData(const std::size_t windowIndex, const std::size_t rowIndex, const std::size_t fieldIndex) const override {
-            const auto& range = mWindows.at(windowIndex);
-            const auto relIndex = range.start - mBaseIndex + rowIndex;
+            const auto&[start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
             return mRows.at(relIndex).data() + mRowLayout.offsetOf(fieldIndex);
         }
 

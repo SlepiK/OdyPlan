@@ -76,5 +76,7 @@ jobs:
             exit 0
           fi
 
-          echo "$FILES" | xargs clang-tidy -p build --warnings-as-errors='*'
+          echo "$FILES" | xargs clang-tidy -p build \
+            --header-filter='odyplan/v2/include/.*' \
+            --warnings-as-errors='*'
 

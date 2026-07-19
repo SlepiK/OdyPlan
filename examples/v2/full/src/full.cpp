@@ -15,7 +15,9 @@
 
 #include "common/operator/pipe/select_operator.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic atStop{false};
+}
 
 extern "C" {
     void rtEnd() {
@@ -112,7 +114,7 @@ int main() {
     );
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v2::core::physical::plan::Plan physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v2::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";

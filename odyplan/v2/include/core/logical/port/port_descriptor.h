@@ -3,8 +3,7 @@
 
 #include <string>
 
-#include "core/common/ident.h"
-#include "../../common/identifier/type.h"
+#include "core/common/identifier/type.h"
 
 namespace sierra::odyplan::v2::core::logical::port {
     using PortTypeJsonName = std::string;

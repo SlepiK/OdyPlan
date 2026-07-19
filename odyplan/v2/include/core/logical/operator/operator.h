@@ -3,6 +3,7 @@
 
 #include "core/common/identifier/operator.h"
 #include "core/logical/port/port.h"
+#include "core/common/ident.h"
 
 namespace sierra::odyplan::v2::core::logical::plan {
     class Plan;
@@ -42,7 +43,7 @@ namespace sierra::odyplan::v2::core::logical::opr {
 
         [[nodiscard]] const port::Ports& getInputPorts() const {
             return mInputPorts;
-        };
+        }
 
         [[nodiscard]] const port::Ports& getOutputPorts() const {
             return mOutputPorts;

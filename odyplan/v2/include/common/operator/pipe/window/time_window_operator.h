@@ -10,8 +10,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::WINDOW_TIME);
 
-            explicit TimeWindowOperator(window::time::TimeWindowConfig windowConfig)
-                : mWindowConfig(std::move(windowConfig)) {
+            explicit TimeWindowOperator(const window::time::TimeWindowConfig &windowConfig)
+                : mWindowConfig(windowConfig) {
                 checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide);
             }
 
@@ -52,7 +52,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
         protected:
-            llvm::Value* getTimestampValue(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, llvm::Type *i64Ty) override {
+            llvm::Value* getTimestampValue(core::physical::segment::SegmentContext & /*segmentCtx*/, const core::physical::port::PortTuple &tuple, llvm::Type * /*i64Ty*/) override {
                 return tuple.at(mTimestampIndex);
             }
 

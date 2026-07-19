@@ -9,7 +9,12 @@ namespace sierra::odyplan::v2::common::io {
 
     class IIOSink {
     public:
+        IIOSink() = default;
         virtual ~IIOSink() = default;
+        IIOSink(IIOSink const&) = delete;
+        IIOSink& operator =(IIOSink const&) = delete;
+        IIOSink(IIOSink&&) = delete;
+        IIOSink& operator=(IIOSink&&) = delete;
 
         virtual void begin() = 0;
         virtual void write(const char* key, core::common::identifier::TypeId typeId, const void* rawData) = 0;
