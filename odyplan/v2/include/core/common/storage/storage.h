@@ -34,7 +34,7 @@ namespace sierra::odyplan::v2::core::common::storage {
         llvm::AllocaInst* createAlloca(const identifier::TypeId typeId) const {
             llvm::Type* llvmType = mTypeRegistry->resolveType(typeId, *mCtx);
 
-            llvm::IRBuilder<> entryBuilder(&mFn->getEntryBlock(), mFn->getEntryBlock().begin());
+            llvm::IRBuilder entryBuilder(&mFn->getEntryBlock(), mFn->getEntryBlock().begin());
 
             return entryBuilder.CreateAlloca(llvmType, nullptr, "Stg.Typ." + std::to_string(typeId));
         }

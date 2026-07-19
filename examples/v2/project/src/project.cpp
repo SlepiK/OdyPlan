@@ -15,7 +15,9 @@
 
 #include "common/operator/pipe/project_operator.h"
 
-inline std::atomic<bool> atStop{false};
+namespace {
+    inline std::atomic atStop{false};
+}
 
 extern "C" {
     void rtEnd() {

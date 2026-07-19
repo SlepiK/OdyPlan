@@ -29,9 +29,9 @@ namespace sierra::odyplan::v2::common::window {
             void* dst = mCurrentRow.data() + mOffset.at(index);
             if (mTypeRegistry->isPointerType(typeId)) {
                 void* ori = nullptr;
-                std::memcpy(static_cast<void*>(&ori), rawData, sizeof(ori));
+                std::memcpy(&ori, rawData, sizeof(ori));
                 const void* own = mTypeRegistry->retain(typeId, ori);
-                std::memcpy(dst, static_cast<const void*>(&own), sizeof(own));
+                std::memcpy(dst, &own, sizeof(own));
             } else {
                 std::memcpy(dst, rawData, mTypeRegistry->getByteSize(typeId));
             }
@@ -52,7 +52,7 @@ namespace sierra::odyplan::v2::common::window {
                     continue;
                 }
                 void* own = nullptr;
-                std::memcpy(static_cast<void*>(&own), row.data() + mOffset.at(i), sizeof(own));
+                std::memcpy(&own, row.data() + mOffset.at(i), sizeof(own));
                 mTypeRegistry->release(typeId, own);
             }
         }

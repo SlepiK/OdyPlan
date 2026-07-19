@@ -30,7 +30,7 @@ namespace sierra::odyplan::v2::core::physical::opr {
 
         [[nodiscard]] const port::Ports& getInputPorts() const {
             return mInputPorts;
-        };
+        }
 
         [[nodiscard]] const port::Ports& getOutputPorts() const {
             return mOutputPorts;

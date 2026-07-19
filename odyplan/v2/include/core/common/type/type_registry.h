@@ -92,7 +92,7 @@ namespace sierra::odyplan::v2::core::common::type {
 
         void registerDefaults() {
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::BOOL), "bool",
+                std::to_underlying(identifier::Type::BOOL), "bool",
                 sizeof(bool),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt1Ty(ctx);
@@ -103,7 +103,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT8), "int8",
+                std::to_underlying(identifier::Type::INT8), "int8",
                 sizeof(std::int8_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt8Ty(ctx);
@@ -114,7 +114,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT16), "int16",
+                std::to_underlying(identifier::Type::INT16), "int16",
                 sizeof(std::int16_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt16Ty(ctx);
@@ -125,7 +125,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT32), "int32",
+                std::to_underlying(identifier::Type::INT32), "int32",
                 sizeof(std::int32_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt32Ty(ctx);
@@ -136,7 +136,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::INT64), "int64",
+                std::to_underlying(identifier::Type::INT64), "int64",
                 sizeof(std::int64_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getInt64Ty(ctx);
@@ -147,7 +147,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::FLOAT), "float",
+                std::to_underlying(identifier::Type::FLOAT), "float",
                 sizeof(std::float_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getFloatTy(ctx);
@@ -158,7 +158,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
                 );
             registerType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::DOUBLE), "double",
+                std::to_underlying(identifier::Type::DOUBLE), "double",
                 sizeof(std::double_t),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::Type::getDoubleTy(ctx);
@@ -169,7 +169,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 }
             );
             registerPtrType(
-                std::to_underlying(sierra::odyplan::v2::core::common::identifier::Type::STRING), "string",
+                std::to_underlying(identifier::Type::STRING), "string",
                 sizeof(const char*),
                 [](llvm::LLVMContext& ctx) {
                     return llvm::PointerType::getUnqual(ctx);
@@ -183,7 +183,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     if (!cpy) {
                         throw std::bad_alloc();
                     }
-                    return static_cast<void*>(cpy);
+                    return cpy;
                 },
                 [](void* own) {
                     // NOLINTNEXTLINE

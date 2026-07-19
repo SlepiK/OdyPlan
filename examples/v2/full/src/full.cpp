@@ -16,7 +16,7 @@
 #include "common/operator/pipe/select_operator.h"
 
 namespace {
-    inline std::atomic<bool> atStop{false};
+    inline std::atomic atStop{false};
 }
 
 extern "C" {

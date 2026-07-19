@@ -4,7 +4,7 @@
 #include "core/logical/operator/sink/sink_operator.h"
 
 namespace sierra::odyplan::v2::example::logical_plan {
-    class NumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
+    class NumberStdoutSinkOperator final : public core::logical::opr::TypedSinkOperator {
     public:
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 1;
 
@@ -19,7 +19,7 @@ namespace sierra::odyplan::v2::example::logical_plan {
         }
     };
 
-    class DoubleNumberStdoutSinkOperator final : public v2::core::logical::opr::TypedSinkOperator {
+    class DoubleNumberStdoutSinkOperator final : public core::logical::opr::TypedSinkOperator {
     public:
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = 1;
 

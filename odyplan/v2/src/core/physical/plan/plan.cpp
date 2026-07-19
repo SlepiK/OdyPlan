@@ -107,7 +107,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", mainFn);
 
-        llvm::IRBuilder<> builder(basicBlock);
+        llvm::IRBuilder builder(basicBlock);
 
         for (auto* function : functions) {
             builder.CreateCall(function, {});

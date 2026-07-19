@@ -94,7 +94,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         enum class State : std::uint8_t {TO_DO, IN_PROGRESS, FINISHED};
 
-        std::vector<State> state(n, State::TO_DO);
+        std::vector state(n, State::TO_DO);
         std::vector<common::identifier::OperatorId> order;
         order.reserve(n);
 
@@ -146,7 +146,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
     bool Plan::wouldCreateCycle(const common::identifier::OperatorId from, const common::identifier::OperatorId to) const {
         std::unordered_set<common::identifier::OperatorId> visitedOperators;
-        std::vector<common::identifier::OperatorId> operatorStack{to};
+        std::vector operatorStack{to};
 
         while (!operatorStack.empty()) {
             const auto current = operatorStack.back();
