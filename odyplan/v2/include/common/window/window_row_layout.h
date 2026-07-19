@@ -1,13 +1,15 @@
 #ifndef SIERRA_ODYPLAN_V2_COMMON_WINDOW_WINDOWROW_H
 #define SIERRA_ODYPLAN_V2_COMMON_WINDOW_WINDOWROW_H
+#include <utility>
+
 #include "core/common/type/type_registry.h"
 #include "core/logical/port/port.h"
 
 namespace sierra::odyplan::v2::common::window {
     class WindowRowLayout {
     public:
-        WindowRowLayout(const core::logical::port::Port &dataSchema, const core::common::type::TypeRegistry& typeRegistry)
-            : mDataSchema(dataSchema),
+        WindowRowLayout(core::logical::port::Port dataSchema, const core::common::type::TypeRegistry& typeRegistry)
+            : mDataSchema(std::move(dataSchema)),
                 mTypeRegistry(&typeRegistry) {
             std::size_t offset = 0;
             mOffset.reserve(mDataSchema.size());

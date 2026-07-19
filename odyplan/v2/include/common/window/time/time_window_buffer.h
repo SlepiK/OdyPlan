@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V2_COMMON_WINDOW_TIME_WINDOWBUFFER_H
 
 #include <deque>
+#include <algorithm>
 #include <common/window/window_buffer.h>
 #include <common/window/time/time_window_config.h>
 #include <common/window/window_row_layout.h>
@@ -20,11 +21,16 @@ namespace sierra::odyplan::v2::common::window::time {
             assert(mClosed && "TimeWindowBuffer::close() was never called");
         }
 
+        TimeWindowBuffer(TimeWindowBuffer const&) = delete;
+        TimeWindowBuffer& operator =(TimeWindowBuffer const&) = delete;
+        TimeWindowBuffer(TimeWindowBuffer&&) = delete;
+        TimeWindowBuffer& operator=(TimeWindowBuffer&&) = delete;
+
         void begin() override {
             mRowLayout.begin();
         }
 
-        void push(std::size_t index, const void *rawData) override {
+        void push(const std::size_t index, const void *rawData) override {
             mRowLayout.push(index, rawData);
         }
 
@@ -88,7 +94,7 @@ namespace sierra::odyplan::v2::common::window::time {
             return mWindows.size();
         }
 
-        [[nodiscard]] size_t getRowCountInWindow(std::size_t index) const override {
+        [[nodiscard]] size_t getRowCountInWindow(const std::size_t index) const override {
             return mWindows.at(index).count;
         }
 
@@ -139,20 +145,18 @@ namespace sierra::odyplan::v2::common::window::time {
 
         void emit(const Timestamp start) {
             const auto end = start + mConfig.size;
-            const auto iterStart = std::lower_bound(mRows.begin(), mRows.end(), start, [](const Row& rw, const Timestamp& ts) {return rw.timestamp < ts;});
-            const auto iterEnd = std::lower_bound(mRows.begin(), mRows.end(), end, [](const Row& rw, const Timestamp& ts) {return rw.timestamp < ts;});
+            const auto iterStart = std::ranges::lower_bound(mRows, start, {}, &Row::timestamp);
+            const auto iterEnd = std::ranges::lower_bound(mRows, end, {}, &Row::timestamp);
 
-            const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd));
-
-            if (count > 0) {
+            if (const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd)); count > 0) {
                 const auto startIndex = static_cast<std::uint64_t>(std::distance(mRows.begin(), iterStart)) + mBaseIndex;
-                mWindows.push_back(WindowRange{startIndex, count});
+                mWindows.push_back(WindowRange{.start=startIndex, .count=count});
             }
         }
 
         void insertAndSort(const Timestamp timestamp, std::vector<std::byte>&& values) {
-            const auto position = std::upper_bound(mRows.begin(), mRows.end(), timestamp, [](const Timestamp& ts, const Row& rw) {return ts < rw.timestamp;});
-            mRows.insert(position, Row{std::move(values), timestamp});
+            const auto position = std::ranges::upper_bound(mRows, timestamp, {}, &Row::timestamp);
+            mRows.insert(position, Row{.values=std::move(values), .timestamp=timestamp});
         }
     };
 }
