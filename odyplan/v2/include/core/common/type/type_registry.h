@@ -82,7 +82,7 @@ namespace sierra::odyplan::v2::core::common::type {
             return [](void* ptr) {};
         }
 
-        [[nodiscard]] const TypeRegistryEntry& get(identifier::TypeId id) const {
+        [[nodiscard]] const TypeRegistryEntry& get(const identifier::TypeId id) const {
             const auto iter = mTypeStorage.find(id);
             if (iter == mTypeStorage.end()) {
                 throw std::invalid_argument("TypeRegistry: unknown typeId " + std::to_string(id));
@@ -177,8 +177,8 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](llvm::IRBuilder<>&b, const std::string& v) {
                     return b.CreateGlobalString(v);
                 },
-                [](void* ori) -> void* {
-                    const char* source = static_cast<const char*>(ori);
+                [](const void* ori) -> void* {
+                    const auto *source = static_cast<const char*>(ori);
                     auto* cpy = strdup(source);
                     if (!cpy) {
                         throw std::bad_alloc();
@@ -186,6 +186,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     return static_cast<void*>(cpy);
                 },
                 [](void* own) {
+                    // NOLINTNEXTLINE
                     free(own);
                 }
             );

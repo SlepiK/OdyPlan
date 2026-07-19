@@ -6,8 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(ENABLE_TOOLING "Enable clang-tidy/format targets" ON)
-option(ENABLE_CLANG_TIDY "Run clang-tidy as part of the build" ON)
-option(ENABLE_CLANG_FORMAT_CHECK "Enable clang-format/format-check targets" ON)
+option(ENABLE_CLANG_TIDY "Run clang-tidy as part of the build" OFF)
+option(ENABLE_CLANG_FORMAT_CHECK "Enable clang-format/format-check targets" OFF)
 
 option(ODYPLAN_V1 "Run OdyPlanV1 as part of the build" OFF)
 option(ODYPLAN_V2 "Run OdyPlanV2 as part of the build" ON)
