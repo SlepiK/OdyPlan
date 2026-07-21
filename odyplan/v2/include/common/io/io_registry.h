@@ -10,6 +10,8 @@
 #include "io_source.h"
 #include "json/json_sink.h"
 #include "json/json_source.h"
+#include "ndjson/ndjson_sink.h"
+#include "ndjson/ndjson_source.h"
 
 
 namespace sierra::odyplan::v2::common::io {
@@ -51,10 +53,16 @@ namespace sierra::odyplan::v2::common::io {
         static IORegistry withDefaults() {
             IORegistry registry;
             registry.registerSourceIO(IOFormat::JSON, [](const nlohmann::json& config) {
-                return std::make_unique<JsonSource>(config.at("path").get<std::string>());
+                return std::make_unique<JSONSource>(config.at("path").get<std::string>());
             });
             registry.registerSinkIO(IOFormat::JSON, [](const nlohmann::json& config) {
-                return std::make_unique<JsonSink>(config.at("path").get<std::string>());
+                return std::make_unique<JSONSink>(config.at("path").get<std::string>());
+            });
+            registry.registerSourceIO(IOFormat::NDJSON, [](const nlohmann::json& config) {
+                return std::make_unique<NDJSONSource>(config.at("path").get<std::string>());
+            });
+            registry.registerSinkIO(IOFormat::NDJSON, [](const nlohmann::json& config) {
+                return std::make_unique<NDJSONSink>(config.at("path").get<std::string>());
             });
             return registry;
         }
