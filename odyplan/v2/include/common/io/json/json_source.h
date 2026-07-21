@@ -6,9 +6,9 @@
 #include "common/io/io_source.h"
 
 namespace sierra::odyplan::v2::common::io {
-    class JsonSource : public IIOSource{
+    class JSONSource : public IIOSource{
     public:
-        explicit JsonSource(const std::string& path) {
+        explicit JSONSource(const std::string& path) {
             std::ifstream file(path);
 
             if (!file.is_open()) {
@@ -22,12 +22,12 @@ namespace sierra::odyplan::v2::common::io {
             }
         }
 
-        ~JsonSource() override = default;
+        ~JSONSource() override = default;
 
-        JsonSource(JsonSource const&) = delete;
-        JsonSource& operator =(JsonSource const&) = delete;
-        JsonSource(JsonSource&&) = delete;
-        JsonSource& operator=(JsonSource&&) = delete;
+        JSONSource(JSONSource const&) = delete;
+        JSONSource& operator =(JSONSource const&) = delete;
+        JSONSource(JSONSource&&) = delete;
+        JSONSource& operator=(JSONSource&&) = delete;
 
         [[nodiscard]] bool available() override {
             if (mIndex >= mData.size()) {
@@ -62,7 +62,7 @@ namespace sierra::odyplan::v2::common::io {
         }
 
     private:
-        nlohmann::json mData;
+        nlohmann::ordered_json mData;
         std::size_t mIndex{0};
         IOData mCurrentData;
     };

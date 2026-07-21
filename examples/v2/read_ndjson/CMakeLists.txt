@@ -6,7 +6,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME example_read_json)
+set(TARGET_NAME example_read_ndjson)
 
 add_executable(${TARGET_NAME}
         ${SOURCES}
@@ -29,8 +29,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
-        ${CMAKE_CURRENT_BINARY_DIR}/read.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.ndjson
+        ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
         COPYONLY
 )
 

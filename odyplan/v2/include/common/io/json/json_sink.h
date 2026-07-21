@@ -8,27 +8,27 @@
 #include "common/io/io_sink.h"
 
 namespace sierra::odyplan::v2::common::io {
-    class JsonSink : public IIOSink {
+    class JSONSink : public IIOSink {
     public:
-        explicit JsonSink(std::string  path)
+        explicit JSONSink(std::string  path)
             : mPath(std::move(path)),
                 mData(nlohmann::json::array()) {
         }
 
-        ~JsonSink() override {
+        ~JSONSink() override {
             try {
                 if (!mData.empty()) {
-                    JsonSink::flush();
+                    JSONSink::flush();
                 }
             } catch (...) {
                 std::fputs("JsonSink: flush failed in destructor (unknown exception)\n", stderr);
             }
         }
 
-        JsonSink(JsonSink const&) = delete;
-        JsonSink& operator =(JsonSink const&) = delete;
-        JsonSink(JsonSink&&) = delete;
-        JsonSink& operator=(JsonSink&&) = delete;
+        JSONSink(JSONSink const&) = delete;
+        JSONSink& operator =(JSONSink const&) = delete;
+        JSONSink(JSONSink&&) = delete;
+        JSONSink& operator=(JSONSink&&) = delete;
 
         void begin() override {
             mCurrent = nlohmann::json::object();
@@ -88,8 +88,8 @@ namespace sierra::odyplan::v2::common::io {
 
     private:
         std::string mPath;
-        nlohmann::json mData;
-        nlohmann::json mCurrent;
+        nlohmann::ordered_json mData;
+        nlohmann::ordered_json mCurrent;
     };
 }
 
