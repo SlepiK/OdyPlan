@@ -7,6 +7,7 @@ namespace sierra::odyplan::v2::common::io {
     using IOFormatType = std::uint8_t;
     enum class IOFormat : IOFormatType {
         JSON = 0,
+        NDJSON = 1,
     };
 }
 

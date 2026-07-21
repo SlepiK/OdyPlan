@@ -1,5 +1,5 @@
 ## Info
-Needs a read.json near the executable.
+Needs a read.ndjson (not .json!) near the executable.
 
 The looped-version don't result in looped reading ;)
 
@@ -30,19 +30,22 @@ basicEntry:
 
 read_loop:                                        ; preds = %read_produce, %basicEntry
   %0 = call i1 @rtIOSourceHasNext(i64 0)
-  br i1 %0, label %read_produce, label %read_exit
+  %1 = call i1 @odyStop()
+  %2 = xor i1 %1, true
+  %3 = and i1 %0, %2
+  br i1 %3, label %read_produce, label %read_exit
 
 read_produce:                                     ; preds = %read_loop
-  %1 = call ptr @rtIOSourceGetField(i64 0, ptr @field_id)
-  %2 = call i64 @rtParseInt64(ptr %1)
-  %3 = call ptr @rtIOSourceGetField(i64 0, ptr @field_value)
-  %4 = call double @rtParseDouble(ptr %3)
-  %5 = call ptr @rtIOSourceGetField(i64 0, ptr @field_name)
-  call void @rtOdyPrintInt(i64 %2)
+  %4 = call ptr @rtIOSourceGetField(i64 0, ptr @field_id)
+  %5 = call i64 @rtParseInt64(ptr %4)
+  %6 = call ptr @rtIOSourceGetField(i64 0, ptr @field_value)
+  %7 = call double @rtParseDouble(ptr %6)
+  %8 = call ptr @rtIOSourceGetField(i64 0, ptr @field_name)
+  call void @rtOdyPrintInt(i64 %5)
   call void @rtOdyPrintSeperator()
-  call void @rtOdyPrintDouble(double %4)
+  call void @rtOdyPrintDouble(double %7)
   call void @rtOdyPrintSeperator()
-  call void @rtOdyPrintString(ptr %5)
+  call void @rtOdyPrintString(ptr %8)
   call void @rtOdyPrintNewline()
   br label %read_loop
 
@@ -51,6 +54,8 @@ read_exit:                                        ; preds = %read_loop
 }
 
 declare i1 @rtIOSourceHasNext(i64)
+
+declare i1 @odyStop()
 
 declare ptr @rtIOSourceGetField(i64, ptr)
 
