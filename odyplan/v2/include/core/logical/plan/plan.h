@@ -39,11 +39,17 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         [[nodiscard]] opr::IOperator& op(common::identifier::OperatorId id) const;
 
+        [[nodiscard]] std::vector<common::edge::Edge> getInEdgesFromOperator(common::identifier::OperatorId id) const;
+
+        [[nodiscard]] std::vector<common::edge::Edge> getOutEdgesFromOperator(common::identifier::OperatorId id) const;
+
     private:
         std::vector<common::identifier::OperatorId> mSourceOperators;
         std::vector<std::unique_ptr<opr::IOperator>> mOperators;
         std::vector<common::edge::Edge> mEdges;
         std::unordered_map<common::identifier::OperatorId, opr::IBindable*> mBindables;
+        std::unordered_map<common::identifier::OperatorId, std::vector<common::edge::Edge>> mInEdges;
+        std::unordered_map<common::identifier::OperatorId, std::vector<common::edge::Edge>> mOutEdges;
 
         void validateConnectionRequest(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator);
         [[nodiscard]] bool areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const;

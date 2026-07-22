@@ -17,7 +17,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::connect: connection would create a cycle in the plan");
         }
 
-        mEdges.push_back(common::edge::Edge(fromOperator, toOperator));
+        const auto edge = common::edge::Edge(fromOperator, toOperator);
+        mEdges.push_back(edge);
+        mInEdges[toOperator.operatorId].push_back(edge);
+        mOutEdges[fromOperator.operatorId].push_back(edge);
     }
 
     [[nodiscard]] opr::IOperator& Plan::op(const common::identifier::OperatorId id) const {
@@ -90,6 +93,53 @@ namespace sierra::odyplan::v2::core::logical::plan {
     }
 
     [[nodiscard]] std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
+        std::unordered_map<common::identifier::OperatorId, std::size_t> degree;
+        std::vector<common::identifier::OperatorId> ready;
+        std::vector<common::identifier::OperatorId> result;
+
+        result.reserve(mOperators.size());
+
+        for (const auto& opr : mOperators) {
+            const auto degree = getInEdgesFromOperator(opr->)
+        }
+
+        /*kahn
+        *std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
+    std::unordered_map<common::identifier::OperatorId, std::size_t> inDegree;
+    std::vector<common::identifier::OperatorId> ready;
+    std::vector<common::identifier::OperatorId> result;
+    result.reserve(mOperators.size()); // oder was auch immer eure Operator-Sammlung heißt
+
+    for (const auto& [id, op] : mOperators) {
+        const auto degree = getInEdgesFromOperator(id).size();
+        inDegree[id] = degree;
+        if (degree == 0) {
+            ready.push_back(id);
+        }
+    }
+
+    while (!ready.empty()) {
+        const auto current = ready.back();
+        ready.pop_back();
+        result.push_back(current);
+
+        for (const auto& edge : getOutEdgesFromOperator(current)) {
+            const auto successor = edge.toOperator.operatorId;
+            if (--inDegree[successor] == 0) {
+                ready.push_back(successor);
+            }
+        }
+    }
+
+    if (result.size() != mOperators.size()) {
+        throw std::logic_error("Plan::topologicalOrder: cycle detected (should be impossible due to wouldCreateCycle checks in connect())");
+    }
+
+    return result;
+}
+         **/
+
+
         const std::size_t n = mOperators.size();
 
         enum class State : std::uint8_t {TO_DO, IN_PROGRESS, FINISHED};
@@ -142,6 +192,16 @@ namespace sierra::odyplan::v2::core::logical::plan {
         }
 
         return true;
+    }
+
+    [[nodiscard]] std::vector<common::edge::Edge> Plan::getInEdgesFromOperator(const common::identifier::OperatorId id) const {
+        const auto it = mInEdges.find(id);
+        return it != mInEdges.end() ? it->second : std::vector<common::edge::Edge>();
+    }
+
+    [[nodiscard]] std::vector<common::edge::Edge> Plan::getOutEdgesFromOperator(const common::identifier::OperatorId id) const {
+        const auto it = mOutEdges.find(id);
+        return it != mOutEdges.end() ? it->second : std::vector<common::edge::Edge>();
     }
 
     bool Plan::wouldCreateCycle(const common::identifier::OperatorId from, const common::identifier::OperatorId to) const {

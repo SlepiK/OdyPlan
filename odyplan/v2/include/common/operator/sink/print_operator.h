@@ -74,7 +74,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                     mPortFieldIndices(std::move(indices)) {
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, std::size_t  /*inputPortIndex*/, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 if (tuple.size() < mPortFieldIndices.size()) {
                     throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
@@ -90,7 +90,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 codegenPrint(segmentCtx.builder, module, "rtOdyPrintNewline");
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void end(core::physical::segment::SegmentContext &segmentCtx, std::size_t inputPortIndex,  core::physical::port::PortTupleConsumer consumer) override {
             }
 
         private:

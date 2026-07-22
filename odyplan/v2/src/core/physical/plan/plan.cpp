@@ -67,7 +67,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
         }
 
         port::PortTupleConsumer chain = [target, noopConsumer](segment::SegmentContext& sCtx, const port::PortTuple& tuple) {
-            target->consume(sCtx, tuple, noopConsumer);
+            target->consume(sCtx, 0, tuple, noopConsumer);
         };
 
         struct EndEntry {
@@ -81,7 +81,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
             port::PortTupleConsumer const next = chain;
             endEntries.push_back(EndEntry{.pipe=it, .downstream=next});
             chain = [it, next](segment::SegmentContext& sCtx, const port::PortTuple& t) mutable {
-                it->consume(sCtx, t, next);
+                it->consume(sCtx, 0, t, next);
             };
         }
 
@@ -90,11 +90,11 @@ namespace sierra::odyplan::v2::core::physical::plan {
         segment.start->produce(segmentCtx, chain);
 
         for (const auto&[pipe, downstream] : endEntries) {
-            pipe->end(segmentCtx, downstream);
+            pipe->end(segmentCtx, 0, downstream);
         }
 
         if (target != nullptr) {
-            target->end(segmentCtx, noopConsumer);
+            target->end(segmentCtx, 0, noopConsumer);
         }
 
         segmentCtx.builder.CreateRetVoid();

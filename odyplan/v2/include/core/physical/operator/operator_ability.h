@@ -24,8 +24,8 @@ namespace sierra::odyplan::v2::core::physical::opr {
         IConsumer& operator =(IConsumer const&) = delete;
         IConsumer(IConsumer&&) = delete;
         IConsumer& operator=(IConsumer&&) = delete;
-        virtual void consume(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
-        virtual void end(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
+        virtual void consume(segment::SegmentContext& segmentCtx, std::size_t inputPortIndex, const port::PortTuple& tuple, port::PortTupleConsumer consumer) = 0;
+        virtual void end(segment::SegmentContext& segmentCtx, std::size_t inputPortIndex, port::PortTupleConsumer consumer) = 0;
     };
 }  // namespace sierra::odyplan::v2::core::physical::opr
 

@@ -53,7 +53,7 @@ namespace sierra::odyplan::v2::core::physical::opr {
             return true;
         }
 
-        void consume(segment::SegmentContext& segmentCtx, const port::PortTuple &tuple, port::PortTupleConsumer  /*consume*/) final {
+        void consume(segment::SegmentContext& segmentCtx, std::size_t  /*inputPortIndex*/ , const port::PortTuple &tuple, port::PortTupleConsumer  /*consume*/) final {
             build(segmentCtx, tuple);
         }
 

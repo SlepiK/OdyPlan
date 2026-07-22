@@ -21,7 +21,7 @@ namespace sierra::odyplan::v2::core::builder {
                 throw std::invalid_argument("PlanBuilder::build: no transformation registered for typeid " + std::to_string(lOpr.getOperatorTypeId()));
             }
 
-            for (auto [oprs, edges] = it->second(lOpr, inputPorts, outputPorts); auto& op : oprs) {
+            for (auto transformation = it->second(lOpr, inputPorts, outputPorts); auto& op : transformation.oprs) {
                 switch (op->getRole()) {
                     case physical::opr::OperatorRole::SOURCE: {
                         auto* source = static_cast<physical::opr::TypedSourceOperator*>(op.get());

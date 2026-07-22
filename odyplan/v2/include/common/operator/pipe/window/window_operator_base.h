@@ -37,7 +37,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
 
-            void consume(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) final {
+            void consume(core::physical::segment::SegmentContext &segmentCtx, std::size_t  /*inputPortIndex*/, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
