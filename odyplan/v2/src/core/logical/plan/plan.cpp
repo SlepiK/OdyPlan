@@ -93,88 +93,41 @@ namespace sierra::odyplan::v2::core::logical::plan {
     }
 
     [[nodiscard]] std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
-        std::unordered_map<common::identifier::OperatorId, std::size_t> degree;
+        std::unordered_map<common::identifier::OperatorId, std::size_t> inDegree;
         std::vector<common::identifier::OperatorId> ready;
         std::vector<common::identifier::OperatorId> result;
 
         result.reserve(mOperators.size());
 
-        for (const auto& opr : mOperators) {
-            const auto degree = getInEdgesFromOperator(opr->)
-        }
-
-        /*kahn
-        *std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
-    std::unordered_map<common::identifier::OperatorId, std::size_t> inDegree;
-    std::vector<common::identifier::OperatorId> ready;
-    std::vector<common::identifier::OperatorId> result;
-    result.reserve(mOperators.size()); // oder was auch immer eure Operator-Sammlung heißt
-
-    for (const auto& [id, op] : mOperators) {
-        const auto degree = getInEdgesFromOperator(id).size();
-        inDegree[id] = degree;
-        if (degree == 0) {
-            ready.push_back(id);
-        }
-    }
-
-    while (!ready.empty()) {
-        const auto current = ready.back();
-        ready.pop_back();
-        result.push_back(current);
-
-        for (const auto& edge : getOutEdgesFromOperator(current)) {
-            const auto successor = edge.toOperator.operatorId;
-            if (--inDegree[successor] == 0) {
-                ready.push_back(successor);
+        for (std::size_t operatorId = 0; operatorId < mOperators.size(); ++operatorId) {
+            //Get all edges coming in the operator (source_operator has 0!)
+            const auto operatorDegree = getInEdgesFromOperator(operatorId).size();
+            inDegree[operatorId] = operatorDegree;
+            if (operatorDegree == 0) {
+                //source_operator dont need further processing
+                ready.push_back(operatorId);
             }
         }
-    }
 
-    if (result.size() != mOperators.size()) {
-        throw std::logic_error("Plan::topologicalOrder: cycle detected (should be impossible due to wouldCreateCycle checks in connect())");
-    }
+        while (!ready.empty()) {
+            const auto currentOperatorId = ready.back();
+            ready.pop_back();
+            result.push_back(currentOperatorId);
 
-    return result;
-}
-         **/
-
-
-        const std::size_t n = mOperators.size();
-
-        enum class State : std::uint8_t {TO_DO, IN_PROGRESS, FINISHED};
-
-        std::vector state(n, State::TO_DO);
-        std::vector<common::identifier::OperatorId> order;
-        order.reserve(n);
-
-        std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](const common::identifier::OperatorId cId) {
-            state.at(cId) = State::IN_PROGRESS;
-
-            for (const auto&[fromOperator, toOperator] : mEdges) {
-                if (fromOperator.operatorId == cId) {
-                    const auto next = toOperator.operatorId;
-                    if (state.at(next) == State::IN_PROGRESS) {
-                        throw std::runtime_error(
-                            "Plan::topologicalOrder: Late cycle detected - something went wrong");
-                    }
-                    if (state.at(next) == State::TO_DO) {
-                        depthfirstsearch(next);
-                    }
+            for (const auto& currentOperatorOutEdge : getOutEdgesFromOperator(currentOperatorId)) {
+                const auto nextOperatorId = currentOperatorOutEdge.toOperator.operatorId;
+                if (--inDegree[nextOperatorId] == 0) {
+                    ready.push_back(nextOperatorId);
                 }
             }
-
-            state.at(cId) = State::FINISHED;
-            order.push_back(cId);
-        };
-
-        for (const auto sourceOprId : mSourceOperators) {
-            depthfirstsearch(sourceOprId);
         }
 
-        //To have the sources at the beginning
-        std::ranges::reverse(order);
-        return order;
+        if (result.size() != mOperators.size()) {
+            //If a operator is added but not connected, it should also exit here
+            throw std::logic_error("Plan::topologicalOrder: Missmatch of size. Cycle or missing connected operator detected");
+        }
+
+        return result;
     }
 
     bool Plan::areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const {
