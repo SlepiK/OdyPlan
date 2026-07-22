@@ -17,7 +17,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::connect: connection would create a cycle in the plan");
         }
 
-        mEdges.push_back(common::edge::Edge(fromOperator, toOperator));
+        const auto edge = common::edge::Edge(fromOperator, toOperator);
+        mEdges.push_back(edge);
+        mIncomingEdges[toOperator.operatorId].push_back(edge);
+        mOutgoingEdges[fromOperator.operatorId].push_back(edge);
     }
 
     [[nodiscard]] opr::IOperator& Plan::op(const common::identifier::OperatorId id) const {
@@ -90,41 +93,41 @@ namespace sierra::odyplan::v2::core::logical::plan {
     }
 
     [[nodiscard]] std::vector<common::identifier::OperatorId> Plan::topologicalOrder() const {
-        const std::size_t n = mOperators.size();
+        std::unordered_map<common::identifier::OperatorId, std::size_t> inDegree;
+        std::vector<common::identifier::OperatorId> ready;
+        std::vector<common::identifier::OperatorId> result;
 
-        enum class State : std::uint8_t {TO_DO, IN_PROGRESS, FINISHED};
+        result.reserve(mOperators.size());
 
-        std::vector state(n, State::TO_DO);
-        std::vector<common::identifier::OperatorId> order;
-        order.reserve(n);
-
-        std::function<void(common::identifier::OperatorId)> depthfirstsearch = [&](const common::identifier::OperatorId cId) {
-            state.at(cId) = State::IN_PROGRESS;
-
-            for (const auto&[fromOperator, toOperator] : mEdges) {
-                if (fromOperator.operatorId == cId) {
-                    const auto next = toOperator.operatorId;
-                    if (state.at(next) == State::IN_PROGRESS) {
-                        throw std::runtime_error(
-                            "Plan::topologicalOrder: Late cycle detected - something went wrong");
-                    }
-                    if (state.at(next) == State::TO_DO) {
-                        depthfirstsearch(next);
-                    }
-                }
+        for (std::size_t operatorId = 0; operatorId < mOperators.size(); ++operatorId) {
+            //Get all edges coming in the operator (source_operator has 0!)
+            const auto operatorDegree = getInEdgesFromOperator(operatorId).size();
+            inDegree[operatorId] = operatorDegree;
+            if (operatorDegree == 0) {
+                //source_operator dont need further processing
+                ready.push_back(operatorId);
             }
-
-            state.at(cId) = State::FINISHED;
-            order.push_back(cId);
-        };
-
-        for (const auto sourceOprId : mSourceOperators) {
-            depthfirstsearch(sourceOprId);
         }
 
-        //To have the sources at the beginning
-        std::ranges::reverse(order);
-        return order;
+        while (!ready.empty()) {
+            const auto currentOperatorId = ready.back();
+            ready.pop_back();
+            result.push_back(currentOperatorId);
+
+            for (const auto& currentOperatorOutEdge : getOutEdgesFromOperator(currentOperatorId)) {
+                const auto nextOperatorId = currentOperatorOutEdge.toOperator.operatorId;
+                if (--inDegree[nextOperatorId] == 0) {
+                    ready.push_back(nextOperatorId);
+                }
+            }
+        }
+
+        if (result.size() != mOperators.size()) {
+            //If a operator is added but not connected, it should also exit here
+            throw std::logic_error("Plan::topologicalOrder: Missmatch of size. Cycle or missing connected operator detected");
+        }
+
+        return result;
     }
 
     bool Plan::areConnectionTypesCompatible(const common::port::PortRef& fromOperator, const common::port::PortRef& toOperator) const {
@@ -169,4 +172,15 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         return false;
     }
+
+    [[nodiscard]] std::vector<common::edge::Edge> Plan::getInEdgesFromOperator(const common::identifier::OperatorId id) const {
+        const auto it = mIncomingEdges.find(id);
+        return it != mIncomingEdges.end() ? it->second : std::vector<common::edge::Edge>();
+    }
+
+    [[nodiscard]] std::vector<common::edge::Edge> Plan::getOutEdgesFromOperator(const common::identifier::OperatorId id) const {
+        const auto it = mOutgoingEdges.find(id);
+        return it != mOutgoingEdges.end() ? it->second : std::vector<common::edge::Edge>();
+    }
+
 }  // namespace sierra::odyplan::v2::core::logical::plan
