@@ -32,7 +32,7 @@ namespace sierra::odyplan::v2::example::select {
             explicit ConstantIntSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
             }
 
-            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumers& consumers) override {
 #ifdef ENABLE_LOOPED_SOURCE
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
@@ -54,7 +54,7 @@ namespace sierra::odyplan::v2::example::select {
 #endif
                 llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
 
-                consumer(segmentCtx, {value});
+                consumers.front()(segmentCtx, {value});
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);

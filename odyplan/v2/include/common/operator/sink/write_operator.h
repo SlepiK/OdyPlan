@@ -62,7 +62,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 }
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, core::physical::port::PortTupleConsumer /*consumer*/) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& /*consumers*/) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -83,7 +83,7 @@ namespace sierra::odyplan::v2::common::opr::sink {
                 segmentCtx.builder.CreateCall(endFn, {index});
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void end(core::physical::segment::SegmentContext &segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
             }
 
         private:

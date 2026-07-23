@@ -8,7 +8,6 @@ namespace sierra::odyplan::v2::core::builder {
 
     [[nodiscard]] physical::plan::Plan PlanBuilder::build(const logical::plan::Plan& lPlan, llvm::LLVMContext& ctx) {
         auto pPlan = physical::plan::Plan(*mRegistry);
-        physical::segment::Segment currentSegment;
 
         for (const auto lOprId : lPlan.topologicalOrder()) {
             const logical::opr::IOperator& lOpr = lPlan.op(lOprId);
@@ -21,40 +20,71 @@ namespace sierra::odyplan::v2::core::builder {
                 throw std::invalid_argument("PlanBuilder::build: no transformation registered for typeid " + std::to_string(lOpr.getOperatorTypeId()));
             }
 
-            for (auto [oprs, edges] = it->second(lOpr, inputPorts, outputPorts); auto& op : oprs) {
-                switch (op->getRole()) {
+            auto [oprs] = it->second(lOpr, inputPorts, outputPorts);
+            if (oprs.empty()) {
+                throw std::invalid_argument("PlanBuilder::build: transformation produced no physical operator");
+            }
+
+            const auto inEdgeCount = lPlan.getInEdgesFromOperator(lOprId).size();
+            if (inEdgeCount > 1 && oprs.size() > 1) {
+                throw std::logic_error(
+                    "PlanBuilder::build: a logical operator with multiple input can currently only transformed to a single physical operator.");
+            }
+
+            physical::chain::Chain chain;
+            chain.exitSchemas = outputPorts;
+            chain.nodes.reserve(oprs.size());
+
+            for (std::size_t i = 0; i < oprs.size(); ++i) {
+                physical::chain::ChainNode node;
+
+                switch (oprs.at(i)->getRole()) {
                     case physical::opr::OperatorRole::SOURCE: {
-                        auto* source = static_cast<physical::opr::TypedSourceOperator*>(op.get());
-                        currentSegment.start = source;
-                        currentSegment.type = physical::segment::SegmentType::NORMAL;
+                        if (i != 0) {
+                            throw std::logic_error("PlanBuilder::build: source_operator needs to be the first element of its chain");
+                        }
+
+                        node.asProducer = static_cast<physical::opr::TypedSourceOperator*>(oprs.at(i).get());
                         break;
                     }
                     case physical::opr::OperatorRole::PIPE: {
-                        auto* pipe = static_cast<physical::opr::TypedPipeOperator*>(op.get());
-                        if (op->isSegmentBreaker()) {
-                            auto* blockingPipe = static_cast<physical::opr::TypedBlockingPipeOperator*>(op.get());
-                            currentSegment.blockingTarget = blockingPipe;
-                            currentSegment.type = physical::segment::SegmentType::BLOCKING;
-                            pPlan.addSegment(std::move(currentSegment));
-                            currentSegment = physical::segment::Segment{};
-                            currentSegment.type = physical::segment::SegmentType::NORMAL;
-                            currentSegment.start = blockingPipe;
+                        if (oprs.at(i)->isSegmentBreaker()) {
+                            auto* blockingPipe = static_cast<physical::opr::TypedBlockingPipeOperator*>(oprs.at(i).get());
+                            node.asConsumer = blockingPipe;
+                            node.asProducer = blockingPipe;
+                            node.isBreaker = true;
                         } else {
-                            currentSegment.mid.push_back(pipe);
+                            node.asConsumer = static_cast<physical::opr::TypedPipeOperator*>(oprs.at(i).get());
                         }
                         break;
                     }
                     case physical::opr::OperatorRole::SINK: {
-                        auto* sink = static_cast<physical::opr::TypedSinkOperator*>(op.get());
-                        currentSegment.type = physical::segment::SegmentType::NORMAL;
-                        currentSegment.end = sink;
-                        pPlan.addSegment(std::move(currentSegment));
-                        currentSegment = physical::segment::Segment{};
+                        if ( i+1 != oprs.size()) {
+                            throw std::logic_error("PlanBuilder::build: a sink_operator must be the last element of its chain");
+                        }
+                        node.asConsumer = static_cast<physical::opr::TypedSinkOperator*>(oprs.at(i).get());
                         break;
                     }
                 }
 
-                pPlan.addOperator(std::move(op));
+                chain.nodes.push_back(node);
+            }
+
+            pPlan.addChain(lOprId, chain);
+
+            std::vector<physical::edge::Edge> outEdges;
+            for (const auto& edge : lPlan.getOutEdgesFromOperator(lOprId)) {
+                outEdges.push_back(physical::edge::Edge{
+                    .fromOperatorOutputPortId = edge.fromOperator.portId,
+                    .toOperatorId = edge.toOperator.operatorId,
+                    .toOperatorInputPortId = edge.toOperator.portId
+                });
+            }
+
+            pPlan.addOutgoingEdge(lOprId, std::move(outEdges));
+
+            for (auto& opr : oprs) {
+                pPlan.addOperator(std::move(opr));
             }
         }
 

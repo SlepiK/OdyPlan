@@ -55,6 +55,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
             throw std::invalid_argument("Plan::validateConnectionRequest: source operator cant get a connection");
         }
 
+        if (fromOperator.portId > from.getOutputPorts().size() - 1) {
+            throw std::invalid_argument("Plan::validateConnectionRequest: source operator dont support the given port");
+        }
+
         const auto& bindable = mBindables.at(toOperator.operatorId);
 
         bindable->bindInput(toOperator.portId, from.getOutputPorts().at(fromOperator.portId));

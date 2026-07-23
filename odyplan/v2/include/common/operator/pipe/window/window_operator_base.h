@@ -37,7 +37,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
             }
 
 
-            void consume(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) final {
+            void consume(core::physical::segment::SegmentContext &segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -61,11 +61,11 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 const auto computeWindowFn = module->getOrInsertFunction("rtWindowCompute", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(computeWindowFn, { wHandle });
 
-                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
+                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
                 segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, const core::physical::port::PortTupleConsumer consumer) final {
+            void end(core::physical::segment::SegmentContext &segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) final {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -77,7 +77,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 const auto flushFn = module->getOrInsertFunction("rtWindowFlush", llvm::FunctionType::get(voidTy, { i64Ty }, false));
                 segmentCtx.builder.CreateCall(flushFn, { wHandle });
 
-                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumer);
+                llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
                 segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
 
