@@ -10,7 +10,6 @@
 namespace sierra::odyplan::v2::core::physical::transformation {
     struct OperatorTransformation {
         std::vector<std::unique_ptr<opr::IOperator>> oprs;
-        std::vector<common::edge::Edge> edges;
     };
 
     using OperatorTransformationFactory = std::function<

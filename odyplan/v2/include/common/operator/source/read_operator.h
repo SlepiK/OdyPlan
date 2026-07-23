@@ -52,7 +52,7 @@ namespace sierra::odyplan::v2::common::opr::source {
                 }
             }
 
-            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumer consumer) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumers& consumers) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
@@ -93,7 +93,7 @@ namespace sierra::odyplan::v2::common::opr::source {
                     tuple.push_back(codegenField(segmentCtx, strValue, dataField.typeId));
                 }
 
-                consumer(segmentCtx, tuple);
+                consumers.front()(segmentCtx, tuple);
                 segmentCtx.builder.CreateBr(loopBB);
 
                 segmentCtx.builder.SetInsertPoint(exitBB);

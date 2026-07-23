@@ -53,12 +53,12 @@ namespace sierra::odyplan::v2::core::physical::opr {
             return true;
         }
 
-        void consume(segment::SegmentContext& segmentCtx, const port::PortTuple &tuple, port::PortTupleConsumer  /*consume*/) final {
-            build(segmentCtx, tuple);
+        void consume(segment::SegmentContext& segmentCtx, const common::identifier::PortId inputPort, const port::PortTuple &tuple, const port::PortTupleConsumers& /*consumers*/) final {
+            build(segmentCtx, inputPort, tuple);
         }
 
-        void produce(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) final {
-            probe(segmentCtx, std::move(consumer));
+        void produce(segment::SegmentContext& segmentCtx, const port::PortTupleConsumers& consumers) final {
+            probe(segmentCtx, consumers);
         }
 
         void setOperatorState(llvm::Value* operatorState) {
@@ -66,8 +66,8 @@ namespace sierra::odyplan::v2::core::physical::opr {
         }
 
     protected:
-        virtual void build(segment::SegmentContext& segmentCtx, const port::PortTuple& tuple) = 0;
-        virtual void probe(segment::SegmentContext& segmentCtx, port::PortTupleConsumer consumer) = 0;
+        virtual void build(segment::SegmentContext& segmentCtx, common::identifier::PortId inputPort, const port::PortTuple& tuple) = 0;
+        virtual void probe(segment::SegmentContext& segmentCtx, const port::PortTupleConsumers& consumers) = 0;
 
     private:
         llvm::Value* mOperatorState = nullptr;
