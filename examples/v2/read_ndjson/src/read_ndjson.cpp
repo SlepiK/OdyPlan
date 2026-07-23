@@ -215,9 +215,17 @@ int main() {
         sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1,2}
     ));
 
+    auto sinkIdSec = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::sink::logical::PrintOperator>(
+        sierra::odyplan::v2::common::opr::sink::logical::PrintOperator::PortFieldIndexV {0,1,2}
+    ));
+
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
+
+    logicalPlan.connect(
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
+        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkIdSec,.portId=0});
 
     std::cout << "Logical Plan: OK\n";
 

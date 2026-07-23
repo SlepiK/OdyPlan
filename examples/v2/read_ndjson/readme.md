@@ -1,5 +1,5 @@
 ## Info
-Needs a read.ndjson (not .json!) near the executable.
+Needs a read.ndjson (not .json!) near the executable. Is using two Print Operator, to show the broadcast.
 
 The looped-version don't result in looped reading ;)
 
@@ -24,7 +24,7 @@ source_filename = "example_read_json"
 @field_value = private unnamed_addr constant [6 x i8] c"value\00", align 1
 @field_name = private unnamed_addr constant [5 x i8] c"name\00", align 1
 
-define void @ody_segment_0() {
+define void @ody_rsource_0() {
 basicEntry:
   br label %read_loop
 
@@ -41,6 +41,12 @@ read_produce:                                     ; preds = %read_loop
   %6 = call ptr @rtIOSourceGetField(i64 0, ptr @field_value)
   %7 = call double @rtParseDouble(ptr %6)
   %8 = call ptr @rtIOSourceGetField(i64 0, ptr @field_name)
+  call void @rtOdyPrintInt(i64 %5)
+  call void @rtOdyPrintSeperator()
+  call void @rtOdyPrintDouble(double %7)
+  call void @rtOdyPrintSeperator()
+  call void @rtOdyPrintString(ptr %8)
+  call void @rtOdyPrintNewline()
   call void @rtOdyPrintInt(i64 %5)
   call void @rtOdyPrintSeperator()
   call void @rtOdyPrintDouble(double %7)
@@ -75,7 +81,7 @@ declare void @rtOdyPrintNewline()
 
 define void @ody_main() {
 basicEntry:
-  call void @ody_segment_0()
+  call void @ody_rsource_0()
   call void @rtEnd()
   ret void
 }
@@ -86,6 +92,9 @@ declare void @rtEnd()
 LLVM-IR: OK
 Running via LLVM-JIT...
 1 3.14 Alice
+1 3.14 Alice
 2 2.71 Bob
+2 2.71 Bob
+3 1.41 Charlie
 3 1.41 Charlie
 ```

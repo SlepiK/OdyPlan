@@ -47,7 +47,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mPredicate(predicate) {
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumer consumer) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
@@ -59,13 +59,13 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 segmentCtx.builder.CreateCondBr(cnd, passBB, mergeBB);
 
                 segmentCtx.builder.SetInsertPoint(passBB);
-                consumer(segmentCtx, tuple);
+                consumers.front()(segmentCtx, tuple);
                 segmentCtx.builder.CreateBr(mergeBB);
 
                 segmentCtx.builder.SetInsertPoint(mergeBB);
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, core::physical::port::PortTupleConsumer consumer) override {
+            void end(core::physical::segment::SegmentContext &segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
             }
 
         private:
