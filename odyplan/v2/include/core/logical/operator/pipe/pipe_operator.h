@@ -17,6 +17,21 @@ namespace sierra::odyplan::v2::core::logical::opr {
 
     protected:
         void bindInput(const common::identifier::PortId portId, port::Port input) override {
+            /**
+             * 1. Get Reference to current InputPorts
+             * 2. Verify that we have enough space in InputPorts or resize it by one field
+             * 3. Set the InputPort at the select Port/Index
+             * 4. Get Reference to the OutputPorts
+             * 5. Get the first OutputPort and set it to the first InputPort
+             *
+             * Else an overwrite is needed. Example:
+             *  outputPort.insert(
+             *      outputPort.end(),
+             *      std::make_move_iterator(input.begin()),
+             *      std::make_move_iterator(input.end())
+             *  );
+             */
+
             auto& inputPorts = getInputPortsRef();
 
             if (inputPorts.size() <= portId) {
@@ -31,13 +46,9 @@ namespace sierra::odyplan::v2::core::logical::opr {
                 outputPorts.resize(1);
             }
 
-            auto& outputPort = outputPorts.at(0);
-            outputPort.insert(
-                outputPort.end(),
-                std::make_move_iterator(input.begin()),
-                std::make_move_iterator(input.end())
-                );
-
+            if (auto& outputPort = outputPorts.at(0); outputPort.empty()) {
+                outputPort = std::move(input);
+            }
         }
     };
 

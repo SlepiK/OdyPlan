@@ -13,6 +13,8 @@ namespace sierra::odyplan::v2::core::logical::port {
         common::identifier::TypeId typeId;
         PortTypeJsonName typeJsonName;
         PortFieldName fieldName;
+
+        bool operator==(const PortDescriptor&) const = default;
     };
 }  // namespace sierra::odyplan::v2::core::logical::port
 

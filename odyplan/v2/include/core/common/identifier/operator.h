@@ -9,6 +9,7 @@ namespace sierra::odyplan::v2::core::common::identifier {
     enum class Operator : OperatorTypeId {
         PROJECT = 10,
         SELECT = 11,
+        MERGE = 12,
         PRINT = 20,
         READ = 21,
         WRITE = 22,
