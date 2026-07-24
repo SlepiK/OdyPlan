@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "core/physical/operator/operator.h"
+#include "core/physical/operator/operator_ability.h"
 
 namespace sierra::odyplan::v2::core::physical::chain {
     struct ChainNode {
