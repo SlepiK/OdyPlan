@@ -14,8 +14,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::MERGE);
 
-            explicit MergeOperator() {
-            }
+            explicit MergeOperator() = default;
 
             [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
@@ -42,11 +41,11 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId  /*inputPort*/, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
                 consumers.at(0)(segmentCtx, tuple);
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
+            void end(core::physical::segment::SegmentContext& segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
             }
 
         };
