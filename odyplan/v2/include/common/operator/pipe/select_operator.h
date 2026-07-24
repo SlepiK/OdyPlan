@@ -47,7 +47,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     mPredicate(predicate) {
             }
 
-            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
+            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId  /*inputPort*/, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
