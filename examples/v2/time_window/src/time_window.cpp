@@ -18,6 +18,7 @@
 #include "common/operator/source/read_operator.h"
 #include "common/window/window_buffer.h"
 #include "common/window/time/time_window_buffer.h"
+#include "core/runtime/helper/bridge.h"
 
 namespace {
     inline std::atomic atStop{false};
@@ -375,6 +376,8 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
+    symbolMap[jit->mangleAndIntern("rtTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskJoin),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtWindowGetRowCountInWindow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetRowCountInWindow),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtWindowGetData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetData),llvm::JITSymbolFlags::Exported);
