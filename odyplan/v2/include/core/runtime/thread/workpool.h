@@ -80,12 +80,12 @@ namespace sierra::odyplan::v2::core::runtime::thread {
         }
 
         bool tryPopOwn(const std::size_t self, Task& task) {
-            std::lock_guard<std::mutex> lock(mQueueMutexes[self]);
-            if (mQueues[self].empty()) {
+            std::lock_guard<std::mutex> lock(mQueueMutexes.at(self));
+            if (mQueues.at(self).empty()) {
                 return false;
             }
-            task = std::move(mQueues[self].front());
-            mQueues[self].pop_front();
+            task = std::move(mQueues.at(self).front());
+            mQueues.at(self).pop_front();
             return true;
         }
 
@@ -102,10 +102,10 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                     continue;
                 }
 
-                std::lock_guard<std::mutex> lock(mQueueMutexes[object]);
-                if (!mQueues[object].empty()) {
-                    task = std::move(mQueues[object].front());
-                    mQueues[object].pop_front();
+                std::lock_guard<std::mutex> lock(mQueueMutexes.at(object));
+                if (!mQueues.at(object).empty()) {
+                    task = std::move(mQueues.at(object).front());
+                    mQueues.at(object).pop_front();
                     return true;
                 }
             }
