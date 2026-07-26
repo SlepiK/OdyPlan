@@ -5,7 +5,7 @@
 #include <core/runtime/thread/workpool.h>
 #include <unordered_map>
 #include <memory>
-#include <print>
+#include <iostream>
 
 inline sierra::odyplan::v2::core::runtime::thread::IOPool gIOPool;
 inline sierra::odyplan::v2::core::runtime::thread::WorkPool& gWorkPool() {
@@ -15,7 +15,7 @@ inline sierra::odyplan::v2::core::runtime::thread::WorkPool& gWorkPool() {
 
 inline std::mutex gComputeMutex;
 inline std::unordered_map<std::uint64_t, std::future<void>> gComputeFutures;
-inline std::atomic_int64_t gNextComputeHandle{0};
+inline std::atomic_uint64_t gNextComputeHandle{0};
 
 extern "C" {
     inline std::uint64_t rtTaskSpawn(void (*fn)(), const sierra::odyplan::v2::core::runtime::thread::TaskKind kind) {
@@ -27,7 +27,7 @@ extern "C" {
             const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63);
             auto future = gWorkPool().submitWork([fn] {fn();});
             {
-                std::lock_guard<std::mutex> lock(gComputeMutex);
+                const std::scoped_lock lock(gComputeMutex);
                 gComputeFutures.emplace(handle, std::move(future));
             }
             return handle;
@@ -38,7 +38,7 @@ extern "C" {
     }
 
     inline void rtTaskJoin(const std::uint64_t handle) {
-        if ((handle & (1ULL << 63)) != 0) {
+        if ((handle & static_cast<std::uint64_t>(1ULL << 63)) != 0) {
             std::future<void> future;
             {
                 const std::scoped_lock lock(gComputeMutex);
