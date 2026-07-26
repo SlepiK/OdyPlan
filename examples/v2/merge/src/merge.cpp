@@ -16,7 +16,9 @@
 #include "common/operator/pipe/merge_operator.h"
 #include "common/operator/source/read_operator.h"
 
-#include "core/runtime/helper/bridge.h"
+#include "core/runtime/helper/io_task.h"
+#include "core/runtime/helper/compute_task.h"
+
 
 namespace {
     inline std::atomic atStop{false};
@@ -344,8 +346,10 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeLock),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeUnlock),llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskSpawn),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);

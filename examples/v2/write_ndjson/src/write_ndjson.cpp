@@ -14,7 +14,8 @@
 
 #include "common/io/io_registry.h"
 #include "common/operator/source/read_operator.h"
-#include "core/runtime/helper/bridge.h"
+#include "core/runtime/helper/io_task.h"
+#include "core/runtime/helper/compute_task.h"
 #include "common/operator/sink/write_operator.h"
 
 namespace {
@@ -323,8 +324,10 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
-    symbolMap[jit->mangleAndIntern("rtTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskSpawn),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSinkBeginData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSinkBeginData),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSinkWrite")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSinkWrite),llvm::JITSymbolFlags::Exported);

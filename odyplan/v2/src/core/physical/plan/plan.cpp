@@ -298,15 +298,14 @@ namespace sierra::odyplan::v2::core::physical::plan {
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto spawnFn = module.getOrInsertFunction("rtTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy, i8Ty}, false));
-        auto joinFn = module.getOrInsertFunction("rtTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
 
-        constexpr std::uint8_t ioBound = 0;
+        auto spawnFn = module.getOrInsertFunction("rtIOTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        auto joinFn = module.getOrInsertFunction("rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+
         std::vector<llvm::Value*> handles;
 
         for (auto* function : functions) {
-            handles.push_back(builder.CreateCall(spawnFn, {function, llvm::ConstantInt::get(i8Ty, ioBound)}));
-            //builder.CreateCall(function, {});
+            handles.push_back(builder.CreateCall(spawnFn, {function}));
         }
 
         for (auto* handle : handles) {
