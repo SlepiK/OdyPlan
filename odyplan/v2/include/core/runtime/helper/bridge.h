@@ -24,7 +24,7 @@ extern "C" {
                 return gIOPool.submitTask([fn] {fn();});
             }
 
-            const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63);
+            const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63ULL);
             auto future = gWorkPool().submitWork([fn] {fn();});
             {
                 const std::scoped_lock lock(gComputeMutex);
@@ -38,7 +38,7 @@ extern "C" {
     }
 
     inline void rtTaskJoin(const std::uint64_t handle) {
-        if ((handle & static_cast<std::uint64_t>(1ULL << 63)) != 0) {
+        if ((handle & (1ULL << 63ULL)) != 0) {
             std::future<void> future;
             {
                 const std::scoped_lock lock(gComputeMutex);
