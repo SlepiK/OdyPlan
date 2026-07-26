@@ -219,14 +219,17 @@ namespace sierra::odyplan::v2::core::physical::plan {
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
+        state::StateRegistry stateRegistry(module, ctx);
+        for (const auto& opr : mOperators) {
+            opr->declareState(stateRegistry, module, ctx);
+        }
+        stateRegistry.finish();
+
         std::vector<llvm::Function*> functions;
         std::vector<llvm::Function*> blockingFunctionsRestart;
 
-
         std::unordered_map<common::identifier::OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<common::identifier::OperatorId, std::set<std::size_t>> incomingInputIndices;
-
-
         for (const auto& [fromOperatorId, edgeLists] : mOutgoingEdges) {
             for (const auto& edge : edgeLists) {
                 ++inDegreeCache[edge.toOperatorId];
@@ -277,15 +280,14 @@ namespace sierra::odyplan::v2::core::physical::plan {
         segmentContext.builder.CreateRetVoid();
 
         std::vector<llvm::Function*> allRoots = functions;
-        allRoots.push_back(endFn);
         for (auto* fn : blockingFunctionsRestart) {
             allRoots.push_back(fn);
         }
 
-        codegenMain(module, ctx, allRoots);
+        codegenMain(module, ctx, allRoots, endFn);
     }
 
-    void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& functions) {
+    void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& functions, llvm::Function* endPhase) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* mainFn = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
 
@@ -293,8 +295,26 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         llvm::IRBuilder builder(basicBlock);
 
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto spawnFn = module.getOrInsertFunction("rtTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy, i8Ty}, false));
+        auto joinFn = module.getOrInsertFunction("rtTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+
+        constexpr std::uint8_t ioBound = 0;
+        std::vector<llvm::Value*> handles;
+
         for (auto* function : functions) {
-            builder.CreateCall(function, {});
+            handles.push_back(builder.CreateCall(spawnFn, {function, llvm::ConstantInt::get(i8Ty, ioBound)}));
+            //builder.CreateCall(function, {});
+        }
+
+        for (auto* handle : handles) {
+            builder.CreateCall(joinFn, {handle});
+        }
+
+        if (endPhase != nullptr) {
+            builder.CreateCall(endPhase);
         }
 
         const auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));

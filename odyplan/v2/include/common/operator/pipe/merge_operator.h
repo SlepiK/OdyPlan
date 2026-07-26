@@ -35,17 +35,23 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     }
 
     namespace physical {
-        class MergeOperator : public core::physical::opr::TypedPipeOperator {
+        class MergeOperator : public core::physical::opr::TypedBlockingPipeOperator {
         public:
-            MergeOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
-                : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
-            }
-
-            void consume(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId  /*inputPort*/, const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers& consumers) override {
-                consumers.at(0)(segmentCtx, tuple);
+            MergeOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, std::size_t count)
+                : TypedBlockingPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
             }
 
             void end(core::physical::segment::SegmentContext& segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
+            }
+
+
+        protected:
+            virtual void build(core::physical::segment::SegmentContext& segmentCtx, core::common::identifier::PortId inputPort, const core::physical::port::PortTuple& tuple) {
+
+            }
+
+            virtual void probe(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumers& consumers) {
+
             }
 
         };

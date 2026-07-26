@@ -16,6 +16,8 @@
 #include "common/operator/pipe/merge_operator.h"
 #include "common/operator/source/read_operator.h"
 
+#include "core/runtime/helper/bridge.h"
+
 namespace {
     inline std::atomic atStop{false};
 
@@ -320,6 +322,10 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
+
+    symbolMap[jit->mangleAndIntern("rtTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskJoin),llvm::JITSymbolFlags::Exported);
+
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceReset")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceReset),llvm::JITSymbolFlags::Exported);
@@ -353,27 +359,13 @@ int main() {
         return 1;
     }
 
-    auto mainExpected = jit->lookup("ody_main");
+    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
 
-    if (!mainExpected) {
-        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
-        return 1;
-    }
-
-    auto odyMain = mainExpected->toPtr<void(*)()>();
-#ifdef ENABLE_LOOPED_SOURCE
-    std::thread mainThread([&]() {
-#endif
-        odyMain();
-#ifdef ENABLE_LOOPED_SOURCE
-    });
-
-    std::cout << "Running (press Enter to stop:\n";
-
-    std::cin.get();
-    atStop.store(true);
-    mainThread.join();
-#endif
+    odyInit(&typeRegistry);
+    odyMain();
+    odyShutdown();
 
     return 0;
 }
