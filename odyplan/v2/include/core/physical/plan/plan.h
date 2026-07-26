@@ -38,7 +38,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
         std::vector<common::identifier::OperatorId> mOrder;
         const common::type::TypeRegistry* mTypeRegistry;
 
-        static void codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& functions, llvm::Function* endPhase);
+        static void codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& ioRoots, const std::vector<llvm::Function*>& computeRoots, llvm::Function* endPhase);
     };
 }  // namespace sierra::odyplan::v2::core::physical::port
 

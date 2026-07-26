@@ -15,6 +15,10 @@ namespace sierra::odyplan::v2::core::physical::opr {
         IProducer(IProducer&&) = delete;
         IProducer& operator=(IProducer&&) = delete;
         virtual void produce(segment::SegmentContext& segmentCtx, const port::PortTupleConsumers& consumers) = 0;
+
+        virtual bool isComputeBound() const {
+            return false;
+        }
     };
 
     class IConsumer {
