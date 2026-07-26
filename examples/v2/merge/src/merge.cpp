@@ -30,6 +30,23 @@ namespace {
 }
 
 extern "C" {
+
+    void* rtCreateMergeLock(const void* /*typeRegistry*/) {
+        return new std::mutex();
+    }
+
+    void rtDestroyMergeLock(void* state) {
+        delete static_cast<std::mutex*>(state);
+    }
+
+    void rtMergeLock(void* state) {
+        static_cast<std::mutex*>(state)->lock();
+    }
+
+    void rtMergeUnlock(void* state) {
+        static_cast<std::mutex*>(state)->unlock();
+    }
+
     void rtEnd() {
     }
 
@@ -322,6 +339,10 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
+    symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeUnlock),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskSpawn),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtTaskJoin),llvm::JITSymbolFlags::Exported);

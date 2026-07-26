@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V2_CORE_PHYSICAL_OPERATOR_OPERATOR_H
 
 #include "core/physical/port/port.h"
+#include <core/common/ident.h>
 #include "core/physical/state/state_registry.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
@@ -42,9 +43,17 @@ namespace sierra::odyplan::v2::core::physical::opr {
         virtual void declareState(state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context) {
         }
 
+        [[nodiscard]] common::identifier::OperatorId getId() const {
+            return mId;
+        }
+
+        void setId(const common::identifier::OperatorId id) {
+            mId = id;
+        }
     private:
         port::Ports mInputPorts;
         port::Ports mOutputPorts;
+        common::identifier::OperatorId mId;
 
     protected:
         port::Ports& getInputPortsRef() {
