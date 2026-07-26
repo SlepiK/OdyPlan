@@ -39,8 +39,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)}, core::physical::port::Ports{std::move(outputPort)}) {
             }
 
-            void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module, llvm::LLVMContext &context) override {
-                auto* i64Ty = llvm::Type::getInt64Ty(context);
+            void declareState(core::physical::state::StateRegistry& stateRegistry, llvm::Module& /*module*/, llvm::LLVMContext& /*context*/) override {
                 mStateHandle = stateRegistry.createHandle(
                     "ody_merge_" + std::to_string(getId()),
                     "rtCreateMergeLock",
@@ -49,8 +48,8 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                     "rtDestroyMergeLock");
             }
 
-            void consume(core::physical::segment::SegmentContext &segmentCtx, core::common::identifier::PortId inputPort,
-                const core::physical::port::PortTuple &tuple, const core::physical::port::PortTupleConsumers &consumers) override {
+            void consume(core::physical::segment::SegmentContext &segmentCtx, core::common::identifier::PortId /*inputPort*/,
+                const core::physical::port::PortTuple& tuple, const core::physical::port::PortTupleConsumers& consumers) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -71,7 +70,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         private:
             core::physical::state::StateHandle mStateHandle;
 
-            llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) {
+            llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const {
                 auto* ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
                 return segmentCtx.builder.CreateLoad(ptrTy, mStateHandle.var);
             }
