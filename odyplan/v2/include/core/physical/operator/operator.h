@@ -53,7 +53,7 @@ namespace sierra::odyplan::v2::core::physical::opr {
     private:
         port::Ports mInputPorts;
         port::Ports mOutputPorts;
-        common::identifier::OperatorId mId;
+        common::identifier::OperatorId mId = 0;
 
     protected:
         port::Ports& getInputPortsRef() {

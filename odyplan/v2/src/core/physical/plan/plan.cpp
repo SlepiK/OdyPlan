@@ -219,7 +219,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
-        state::StateRegistry stateRegistry(module, ctx);
+        state::StateRegistry stateRegistry(&module, &ctx);
         for (const auto& opr : mOperators) {
             opr->declareState(stateRegistry, module, ctx);
         }

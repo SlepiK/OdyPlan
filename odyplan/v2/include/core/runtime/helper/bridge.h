@@ -14,13 +14,13 @@ inline std::unordered_map<std::uint64_t, std::future<void>> gComputeFutures;
 inline std::atomic_int64_t gNextComputeHandle{0};
 
 extern "C" {
-    std::uint64_t rtTaskSpawn(void (*fn)(), const sierra::odyplan::v2::core::runtime::thread::TaskKind kind) {
+    inline std::uint64_t rtTaskSpawn(void (*fn)(), const sierra::odyplan::v2::core::runtime::thread::TaskKind kind) {
         try {
             if (kind == sierra::odyplan::v2::core::runtime::thread::TaskKind::IO) {
                 return gIOPool.submitTask([fn] {fn();});
             }
 
-            const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ull << 63);
+            const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63);
             auto future = gWorkPool.submitWork([fn] {fn();});
             {
                 std::lock_guard<std::mutex> lock(gComputeMutex);
@@ -33,8 +33,8 @@ extern "C" {
         }
     }
 
-    void rtTaskJoin(const std::uint64_t handle) {
-        if ((handle & (1ull << 63)) != 0) {
+    inline void rtTaskJoin(const std::uint64_t handle) {
+        if ((handle & (1ULL << 63)) != 0) {
             std::future<void> future;
             {
                 std::lock_guard<std::mutex> lock(gComputeMutex);
