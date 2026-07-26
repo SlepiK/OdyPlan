@@ -28,7 +28,7 @@ extern "C" {
             }
             return handle;
         } catch (std::exception& e) {
-            std::cerr << "rtComputeTaskSpawn:" << e.what() << std::endl;
+            std::cerr << "rtComputeTaskSpawn:" << e.what() << '\n';
             std::abort();
         }
     }
