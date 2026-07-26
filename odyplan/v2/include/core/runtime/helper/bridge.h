@@ -15,17 +15,22 @@ inline std::atomic_int64_t gNextComputeHandle{0};
 
 extern "C" {
     std::uint64_t rtTaskSpawn(void (*fn)(), const sierra::odyplan::v2::core::runtime::thread::TaskKind kind) {
-        if (kind == sierra::odyplan::v2::core::runtime::thread::TaskKind::IO) {
-            return gIOPool.submitTask([fn] {fn();});
-        }
+        try {
+            if (kind == sierra::odyplan::v2::core::runtime::thread::TaskKind::IO) {
+                return gIOPool.submitTask([fn] {fn();});
+            }
 
-        const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ull << 63);
-        auto future = gWorkPool.submitWork([fn] {fn();});
-        {
-            std::lock_guard<std::mutex> lock(gComputeMutex);
-            gComputeFutures.emplace(handle, std::move(future));
+            const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ull << 63);
+            auto future = gWorkPool.submitWork([fn] {fn();});
+            {
+                std::lock_guard<std::mutex> lock(gComputeMutex);
+                gComputeFutures.emplace(handle, std::move(future));
+            }
+            return handle;
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "rtTaskSpawn: %s\n", e.what());
+            std::abort();
         }
-        return handle;
     }
 
     void rtTaskJoin(const std::uint64_t handle) {

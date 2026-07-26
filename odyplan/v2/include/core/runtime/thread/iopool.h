@@ -33,6 +33,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                 const auto workerId = mIdleWorkers.back();
                 mIdleWorkers.pop_back();
                 mPendingTasks[workerId] = std::move(task);
+                mCompletion[workerId] = false;
                 lock.unlock();
                 mWakeUpCV.notify_all();
                 return workerId;
