@@ -5,6 +5,7 @@
 #include <core/runtime/thread/workpool.h>
 #include <unordered_map>
 #include <memory>
+#include <print>
 
 inline sierra::odyplan::v2::core::runtime::thread::IOPool gIOPool;
 inline sierra::odyplan::v2::core::runtime::thread::WorkPool& gWorkPool() {
@@ -31,7 +32,7 @@ extern "C" {
             }
             return handle;
         } catch (const std::exception& e) {
-            std::fprintf(stderr, "rtTaskSpawn: %s\n", e.what());
+            std::cerr << "rtTaskSpawn: " << e.what() << '\n';
             std::abort();
         }
     }

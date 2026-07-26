@@ -48,7 +48,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
             const auto index = mRoundRobin.fetch_add(1, std::memory_order_relaxed) % mQueueMutexes.size();
             {
                 const std::scoped_lock lock(mQueueMutexes.at(index));
-                mQueues[index].push_front(std::move(wrapped));
+                mQueues.at(index).push_front(std::move(wrapped));
             }
 
             mPending.fetch_add(1, std::memory_order_relaxed);
