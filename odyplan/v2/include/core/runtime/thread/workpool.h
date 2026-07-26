@@ -31,6 +31,11 @@ namespace sierra::odyplan::v2::core::runtime::thread {
             }
         }
 
+        WorkPool(const WorkPool&) = delete;
+        WorkPool& operator=(const WorkPool&) = delete;
+        WorkPool(WorkPool&&) = delete;
+        WorkPool& operator=(WorkPool&&) = delete;
+
         std::future<void> submitWork(Task task) {
             auto prom = std::make_shared<std::promise<void>>();
             std::future<void> fut = prom->get_future();
@@ -42,7 +47,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
 
             const auto index = mRoundRobin.fetch_add(1, std::memory_order_relaxed) % mQueueMutexes.size();
             {
-                std::lock_guard<std::mutex> lock(mQueueMutexes[index]);
+                const std::scoped_lock lock(mQueueMutexes.at(index));
                 mQueues[index].push_front(std::move(wrapped));
             }
 
@@ -80,7 +85,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
         }
 
         bool tryPopOwn(const std::size_t self, Task& task) {
-            std::lock_guard<std::mutex> lock(mQueueMutexes.at(self));
+            const std::scoped_lock lock(mQueueMutexes.at(self));
             if (mQueues.at(self).empty()) {
                 return false;
             }
@@ -102,7 +107,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                     continue;
                 }
 
-                const std::lock_guard<std::mutex> lock(mQueueMutexes.at(object));
+                const std::scoped_lock lock(mQueueMutexes.at(object));
                 if (!mQueues.at(object).empty()) {
                     task = std::move(mQueues.at(object).front());
                     mQueues.at(object).pop_front();

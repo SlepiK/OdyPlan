@@ -10,10 +10,11 @@
 namespace sierra::odyplan::v2::core::runtime::thread {
     class IOPool {
     public:
+        IOPool() = default;
 
         ~IOPool() {
             {
-                std::lock_guard<std::mutex> lock(mMutex);
+                const std::scoped_lock lock(mMutex);
                 mShutdown = true;
             }
 
@@ -25,6 +26,12 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                 }
             }
         }
+
+        IOPool(const IOPool&) = delete;
+        IOPool& operator=(const IOPool&) = delete;
+        IOPool(IOPool&&) = delete;
+        IOPool& operator=(IOPool&&) = delete;
+
 
         std::uint64_t submitTask(Task task) {
             std::unique_lock<std::mutex> lock(mMutex);
@@ -88,7 +95,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                 task();
 
                 {
-                    std::lock_guard<std::mutex> lock(mMutex);
+                    const std::scoped_lock lock(mMutex);
                     mCompletion[workerId] = true;
                     mIdleWorkers.push_back(workerId);
                 }

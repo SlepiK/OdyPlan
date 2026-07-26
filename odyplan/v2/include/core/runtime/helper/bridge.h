@@ -7,7 +7,10 @@
 #include <memory>
 
 inline sierra::odyplan::v2::core::runtime::thread::IOPool gIOPool;
-inline sierra::odyplan::v2::core::runtime::thread::WorkPool gWorkPool;
+inline sierra::odyplan::v2::core::runtime::thread::WorkPool& gWorkPool() {
+    static sierra::odyplan::v2::core::runtime::thread::WorkPool instance;
+    return instance;
+}
 
 inline std::mutex gComputeMutex;
 inline std::unordered_map<std::uint64_t, std::future<void>> gComputeFutures;
@@ -21,7 +24,7 @@ extern "C" {
             }
 
             const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63);
-            auto future = gWorkPool.submitWork([fn] {fn();});
+            auto future = gWorkPool().submitWork([fn] {fn();});
             {
                 std::lock_guard<std::mutex> lock(gComputeMutex);
                 gComputeFutures.emplace(handle, std::move(future));
@@ -37,7 +40,7 @@ extern "C" {
         if ((handle & (1ULL << 63)) != 0) {
             std::future<void> future;
             {
-                std::lock_guard<std::mutex> lock(gComputeMutex);
+                const std::scoped_lock lock(gComputeMutex);
                 auto it = gComputeFutures.find(handle);
                 if (it == gComputeFutures.end()) {
                     return;
