@@ -13,8 +13,8 @@ namespace sierra::odyplan::v2::core::runtime::thread {
     class WorkPool {
     public:
         explicit WorkPool(const std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()))
-            : mQueues(poolSize),
-                mQueueMutexes(poolSize) {
+            : mQueueMutexes(poolSize),
+                mQueues(poolSize) {
             mWorkers.reserve(poolSize);
             for (std::size_t i = 0; i < poolSize; ++i) {
                 mWorkers.emplace_back([this, i] {});
@@ -102,7 +102,7 @@ namespace sierra::odyplan::v2::core::runtime::thread {
                     continue;
                 }
 
-                std::lock_guard<std::mutex> lock(mQueueMutexes.at(object));
+                const std::lock_guard<std::mutex> lock(mQueueMutexes.at(object));
                 if (!mQueues.at(object).empty()) {
                     task = std::move(mQueues.at(object).front());
                     mQueues.at(object).pop_front();
