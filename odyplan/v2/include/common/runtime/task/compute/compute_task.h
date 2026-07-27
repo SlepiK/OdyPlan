@@ -4,12 +4,12 @@
 #include <iostream>
 #include <ostream>
 
-#include "core/runtime/thread/workpool.h"
+#include "core/internal/thread/workpool.h"
 
 using ComputeTaskHandle = std::uint64_t;
 
-inline sierra::odyplan::v2::core::runtime::thread::WorkPool& gWorkPool() {
-    static sierra::odyplan::v2::core::runtime::thread::WorkPool instance;
+inline sierra::odyplan::v2::core::internal::thread::WorkPool& gWorkPool() {
+    static sierra::odyplan::v2::core::internal::thread::WorkPool instance;
     return instance;
 }
 

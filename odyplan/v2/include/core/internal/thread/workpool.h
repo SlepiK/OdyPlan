@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_WORKPOOL_H
-#define SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_WORKPOOL_H
+#ifndef SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_WORKPOOL_H
+#define SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_WORKPOOL_H
 #include <condition_variable>
 #include <deque>
 #include <future>
@@ -9,7 +9,7 @@
 #include <random>
 #include "task.h"
 
-namespace sierra::odyplan::v2::core::runtime::thread {
+namespace sierra::odyplan::v2::core::internal::thread {
     class WorkPool {
     public:
         explicit WorkPool(const std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()))
@@ -120,4 +120,4 @@ namespace sierra::odyplan::v2::core::runtime::thread {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_WORKPOOL_H
+#endif //SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_WORKPOOL_H

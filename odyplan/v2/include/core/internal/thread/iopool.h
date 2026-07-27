@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_IOPOOL_H
-#define SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_IOPOOL_H
+#ifndef SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_IOPOOL_H
+#define SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_IOPOOL_H
 
 #include <condition_variable>
 #include <cstdint>
@@ -7,7 +7,7 @@
 
 #include "task.h"
 
-namespace sierra::odyplan::v2::core::runtime::thread {
+namespace sierra::odyplan::v2::core::internal::thread {
     class IOPool {
     public:
         IOPool() = default;
@@ -106,4 +106,4 @@ namespace sierra::odyplan::v2::core::runtime::thread {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V2_CORE_RUNTIME_THREAD_IOPOOL_H
+#endif //SIERRA_ODYPLAN_V2_CORE_INTERNAL_THREAD_IOPOOL_H
