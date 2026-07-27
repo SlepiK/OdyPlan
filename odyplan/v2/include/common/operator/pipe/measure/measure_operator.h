@@ -68,15 +68,19 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
             void declareState(core::physical::state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context) override {
                 auto* ptrTy = llvm::PointerType::getUnqual(context);
-                llvm::Value* labelGlobal = llvm::ConstantExpr::getInBoundsGetElementPtr(
-                    llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
-                    new llvm::GlobalVariable(
+                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+                auto* labelGlobalVariable = new llvm::GlobalVariable(
                         module,
                         llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
                         true,
                         llvm::GlobalValue::InternalLinkage,
                         llvm::ConstantDataArray::getString(context, mLabel, true)
-                    ),
+                    );
+
+
+                llvm::Value* labelGlobal = llvm::ConstantExpr::getInBoundsGetElementPtr(
+                    llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
+                    labelGlobalVariable,
                     std::vector<llvm::Value*>{
                         llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
                         llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)

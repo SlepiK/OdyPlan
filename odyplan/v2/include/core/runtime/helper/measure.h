@@ -9,12 +9,14 @@ constexpr uint64_t MEASUREMENT_AFTER_LINES_REPORT = 2;
 
 extern "C" {
     inline void* rtCreateMeasure(const void* /*typeRegistry*/, const char* label) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* state = new sierra::odyplan::v2::core::runtime::measure::MeasureState();
         state->label = label;
         return state;
     }
 
     inline void rtDestroyMeasure(void* measureState) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         delete static_cast<sierra::odyplan::v2::core::runtime::measure::MeasureState*>(measureState);
     }
 
