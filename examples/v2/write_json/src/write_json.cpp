@@ -1,3 +1,5 @@
+#define SIERRA_RUNTIME_IO
+
 #include <iostream>
 #include <llvm/Support/TargetSelect.h>
 
@@ -5,7 +7,16 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include "common/operator/sink/print_operator.h"
+#include "common/operator/source/read/logical/read_operator.h"
+#include "common/operator/source/read/physical/read_operator.h"
+#include "common/operator/source/read/runtime/read_runtime.h"
+
+#include "common/operator/sink/write/logical/write_operator.h"
+#include "common/operator/sink/write/physical/write_operator.h"
+#include "common/operator/sink/write/runtime/write_runtime.h"
+
+#include "common/runtime/runtime.h"
+
 #include "core/logical/plan/plan.h"
 
 #include "core/builder/plan_builder.h"
@@ -13,223 +24,6 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
-#include "common/operator/source/read_operator.h"
-#include "common/operator/sink/write_operator.h"
-#include "core/runtime/helper/io_task.h"
-#include "core/runtime/helper/compute_task.h"
-
-namespace {
-    inline std::atomic atStop{false};
-
-    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource>> gSources;
-
-    inline std::vector<std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink>> gSinks;
-
-    sierra::odyplan::v2::common::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSource> source) {
-        gSources.push_back(std::move(source));
-        return gSources.size() - 1;
-    }
-
-    sierra::odyplan::v2::common::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v2::common::io::IIOSink> sink) {
-        gSinks.push_back(std::move(sink));
-        return gSinks.size() - 1;
-    }
-}
-
-extern "C" {
-    bool rtIOSourceHasNext(const sierra::odyplan::v2::common::io::IOSourceId index) {
-        assert(index < gSources.size() && "invalid IOSource");
-        if (index >= gSources.size()) {
-            return false;
-        }
-
-        return gSources.at(index)->available();
-    }
-
-    const char* rtIOSourceGetField(const sierra::odyplan::v2::common::io::IOSourceId index, const char* fieldName) {
-        assert(index < gSources.size() && "invalid IOSource");
-        if (index >= gSources.size() || fieldName == nullptr) {
-            return nullptr;
-        }
-
-        const sierra::odyplan::v2::common::io::IOData& current = gSources.at(index)->current();
-        const auto iter = current.find(fieldName);
-        return iter != current.end() ? iter->second.c_str() : nullptr;
-    }
-
-    void rtIOSourceReset(const sierra::odyplan::v2::common::io::IOSourceId index) {
-        assert(index < gSources.size() && "invalid IOSource");
-        if (index < gSources.size()) {
-            gSources.at(index)->reset();
-        }
-    }
-
-    bool rtParseBool(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseBool: invalid argument");
-        }
-
-        if (std::strcmp(str, "true") == 0 || std::strcmp(str, "1") == 0) {
-            return true;
-        }
-        if (std::strcmp(str, "false") == 0 || std::strcmp(str, "0") == 0) {
-            return false;
-        }
-
-        throw std::invalid_argument("rtParseBool: invalid argument");
-    }
-
-    std::int8_t rtParseInt8(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseInt8: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const long value = std::strtol(str, &end, 10);
-
-        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int8_t>::min() || value > std::numeric_limits<std::int8_t>::max()) {
-            throw std::invalid_argument("rtParseInt8: invalid argument or out of range");
-        }
-
-        return static_cast<std::int8_t>(value);
-    }
-
-    std::int16_t rtParseInt16(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseInt16: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const long value = std::strtol(str, &end, 10);
-
-        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int16_t>::min() || value > std::numeric_limits<std::int16_t>::max()) {
-            throw std::invalid_argument("rtParseInt16: invalid argument or out of range");
-        }
-
-        return static_cast<std::int16_t>(value);
-    }
-
-    std::int32_t rtParseInt32(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseInt32: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const long value = std::strtol(str, &end, 10);
-
-        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int32_t>::min() || value > std::numeric_limits<std::int32_t>::max()) {
-            throw std::invalid_argument("rtParseInt32: invalid argument or out of range");
-        }
-
-        return static_cast<std::int32_t>(value);
-    }
-
-    std::int64_t rtParseInt64(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseInt64: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const long value = std::strtol(str, &end, 10);
-
-        if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<std::int64_t>::min() || value > std::numeric_limits<std::int64_t>::max()) {
-            throw std::invalid_argument("rtParseInt64: invalid argument or out of range");
-        }
-
-        return value;
-    }
-
-    std::float_t rtParseFloat(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseFloat: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const std::float_t value = std::strtof(str, &end);
-
-        if (end == str || *end != '\0' || errno == ERANGE) {
-            throw std::invalid_argument("rtParseFloat: invalid argument");
-        }
-
-        return value;
-    }
-
-    std::double_t rtParseDouble(const char* str) {
-        if (str == nullptr) {
-            throw std::invalid_argument("rtParseDouble: invalid argument");
-        }
-
-        char* end = nullptr;
-        errno = 0;
-        const std::double_t value = std::strtod(str, &end);
-
-        if (end == str || *end != '\0' || errno == ERANGE) {
-            throw std::invalid_argument("rtParseDouble: invalid argument");
-        }
-
-        return value;
-    }
-
-    void rtIOSinkBeginData(const sierra::odyplan::v2::common::io::IOSinkId index) {
-        gSinks.at(index)->begin();
-    }
-
-    void rtIOSinkWrite(const sierra::odyplan::v2::common::io::IOSinkId index, const sierra::odyplan::v2::core::common::identifier::TypeId typeId, const char* key, const void* value) {
-        gSinks.at(index)->write(key, typeId, value);
-    }
-
-    void rtIOSinkEndData(const sierra::odyplan::v2::common::io::IOSinkId index) {
-        gSinks.at(index)->end();
-    }
-
-    void rtIOSinkFlush(const sierra::odyplan::v2::common::io::IOSinkId index) {
-        gSinks.at(index)->flush();
-    }
-
-    void rtIOSinkFlushAll() {
-        for (const auto& sink : gSinks) {
-            sink->flush();
-        }
-    }
-
-    void rtEnd() {
-        rtIOSinkFlushAll();
-    }
-
-    void rtOdyPrintString(const char* data) {
-        std::cout << data;
-    }
-
-    void rtOdyPrintDouble(const double value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintFloat(const float value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintInt(const int value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintSeperator() {
-        std::cout << " ";
-    }
-
-    void rtOdyPrintNewline() {
-        std::cout << "\n";
-    }
-
-    bool odyStop() {
-        return atStop.load(std::memory_order_relaxed);
-    }
-}
-
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
@@ -249,10 +43,6 @@ int main() {
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
-
-    /*logicalPlan.connect(
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0},
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});*/
 
     std::cout << "Logical Plan: OK\n";
 
@@ -347,13 +137,6 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtParseFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseFloat),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtParseDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseDouble),llvm::JITSymbolFlags::Exported);
 
-
-    symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintString),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
