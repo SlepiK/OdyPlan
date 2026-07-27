@@ -10,6 +10,7 @@ namespace sierra::odyplan::v2::core::common::identifier {
         PROJECT = 10,
         SELECT = 11,
         MERGE = 12,
+        JOIN = 13,
         PRINT = 20,
         READ = 21,
         WRITE = 22,
