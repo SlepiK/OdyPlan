@@ -14,6 +14,8 @@
 #include <atomic>
 
 #include "common/operator/pipe/select_operator.h"
+#include "core/runtime/helper/io_task.h"
+#include "core/runtime/helper/compute_task.h"
 
 namespace {
     inline std::atomic atStop{false};
@@ -144,6 +146,11 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
+
     symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintString),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);

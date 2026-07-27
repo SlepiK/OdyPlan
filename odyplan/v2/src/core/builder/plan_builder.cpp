@@ -25,6 +25,10 @@ namespace sierra::odyplan::v2::core::builder {
                 throw std::invalid_argument("PlanBuilder::build: transformation produced no physical operator");
             }
 
+            for (auto& opr : oprs) {
+                opr->setId(lOprId);
+            }
+
             const auto inEdgeCount = lPlan.getInEdgesFromOperator(lOprId).size();
             if (inEdgeCount > 1 && oprs.size() > 1) {
                 throw std::logic_error(

@@ -80,7 +80,6 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
                 segmentCtx.builder.CreateCall(drainFn, {wHandle});
             }
-
         protected:
 
             virtual llvm::Value* getTimestampValue(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTuple& tuple, llvm::Type* i64Ty) = 0;

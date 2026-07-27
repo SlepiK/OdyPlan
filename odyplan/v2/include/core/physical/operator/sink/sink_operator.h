@@ -6,6 +6,7 @@
 #include "core/physical/port/port.h"
 
 namespace sierra::odyplan::v2::core::physical::opr {
+    // NOLINTNEXTLINE(misc-multiple-inheritance)
     class ISinkOperator : public IOperator, public IConsumer {
     public:
         [[nodiscard]] bool hasInputPorts() const override {

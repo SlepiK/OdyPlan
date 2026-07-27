@@ -18,7 +18,9 @@ namespace sierra::odyplan::v2::core::physical::plan {
             llvm::LLVMContext& ctx;
             std::vector<llvm::Function*>& functions;
             const common::type::TypeRegistry* typeRegistry;
-            std::vector<llvm::Function*> blockingFunctionsRestart;
+
+            std::vector<llvm::Function*>& ioRestartRoots;
+            std::vector<llvm::Function*>& computeRestartRoots;
 
             std::unordered_map<common::identifier::OperatorId, port::PortTupleConsumers> exitCache;
             std::unordered_map<common::identifier::OperatorId, port::PortTupleConsumers> afterEntryCache;
@@ -30,7 +32,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
                 const auto& chain = chains.at(operatorId);
                 const auto edgeIt = outgoingEdges.find(operatorId);
-                constexpr std::vector<edge::Edge> emptyEdges{};
+                static const std::vector<edge::Edge> emptyEdges{};
                 const auto& outEdges = edgeIt != outgoingEdges.end() ? edgeIt->second : emptyEdges;
 
                 std::unordered_map<common::identifier::PortId, std::vector<edge::Edge>> byPort;
@@ -48,12 +50,12 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
                     const auto& edgesForPort = found->second;
 
-                    if (outEdges.size() == 1) {
+                    if (edgesForPort.size() == 1) {
                         result[portIndex] = buildEnter(edgesForPort.front());
                     } else {
                         port::PortTupleConsumers branches;
-                        branches.reserve(outEdges.size());
-                        for (const auto& edge : outEdges) {
+                        branches.reserve(edgesForPort.size());
+                        for (const auto& edge : edgesForPort) {
                             branches.push_back(buildEnter(edge));
                         }
                         result[portIndex] = [branches](segment::SegmentContext& sCtx, const port::PortTuple& tuple) {
@@ -66,6 +68,24 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
                 exitCache.emplace(operatorId, result);
                 return result;
+            }
+
+            void spawnBlockingRoot(const common::identifier::OperatorId operatorId, const std::string& suffix,
+                opr::IProducer* producer, const port::PortTupleConsumers& next) {
+                auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
+                auto* fn = llvm::Function::Create(fnType, llvm::Function::ExternalLinkage,
+                    "ody_root_blocking_" + std::to_string(operatorId) + "_" + suffix, &module);
+                auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
+
+                segment::SegmentContext segmentContext(fn, entryBB, ctx, *typeRegistry);
+                producer->produce(segmentContext, next);
+                segmentContext.builder.CreateRetVoid();
+
+                if (producer->isComputeBound()) {
+                    computeRestartRoots.push_back(fn);
+                } else {
+                    ioRestartRoots.push_back(fn);
+                }
             }
 
             port::PortTupleConsumer buildEnter(const edge::Edge& edge) {
@@ -116,7 +136,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 }
 
                 if (chain.nodes.front().isBreaker) {
-                    spawnRoot(operatorId, "0", chain.nodes.front().asProducer, rest);
+                    spawnBlockingRoot(operatorId, "0", chain.nodes.front().asProducer, rest);
                 }
 
                 afterEntryCache.emplace(operatorId, rest);
@@ -139,7 +159,7 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 }
 
                 if (node.isBreaker) {
-                    spawnRoot(operatorId, std::to_string(index), node.asProducer, rest);
+                    spawnBlockingRoot(operatorId, std::to_string(index), node.asProducer, rest);
                     return noopConsumer;
                 }
 
@@ -148,19 +168,6 @@ namespace sierra::odyplan::v2::core::physical::plan {
                     consumerNode->consume(sCtx, 0, tuple, rest);
                 };
             }
-
-            void spawnRoot(const common::identifier::OperatorId operatorId, const std::string& suffix, opr::IProducer* producer, const port::PortTupleConsumers& rest) {
-                auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
-                auto* fn = llvm::Function::Create(fnType, llvm::Function::InternalLinkage, "ody_rblock_" +std::to_string(operatorId) + "_" + suffix, &module);
-                auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
-
-                segment::SegmentContext segmentContext(fn, entryBB, ctx, *typeRegistry);
-
-                producer->produce(segmentContext, rest);
-                segmentContext.builder.CreateRetVoid();
-                functions.push_back(fn);
-            }
-
 
             port::PortTupleConsumer compileAsFunction(const common::identifier::OperatorId operatorId, const common::identifier::PortId portId, const port::Port& portSchema, const port::PortTupleConsumer& inner) {
                 std::vector<llvm::Type*> paramTypes;
@@ -219,14 +226,18 @@ namespace sierra::odyplan::v2::core::physical::plan {
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
-        std::vector<llvm::Function*> functions;
-        std::vector<llvm::Function*> blockingFunctionsRestart;
+        state::StateRegistry stateRegistry(&module, &ctx);
+        for (const auto& opr : mOperators) {
+            opr->declareState(stateRegistry, module, ctx);
+        }
+        stateRegistry.finish();
 
+        std::vector<llvm::Function*> functions;
+        std::vector<llvm::Function*> ioFunctionsRestart;
+        std::vector<llvm::Function*> computeFunctionsRestart;
 
         std::unordered_map<common::identifier::OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<common::identifier::OperatorId, std::set<std::size_t>> incomingInputIndices;
-
-
         for (const auto& [fromOperatorId, edgeLists] : mOutgoingEdges) {
             for (const auto& edge : edgeLists) {
                 ++inDegreeCache[edge.toOperatorId];
@@ -236,7 +247,9 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         port::PortTupleConsumer noopConsumer = [](segment::SegmentContext&, const port::PortTuple&) {};
 
-        detail::Builder detailBuilder{mChains, mOutgoingEdges, inDegreeCache, noopConsumer, module, ctx, functions, mTypeRegistry, blockingFunctionsRestart};
+        detail::Builder detailBuilder{.chains=mChains, .outgoingEdges=mOutgoingEdges, .inDegree=inDegreeCache,
+            .noopConsumer=noopConsumer, .module=module, .ctx=ctx, .functions=functions, .typeRegistry=mTypeRegistry,
+            .ioRestartRoots=ioFunctionsRestart, .computeRestartRoots=computeFunctionsRestart};
 
         for (const auto& [id, chain] : mChains) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
@@ -276,16 +289,15 @@ namespace sierra::odyplan::v2::core::physical::plan {
         }
         segmentContext.builder.CreateRetVoid();
 
-        std::vector<llvm::Function*> allRoots = functions;
-        allRoots.push_back(endFn);
-        for (auto* fn : blockingFunctionsRestart) {
-            allRoots.push_back(fn);
+        std::vector<llvm::Function*> ioRoots = functions;
+        for (auto* fn : ioFunctionsRestart) {
+            ioRoots.push_back(fn);
         }
 
-        codegenMain(module, ctx, allRoots);
+        codegenMain(module, ctx, ioRoots, computeFunctionsRestart, endFn);
     }
 
-    void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& functions) {
+    void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& ioRoots, const std::vector<llvm::Function*>& computeRoots, llvm::Function* endPhase) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* mainFn = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
 
@@ -293,8 +305,36 @@ namespace sierra::odyplan::v2::core::physical::plan {
 
         llvm::IRBuilder builder(basicBlock);
 
-        for (auto* function : functions) {
-            builder.CreateCall(function, {});
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+
+        auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        auto ioJoinFn = module.getOrInsertFunction("rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+        auto computeSpawnFn = module.getOrInsertFunction("rtComputeTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        auto computeJoinFn = module.getOrInsertFunction("rtComputeTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+
+        std::vector<llvm::Value*> ioHandles;
+        std::vector<llvm::Value*> computeHandles;
+
+        for (auto* root : ioRoots) {
+            ioHandles.push_back(builder.CreateCall(ioSpawnFn, {root}));
+        }
+
+        for (auto* root : computeRoots) {
+            computeHandles.push_back(builder.CreateCall(computeSpawnFn, {root}));
+        }
+
+        for (auto* handle : ioHandles) {
+            builder.CreateCall(ioJoinFn, {handle});
+        }
+
+        for (auto* handle : computeHandles) {
+            builder.CreateCall(computeJoinFn, {handle});
+        }
+
+        if (endPhase != nullptr) {
+            builder.CreateCall(endPhase);
         }
 
         const auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
