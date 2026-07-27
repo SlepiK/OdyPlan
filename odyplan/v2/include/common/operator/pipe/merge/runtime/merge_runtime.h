@@ -5,10 +5,12 @@
 
 extern "C" {
     inline void* rtCreateMergeLock(const void* /*typeRegistry*/) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         return new std::mutex();
     }
 
     inline void rtDestroyMergeLock(void* state) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         delete static_cast<std::mutex*>(state);
     }
 

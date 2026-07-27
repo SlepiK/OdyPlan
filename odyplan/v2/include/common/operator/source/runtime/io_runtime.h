@@ -37,7 +37,7 @@ extern "C" {
     inline void rtIOSourceReset(const sierra::odyplan::v2::common::io::IOSourceId index) {
         assert(index < gSources.size() && "invalid IOSource");
         if (index < gSources.size()) {
-            gSources.at(index)->reset();
+            (*gSources.at(index)).reset();
         }
     }
 }
