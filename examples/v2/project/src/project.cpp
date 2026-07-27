@@ -5,7 +5,7 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include "common/operator/sink/print_operator.h"
+#include "common/operator/sink/print/print_operator.h"
 #include "core/logical/plan/plan.h"
 
 #include "const_source_operator.h"
@@ -13,7 +13,7 @@
 
 #include <atomic>
 
-#include "common/operator/pipe/project_operator.h"
+#include "common/operator/pipe/project/project_operator.h"
 #include "core/runtime/helper/io_task.h"
 #include "core/runtime/helper/compute_task.h"
 

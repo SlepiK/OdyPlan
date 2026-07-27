@@ -104,4 +104,4 @@ namespace sierra::odyplan::v2::common::opr::pipe {
     }
 }
 
-#endif //ODYPLAN_MEASURE_OPERATOR_H
+#endif //SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_MEASURE_MEASUREOPERATOR_H

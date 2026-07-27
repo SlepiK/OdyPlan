@@ -5,7 +5,7 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include "common/operator/sink/print_operator.h"
+#include "common/operator/sink/print/print_operator.h"
 #include "core/logical/plan/plan.h"
 
 #include "core/builder/plan_builder.h"
@@ -15,7 +15,7 @@
 
 #include "common/io/io_registry.h"
 #include "common/operator/pipe/window/time_window_operator.h"
-#include "common/operator/source/read_operator.h"
+#include "common/operator/source/read/read_operator.h"
 #include "common/window/window_buffer.h"
 #include "common/window/time/time_window_buffer.h"
 #include "core/runtime/helper/io_task.h"
