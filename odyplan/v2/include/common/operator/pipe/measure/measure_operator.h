@@ -77,7 +77,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                         llvm::ConstantDataArray::getString(context, mLabel, true)
                     );
 
-
+                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
                 llvm::Value* labelGlobal = llvm::ConstantExpr::getInBoundsGetElementPtr(
                     llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
                     labelGlobalVariable,
