@@ -16,6 +16,10 @@
 #include "common/operator/pipe/merge_operator.h"
 #include "common/operator/source/read_operator.h"
 
+#include "core/runtime/helper/io_task.h"
+#include "core/runtime/helper/compute_task.h"
+
+
 namespace {
     inline std::atomic atStop{false};
 
@@ -28,6 +32,23 @@ namespace {
 }
 
 extern "C" {
+
+    void* rtCreateMergeLock(const void* /*typeRegistry*/) {
+        return new std::mutex();
+    }
+
+    void rtDestroyMergeLock(void* state) {
+        delete static_cast<std::mutex*>(state);
+    }
+
+    void rtMergeLock(void* state) {
+        static_cast<std::mutex*>(state)->lock();
+    }
+
+    void rtMergeUnlock(void* state) {
+        static_cast<std::mutex*>(state)->unlock();
+    }
+
     void rtEnd() {
     }
 
@@ -294,7 +315,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("example_read_json",*ctx);
+    auto module = std::make_unique<llvm::Module>("example_merge",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
@@ -319,6 +340,16 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+
+    symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeUnlock),llvm::JITSymbolFlags::Exported);
+
+    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
@@ -353,27 +384,13 @@ int main() {
         return 1;
     }
 
-    auto mainExpected = jit->lookup("ody_main");
+    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
 
-    if (!mainExpected) {
-        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
-        return 1;
-    }
-
-    auto odyMain = mainExpected->toPtr<void(*)()>();
-#ifdef ENABLE_LOOPED_SOURCE
-    std::thread mainThread([&]() {
-#endif
-        odyMain();
-#ifdef ENABLE_LOOPED_SOURCE
-    });
-
-    std::cout << "Running (press Enter to stop:\n";
-
-    std::cin.get();
-    atStop.store(true);
-    mainThread.join();
-#endif
+    odyInit(&typeRegistry);
+    odyMain();
+    odyShutdown();
 
     return 0;
 }
