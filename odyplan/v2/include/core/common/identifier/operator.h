@@ -15,6 +15,7 @@ namespace sierra::odyplan::v2::core::common::identifier {
         WRITE = 22,
         WINDOW_COUNT = 30,
         WINDOW_TIME = 31,
+        MEASURE = 40,
     };
 }  // namespace sierra::odyplan::v2::core::common::identifier
 
