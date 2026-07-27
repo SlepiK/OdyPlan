@@ -28,7 +28,8 @@ extern "C" {
             const auto now = std::chrono::steady_clock::now();
             const std::scoped_lock lock(state->printMutex);
             const auto elapsed = std::chrono::duration<double>(now - state->start).count();
-            std::println(stderr, "[{}] {} lines, {:.2f} lines/sec (win)", state->label, static_cast<unsigned long long>(n), elapsed > 0.0 ? MEASUREMENT_AFTER_LINES_REPORT : 0.0);
+            std::println(stderr, "[{}] {} lines, {:.2f} lines/sec (win)", state->label, static_cast<unsigned long long>(n), elapsed > 0.0 ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / elapsed) : 0.0);
+            std::fflush(stderr);
             state->start = now;
         }
     }
@@ -39,7 +40,8 @@ extern "C" {
         const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - state->start).count();
 
         const std::scoped_lock lock(state->printMutex);
-        std::println(stderr, "[{}] Total: {} lines in {:.3f} sec ({:.2f} lines/sec)", state->label, static_cast<unsigned long long>(total), elapsed, elapsed > 0.0 ? static_cast<double>(total) / elapsed : 0.0);
+        std::println(stderr, "[{}] Total: {} lines in {:.3f} sec ({:.2f} lines/sec)", state->label, static_cast<unsigned long long>(total), elapsed, elapsed > 0.0 ? (static_cast<double>(total) / elapsed) : 0.0);
+        std::fflush(stderr);
     }
 }
 
