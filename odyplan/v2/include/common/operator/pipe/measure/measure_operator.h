@@ -10,7 +10,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
         public:
             static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(core::common::identifier::Operator::MEASURE);
 
-            MeasureOperator(std::string label)
+            explicit MeasureOperator(std::string label)
                 : mLabel(std::move(label)) {
             }
 
@@ -55,7 +55,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
                 consumers.at(0)(segmentCtx, tuple);
             }
 
-            void end(core::physical::segment::SegmentContext &segmentCtx, const core::common::identifier::PortId inputPort, const core::physical::port::PortTupleConsumers& consumers) override {
+            void end(core::physical::segment::SegmentContext &segmentCtx, const core::common::identifier::PortId  /*inputPort*/, const core::physical::port::PortTupleConsumers&  /*consumers*/) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
                 auto* voidTy = llvm::Type::getVoidTy(ctx);
