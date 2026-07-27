@@ -68,7 +68,7 @@ namespace sierra::odyplan::v2::common::opr::pipe {
 
             void declareState(core::physical::state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context) override {
                 auto* ptrTy = llvm::PointerType::getUnqual(context);
-                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
                 auto* labelGlobalVariable = new llvm::GlobalVariable(
                         module,
                         llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
