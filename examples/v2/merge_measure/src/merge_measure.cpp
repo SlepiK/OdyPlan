@@ -224,6 +224,9 @@ extern "C" {
 
 
 int main() {
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
+
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
 
     std::cout << "Building Logical Plan...\n";
