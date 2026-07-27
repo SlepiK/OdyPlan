@@ -415,6 +415,8 @@ int main() {
         return 1;
     }
 
+    std::fflush(nullptr);
+
     auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
     auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
     auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
