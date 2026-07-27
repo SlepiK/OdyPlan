@@ -5,53 +5,19 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include "common/operator/sink/print_operator.h"
+#include "common/operator/pipe/select/logical/select_operator.h"
+#include "common/operator/pipe/select/physical/select_operator.h"
+
+#include "common/operator/sink/print/logical/print_operator.h"
+#include "common/operator/sink/print/physical/print_operator.h"
+#include "common/operator/sink/print/runtime/print_runtime.h"
+
+#include "common/runtime/runtime.h"
+
 #include "core/logical/plan/plan.h"
 
 #include "const_int_source_operator.h"
 #include "core/builder/plan_builder.h"
-
-#include <atomic>
-
-#include "common/operator/pipe/select_operator.h"
-#include "core/runtime/helper/io_task.h"
-#include "core/runtime/helper/compute_task.h"
-namespace {
-    inline std::atomic atStop{false};
-}
-
-extern "C" {
-    void rtEnd() {
-    }
-
-    void rtOdyPrintString(const char* dataRaw, const std::uint64_t dataLength) {
-        std::cout << std::string_view(dataRaw, dataLength);
-    }
-
-    void rtOdyPrintDouble(const double value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintFloat(const float value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintInt(const int value) {
-        std::cout << value;
-    }
-
-    void rtOdyPrintSeperator() {
-        std::cout << " ";
-    }
-
-    void rtOdyPrintNewline() {
-        std::cout << "\n";
-    }
-
-    bool odyStop() {
-        return atStop.load(std::memory_order_relaxed);
-    }
-}
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
