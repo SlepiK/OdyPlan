@@ -1,12 +1,12 @@
-#ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_PHYSICAL_H
-#define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_PHYSICAL_H
+#ifndef SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_INTERVAL_PHYSICAL_H
+#define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_INTERVAL_PHYSICAL_H
 #include "core/physical/operator/pipe/pipe_operator.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe::physical {
-    class JoinOperator : public core::physical::opr::TypedPipeOperator {
+    class IntervalJoinOperator : public core::physical::opr::TypedPipeOperator {
     public:
 
-        JoinOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
+        IntervalJoinOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
             : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                                 core::physical::port::Ports{std::move(outputPort)}) {
         }
@@ -27,4 +27,4 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_PHYSICAL_H
+#endif //SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_JOIN_OPERATOR_INTERVAL_PHYSICAL_H
