@@ -1,3 +1,5 @@
+#define SIERRA_RUNTIME_IO
+
 #include <iostream>
 #include <llvm/Support/TargetSelect.h>
 
@@ -9,13 +11,11 @@
 #include "common/operator/source/read/physical/read_operator.h"
 #include "common/operator/source/read/runtime/read_runtime.h"
 
-#include "common/operator/sink/print/logical/print_operator.h"
-#include "common/operator/sink/print/physical/print_operator.h"
-#include "common/operator/sink/print/runtime/print_runtime.h"
-
 #include "common/operator/sink/write/logical/write_operator.h"
 #include "common/operator/sink/write/physical/write_operator.h"
 #include "common/operator/sink/write/runtime/write_runtime.h"
+
+#include "common/runtime/runtime.h"
 
 #include "core/logical/plan/plan.h"
 
@@ -26,20 +26,6 @@
 #include "common/io/io_registry.h"
 #include "core/runtime/helper/io_task.h"
 #include "core/runtime/helper/compute_task.h"
-
-namespace {
-    inline std::atomic atStop{false};
-}
-
-extern "C" {
-    void rtEnd() {
-        rtIOSinkFlushAll();
-    }
-
-    bool odyStop() {
-        return atStop.load(std::memory_order_relaxed);
-    }
-}
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
@@ -59,10 +45,6 @@ int main() {
     logicalPlan.connect(
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sourceId,.portId=0},
         sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});
-
-    /*logicalPlan.connect(
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=selectId,.portId=0},
-        sierra::odyplan::v2::core::common::port::PortRef{.operatorId=sinkId,.portId=0});*/
 
     std::cout << "Logical Plan: OK\n";
 
@@ -157,13 +139,6 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtParseFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseFloat),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtParseDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtParseDouble),llvm::JITSymbolFlags::Exported);
 
-
-    symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintString),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 

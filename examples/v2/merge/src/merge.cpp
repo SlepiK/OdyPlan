@@ -18,31 +18,16 @@
 #include "common/operator/sink/print/physical/print_operator.h"
 #include "common/operator/sink/print/runtime/print_runtime.h"
 
+#include "common/runtime/runtime.h"
+
 #include "core/logical/plan/plan.h"
 
 #include "core/builder/plan_builder.h"
-
-#include <atomic>
 
 #include "common/io/io_registry.h"
 
 #include "core/runtime/helper/io_task.h"
 #include "core/runtime/helper/compute_task.h"
-
-
-namespace {
-    inline std::atomic atStop{false};
-}
-
-extern "C" {
-    void rtEnd() {
-    }
-
-    bool odyStop() {
-        return atStop.load(std::memory_order_relaxed);
-    }
-}
-
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;

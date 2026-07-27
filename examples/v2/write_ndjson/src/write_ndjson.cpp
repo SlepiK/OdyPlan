@@ -1,10 +1,11 @@
+#define SIERRA_RUNTIME_IO
+
 #include <iostream>
 #include <llvm/Support/TargetSelect.h>
 
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
-
 
 #include "common/operator/source/read/logical/read_operator.h"
 #include "common/operator/source/read/physical/read_operator.h"
@@ -13,6 +14,8 @@
 #include "common/operator/sink/write/logical/write_operator.h"
 #include "common/operator/sink/write/physical/write_operator.h"
 #include "common/operator/sink/write/runtime/write_runtime.h"
+
+#include "common/runtime/runtime.h"
 
 #include "core/logical/plan/plan.h"
 
@@ -23,21 +26,6 @@
 #include "common/io/io_registry.h"
 #include "core/runtime/helper/io_task.h"
 #include "core/runtime/helper/compute_task.h"
-
-namespace {
-    inline std::atomic atStop{false};
-}
-
-extern "C" {
-    void rtEnd() {
-        rtIOSinkFlushAll();
-    }
-
-    bool odyStop() {
-        return atStop.load(std::memory_order_relaxed);
-    }
-}
-
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
