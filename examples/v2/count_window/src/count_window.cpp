@@ -5,7 +5,6 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-
 #include "common/operator/source/read/logical/read_operator.h"
 #include "common/operator/source/read/physical/read_operator.h"
 #include "common/operator/source/read/runtime/read_runtime.h"
@@ -21,14 +20,10 @@
 #include "common/runtime/runtime.h"
 
 #include "core/logical/plan/plan.h"
-
 #include "core/builder/plan_builder.h"
 
 #include "common/io/io_registry.h"
 #include "common/window/count/count_window_buffer.h"
-#include "core/runtime/helper/io_task.h"
-#include "core/runtime/helper/compute_task.h"
-
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;

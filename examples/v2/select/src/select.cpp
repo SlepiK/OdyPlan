@@ -19,9 +19,6 @@
 #include "const_int_source_operator.h"
 #include "core/builder/plan_builder.h"
 
-#include "core/runtime/helper/io_task.h"
-#include "core/runtime/helper/compute_task.h"
-
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
 

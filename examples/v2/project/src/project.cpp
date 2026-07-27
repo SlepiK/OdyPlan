@@ -21,9 +21,6 @@
 
 #include <atomic>
 
-#include "core/runtime/helper/io_task.h"
-#include "core/runtime/helper/compute_task.h"
-
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
 
