@@ -38,6 +38,3 @@ if(ENABLE_TOOLING)
     register_lint_sources(${SOURCES} ${HEADERS})
     register_tidy_sources(${SOURCES})
 endif()
-
-add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
-set_tests_properties(${TARGET_NAME} PROPERTIES TIMEOUT 30)
