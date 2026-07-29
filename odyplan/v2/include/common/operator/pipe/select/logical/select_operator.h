@@ -25,7 +25,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
             if (mPredicate == nullptr) {
                 throw std::invalid_argument("SelectOperator: predicate must be non-null");
             }

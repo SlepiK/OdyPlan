@@ -61,7 +61,6 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             mCandidateOnRight = true;
 
             mLeftSide.end(timestamp);
-            mRightSide.evict(timestamp);
         }
 
         void endRight(const Timestamp timestamp) {
@@ -76,7 +75,14 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             mCandidateOnRight = false;
 
             mRightSide.end(timestamp);
-            mLeftSide.evict(timestamp);
+        }
+
+        void evict(const Timestamp timestamp, const bool callFromLeft) {
+            if (callFromLeft) {
+                mRightSide.evict(timestamp);
+            } else {
+                mLeftSide.evict(timestamp);
+            }
         }
 
         [[nodiscard]] std::size_t getCandidateSize() const {

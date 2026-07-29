@@ -15,7 +15,7 @@ namespace sierra::odyplan::v2::example::logical_plan {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
         }
     };
 
@@ -30,7 +30,7 @@ namespace sierra::odyplan::v2::example::logical_plan {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
         }
     };
 } // namespace sierra::odyplan::v2::example::logical_plan

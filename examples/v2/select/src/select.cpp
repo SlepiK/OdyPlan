@@ -26,7 +26,9 @@ int main() {
 
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::example::select::logical::ConstantIntSourceOperator>());
 
-    auto selectPredicate = sierra::odyplan::v2::core::common::expression::LE(sierra::odyplan::v2::core::common::expression::field(0), sierra::odyplan::v2::core::common::expression::cInt(6));
+    auto selectPredicate = sierra::odyplan::v2::core::common::expression::LE(
+        sierra::odyplan::v2::core::common::expression::field(0),
+        sierra::odyplan::v2::core::common::expression::cInt(6));
 
     auto selectId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v2::common::opr::pipe::logical::SelectOperator>(
         std::move(selectPredicate)

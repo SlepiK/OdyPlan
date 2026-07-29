@@ -45,10 +45,10 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
             inputPorts.at(portId) = input;
         }
 
-        void validate() override {
+        void validateInput() override {
             const auto& inputPorts = getInputPorts();
             if (inputPorts.size() != 2 || inputPorts.at(0).empty() || inputPorts.at(1).empty()) {
-                throw std::logic_error("IntervalJoinOperator::validate: expects two inputs");
+                return;
             }
 
             const auto& left = inputPorts.at(0);
@@ -59,6 +59,16 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
             combinedPort.insert(combinedPort.end(), left.begin(), left.end());
             combinedPort.insert(combinedPort.end(), right.begin(), right.end());
             getOutputPortsRef() = {combinedPort};
+        }
+
+        void validate() const override {
+            const auto& inputPorts = getInputPorts();
+            if (inputPorts.size() != 2 || inputPorts.at(0).empty() || inputPorts.at(1).empty()) {
+                throw std::logic_error("IntervalJoinOperator::validate: expects two inputs");
+            }
+            if (getOutputPorts().empty() || getOutputPorts().front().empty()) {
+                throw std::logic_error("IntervalJoinOperator::validate: output schema never computed");
+            }
         }
 
     private:

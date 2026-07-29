@@ -31,7 +31,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
             if (!mNameMapping.empty() && mMapping.empty()) {
                 mMapping = resolveNameMapping(getInputPorts().at(0), mNameMapping);
             }

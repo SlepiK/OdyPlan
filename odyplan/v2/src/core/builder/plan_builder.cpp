@@ -12,6 +12,8 @@ namespace sierra::odyplan::v2::core::builder {
         for (const auto lOprId : lPlan.topologicalOrder()) {
             const logical::opr::IOperator& lOpr = lPlan.op(lOprId);
 
+            lOpr.validate();
+
             auto inputPorts = resolvePorts(lOpr.getInputPorts(), ctx);
             auto outputPorts = resolvePorts(lOpr.getOutputPorts(), ctx);
 

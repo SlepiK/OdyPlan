@@ -26,7 +26,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
             if (mWindowConfig.allowedLateness.count() < 0) {
                 throw std::invalid_argument("allowedLateness must be non-negative");
             }

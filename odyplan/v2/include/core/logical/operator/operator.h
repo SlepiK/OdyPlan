@@ -9,6 +9,10 @@ namespace sierra::odyplan::v2::core::logical::plan {
     class Plan;
 }
 
+namespace sierra::odyplan::v2::core::builder {
+    class PlanBuilder;
+}
+
 namespace sierra::odyplan::v2::core::logical::opr {
     class IBindable {
         friend class plan::Plan;
@@ -23,11 +27,12 @@ namespace sierra::odyplan::v2::core::logical::opr {
         IBindable& operator=(IBindable&&) = delete;
     protected:
         virtual void bindInput(common::identifier::PortId portId, port::Port input) = 0;
-        virtual void validate() = 0;
+        virtual void validateInput() = 0;
     };
 
     class IOperator {
         friend class plan::Plan;
+        friend class builder::PlanBuilder;
     public:
         IOperator() = default;
         virtual ~IOperator() = default;
@@ -62,6 +67,10 @@ namespace sierra::odyplan::v2::core::logical::opr {
 
         port::Ports& getOutputPortsRef() {
             return mOutputPorts;
+        }
+
+
+        virtual void validate() const {
         }
     };
 

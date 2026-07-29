@@ -28,10 +28,10 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 
 enable_clang_tidy_on_target(${TARGET_NAME})
 
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.ndjson
-        ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
-        COPYONLY
+file(COPY
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/left.ndjson
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/right.ndjson
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 if(ENABLE_TOOLING)

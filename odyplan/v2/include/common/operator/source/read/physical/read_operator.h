@@ -12,11 +12,13 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
     class ReadOperator : public core::physical::opr::TypedSourceOperator {
     public:
         ReadOperator(core::physical::port::Port outputPort, const io::IOSourceId ioSourceId,
-                     core::logical::port::Port dataSchema, std::optional<std::size_t> timestampFieldIndex = std::nullopt)
+                     core::logical::port::Port dataSchema, std::optional<std::size_t> timestampFieldIndex = std::nullopt,
+                     std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0))
             : TypedSourceOperator(std::move(outputPort)),
               mIOSourceId(ioSourceId),
               mDataSchema(std::move(dataSchema)),
-                mTimestampFieldIndex(timestampFieldIndex) {
+                mTimestampFieldIndex(timestampFieldIndex),
+                mRowDelay(rowDelay) {
             if (mDataSchema.empty()) {
                 throw std::invalid_argument("ReadOperator: dataSchema is empty");
             }
@@ -50,6 +52,13 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
             const auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext",
                                                                llvm::FunctionType::get(i1Ty, {idTy}, false));
             llvm::Value *hasNext = segmentCtx.builder.CreateCall(hasNextFn, {sourceId});
+
+            if (mRowDelay.count() > 0) {
+                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+                auto* voidTy = llvm::Type::getVoidTy(ctx);
+                const auto sleepFn = module->getOrInsertFunction("rtSleepMs", llvm::FunctionType::get(voidTy, {i64Ty}, false));
+                segmentCtx.builder.CreateCall(sleepFn, {llvm::ConstantInt::get(i64Ty, mRowDelay.count())});
+            }
 
             const auto stopFn = module->getOrInsertFunction("odyStop", llvm::FunctionType::get(i1Ty, {}, false));
             llvm::Value *stopped = segmentCtx.builder.CreateCall(stopFn, {});
@@ -90,6 +99,7 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
         io::IOSourceId mIOSourceId;
         core::logical::port::Port mDataSchema;
         std::optional<std::size_t> mTimestampFieldIndex;
+        std::chrono::milliseconds mRowDelay;
 
         static llvm::Value *codegenField(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *stringValue,
                                          const core::common::identifier::TypeId typeId) {

@@ -21,7 +21,7 @@ extern "C" {
         }
 
         for (std::uint64_t i = 0; i < rightFieldSize; ++i) {
-            leftSchema.push_back(sierra::odyplan::v2::core::logical::port::PortDescriptor{.typeId = rightTypeIds[i]});
+            rightSchema.push_back(sierra::odyplan::v2::core::logical::port::PortDescriptor{.typeId = rightTypeIds[i]});
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
@@ -80,6 +80,10 @@ extern "C" {
     inline std::int64_t rtJoinGetCandidateTimestamp(void* state, const std::uint64_t candidateIndex) {
         const auto timestamp = static_cast<sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer*>(state)->getCandidateTimestamp(candidateIndex);
         return timestamp.time_since_epoch().count();
+    }
+
+    inline void rtJoinEvict(void* state, std::int64_t timestampMs, const bool callFromLeft) {
+        static_cast<sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer*>(state)->evict(sierra::odyplan::v2::common::opr::pipe::physical::internal::Timestamp(std::chrono::milliseconds(timestampMs)), callFromLeft);
     }
 }
 

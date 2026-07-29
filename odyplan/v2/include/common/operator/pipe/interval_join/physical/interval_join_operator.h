@@ -35,10 +35,12 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                 //left
                 codegenSide(segmentCtx, state, tuple, mLeftSchema, "rtJoinBeginLeft", "rtJoinPushLeft", "rtJoinEndLeft");
                 emitMatch(segmentCtx, state, tuple, true, consumers);
+                codegenEvict(segmentCtx, state, tuple.timestamp, true);
             } else {
                 //right
                 codegenSide(segmentCtx, state, tuple, mRightSchema, "rtJoinBeginRight", "rtJoinPushRight", "rtJoinEndRight");
                 emitMatch(segmentCtx, state, tuple, false, consumers);
+                codegenEvict(segmentCtx, state, tuple.timestamp, false);
             }
 
             const auto unlockFn = module->getOrInsertFunction("rtJoinUnlock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
@@ -76,6 +78,19 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
         llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) {
             auto* ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
             return segmentCtx.builder.CreateLoad(ptrTy, mState.var);
+        }
+
+        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state, llvm::Value* timestamp, const bool callFromLeft) {
+            llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+            llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+            auto* voidTy = llvm::Type::getVoidTy(ctx);
+            auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+            auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+            auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+
+            const auto evictFn = module->getOrInsertFunction("rtJoinEvict", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i1Ty}, false));
+            segmentCtx.builder.CreateCall(evictFn, {state, timestamp, llvm::ConstantInt::get(i1Ty, callFromLeft ? 1 : 0)});
         }
 
         static llvm::GlobalVariable* buildTypeIds(llvm::Module& module, llvm::LLVMContext& ctx, const core::logical::port::Port& schema, const std::string& name) {
