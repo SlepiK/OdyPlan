@@ -16,6 +16,10 @@ extern "C" {
     inline bool odyStop() {
         return atStop.load(std::memory_order_relaxed);
     }
+
+    inline std::int64_t rtNow() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
 }
 
 #endif //SIERRA_ODYPLAN_V2_COMMON_RUNTIME_RUNTIME_H

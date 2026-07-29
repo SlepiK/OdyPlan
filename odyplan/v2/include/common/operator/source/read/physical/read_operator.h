@@ -12,12 +12,19 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
     class ReadOperator : public core::physical::opr::TypedSourceOperator {
     public:
         ReadOperator(core::physical::port::Port outputPort, const io::IOSourceId ioSourceId,
-                     core::logical::port::Port dataSchema)
+                     core::logical::port::Port dataSchema, std::optional<std::size_t> timestampFieldIndex = std::nullopt)
             : TypedSourceOperator(std::move(outputPort)),
               mIOSourceId(ioSourceId),
-              mDataSchema(std::move(dataSchema)) {
+              mDataSchema(std::move(dataSchema)),
+                mTimestampFieldIndex(timestampFieldIndex) {
             if (mDataSchema.empty()) {
                 throw std::invalid_argument("ReadOperator: dataSchema is empty");
+            }
+            if (mTimestampFieldIndex.has_value() && *mTimestampFieldIndex >= mDataSchema.size()) {
+                throw std::out_of_range("ReadOperator: timestamp field index out of range");
+            }
+            if (mTimestampFieldIndex.has_value() && mDataSchema.at(*mTimestampFieldIndex).typeId != std::to_underlying(core::common::identifier::Type::INT64)) {
+                throw std::invalid_argument("ReadOperator: timestamp field wrong type");
             }
         }
 
@@ -66,6 +73,13 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
                 tuple.push_back(codegenField(segmentCtx, strValue, dataField.typeId));
             }
 
+            if (mTimestampFieldIndex.has_value()) {
+                tuple.timestamp = tuple.at(*mTimestampFieldIndex);
+            } else {
+                const auto nowFn = module->getOrInsertFunction("rtNow", llvm::FunctionType::get(idTy, {}, false));
+                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+            }
+
             consumers.front()(segmentCtx, tuple);
             segmentCtx.builder.CreateBr(loopBB);
 
@@ -75,6 +89,7 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
     private:
         io::IOSourceId mIOSourceId;
         core::logical::port::Port mDataSchema;
+        std::optional<std::size_t> mTimestampFieldIndex;
 
         static llvm::Value *codegenField(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *stringValue,
                                          const core::common::identifier::TypeId typeId) {

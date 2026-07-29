@@ -30,6 +30,8 @@ namespace sierra::odyplan::v2::common::window {
         [[nodiscard]] virtual std::size_t getRowCountInWindow(std::size_t index) const = 0;
 
         [[nodiscard]] virtual const std::byte* getData(std::size_t windowIndex, std::size_t rowIndex, std::size_t fieldIndex) const = 0;
+
+        [[nodiscard]] virtual std::chrono::sys_time<std::chrono::milliseconds> getTimestamp(std::size_t windowIndex, std::size_t rowIndex) const = 0;
     };
 }
 

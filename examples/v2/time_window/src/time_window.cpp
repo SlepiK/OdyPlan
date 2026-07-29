@@ -88,16 +88,14 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v2::common::opr::pipe::logical::TimeWindowOperator::TYPE_ID,
-        [&typeRegistry](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
+        [](const sierra::odyplan::v2::core::logical::opr::IOperator& op,
             const sierra::odyplan::v2::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v2::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v2::core::physical::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v2::common::opr::pipe::logical::TimeWindowOperator&>(op);
             const auto& config = concrete.getWindowConfig();
 
-            auto windowHandle = registerWindow(std::make_unique<sierra::odyplan::v2::common::window::time::TimeWindowBuffer>(config, concrete.getOutputPorts().at(0), typeRegistry));
-
             sierra::odyplan::v2::core::physical::transformation::OperatorTransformation ot;
-            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), windowHandle, config.timestampIndex));
+            ot.oprs.push_back(std::make_unique<sierra::odyplan::v2::common::opr::pipe::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config, concrete.getInputPorts().front()));
             return ot;
         }
     );
@@ -152,14 +150,19 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtWindowGetRowCountInWindow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetRowCountInWindow),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowGetData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetData),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowBeginRow),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowGetCount")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetCount),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowCompute")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowCompute),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowPush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowPush),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowEndRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowEndRow),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtWindowFlush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowFlush),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtCreateCountWindowBuffer")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateCountWindowBuffer), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyCountWindowBuffer")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyCountWindowBuffer), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtCreateTimeWindowBuffer")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateTimeWindowBuffer), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyTimeWindowBuffer")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyTimeWindowBuffer), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowBeginRow), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowPush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowPush), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowEndRow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowEndRow), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowCompute")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowCompute), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowFlush")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowFlush), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetCount")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetCount), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetRowCountInWindow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetRowCountInWindow), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetData), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtWindowGetTimestamp")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtWindowGetTimestamp), llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
@@ -179,6 +182,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtNow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtNow),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
@@ -194,27 +198,13 @@ int main() {
         return 1;
     }
 
-    auto mainExpected = jit->lookup("ody_main");
+    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
 
-    if (!mainExpected) {
-        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
-        return 1;
-    }
-
-    auto odyMain = mainExpected->toPtr<void(*)()>();
-#ifdef ENABLE_LOOPED_SOURCE
-    std::thread mainThread([&]() {
-#endif
-        odyMain();
-#ifdef ENABLE_LOOPED_SOURCE
-    });
-
-    std::cout << "Running (press Enter to stop:\n";
-
-    std::cin.get();
-    atStop.store(true);
-    mainThread.join();
-#endif
+    odyInit(&typeRegistry);
+    odyMain();
+    odyShutdown();
 
     return 0;
 }

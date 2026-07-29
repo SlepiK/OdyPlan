@@ -132,6 +132,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtNow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtNow),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&odyStop),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtEnd),llvm::JITSymbolFlags::Exported);
 
@@ -147,27 +148,13 @@ int main() {
         return 1;
     }
 
-    auto mainExpected = jit->lookup("ody_main");
+    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
 
-    if (!mainExpected) {
-        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
-        return 1;
-    }
-
-    auto odyMain = mainExpected->toPtr<void(*)()>();
-#ifdef ENABLE_LOOPED_SOURCE
-    std::thread mainThread([&]() {
-#endif
-        odyMain();
-#ifdef ENABLE_LOOPED_SOURCE
-    });
-
-    std::cout << "Running (press Enter to stop:\n";
-
-    std::cin.get();
-    atStop.store(true);
-    mainThread.join();
-#endif
+    odyInit(&typeRegistry);
+    odyMain();
+    odyShutdown();
 
     return 0;
 }
