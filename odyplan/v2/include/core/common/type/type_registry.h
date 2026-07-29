@@ -62,6 +62,14 @@ namespace sierra::odyplan::v2::core::common::type {
             get(id).release(own);
         }
 
+        [[nodiscard]] const HashFn& getHashFn(const identifier::TypeId id) const {
+            return get(id).hash;
+        }
+
+        [[nodiscard]] const EqualFn& getEqualFn(const identifier::TypeId id) const {
+            return get(id).equal;
+        }
+
     private:
         struct TypeRegistryEntry {
             std::string name;
