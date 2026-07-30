@@ -6,6 +6,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Type.h>
+#include <math.h>
 #include <functional>
 #include <string>
 #include <utility>
@@ -115,7 +116,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getInt1Ty(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte* ptr) -> std::size_t {
-                    bool value;
+                    bool value = false;
                     std::memcpy(&value, ptr, sizeof(bool));
                     return std::hash<bool>{}(value);
                 },
@@ -134,7 +135,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getInt8Ty(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte* ptr) -> std::size_t {
-                    std::int8_t value;
+                    std::int8_t value = 0;
                     std::memcpy(&value, ptr, sizeof(std::int8_t));
                     return std::hash<std::int8_t>{}(value);
                 },
@@ -153,7 +154,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getInt16Ty(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
-                    std::int16_t value;
+                    std::int16_t value = 0;
                     std::memcpy(&value, ptr, sizeof(std::int16_t));
                     return std::hash<std::int16_t>{}(value);
                 },
@@ -172,7 +173,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getInt32Ty(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
-                    std::int32_t value;
+                    std::int32_t value = 0;
                     std::memcpy(&value, ptr, sizeof(std::int32_t));
                     return std::hash<std::int32_t>{}(value);
                 },
@@ -191,7 +192,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getInt64Ty(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
-                    std::int64_t value;
+                    std::int64_t value = 0;
                     std::memcpy(&value, ptr, sizeof(std::int64_t));
                     return std::hash<std::int64_t>{}(value);
                 },
@@ -210,7 +211,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getFloatTy(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
-                    std::float_t value;
+                    std::float_t value = 0.0F;
                     std::memcpy(&value, ptr, sizeof(std::float_t));
                     if (value == 0.0F) {
                         value = 0.0F;
@@ -218,8 +219,8 @@ namespace sierra::odyplan::v2::core::common::type {
                     return std::hash<std::float_t>{}(value);
                 },
                 [](const std::byte *a, const std::byte *b) -> bool {
-                    std::float_t fA;
-                    std::float_t fB;
+                    std::float_t fA = 0.0F;
+                    std::float_t fB = 0.0F;
                     std::memcpy(&fA, a, sizeof(std::float_t));
                     std::memcpy(&fB, b, sizeof(std::float_t));
                     return fA == fB;
@@ -236,7 +237,7 @@ namespace sierra::odyplan::v2::core::common::type {
                     llvm::Type::getDoubleTy(b.getContext()), std::stoi(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
-                    std::double_t value;
+                    std::double_t value = 0.0;
                     std::memcpy(&value, ptr, sizeof(std::double_t));
                     if (value == 0.0) {
                         value = 0.0;
@@ -244,8 +245,8 @@ namespace sierra::odyplan::v2::core::common::type {
                     return std::hash<std::double_t>{}(value);
                 },
                 [](const std::byte *a, const std::byte *b) -> bool {
-                    std::double_t dA;
-                    std::double_t dB;
+                    std::double_t dA = 0.0;
+                    std::double_t dB = 0.0;
                     std::memcpy(&dA, a, sizeof(std::double_t));
                     std::memcpy(&dB, b, sizeof(std::double_t));
                     return dA == dB;
@@ -261,13 +262,13 @@ namespace sierra::odyplan::v2::core::common::type {
                     return b.CreateGlobalString(v);
                 },
                 [](const std::byte* ptr) -> std::size_t {
-                    const char* value;
+                    const char* value = nullptr;
                     std::memcpy(&value, ptr, sizeof(value));
                     return value != nullptr ? std::hash<std::string_view>{}(value) : std::hash<std::string_view>{}("");
                 },
                 [](const std::byte* aPtr, const std::byte* bPtr) -> bool {
-                    const char* a;
-                    const char* b;
+                    const char* a = nullptr;
+                    const char* b = nullptr;
                     std::memcpy(&a, aPtr, sizeof(a));
                     std::memcpy(&b, bPtr, sizeof(b));
                     if (a == nullptr || b == nullptr) {
