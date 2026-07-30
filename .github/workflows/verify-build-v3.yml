@@ -6,7 +6,7 @@ on:
 
 jobs:
   clang-tidy:
-    name: verify-build v2 code check
+    name: verify-build v3
     runs-on: ubuntu-24.04
 
     steps:
@@ -65,6 +65,16 @@ jobs:
       - name: Build
         run: |
           cmake --build build
+
+      # ---- examples ----
+
+      - name: Build example_logical_plan
+        run: cmake --build build --target example_logical_plan
+
+      - name: Run example_logical_plan
+        run: build/examples/v2/logical_plan/example_logical_plan
+
+
 
       - name: Run v2 examples
         run: |
