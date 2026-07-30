@@ -7,7 +7,7 @@
 inline std::atomic atStop{false};
 
 #ifdef SIERRA_USER_PROGRAM_CLOCK
-const auto programStart = std::chrono::steady_clock::now();
+inline const auto programStart = std::chrono::steady_clock::now();
 #endif
 extern "C" {
     inline void rtEnd() {
