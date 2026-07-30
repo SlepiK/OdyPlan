@@ -6,7 +6,6 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Type.h>
-#include <math.h>
 #include <functional>
 #include <string>
 #include <utility>

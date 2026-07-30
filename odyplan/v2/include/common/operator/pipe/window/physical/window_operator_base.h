@@ -95,7 +95,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
         core::physical::state::StateHandle mState;
         llvm::Function *mDrainFn = nullptr;
 
-        llvm::Value* loadStatePtr(core::physical::segment::SegmentContext &segmentCtx) {
+        llvm::Value* loadStatePtr(core::physical::segment::SegmentContext &segmentCtx) const {
             auto *ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
             return segmentCtx.builder.CreateLoad(ptrTy, mState.var);
         }

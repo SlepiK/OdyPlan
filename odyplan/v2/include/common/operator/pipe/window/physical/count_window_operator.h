@@ -2,6 +2,8 @@
 #define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOW_COUNTOPERATOR_PHYSICAL_H
 
 #include "window_operator_base.h"
+#include "core/logical/port/port.h"
+#include "common/window/count/count_window_config.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe::physical {
     class CountWindowOperator final : public WindowOperatorBase {
