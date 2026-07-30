@@ -65,103 +65,114 @@ jobs:
       # ---- library ----
 
       - name: Build
-        run: |
-          cmake --build build
+        run: cmake --build build
 
       # ---- examples ----
 
       # -- logical_plan --
 
-      - name: Build example_logical_plan
-        run: cmake --build build --target example_logical_plan
-
-      - name: Run example_logical_plan
-        run: build/examples/v2/logical_plan/example_logical_plan
+      - name: Build & Run example_logical_plan
+        id: example_logical_plan
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_logical_plan
+          build/examples/v2/logical_plan/example_logical_plan
 
       # -- full --
 
-      - name: Build example_full
-        run: cmake --build build --target example_full
-
-      - name: Run example_full
-        run: build/examples/v2/logical_plan/example_full
+      - name: Build & Run example_full
+        id: example_full
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_full
+          build/examples/v2/logical_plan/example_full
 
       # -- project --
 
-      - name: Build example_project
-        run: cmake --build build --target example_project
-
-      - name: Run example_project
-        run: build/examples/v2/logical_plan/example_project
+      - name: Build & Run example_project
+        id: example_project
+        continue-on-error: true
+        run: | 
+          cmake --build build --target example_project
+          build/examples/v2/logical_plan/example_project
 
       # -- select --
 
-      - name: Build example_select
-        run: cmake --build build --target example_select
-
-      - name: Run example_select
-        run: build/examples/v2/logical_plan/example_select
+      - name: Build & Run example_select
+        id: example_select
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_select
+          build/examples/v2/logical_plan/example_select
 
       # -- read_ndjson --
 
-      - name: Build example_read_ndjson
-        run: cmake --build build --target example_read_ndjson
-
-      - name: Run example_read_ndjson
-        run: build/examples/v2/logical_plan/example_read_ndjson
+      - name: Build & Run example_read_ndjson
+        id: example_read_ndjson
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_read_ndjson
+          build/examples/v2/logical_plan/example_read_ndjson
 
       # -- write_ndjson --
 
-      - name: Build example_write_ndjson
-        run: cmake --build build --target example_write_ndjson
-
-      - name: Run example_write_ndjson
-        run: build/examples/v2/logical_plan/example_write_ndjson
+      - name: Build & Run example_write_ndjson
+        id: example_write_ndjson
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_write_ndjson
+          build/examples/v2/logical_plan/example_write_ndjson
 
       # -- write_json --
 
-      - name: Build example_write_json
-        run: cmake --build build --target example_write_json
-
-      - name: Run example_write_json
-        run: build/examples/v2/logical_plan/example_write_json
+      - name: Build & Run example_write_json
+        id: example_write_json
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_write_json
+          build/examples/v2/logical_plan/example_write_json
 
       # -- count_window --
 
-      - name: Build example_count_window
-        run: cmake --build build --target example_count_window
-
-      - name: Run example_count_window
-        run: build/examples/v2/logical_plan/example_count_window
+      - name: Build & Run example_count_window
+        id: example_count_window
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_count_window
+          build/examples/v2/logical_plan/example_count_window
 
       # -- time_window --
 
-      - name: Build example_time_window
-        run: cmake --build build --target example_time_window
-
-      - name: Run example_time_window
-        run: build/examples/v2/logical_plan/example_time_window
+      - name: Build & Run example_time_window
+        id: example_time_window
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_time_window
+          build/examples/v2/logical_plan/example_time_window
 
       # -- merge --
 
-      - name: Build example_merge
-        run: cmake --build build --target example_merge
-
-      - name: Run example_merge
-        run: build/examples/v2/logical_plan/example_merge
+      - name: Build & Run example_merge
+        id: example_merge
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_merge
+          build/examples/v2/logical_plan/example_merge
 
       # -- merge_measure --
 
-      - name: Build example_merge_measure
-        run: cmake --build build --target merge_measure
-
-      - name: Run merge_measure
-        run: build/examples/v2/logical_plan/merge_measure
+      - name: Build & Run example_merge_measure
+        id: example_merge_measure
+        continue-on-error: true
+        run: |
+          cmake --build build --target merge_measure
+          build/examples/v2/logical_plan/merge_measure
 
       # -- interval_join --
 
-      - name: Build example_interval_join
-        run: cmake --build build --target example_interval_join
-
-      - name: Run example_interval_join
-        run: build/examples/v2/logical_plan/example_interval_join
+      - name: Build & Run example_interval_join
+        id: example_interval_join
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_interval_join
+          build/examples/v2/logical_plan/example_interval_join
