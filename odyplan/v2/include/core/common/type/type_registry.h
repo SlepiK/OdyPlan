@@ -31,10 +31,11 @@ namespace sierra::odyplan::v2::core::common::type {
             return registry;
         }
 
+        // NOLINTNEXTLINE(readability-function-size)
         void registerType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, HashFn hashFunction, EqualFn equalFunction) {
             mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = false, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=defaultRetain(), .release=defaultRelease(), .hash=std::move(hashFunction), .equal=std::move(equalFunction)});
         }
-
+        // NOLINTNEXTLINE(readability-function-size)
         void registerPtrType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, HashFn hashFunction, EqualFn equalFunction, RetainFn retain = defaultRetain(), ReleaseFn release = defaultRelease()) {
             mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = true, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=std::move(retain), .release=std::move(release), .hash=std::move(hashFunction), .equal=std::move(equalFunction)});
         }
@@ -104,6 +105,7 @@ namespace sierra::odyplan::v2::core::common::type {
             return iter->second;
         }
 
+        // NOLINTNEXTLINE(readability-function-size)
         void registerDefaults() {
             registerType(
                 std::to_underlying(identifier::Type::BOOL), "bool",
@@ -263,14 +265,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 },
                 [](const std::byte* ptr) -> std::size_t {
                     const char* value = nullptr;
-                    std::memcpy(&value, ptr, sizeof(value));
+                    std::memcpy(static_cast<void*>(&value), ptr, sizeof(value));
                     return value != nullptr ? std::hash<std::string_view>{}(value) : std::hash<std::string_view>{}("");
                 },
                 [](const std::byte* aPtr, const std::byte* bPtr) -> bool {
                     const char* a = nullptr;
                     const char* b = nullptr;
-                    std::memcpy(&a, aPtr, sizeof(a));
-                    std::memcpy(&b, bPtr, sizeof(b));
+                    std::memcpy(static_cast<void*>(&a), aPtr, sizeof(a));
+                    std::memcpy(static_cast<void*>(&b), bPtr, sizeof(b));
                     if (a == nullptr || b == nullptr) {
                         return a == b;
                     }

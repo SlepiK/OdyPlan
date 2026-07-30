@@ -79,7 +79,7 @@ namespace sierra::odyplan::v2::common::opr::source::physical {
                 llvm::Value *fieldName = segmentCtx.builder.CreateGlobalString(
                     dataField.fieldName, "field_" + dataField.fieldName, 0, module);
                 llvm::Value *strValue = segmentCtx.builder.CreateCall(getFieldFn, {sourceId, fieldName});
-                tuple.push_back(codegenField(segmentCtx, strValue, dataField.typeId));
+                tuple.pushBack(codegenField(segmentCtx, strValue, dataField.typeId));
             }
 
             if (mTimestampFieldIndex.has_value()) {

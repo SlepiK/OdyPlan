@@ -19,6 +19,11 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             assert(mAllReleased && "IntervalJoinBuffer: left and right side was never released!");
         }
 
+        IntervalJoinBuffer(const IntervalJoinBuffer&) = delete;
+        IntervalJoinBuffer& operator=(const IntervalJoinBuffer&) = delete;
+        IntervalJoinBuffer(IntervalJoinBuffer&&) = delete;
+        IntervalJoinBuffer& operator=(IntervalJoinBuffer&&) = delete;
+
         void close() {
             mLeftSide.release();
             mRightSide.release();

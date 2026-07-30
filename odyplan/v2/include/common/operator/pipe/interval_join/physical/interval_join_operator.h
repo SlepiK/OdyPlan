@@ -150,7 +150,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
             for (std::size_t i = 0; i < otherSchema.size(); ++i) {
                 llvm::Value* candidatePtr = segmentCtx.builder.CreateCall(getCandidateFn, {state, index, llvm::ConstantInt::get(i64Ty, i)});
                 llvm::Type* candidateTy = segmentCtx.typeRegistry.resolveType(otherSchema.at(i).typeId, ctx);
-                otherTuple.push_back(segmentCtx.builder.CreateLoad(candidateTy, candidatePtr));
+                otherTuple.pushBack(segmentCtx.builder.CreateLoad(candidateTy, candidatePtr));
             }
 
             auto getCandidateTimestampFn = module->getOrInsertFunction("rtJoinGetCandidateTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));

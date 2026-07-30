@@ -21,7 +21,7 @@ namespace sierra::odyplan::v2::core::physical::port {
         }
 
         [[nodiscard]] llvm::Value* operator[](const std::size_t index) const {
-            return fields[index];
+            return fields.at(index);
         }
 
         [[nodiscard]] auto begin() const {
@@ -32,7 +32,7 @@ namespace sierra::odyplan::v2::core::physical::port {
             return fields.end();
         }
 
-        void push_back(llvm::Value* value) {
+        void pushBack(llvm::Value* value) {
             fields.push_back(value);
         }
         void reserve(const std::size_t size) {

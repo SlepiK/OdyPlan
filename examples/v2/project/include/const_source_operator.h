@@ -73,8 +73,8 @@ namespace sierra::odyplan::v2::example::project {
                 core::physical::port::PortTuple tuple;
                 tuple.reserve(getOutputPorts().size());
 
-                tuple.push_back(valueField1);
-                tuple.push_back(valueField2);
+                tuple.pushBack(valueField1);
+                tuple.pushBack(valueField2);
 
                 const auto nowFn = module->getOrInsertFunction("rtNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});

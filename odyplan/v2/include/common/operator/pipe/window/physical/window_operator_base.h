@@ -191,7 +191,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
 
             emit.reserve(getOutputPorts().at(0).size());
             for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
-                emit.push_back(codegenGet(segmentCtx, state, wIndex, wRowIndex, llvm::ConstantInt::get(i64Ty, i),
+                emit.pushBack(codegenGet(segmentCtx, state, wIndex, wRowIndex, llvm::ConstantInt::get(i64Ty, i),
                                           getOutputPorts().at(0).at(i).typeId));
             }
 
