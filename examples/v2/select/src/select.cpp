@@ -125,6 +125,7 @@ int main() {
 
     std::cout << "\n\n";
     llvm::raw_os_ostream ros(std::cout);
+    std::cout << "\n\n--- Raw IR ---\n";
     module->print(ros, nullptr);
     ros.flush();
     std::cout << "\n\n";
@@ -142,6 +143,14 @@ int main() {
     }
 
     auto& jit = *jitExpected;
+
+    module->setDataLayout(jit->getDataLayout());
+    optimizeLlvmModule(*module, llvm::OptimizationLevel::02);
+
+    std::cout << "\n\n--- Optimized IR ---\n";
+    module->print(ros, nullptr);
+    ros.flush();
+    std::cout << "\n\n";
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
