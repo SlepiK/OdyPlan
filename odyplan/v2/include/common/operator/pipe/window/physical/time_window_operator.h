@@ -2,24 +2,45 @@
 #define SIERRA_ODYPLAN_V2_COMMON_OPERATOR_PIPE_WINDOW_TIMEOPERATOR_PHYSICAL_H
 
 #include "window_operator_base.h"
+#include "core/logical/port/port.h"
+#include "common/window/time/time_window_config.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe::physical {
     class TimeWindowOperator final : public WindowOperatorBase {
     public:
         TimeWindowOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort,
-                           const std::uint64_t windowHandle, const std::size_t timestampIndex)
-            : WindowOperatorBase(std::move(inputPort), std::move(outputPort), windowHandle),
-              mTimestampIndex(timestampIndex) {
+                            const window::time::TimeWindowConfig& config, core::logical::port::Port dataSchema)
+            : WindowOperatorBase(std::move(inputPort), std::move(outputPort)),
+              mConfig(config), mDataSchema(std::move(dataSchema)) {
         }
 
-    protected:
-        llvm::Value *getTimestampValue(core::physical::segment::SegmentContext & /*segmentCtx*/,
-                                       const core::physical::port::PortTuple &tuple, llvm::Type * /*i64Ty*/) override {
-            return tuple.at(mTimestampIndex);
+        void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module,
+                          llvm::LLVMContext &context) override {
+            auto* i64Ty = llvm::Type::getInt64Ty(context);
+            auto* ptrTy = llvm::PointerType::getUnqual(context);
+
+            auto* typesGlobal = buildTypeIds(module, context, mDataSchema,
+                "time_window_types_" + std::to_string(mLogicalOperatorId));
+
+            const auto state = stateRegistry.createHandle(
+                "time_window_" + std::to_string(mLogicalOperatorId),
+                "rtCreateTimeWindowBuffer",
+                {
+                    llvm::ConstantInt::get(i64Ty, mConfig.size.count()),
+                    llvm::ConstantInt::get(i64Ty, mConfig.slide.count()),
+                    llvm::ConstantInt::get(i64Ty, mConfig.allowedLateness.count()),
+                    typesGlobal, llvm::ConstantInt::get(i64Ty, mDataSchema.size())
+                },
+                {i64Ty, i64Ty, i64Ty, ptrTy, i64Ty},
+                "rtDestroyTimeWindowBuffer");
+
+            setWindowState(state);
         }
 
     private:
-        std::size_t mTimestampIndex;
+        window::time::TimeWindowConfig mConfig;
+        core::logical::port::Port mDataSchema;
+        core::common::identifier::OperatorId mLogicalOperatorId = 0;
     };
 }
 

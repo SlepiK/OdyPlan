@@ -33,8 +33,9 @@ namespace sierra::odyplan::v2::example::select {
             }
 
             void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::port::PortTupleConsumers& consumers) override {
-#ifdef ENABLE_LOOPED_SOURCE
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+                llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+#ifdef ENABLE_LOOPED_SOURCE
                 llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
                 auto* loopBB = llvm::BasicBlock::Create(ctx, "loop", fn);
@@ -54,7 +55,15 @@ namespace sierra::odyplan::v2::example::select {
 #endif
                 llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
 
-                consumers.front()(segmentCtx, {value});
+                core::physical::port::PortTuple tuple;
+                tuple.reserve(getOutputPorts().size());
+
+                tuple.pushBack(value);
+
+                const auto nowFn = module->getOrInsertFunction("rtNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
+                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+
+                consumers.front()(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);

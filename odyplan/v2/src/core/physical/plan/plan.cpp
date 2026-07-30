@@ -170,8 +170,12 @@ namespace sierra::odyplan::v2::core::physical::plan {
             }
 
             port::PortTupleConsumer compileAsFunction(const common::identifier::OperatorId operatorId, const common::identifier::PortId portId, const port::Port& portSchema, const port::PortTupleConsumer& inner) {
+
+                auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+
                 std::vector<llvm::Type*> paramTypes;
-                paramTypes.reserve(portSchema.size());
+                paramTypes.reserve(portSchema.size() + 1);
+                paramTypes.push_back(i64Ty);
                 for (const auto& descriptor : portSchema) {
                     paramTypes.push_back(descriptor.llvmType);
                 }
@@ -183,9 +187,10 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 segment::SegmentContext segmentContext(fn, entryBB, ctx, *typeRegistry);
 
                 port::PortTuple reconstructed;
-                reconstructed.reserve(portSchema.size());
+                reconstructed.timestamp = fn->getArg(0);
+                reconstructed.fields.reserve(portSchema.size());
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
-                    reconstructed.push_back(fn->getArg(i));
+                    reconstructed.fields.push_back(fn->getArg(i + 1));
                 }
 
                 inner(segmentContext, reconstructed);
@@ -193,7 +198,11 @@ namespace sierra::odyplan::v2::core::physical::plan {
                 segmentContext.builder.CreateRetVoid();
 
                 return [fn](segment::SegmentContext& sCtx, const port::PortTuple& tuple) {
-                    sCtx.builder.CreateCall(fn, llvm::ArrayRef<llvm::Value*>(tuple));
+                    std::vector<llvm::Value*> args;
+                    args.reserve(tuple.fields.size() + 1);
+                    args.push_back(tuple.timestamp);
+                    args.insert(args.end(), tuple.fields.begin(), tuple.fields.end());
+                    sCtx.builder.CreateCall(fn, args);
                 };
             }
         };

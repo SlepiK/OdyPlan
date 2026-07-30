@@ -22,6 +22,12 @@ namespace sierra::odyplan::v2::common::opr::sink::physical {
             if (tuple.size() < mPortFieldIndices.size()) {
                 throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
             }
+
+            codegenPrintField(segmentCtx.builder, module, static_cast<core::common::identifier::TypeId>(core::common::identifier::Type::INT64),
+                                  tuple.timestamp);
+
+            codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
+
             for (std::size_t i = 0; i < mPortFieldIndices.size(); ++i) {
                 std::size_t const fieldIndex = mPortFieldIndices.at(i);
                 codegenPrintField(segmentCtx.builder, module, getInputPorts().at(0).at(fieldIndex).typeId,

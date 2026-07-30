@@ -11,10 +11,11 @@ namespace sierra::odyplan::v2::common::opr::source::logical {
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(
             core::common::identifier::Operator::READ);
 
-        ReadOperator(core::logical::port::Port outputPort, const io::IOFormat ioFormat, nlohmann::json ioConfig)
+        ReadOperator(core::logical::port::Port outputPort, const io::IOFormat ioFormat, nlohmann::json ioConfig, const std::chrono::milliseconds delay = std::chrono::milliseconds(0))
             : TypedSourceOperator(std::move(outputPort)),
               mIOFormat(ioFormat),
-              mIOConfig(std::move(ioConfig)) {
+              mIOConfig(std::move(ioConfig)),
+                mDelay(delay) {
         }
 
         [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
@@ -29,9 +30,14 @@ namespace sierra::odyplan::v2::common::opr::source::logical {
             return mIOConfig;
         }
 
+        [[nodiscard]] std::chrono::milliseconds getDelay() const {
+            return mDelay;
+        }
+
     private:
         io::IOFormat mIOFormat;
         nlohmann::json mIOConfig;
+        std::chrono::milliseconds mDelay;
     };
 }
 

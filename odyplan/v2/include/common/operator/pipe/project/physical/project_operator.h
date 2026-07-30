@@ -21,12 +21,13 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                      const core::physical::port::PortTupleConsumers &consumers) override {
             core::physical::port::PortTuple projected;
             projected.reserve(mMapping.size());
+            projected.timestamp = tuple.timestamp;
 
             for (const auto index: mMapping) {
                 if (index >= tuple.size()) {
                     throw std::invalid_argument("ProjectOperator: index out of range");
                 }
-                projected.push_back(tuple.at(index));
+                projected.pushBack(tuple.at(index));
             }
 
             consumers.front()(segmentCtx, projected);

@@ -11,6 +11,8 @@
 namespace sierra::odyplan::v2::common::window::count {
     class CountWindowBuffer final : public IWindowBuffer {
     public:
+        using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
+
         CountWindowBuffer(const CountWindowConfig &config, core::logical::port::Port mDataSchema, const core::common::type::TypeRegistry& typeRegistry)
             : mConfig(config),
                 mRowLayout(std::move(mDataSchema), typeRegistry) {
@@ -33,8 +35,9 @@ namespace sierra::odyplan::v2::common::window::count {
             mRowLayout.push(index, rawData);
         }
 
-        void end(std::chrono::sys_time<std::chrono::milliseconds>  /*timestamp*/) override {
+        void end(const Timestamp timestamp) override {
             mRows.push_back(mRowLayout.pop());
+            mTimestamps.push_back(timestamp);
             ++mTotalPushed;
         }
 
@@ -78,7 +81,14 @@ namespace sierra::odyplan::v2::common::window::count {
             }
 
             mRows.clear();
+            mTimestamps.clear();
             mClosed = true;
+        }
+
+        [[nodiscard]] Timestamp getTimestamp(const std::size_t windowIndex, const std::size_t rowIndex) const override {
+            const auto&[start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
+            return mTimestamps.at(relIndex);
         }
 
     private:
@@ -86,6 +96,7 @@ namespace sierra::odyplan::v2::common::window::count {
         WindowRowLayout mRowLayout;
 
         std::deque<std::vector<std::byte>> mRows;
+        std::deque<Timestamp> mTimestamps;
         std::vector<WindowRange> mWindows;
 
         std::uint64_t mBaseIndex = 0;
@@ -97,6 +108,7 @@ namespace sierra::odyplan::v2::common::window::count {
             while (mBaseIndex < mNextWindowStart && !mRows.empty()) {
                 mRowLayout.releaseRow(mRows.front());
                 mRows.pop_front();
+                mTimestamps.pop_front();
                 ++mBaseIndex;
             }
         }

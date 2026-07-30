@@ -32,7 +32,7 @@ namespace sierra::odyplan::v2::common::opr::sink::logical {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
             if (!mPortFieldNames.empty() && mPortFieldIndices.empty()) {
                 PortFieldIndexV indices;
                 indices.reserve(mPortFieldNames.size());
