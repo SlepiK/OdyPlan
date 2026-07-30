@@ -121,6 +121,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             const auto [z, h] = mKeyIndex.equal_range(hashValue);
             for (auto iter = z; iter != h; ++iter) {
                 const auto candidateIndex = iter->second;
+                //NOLINTNEXTLINE(bugprone-unchecked-optional-access,-warnings-as-errors)
                 const auto* candidate = getFieldPtr(candidateIndex, *mKeyFieldIndex);
                 if (mEqualFunction(candidate, query)) {
                     result.push_back(candidateIndex);

@@ -24,6 +24,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             return std::nullopt;
         }
 
+        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
         const auto& compare = static_cast<const core::common::expression::CompareExpression&>(*predicate);
 
         if (compare.getOpr() != core::common::expression::CompareExpression::CompareOp::EQ) {
@@ -42,13 +43,16 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             return std::nullopt;
         }
 
+        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
         const auto leftIndex = static_cast<const core::common::expression::FieldReferenceExpression&>(left).getFieldIndex();
+        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
         const auto rightIndex = static_cast<const core::common::expression::FieldReferenceExpression&>(right).getFieldIndex();
 
         const auto leftSize = leftSchema.size();
         const auto rightSize = rightSchema.size();
 
-        std::size_t leftFieldIndex, rightFieldIndex;
+        std::size_t leftFieldIndex = 0;
+        std::size_t rightFieldIndex = 0;
 
         if (leftIndex < leftSize && rightIndex >= leftSize && rightIndex < leftSize + rightSize) {
             leftFieldIndex = leftIndex;
