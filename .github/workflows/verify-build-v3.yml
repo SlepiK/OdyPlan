@@ -68,35 +68,98 @@ jobs:
 
       # ---- examples ----
 
+      # -- logical_plan --
+
       - name: Build example_logical_plan
         run: cmake --build build --target example_logical_plan
 
       - name: Run example_logical_plan
         run: build/examples/v2/logical_plan/example_logical_plan
 
+      # -- full --
 
+      - name: Build example_full
+        run: cmake --build build --target example_full
 
-      - name: Run v2 examples
-        run: |
-          failed=0
-          while IFS= read -r -d '' bin; do
-            echo "::group::Running $bin"
-            
-            dir=$(dirname "$bin")
-            exe=$(basename "$bin")
-          
-            (
-              cd "$dir"
-              "./$exe"
-            )
-          
-            status=$?
-            echo "::endgroup::"
-          
-            if [ $status -ne 0 ]; then
-              echo "$bin failed with exit code $status"
-              failed=$status
-            fi
-          done < <(find build/examples/v2 -maxdepth 2 -type f -name 'example_*' -executable -print0)
-          exit $failed
+      - name: Run example_full
+        run: build/examples/v2/logical_plan/example_full
 
+      # -- project --
+
+      - name: Build example_project
+        run: cmake --build build --target example_project
+
+      - name: Run example_project
+        run: build/examples/v2/logical_plan/example_project
+
+      # -- select --
+
+      - name: Build example_select
+        run: cmake --build build --target example_select
+
+      - name: Run example_select
+        run: build/examples/v2/logical_plan/example_select
+
+      # -- read_ndjson --
+
+      - name: Build example_read_ndjson
+        run: cmake --build build --target example_read_ndjson
+
+      - name: Run example_read_ndjson
+        run: build/examples/v2/logical_plan/example_read_ndjson
+
+      # -- write_ndjson --
+
+      - name: Build example_write_ndjson
+        run: cmake --build build --target example_write_ndjson
+
+      - name: Run example_write_ndjson
+        run: build/examples/v2/logical_plan/example_write_ndjson
+
+      # -- write_json --
+
+      - name: Build example_write_json
+        run: cmake --build build --target example_write_json
+
+      - name: Run example_write_json
+        run: build/examples/v2/logical_plan/example_write_json
+
+      # -- count_window --
+
+      - name: Build example_count_window
+        run: cmake --build build --target example_count_window
+
+      - name: Run example_count_window
+        run: build/examples/v2/logical_plan/example_count_window
+
+      # -- time_window --
+
+      - name: Build example_time_window
+        run: cmake --build build --target example_time_window
+
+      - name: Run example_time_window
+        run: build/examples/v2/logical_plan/example_time_window
+
+      # -- merge --
+
+      - name: Build example_merge
+        run: cmake --build build --target example_merge
+
+      - name: Run example_merge
+        run: build/examples/v2/logical_plan/example_merge
+
+      # -- merge_measure --
+
+      - name: Build example_merge_measure
+        run: cmake --build build --target merge_measure
+
+      - name: Run merge_measure
+        run: build/examples/v2/logical_plan/merge_measure
+
+      # -- interval_join --
+
+      - name: Build example_interval_join
+        run: cmake --build build --target example_interval_join
+
+      - name: Run example_interval_join
+        run: build/examples/v2/logical_plan/example_interval_join
