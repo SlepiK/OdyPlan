@@ -4,6 +4,8 @@
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/OptimizationLevel.h>
 
 #include "common/operator/pipe/select/logical/select_operator.h"
 #include "common/operator/pipe/select/physical/select_operator.h"
@@ -18,6 +20,26 @@
 
 #include "const_int_source_operator.h"
 #include "core/builder/plan_builder.h"
+
+void optimizeLlvmModule(llvm::Module& module, llvm::OptimizationLevel level) {
+    //Passes are selected by reading some forum entries... , no real clue if they are the right ones... ;)
+    llvm::LoopAnalysisManager loopAnaMgr;
+    llvm::FunctionAnalysisManager fnAnaMgr;
+    llvm::ModuleAnalysisManager modAnaMgr;
+    llvm::CGSCCAnalysisManager cgsccAnaMgr;
+
+    llvm::PassBuilder passBuilder;
+
+    passBuilder.registerLoopAnalyses(loopAnaMgr);
+    passBuilder.registerFunctionAnalyses(fnAnaMgr);
+    passBuilder.registerModuleAnalyses(modAnaMgr);
+    passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
+    passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
+
+    llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
+
+    modPassMgr.run(module, modAnaMgr);
+}
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
