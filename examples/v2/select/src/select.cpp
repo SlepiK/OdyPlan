@@ -145,7 +145,7 @@ int main() {
     auto& jit = *jitExpected;
 
     module->setDataLayout(jit->getDataLayout());
-    optimizeLlvmModule(*module, llvm::OptimizationLevel::02);
+    optimizeLlvmModule(*module, llvm::OptimizationLevel::O2);
 
     std::cout << "\n\n--- Optimized IR ---\n";
     module->print(ros, nullptr);
