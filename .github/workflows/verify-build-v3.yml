@@ -62,6 +62,8 @@ jobs:
             -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
             -DENABLE_V2_EXAMPLES=ON
 
+      # ---- library ----
+
       - name: Build
         run: |
           cmake --build build
