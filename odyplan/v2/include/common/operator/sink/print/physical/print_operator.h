@@ -23,8 +23,7 @@ namespace sierra::odyplan::v2::common::opr::sink::physical {
                 throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
             }
 
-            codegenPrintField(segmentCtx.builder, module, static_cast<core::common::identifier::TypeId>(core::common::identifier::Type::INT64),
-                                  tuple.timestamp);
+            codegenPrintTimestamp(segmentCtx.builder, module, tuple.timestamp);
 
             codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
 
@@ -54,6 +53,18 @@ namespace sierra::odyplan::v2::common::opr::sink::physical {
                 false
             );
             builder.CreateCall(module->getOrInsertFunction(name, fnType), {});
+        }
+
+        static void codegenPrintTimestamp(llvm::IRBuilder<> &builder, llvm::Module *module, llvm::Value *value) {
+            llvm::LLVMContext &ctx = builder.getContext();
+            auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+            auto *fnType = llvm::FunctionType::get(
+                        llvm::Type::getVoidTy(ctx),
+                        {i64Ty},
+                        false
+                        );
+            llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintTimeStamp", fnType);
+            builder.CreateCall(fn, {value});
         }
 
         static void codegenPrintField(llvm::IRBuilder<> &builder, llvm::Module *module,

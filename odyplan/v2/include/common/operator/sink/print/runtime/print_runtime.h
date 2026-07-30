@@ -24,6 +24,10 @@ extern "C" {
         std::cout << " ";
     }
 
+    inline void rtOdyPrintTimeStamp(const std::int64_t value) {
+        std::cout << value << "]";
+    }
+
     inline void rtOdyPrintNewline() {
         std::cout << "\n";
         std::cout.flush();

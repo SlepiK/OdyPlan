@@ -190,7 +190,7 @@ namespace sierra::odyplan::v2::core::common::type {
                 },
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
-                    llvm::Type::getInt64Ty(b.getContext()), std::stoi(v));
+                    llvm::Type::getInt64Ty(b.getContext()), std::stoll(v));
                 },
                 [](const std::byte *ptr) -> std::size_t {
                     std::int64_t value = 0;
