@@ -1,0 +1,220 @@
+name: verify-build-v3
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  clang-tidy:
+    name: verify-build v3
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install CMake 4.1
+        run: |
+          pip install cmake==4.1.0
+          echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
+
+      - name: Install Ninja
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libstdc++-14-dev zstd ninja-build
+
+      - name: Cache LLVM 22
+        uses: actions/cache@v6
+        id: cache-llvm
+        with:
+          path: ~/llvm-22
+          key: llvm-22.1.0-linux-x64
+
+      - name: Download LLVM 22
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.0/LLVM-22.1.0-Linux-X64.tar.xz
+          mkdir -p ~/llvm-22
+          tar -xf LLVM-22.1.0-Linux-X64.tar.xz -C ~/llvm-22 --strip-components=1
+
+      - name: Remove system LLVM/Clang
+        run: |
+          sudo apt-get remove -y llvm* clang* libclang*
+          sudo apt-get autoremove -y
+
+      - name: Add LLVM to PATH
+        run: echo "/home/runner/llvm-22/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain
+        run: |
+          clang-tidy --version
+          clang++ --version
+          cmake --version
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
+            -DENABLE_V2_EXAMPLES=ON
+
+      # ---- library ----
+
+      - name: Build OdyPlanV2
+        run: cmake --build build --target OdyPlanV2
+
+      # ---- examples ----
+
+      # -- logical_plan --
+
+      - name: Build & Run example_logical_plan
+        id: example_logical_plan
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_logical_plan
+          cd build/examples/v2/logical_plan
+          ./example_logical_plan
+
+      # -- full --
+
+      - name: Build & Run example_full
+        id: example_full
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_full
+          cd build/examples/v2/full
+          ./example_full
+
+      # -- project --
+
+      - name: Build & Run example_project
+        id: example_project
+        continue-on-error: true
+        run: | 
+          cmake --build build --target example_project
+          cd build/examples/v2/project
+          ./example_project
+
+      # -- select --
+
+      - name: Build & Run example_select
+        id: example_select
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_select
+          cd build/examples/v2/select
+          ./example_select
+
+      # -- read_ndjson --
+
+      - name: Build & Run example_read_ndjson
+        id: example_read_ndjson
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_read_ndjson
+          cd build/examples/v2/read_ndjson
+          ./example_read_ndjson
+
+      # -- write_ndjson --
+
+      - name: Build & Run example_write_ndjson
+        id: example_write_ndjson
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_write_ndjson
+          cd build/examples/v2/write_ndjson
+          ./example_write_ndjson
+
+      # -- write_json --
+
+      - name: Build & Run example_write_json
+        id: example_write_json
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_write_json
+          cd build/examples/v2/write_json
+          ./example_write_json
+
+      # -- count_window --
+
+      - name: Build & Run example_count_window
+        id: example_count_window
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_count_window
+          cd build/examples/v2/count_window
+          ./example_count_window
+
+      # -- time_window --
+
+      - name: Build & Run example_time_window
+        id: example_time_window
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_time_window
+          cd build/examples/v2/time_window
+          ./example_time_window
+
+      # -- merge --
+
+      - name: Build & Run example_merge
+        id: example_merge
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_merge
+          cd build/examples/v2/merge
+          ./example_merge
+
+      # -- merge_measure --
+
+      - name: Build & Run example_merge_measure
+        id: example_merge_measure
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_merge_measure
+          cd build/examples/v2/merge_measure
+          ./example_merge_measure
+
+      # -- interval_join --
+
+      - name: Build & Run example_interval_join
+        id: example_interval_join
+        continue-on-error: true
+        run: |
+          cmake --build build --target example_interval_join
+          cd build/examples/v2/interval_join
+          ./example_interval_join
+          
+
+      - name: Example results
+        if: always()
+        run: |
+          failed=0
+          check() {
+            local name="$1"
+            local outcome="$2"
+            if [ "$outcome" != "success" ]; then
+              echo "❌ $name failed"
+              failed=1
+            fi
+          }
+          check "example_logical_plan"  "${{ steps.example_logical_plan.outcome }}"
+          check "example_full"          "${{ steps.example_full.outcome }}"
+          check "example_project"          "${{ steps.example_project.outcome }}"
+          check "example_select"          "${{ steps.example_select.outcome }}"
+          check "example_read_ndjson"          "${{ steps.example_read_ndjson.outcome }}"
+          check "example_write_ndjson"          "${{ steps.example_write_ndjson.outcome }}"
+          check "example_write_json"          "${{ steps.example_write_json.outcome }}"
+          check "example_count_window"          "${{ steps.example_count_window.outcome }}"
+          check "example_time_window"          "${{ steps.example_time_window.outcome }}"
+          check "example_merge"          "${{ steps.example_merge.outcome }}"
+          check "example_merge_measure"          "${{ steps.example_merge_measure.outcome }}"
+          check "example_interval_join"          "${{ steps.example_interval_join.outcome }}"
+
+          if [ "$failed" -eq 1 ]; then
+            exit 1
+          fi
