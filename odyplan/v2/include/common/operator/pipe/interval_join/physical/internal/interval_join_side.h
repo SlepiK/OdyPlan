@@ -29,13 +29,34 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
 
         void evict(const Timestamp otherMark) {
             while (!mBufferedRows.empty() && (mBufferedRows.front().timestamp + mWindowSize) <= otherMark) {
+                if (mKeyFieldIndex) {
+                    const auto* keyPtr = mBufferedRows.front().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
+                    const auto hashValue = mHashFunction(keyPtr);
+                    auto [v, g] = mKeyIndex.equal_range(hashValue);
+                    for (auto iter = v; iter != g; ++iter) {
+                        if (iter->second == mBasisIndex) {
+                            mKeyIndex.erase(iter);
+                            break;
+                        }
+                    }
+                }
                 mLayout.releaseRow(mBufferedRows.front().values);
                 mBufferedRows.pop_front();
+                ++mBasisIndex;
             }
         }
 
         void end(const Timestamp timestamp) {
+            const auto absoluteIndex = mBasisIndex + mBufferedRows.size();
+
             mBufferedRows.push_back(RowBuffer{.values = mLayout.pop(), .timestamp = timestamp});
+
+            if (mKeyFieldIndex) {
+                const auto* keyPtr = mBufferedRows.back().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
+                mKeyIndex.emplace(mHashFunction(keyPtr), absoluteIndex);
+            }
+
+            mLastAbsoluteIndex = absoluteIndex;
 
             if (!mMaxTimeStamp || (mMaxTimeStamp.has_value() && timestamp > mMaxTimeStamp.value())) {
                 mMaxTimeStamp = timestamp;
@@ -47,6 +68,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
                 mLayout.releaseRow(values);
             }
             mBufferedRows.clear();
+            mKeyIndex.clear();
         }
 
         [[nodiscard]] std::size_t getSize() const {
@@ -62,16 +84,53 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
         }
 
         [[nodiscard]] const std::byte* getFieldPtr(const std::size_t rowIndex, const std::size_t fieldIndex) const {
-            return mBufferedRows.at(rowIndex).values.data() + mLayout.offsetOf(fieldIndex);
+            return mBufferedRows.at(rowIndex - mBasisIndex).values.data() + mLayout.offsetOf(fieldIndex);
         }
 
-        [[nodiscard]] bool isOver(const Timestamp otherTimestamp, const std::chrono::milliseconds otherWindowSize, const std::size_t index) const {
-            const auto&[values, timestamp] = mBufferedRows.at(index);
+        [[nodiscard]] bool isOver(const Timestamp otherTimestamp, const std::chrono::milliseconds otherWindowSize, const std::size_t rowIndex) const {
+            const auto&[values, timestamp] = mBufferedRows.at(rowIndex - mBasisIndex);
             return (otherTimestamp < (timestamp + mWindowSize)) && (timestamp < (otherTimestamp + otherWindowSize));
         }
 
         [[nodiscard]] Timestamp getTimestamp(const std::size_t rowIndex) const {
-            return mBufferedRows.at(rowIndex).timestamp;
+            return mBufferedRows.at(rowIndex - mBasisIndex).timestamp;
+        }
+
+        void enableKeyIdx(const std::size_t fieldIndex, core::common::type::TypeRegistry::HashFn hashFunction,
+            core::common::type::TypeRegistry::EqualFn equalFunction) {
+            mKeyFieldIndex = fieldIndex;
+            mHashFunction = std::move(hashFunction);
+            mEqualFunction = std::move(equalFunction);
+        }
+
+        [[nodiscard]] std::optional<std::size_t> getKeyFieldIndex() const {
+            return mKeyFieldIndex;
+        }
+
+        [[nodiscard]] bool hasKeyIndex() const {
+            return mKeyFieldIndex.has_value();
+        }
+
+        [[nodiscard]] std::uint64_t getLastAbsoluteIndex() const {
+            return mLastAbsoluteIndex;
+        }
+
+        [[nodiscard]] std::vector<std::uint64_t> hashLookup(const std::byte* query) {
+            std::vector<std::uint64_t> result;
+            const auto hashValue = mHashFunction(query);
+            const auto [z, h] = mKeyIndex.equal_range(hashValue);
+            for (auto iter = z; iter != h; ++iter) {
+                const auto candidateIndex = iter->second;
+                const auto* candidate = getFieldPtr(candidateIndex, *mKeyFieldIndex);
+                if (mEqualFunction(candidate, query)) {
+                    result.push_back(candidateIndex);
+                }
+            }
+            return result;
+        }
+
+        [[nodiscard]] std::uint64_t getBaseIndex() const {
+            return mBasisIndex;
         }
 
     private:
@@ -84,6 +143,14 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
         std::chrono::milliseconds mWindowSize;
         std::deque<RowBuffer> mBufferedRows;
         std::optional<Timestamp> mMaxTimeStamp;
+        //Hash-Behavior for == predicate only
+        std::optional<std::size_t> mKeyFieldIndex;
+        std::unordered_multimap<std::size_t, std::uint64_t> mKeyIndex;
+        core::common::type::TypeRegistry::HashFn mHashFunction;
+        core::common::type::TypeRegistry::EqualFn mEqualFunction;
+
+        std::uint64_t mBasisIndex = 0;
+        std::uint64_t mLastAbsoluteIndex = 0;
     };
 }
 

@@ -50,31 +50,59 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
         }
 
         void endLeft(const Timestamp timestamp) {
+            mLeftSide.end(timestamp);
+            const auto newAbsIndex = mLeftSide.getLastAbsoluteIndex();
+
             mCandidates.clear();
 
-            for (std::size_t i = 0; i < mRightSide.getSize(); ++i) {
-                if (mRightSide.isOver(timestamp, mLeftSide.getWindowSize(), i)) {
-                    mCandidates.push_back(i);
+            if (mLeftSide.hasKeyIndex() && mRightSide.hasKeyIndex()) {
+                //HASH
+                const auto* key = mLeftSide.getFieldPtr(newAbsIndex, *mLeftSide.getKeyFieldIndex());
+                for (const auto candidate : mRightSide.hashLookup(key)) {
+                    if (mRightSide.isOver(timestamp, mLeftSide.getWindowSize(), candidate)) {
+                        mCandidates.push_back(candidate);
+                    }
+                }
+            } else {
+                //DEFAULT
+                const auto size = mRightSide.getSize();
+                const auto base = mRightSide.getBaseIndex();
+                for (std::size_t i = base; i < base + size; ++i) {
+                    if (mRightSide.isOver(timestamp, mLeftSide.getWindowSize(), i)) {
+                        mCandidates.push_back(i);
+                    }
                 }
             }
 
             mCandidateOnRight = true;
-
-            mLeftSide.end(timestamp);
         }
 
         void endRight(const Timestamp timestamp) {
-            mCandidates.clear();
+            mRightSide.end(timestamp);
+            const auto newAbsIndex = mRightSide.getLastAbsoluteIndex();
 
-            for (std::size_t i = 0; i < mLeftSide.getSize(); ++i) {
-                if (mLeftSide.isOver(timestamp, mRightSide.getWindowSize(), i)) {
-                    mCandidates.push_back(i);
+            mCandidates.clear();
+            if (mLeftSide.hasKeyIndex() && mRightSide.hasKeyIndex()) {
+                //HASH
+                const auto* key = mRightSide.getFieldPtr(newAbsIndex, *mRightSide.getKeyFieldIndex());
+                for (const auto candidate : mLeftSide.hashLookup(key)) {
+                    if (mLeftSide.isOver(timestamp, mRightSide.getWindowSize(), candidate)) {
+                        mCandidates.push_back(candidate);
+                    }
                 }
+            } else {
+                //DEFAULT
+                const auto size = mLeftSide.getSize();
+                const auto base = mLeftSide.getBaseIndex();
+                for (std::size_t i = base; i < base + size; ++i) {
+                    if (mLeftSide.isOver(timestamp, mRightSide.getWindowSize(), i)) {
+                        mCandidates.push_back(i);
+                    }
+                }
+
             }
 
             mCandidateOnRight = false;
-
-            mRightSide.end(timestamp);
         }
 
         void evict(const Timestamp timestamp, const bool callFromLeft) {
@@ -97,6 +125,12 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
         [[nodiscard]] Timestamp getCandidateTimestamp(const std::size_t candidateIndex) const {
             const auto rowIndex = mCandidates.at(candidateIndex);
             return mCandidateOnRight ? mRightSide.getTimestamp(rowIndex) : mLeftSide.getTimestamp(rowIndex);
+        }
+
+        void enableEqui(const std::size_t leftFieldIndex, const std::size_t rightFieldIndex,
+            core::common::type::TypeRegistry::HashFn hashFunction, core::common::type::TypeRegistry::EqualFn equalFunction) {
+            mLeftSide.enableKeyIdx(leftFieldIndex, hashFunction, equalFunction);
+            mRightSide.enableKeyIdx(rightFieldIndex, std::move(hashFunction), std::move(equalFunction));
         }
     private:
         IntervalJoinSide mLeftSide;

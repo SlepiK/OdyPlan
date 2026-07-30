@@ -10,7 +10,9 @@ extern "C" {
     inline void* rtJoinCreate(const void* typeRegistryRawPtr,
         const sierra::odyplan::v2::core::common::identifier::TypeId* leftTypeIds, const std::uint64_t leftFieldSize,
         const sierra::odyplan::v2::core::common::identifier::TypeId* rightTypeIds, const std::uint64_t rightFieldSize,
-        const std::uint64_t leftWindowSize, const std::uint64_t rightWindowSize ) {
+        const std::uint64_t leftWindowSize, const std::uint64_t rightWindowSize,
+        const std::uint8_t hasEquiKey, const std::uint64_t leftKeyFieldIndex,
+        const std::uint64_t rightKeyFieldIndex, const sierra::odyplan::v2::core::common::identifier::TypeId keyTypeId) {
         const auto* typeRegistry = static_cast<const sierra::odyplan::v2::core::common::type::TypeRegistry*>(typeRegistryRawPtr);
 
         sierra::odyplan::v2::core::logical::port::Port leftSchema;
@@ -25,15 +27,25 @@ extern "C" {
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer(std::move(leftSchema),
-            std::move(rightSchema), *typeRegistry, std::chrono::milliseconds(leftWindowSize),
-            std::chrono::milliseconds(rightWindowSize));
+        auto* buffer = new sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer(
+            std::move(leftSchema), std::move(rightSchema),
+            *typeRegistry,
+            std::chrono::milliseconds(leftWindowSize),
+            std::chrono::milliseconds(rightWindowSize)
+            );
+
+        if (hasEquiKey != 0) {
+            buffer->enableEqui(leftKeyFieldIndex, rightKeyFieldIndex, typeRegistry->getHashFn(keyTypeId), typeRegistry->getEqualFn(keyTypeId));
+        }
+
+        return buffer;
     }
 
     inline void rtJoinDestroy(void* state) {
         auto* buffer = static_cast<sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer*>(state);
 
         buffer->close();
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         delete buffer;
     }
 
@@ -82,7 +94,7 @@ extern "C" {
         return timestamp.time_since_epoch().count();
     }
 
-    inline void rtJoinEvict(void* state, std::int64_t timestampMs, const bool callFromLeft) {
+    inline void rtJoinEvict(void* state, const std::int64_t timestampMs, const bool callFromLeft) {
         static_cast<sierra::odyplan::v2::common::opr::pipe::physical::internal::IntervalJoinBuffer*>(state)->evict(sierra::odyplan::v2::common::opr::pipe::physical::internal::Timestamp(std::chrono::milliseconds(timestampMs)), callFromLeft);
     }
 }

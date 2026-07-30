@@ -4,6 +4,7 @@
 #include "core/logical/port/port.h"
 #include "core/physical/operator/pipe/pipe_operator.h"
 #include "internal/interval_join_config.h"
+#include "internal/interval_join_predmod.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe::physical {
     class IntervalJoinOperator : public core::physical::opr::TypedPipeOperator {
@@ -50,10 +51,14 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
         void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module,
                           llvm::LLVMContext &context) override {
             auto* i64Ty = llvm::Type::getInt64Ty(context);
+            auto* i8Ty = llvm::Type::getInt8Ty(context);
             auto* ptrTy = llvm::PointerType::getUnqual(context);
 
             auto* leftSideTypesGlobal = buildTypeIds(module, context, mLeftSchema, "join_left_side_types_" + std::to_string(getId()));
             auto* rightSideTypesGlobal = buildTypeIds(module, context, mRightSchema, "join_right_side_types_" + std::to_string(getId()));
+
+            const auto equiKey = internal::tryGetEquiKey(mPredicate, mLeftSchema, mRightSchema);
+            const bool hasEquiKey = equiKey.has_value();
 
             mState = stateRegistry.createHandle(
                 "join_" + std::to_string(getId()),
@@ -61,9 +66,13 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                     leftSideTypesGlobal, llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),
                     rightSideTypesGlobal, llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
                     llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
-                    llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count())
+                    llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
+                    llvm::ConstantInt::get(i8Ty, hasEquiKey ? 1 : 0),
+                    llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->leftFieldIndex : 0),
+                    llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->rightFieldIndex : 0),
+                    llvm::ConstantInt::get(i8Ty, hasEquiKey ? equiKey->typeId : 0)
                 },
-                {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty},
+                {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, i64Ty, i64Ty, i8Ty},
                 "rtJoinDestroy"
                 );
         }
