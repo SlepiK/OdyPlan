@@ -67,7 +67,7 @@ declare void @rtComputeTaskJoin(i64)
 declare void @rtEnd()
 ```
 
-## Example Output [Raw]
+## Example Output [Optimized]
 ```text
 ; ModuleID = 'exampleSelect'
 source_filename = "exampleSelect"
