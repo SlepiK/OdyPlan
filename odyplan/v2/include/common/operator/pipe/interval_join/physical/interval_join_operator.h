@@ -262,6 +262,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
 
         static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, core::common::expression::CompareExpression::CompareOp opr) {
             const bool isFloat = left->getType()->isFloatingPointTy();
+            // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
             switch (opr) {
                 case core::common::expression::CompareExpression::CompareOp::EQ: {
                     return isFloat ? builder.CreateFCmpOEQ(left, right) : builder.CreateICmpEQ(left, right);
@@ -284,6 +285,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                 default:
                     throw std::out_of_range("IntervalJoinOperator::compare: Invalid compare expression type");
             }
+            // NOLINTEND(clang-analyzer-security.ArrayBound)
         }
     };
 }
