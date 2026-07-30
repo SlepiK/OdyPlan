@@ -6,6 +6,9 @@
 
 inline std::atomic atStop{false};
 
+#ifdef SIERRA_USER_PROGRAM_CLOCK
+const auto programStart = std::chrono::steady_clock::now();
+#endif
 extern "C" {
     inline void rtEnd() {
 #ifdef SIERRA_RUNTIME_IO
@@ -18,7 +21,11 @@ extern "C" {
     }
 
     inline std::int64_t rtNow() {
+#ifdef SIERRA_USER_PROGRAM_CLOCK
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - programStart).count();
+#else
         return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+#endif
     }
 
     inline void rtSleepMs(const std::int64_t ms) {
