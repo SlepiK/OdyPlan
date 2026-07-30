@@ -76,7 +76,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_logical_plan
-          build/examples/v2/logical_plan/example_logical_plan
+          cd build/examples/v2/logical_plan
+          ./example_logical_plan
 
       # -- full --
 
@@ -85,7 +86,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_full
-          build/examples/v2/full/example_full
+          cd build/examples/v2/full
+          ./example_full
 
       # -- project --
 
@@ -94,7 +96,8 @@ jobs:
         continue-on-error: true
         run: | 
           cmake --build build --target example_project
-          build/examples/v2/project/example_project
+          cd build/examples/v2/project
+          ./example_project
 
       # -- select --
 
@@ -103,7 +106,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_select
-          build/examples/v2/select/example_select
+          cd build/examples/v2/select
+          ./example_select
 
       # -- read_ndjson --
 
@@ -112,7 +116,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_read_ndjson
-          build/examples/v2/read_ndjson/example_read_ndjson
+          cd build/examples/v2/read_ndjson
+          ./example_read_ndjson
 
       # -- write_ndjson --
 
@@ -121,7 +126,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_write_ndjson
-          build/examples/v2/write_ndjson/example_write_ndjson
+          cd build/examples/v2/write_ndjson
+          ./example_write_ndjson
 
       # -- write_json --
 
@@ -130,7 +136,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_write_json
-          build/examples/v2/write_json/example_write_json
+          cd build/examples/v2/write_json
+          ./example_write_json
 
       # -- count_window --
 
@@ -139,7 +146,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_count_window
-          build/examples/v2/count_window/example_count_window
+          cd build/examples/v2/count_window
+          ./example_count_window
 
       # -- time_window --
 
@@ -148,7 +156,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_time_window
-          build/examples/v2/time_window/example_time_window
+          cd build/examples/v2/time_window
+          ./example_time_window
 
       # -- merge --
 
@@ -157,7 +166,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_merge
-          build/examples/v2/merge/example_merge
+          cd build/examples/v2/merge
+          ./example_merge
 
       # -- merge_measure --
 
@@ -166,7 +176,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_merge_measure
-          build/examples/v2/merge_measure/example_merge_measure
+          cd build/examples/v2/merge_measure
+          ./example_merge_measure
 
       # -- interval_join --
 
@@ -175,7 +186,8 @@ jobs:
         continue-on-error: true
         run: |
           cmake --build build --target example_interval_join
-          build/examples/v2/interval_join/example_interval_join
+          cd build/examples/v2/interval_join
+          ./example_interval_join
           
 
       - name: Example results
