@@ -110,6 +110,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                 values.push_back(llvm::ConstantInt::get(i8Ty, slot.typeId));
             }
             auto* arrTy = llvm::ArrayType::get(i8Ty, values.size());
+            //NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
             return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::InternalLinkage, llvm::ConstantArray::get(arrTy, values), name);
         }
 
@@ -191,7 +192,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
             segmentCtx.builder.SetInsertPoint(exitBB);
         }
 
-        void codegenSide(core::physical::segment::SegmentContext &segmentCtx, llvm::Value* state, const core::physical::port::PortTuple& tuple,
+        static void codegenSide(core::physical::segment::SegmentContext &segmentCtx, llvm::Value* state, const core::physical::port::PortTuple& tuple,
                          const core::logical::port::Port& schema, const char* beginFnName,
                          const char* pushFnName, const char* endFnName) {
             llvm::LLVMContext& ctx = segmentCtx.builder.getContext();

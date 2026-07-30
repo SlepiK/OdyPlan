@@ -62,6 +62,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
 
             if (mLeftSide.hasKeyIndex() && mRightSide.hasKeyIndex()) {
                 //HASH
+                //NOLINTNEXTLINE(bugprone-unchecked-optional-access)
                 const auto* key = mLeftSide.getFieldPtr(newAbsIndex, *mLeftSide.getKeyFieldIndex());
                 for (const auto candidate : mRightSide.hashLookup(key)) {
                     if (mRightSide.isOver(timestamp, mLeftSide.getWindowSize(), candidate)) {
@@ -89,6 +90,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical::internal {
             mCandidates.clear();
             if (mLeftSide.hasKeyIndex() && mRightSide.hasKeyIndex()) {
                 //HASH
+                //NOLINTNEXTLINE(bugprone-unchecked-optional-access)
                 const auto* key = mRightSide.getFieldPtr(newAbsIndex, *mRightSide.getKeyFieldIndex());
                 for (const auto candidate : mLeftSide.hashLookup(key)) {
                     if (mLeftSide.isOver(timestamp, mRightSide.getWindowSize(), candidate)) {

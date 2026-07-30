@@ -13,9 +13,9 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
         static constexpr core::common::identifier::OperatorTypeId TYPE_ID = std::to_underlying(
             core::common::identifier::Operator::INTERVAL_JOIN);
 
-        explicit IntervalJoinOperator(physical::internal::IntervalJoinConfig config,
+        explicit IntervalJoinOperator(const physical::internal::IntervalJoinConfig config,
                                       const core::common::expression::IExpression* predicate = nullptr)
-                : mConfig(std::move(config)), mPredicate(predicate) {
+                : mConfig(config), mPredicate(predicate) {
         }
 
         [[nodiscard]] core::common::identifier::OperatorTypeId getOperatorTypeId() const override {
