@@ -24,7 +24,7 @@ jobs:
           sudo apt-get install -y libstdc++-14-dev zstd ninja-build
 
       - name: Cache LLVM 22
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         id: cache-llvm
         with:
           path: ~/llvm-22
