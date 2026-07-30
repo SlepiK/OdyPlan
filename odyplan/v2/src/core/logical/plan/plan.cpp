@@ -63,7 +63,7 @@ namespace sierra::odyplan::v2::core::logical::plan {
 
         bindable->bindInput(toOperator.portId, from.getOutputPorts().at(fromOperator.portId));
 
-        bindable->validate();
+        bindable->validateInput();
 
         const auto& to = op(toOperator.operatorId);
 

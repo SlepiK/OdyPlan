@@ -29,8 +29,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
-        ${CMAKE_CURRENT_BINARY_DIR}/read.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.ndjson
+        ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
         COPYONLY
 )
 

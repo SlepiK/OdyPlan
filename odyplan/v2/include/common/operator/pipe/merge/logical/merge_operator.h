@@ -18,7 +18,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::logical {
         }
 
     protected:
-        void validate() override {
+        void validateInput() override {
             const auto &inputPortsRef = getInputPortsRef();
             const auto &outputPortRef = getOutputPortsRef().at(0);
 

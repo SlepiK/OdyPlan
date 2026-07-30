@@ -116,6 +116,12 @@ namespace sierra::odyplan::v2::common::window::time {
             mClosed = true;
         }
 
+        [[nodiscard]] Timestamp getTimestamp(const std::size_t windowIndex, const std::size_t rowIndex) const override {
+            const auto& [start, count] = mWindows.at(windowIndex);
+            const auto relIndex = start - mBaseIndex + rowIndex;
+            return mRows.at(relIndex).timestamp;
+        }
+
     private:
         struct Row {
             std::vector<std::byte> values;

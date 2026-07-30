@@ -21,18 +21,22 @@ namespace sierra::odyplan::v2::core::common::type {
         using RetainFn = std::function<void*(void* ori)>;
         using ReleaseFn = std::function<void(void* own)>;
 
+        using HashFn = std::function<std::size_t(const std::byte*)>;
+        using EqualFn = std::function<bool(const std::byte*, const std::byte*)>;
+
         static TypeRegistry withDefaults() {
             TypeRegistry registry;
             registry.registerDefaults();
             return registry;
         }
 
-        void registerType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory) {
-            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = false, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=defaultRetain(), .release=defaultRelease()});
+        // NOLINTNEXTLINE(readability-function-size)
+        void registerType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, HashFn hashFunction, EqualFn equalFunction) {
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = false, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=defaultRetain(), .release=defaultRelease(), .hash=std::move(hashFunction), .equal=std::move(equalFunction)});
         }
-
-        void registerPtrType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, RetainFn retain = defaultRetain(), ReleaseFn release = defaultRelease()) {
-            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = true, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=std::move(retain), .release=std::move(release)});
+        // NOLINTNEXTLINE(readability-function-size)
+        void registerPtrType(identifier::TypeId id, std::string name, const std::size_t byteSize, LLVMTypeFactory typeFactory, ConstantFactory constantFactory, HashFn hashFunction, EqualFn equalFunction, RetainFn retain = defaultRetain(), ReleaseFn release = defaultRelease()) {
+            mTypeStorage.emplace(id, TypeRegistryEntry {.name=std::move(name), .byteSize = byteSize, .isPointerType = true, .typeFactory=std::move(typeFactory), .constantFactory=std::move(constantFactory), .retain=std::move(retain), .release=std::move(release), .hash=std::move(hashFunction), .equal=std::move(equalFunction)});
         }
 
         [[nodiscard]] llvm::Type* resolveType(const identifier::TypeId id, llvm::LLVMContext& ctx) const {
@@ -59,6 +63,14 @@ namespace sierra::odyplan::v2::core::common::type {
             get(id).release(own);
         }
 
+        [[nodiscard]] const HashFn& getHashFn(const identifier::TypeId id) const {
+            return get(id).hash;
+        }
+
+        [[nodiscard]] const EqualFn& getEqualFn(const identifier::TypeId id) const {
+            return get(id).equal;
+        }
+
     private:
         struct TypeRegistryEntry {
             std::string name;
@@ -68,6 +80,8 @@ namespace sierra::odyplan::v2::core::common::type {
             ConstantFactory constantFactory;
             RetainFn retain;
             ReleaseFn release;
+            HashFn hash;
+            EqualFn equal;
         };
 
         std::unordered_map<identifier::TypeId, TypeRegistryEntry> mTypeStorage;
@@ -90,6 +104,7 @@ namespace sierra::odyplan::v2::core::common::type {
             return iter->second;
         }
 
+        // NOLINTNEXTLINE(readability-function-size)
         void registerDefaults() {
             registerType(
                 std::to_underlying(identifier::Type::BOOL), "bool",
@@ -100,6 +115,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt1Ty(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte* ptr) -> std::size_t {
+                    bool value = false;
+                    std::memcpy(&value, ptr, sizeof(bool));
+                    return std::hash<bool>{}(value);
+                },
+                [](const std::byte* a, const std::byte* b) -> bool {
+                    return std::memcmp(a,b,sizeof(bool))==0;
                 }
                 );
             registerType(
@@ -111,6 +134,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt8Ty(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte* ptr) -> std::size_t {
+                    std::int8_t value = 0;
+                    std::memcpy(&value, ptr, sizeof(std::int8_t));
+                    return std::hash<std::int8_t>{}(value);
+                },
+                [](const std::byte* a, const std::byte* b) -> bool {
+                    return std::memcmp(a,b,sizeof(std::int8_t))==0;
                 }
                 );
             registerType(
@@ -122,6 +153,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt16Ty(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte *ptr) -> std::size_t {
+                    std::int16_t value = 0;
+                    std::memcpy(&value, ptr, sizeof(std::int16_t));
+                    return std::hash<std::int16_t>{}(value);
+                },
+                [](const std::byte *a, const std::byte *b) -> bool {
+                    return std::memcmp(a, b, sizeof(std::int16_t)) == 0;
                 }
                 );
             registerType(
@@ -133,6 +172,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt32Ty(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte *ptr) -> std::size_t {
+                    std::int32_t value = 0;
+                    std::memcpy(&value, ptr, sizeof(std::int32_t));
+                    return std::hash<std::int32_t>{}(value);
+                },
+                [](const std::byte *a, const std::byte *b) -> bool {
+                    return std::memcmp(a, b, sizeof(std::int32_t)) == 0;
                 }
                 );
             registerType(
@@ -144,6 +191,14 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getInt64Ty(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte *ptr) -> std::size_t {
+                    std::int64_t value = 0;
+                    std::memcpy(&value, ptr, sizeof(std::int64_t));
+                    return std::hash<std::int64_t>{}(value);
+                },
+                [](const std::byte *a, const std::byte *b) -> bool {
+                    return std::memcmp(a, b, sizeof(std::int64_t)) == 0;
                 }
                 );
             registerType(
@@ -155,6 +210,21 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getFloatTy(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte *ptr) -> std::size_t {
+                    std::float_t value = 0.0F;
+                    std::memcpy(&value, ptr, sizeof(std::float_t));
+                    if (value == 0.0F) {
+                        value = 0.0F;
+                    }
+                    return std::hash<std::float_t>{}(value);
+                },
+                [](const std::byte *a, const std::byte *b) -> bool {
+                    std::float_t fA = 0.0F;
+                    std::float_t fB = 0.0F;
+                    std::memcpy(&fA, a, sizeof(std::float_t));
+                    std::memcpy(&fB, b, sizeof(std::float_t));
+                    return fA == fB;
                 }
                 );
             registerType(
@@ -166,6 +236,21 @@ namespace sierra::odyplan::v2::core::common::type {
                 [](const llvm::IRBuilder<>&b, const std::string& v) {
                 return llvm::ConstantInt::get(
                     llvm::Type::getDoubleTy(b.getContext()), std::stoi(v));
+                },
+                [](const std::byte *ptr) -> std::size_t {
+                    std::double_t value = 0.0;
+                    std::memcpy(&value, ptr, sizeof(std::double_t));
+                    if (value == 0.0) {
+                        value = 0.0;
+                    }
+                    return std::hash<std::double_t>{}(value);
+                },
+                [](const std::byte *a, const std::byte *b) -> bool {
+                    std::double_t dA = 0.0;
+                    std::double_t dB = 0.0;
+                    std::memcpy(&dA, a, sizeof(std::double_t));
+                    std::memcpy(&dB, b, sizeof(std::double_t));
+                    return dA == dB;
                 }
             );
             registerPtrType(
@@ -176,6 +261,21 @@ namespace sierra::odyplan::v2::core::common::type {
                 },
                 [](llvm::IRBuilder<>&b, const std::string& v) {
                     return b.CreateGlobalString(v);
+                },
+                [](const std::byte* ptr) -> std::size_t {
+                    const char* value = nullptr;
+                    std::memcpy(static_cast<void*>(&value), ptr, sizeof(value));
+                    return value != nullptr ? std::hash<std::string_view>{}(value) : std::hash<std::string_view>{}("");
+                },
+                [](const std::byte* aPtr, const std::byte* bPtr) -> bool {
+                    const char* a = nullptr;
+                    const char* b = nullptr;
+                    std::memcpy(static_cast<void*>(&a), aPtr, sizeof(a));
+                    std::memcpy(static_cast<void*>(&b), bPtr, sizeof(b));
+                    if (a == nullptr || b == nullptr) {
+                        return a == b;
+                    }
+                    return std::strcmp(a, b) == 0;
                 },
                 [](const void* ori) -> void* {
                     const auto *source = static_cast<const char*>(ori);
