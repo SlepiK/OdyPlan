@@ -84,7 +84,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
         const core::common::expression::IExpression* mPredicate;
         core::physical::state::StateHandle mState;
 
-        llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) {
+        llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const {
             auto* ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
             return segmentCtx.builder.CreateLoad(ptrTy, mState.var);
         }
@@ -219,6 +219,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
             const core::common::expression::IExpression& expression) {
             switch (expression.getExpressionType()) {
                 case core::common::expression::ExpressionType::FIELD_REFERENCE: {
+                    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
                     const auto& fieldRef = static_cast<const core::common::expression::FieldReferenceExpression&>(expression);
                     if (fieldRef.getFieldIndex() >= tuple.size()) {
                         throw std::out_of_range("IntervalJoinOperator: Field index out of range");
@@ -226,16 +227,19 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
                     return tuple.at(fieldRef.getFieldIndex());
                 }
                 case core::common::expression::ExpressionType::CONSTANT: {
+                    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
                     const auto& constExp = static_cast<const core::common::expression::ConstantExpression&>(expression);
                     return segmentCtx.typeRegistry.compileConstant(constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
                 }
                 case core::common::expression::ExpressionType::COMPARE: {
+                    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
                     const auto& cmpExp = static_cast<const core::common::expression::CompareExpression&>(expression);
                     llvm::Value* left = codegenExpression(segmentCtx, tuple, cmpExp.getLeftPart());
                     llvm::Value* right = codegenExpression(segmentCtx, tuple, cmpExp.getRightPart());
                     return codegenCompare(segmentCtx.builder, left, right, cmpExp.getOpr());
                 }
                 case core::common::expression::ExpressionType::LOGICAL: {
+                    //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
                     const auto& logicExp = static_cast<const core::common::expression::LogicalExpression&>(expression);
                     llvm::Value* left = codegenExpression(segmentCtx, tuple, logicExp.getLeftPart());
                     if (logicExp.isUnary()) {

@@ -4,6 +4,7 @@
 #include <llvm/IR/Module.h>
 
 #include "core/physical/operator/pipe/pipe_operator.h"
+#include "core/logical/port/port.h"
 
 namespace sierra::odyplan::v2::common::opr::pipe::physical {
     class WindowOperatorBase : public core::physical::opr::TypedPipeOperator {
@@ -69,7 +70,7 @@ namespace sierra::odyplan::v2::common::opr::pipe::physical {
         }
 
     protected:
-        void setWindowState(core::physical::state::StateHandle state) {
+        void setWindowState(const core::physical::state::StateHandle state) {
             mState = state;
         }
 

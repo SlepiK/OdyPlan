@@ -7,6 +7,7 @@
 #include "core/logical/port/port.h"
 
 extern "C" {
+    //NOLINTNEXTLINE(readability-function-size)
     inline void* rtJoinCreate(const void* typeRegistryRawPtr,
         const sierra::odyplan::v2::core::common::identifier::TypeId* leftTypeIds, const std::uint64_t leftFieldSize,
         const sierra::odyplan::v2::core::common::identifier::TypeId* rightTypeIds, const std::uint64_t rightFieldSize,
