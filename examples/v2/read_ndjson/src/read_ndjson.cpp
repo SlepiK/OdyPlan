@@ -120,7 +120,7 @@ int main() {
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("example_read_json",*ctx);
+    auto module = std::make_unique<llvm::Module>("example_read_ndjson",*ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
