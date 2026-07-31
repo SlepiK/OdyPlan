@@ -1,7 +1,20 @@
-## Info
-Run was inside of an GitHub Runner 
+## Select Example
 
-## Example Output [Raw]
+### Requirements
+N/A
+
+### Process
+Passes via a custom operator data (5) to the SelectOperator (Predicate: "<=6") and prints the result
+
+### Running System
+Run was inside an GitHub Runner
+
+### Output
+```text
+1785453865286] 5
+```
+
+### LLVM IR [Raw]
 ```text
 ; ModuleID = 'exampleSelect'
 source_filename = "exampleSelect"
@@ -67,7 +80,7 @@ declare void @rtComputeTaskJoin(i64)
 declare void @rtEnd()
 ```
 
-## Example Output [Optimized]
+### LLVM IR [Optimized]
 ```text
 ; ModuleID = 'exampleSelect'
 source_filename = "exampleSelect"
