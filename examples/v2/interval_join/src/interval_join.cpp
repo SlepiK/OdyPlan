@@ -4,6 +4,8 @@
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/OptimizationLevel.h>
 
 #include "common/operator/source/read/logical/read_operator.h"
 #include "common/operator/source/read/physical/read_operator.h"
@@ -26,6 +28,26 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
+
+void optimizeLlvmModule(llvm::Module& module, llvm::OptimizationLevel level) {
+    //Passes are selected by reading some forum entries... , no real clue if they are the right ones... ;)
+    llvm::LoopAnalysisManager loopAnaMgr;
+    llvm::FunctionAnalysisManager fnAnaMgr;
+    llvm::ModuleAnalysisManager modAnaMgr;
+    llvm::CGSCCAnalysisManager cgsccAnaMgr;
+
+    llvm::PassBuilder passBuilder;
+
+    passBuilder.registerLoopAnalyses(loopAnaMgr);
+    passBuilder.registerFunctionAnalyses(fnAnaMgr);
+    passBuilder.registerModuleAnalyses(modAnaMgr);
+    passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
+    passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
+
+    llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
+
+    modPassMgr.run(module, modAnaMgr);
+}
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
@@ -157,6 +179,7 @@ int main() {
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
+    std::cout << "\n\n--- Raw IR ---\n";
     llvm::raw_os_ostream ros(std::cout);
     module->print(ros, nullptr);
     ros.flush();
@@ -175,6 +198,14 @@ int main() {
     }
 
     auto& jit = *jitExpected;
+
+    module->setDataLayout(jit->getDataLayout());
+    optimizeLlvmModule(*module, llvm::OptimizationLevel::O2);
+
+    std::cout << "\n\n--- Optimized IR ---\n";
+    module->print(ros, nullptr);
+    ros.flush();
+    std::cout << "\n\n";
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;

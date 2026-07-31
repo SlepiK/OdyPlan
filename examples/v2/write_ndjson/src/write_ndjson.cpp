@@ -6,6 +6,8 @@
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/OptimizationLevel.h>
 
 #include "common/operator/source/read/logical/read_operator.h"
 #include "common/operator/source/read/physical/read_operator.h"
@@ -24,6 +26,26 @@
 #include <atomic>
 
 #include "common/io/io_registry.h"
+
+void optimizeLlvmModule(llvm::Module& module, llvm::OptimizationLevel level) {
+    //Passes are selected by reading some forum entries... , no real clue if they are the right ones... ;)
+    llvm::LoopAnalysisManager loopAnaMgr;
+    llvm::FunctionAnalysisManager fnAnaMgr;
+    llvm::ModuleAnalysisManager modAnaMgr;
+    llvm::CGSCCAnalysisManager cgsccAnaMgr;
+
+    llvm::PassBuilder passBuilder;
+
+    passBuilder.registerLoopAnalyses(loopAnaMgr);
+    passBuilder.registerFunctionAnalyses(fnAnaMgr);
+    passBuilder.registerModuleAnalyses(modAnaMgr);
+    passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
+    passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
+
+    llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
+
+    modPassMgr.run(module, modAnaMgr);
+}
 
 int main() {
     sierra::odyplan::v2::core::logical::plan::Plan logicalPlan;
@@ -96,6 +118,7 @@ int main() {
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
+    std::cout << "\n\n--- Raw IR ---\n";
     llvm::raw_os_ostream ros(std::cout);
     module->print(ros, nullptr);
     ros.flush();
@@ -114,6 +137,14 @@ int main() {
     }
 
     auto& jit = *jitExpected;
+
+    module->setDataLayout(jit->getDataLayout());
+    optimizeLlvmModule(*module, llvm::OptimizationLevel::O2);
+
+    std::cout << "\n\n--- Optimized IR ---\n";
+    module->print(ros, nullptr);
+    ros.flush();
+    std::cout << "\n\n";
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
@@ -156,27 +187,13 @@ int main() {
         return 1;
     }
 
-    auto mainExpected = jit->lookup("ody_main");
+    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
 
-    if (!mainExpected) {
-        std::cerr << "Failed to find ody_main: " << llvm::toString(mainExpected.takeError()) << "\n";
-        return 1;
-    }
-
-    auto odyMain = mainExpected->toPtr<void(*)()>();
-#ifdef ENABLE_LOOPED_SOURCE
-    std::thread mainThread([&]() {
-#endif
-        odyMain();
-#ifdef ENABLE_LOOPED_SOURCE
-    });
-
-    std::cout << "Running (press Enter to stop:\n";
-
-    std::cin.get();
-    atStop.store(true);
-    mainThread.join();
-#endif
+    odyInit(&typeRegistry);
+    odyMain();
+    odyShutdown();
 
     return 0;
 }
