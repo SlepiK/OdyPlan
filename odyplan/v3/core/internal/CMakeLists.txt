@@ -1,0 +1,52 @@
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+)
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+)
+
+set(TARGET_NAME odyplan_core_internal)
+
+add_library(${TARGET_NAME} STATIC
+        ${SOURCES}
+        ${HEADERS}
+)
+add_library(odyplan::core::internal ALIAS ${TARGET_NAME})
+
+target_include_directories(${TARGET_NAME} PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(${TARGET_NAME}
+        PUBLIC
+        odyplan::core::shared
+        PRIVATE
+        nlohmann_json::nlohmann_json
+        spdlog::spdlog
+)
+
+odyplan_link_llvm(${TARGET_NAME} PRIVATE)
+
+if(WIN32)
+    target_compile_definitions(${TARGET_NAME} PUBLIC
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(${TARGET_NAME} PRIVATE
+            /permissive-
+            /Zc:__cplusplus
+            /bigobj
+    )
+endif()
+
+if(COMMAND enable_clang_tidy_on_target)
+    enable_clang_tidy_on_target(${TARGET_NAME})
+endif()
+
+if(ENABLE_TOOLING)
+    register_lint_sources(${SOURCES} ${HEADERS})
+    register_tidy_sources(${SOURCES})
+endif()

@@ -36,3 +36,17 @@ if(LLVM_ENABLE_ABI_BREAKING_CHECKS)
 else()
     add_definitions(-DLLVM_ENABLE_ABI_BREAKING_CHECKS=0)
 endif()
+
+function(odyplan_link_llvm TARGET_NAME VISIBILITY)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(${TARGET_NAME} ${VISIBILITY}
+                -Wl,--start-group
+                ${LLVM_LIBS}
+                -Wl,--end-group
+        )
+    else()
+        target_link_libraries(${TARGET_NAME} ${VISIBILITY}
+                ${LLVM_LIBS}
+        )
+    endif()
+endfunction()
