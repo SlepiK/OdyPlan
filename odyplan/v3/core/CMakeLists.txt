@@ -29,4 +29,12 @@ target_link_libraries(${FACADE_TARGET} INTERFACE
 #    )
 #endif()
 
+add_custom_target(odyplan_core_all)
+add_dependencies(odyplan_core_all
+        odyplan_core_shared
+        odyplan_core_internal
+        odyplan_core_logical
+        odyplan_core_physical
+        odyplan_core_builder
+)
 
