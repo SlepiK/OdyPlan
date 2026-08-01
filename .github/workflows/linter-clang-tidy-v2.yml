@@ -1,4 +1,4 @@
-name: linter-clang-tidy-v2
+name: linter-clang-tidy-v3
 
 on:
   pull_request:
@@ -64,19 +64,19 @@ jobs:
           
       - name: Run clang-tidy
         run: |
-          if [[ ! -d odyplan/v2/include ]]; then
-            echo "No include directory found. Skipping clang-tidy."
+          if [[ ! -d odyplan/v3/core ]]; then
+            echo "No v3/core directory found. Skipping clang-tidy."
             exit 0
           fi
-
-          FILES=$(find odyplan/v2/include -type f \( -name '*.h' -o -name '*.hpp' \))
-
+            
+          FILES=$(find odyplan/v3/core/*/include -type f -name '*.h' 2>/dev/null)
+            
           if [[ -z "$FILES" ]]; then
             echo "No header files found. Skipping clang-tidy."
             exit 0
           fi
-
+            
           echo "$FILES" | xargs clang-tidy -p build \
-            --header-filter='odyplan/v2/include/.*' \
+            --header-filter='odyplan/v3/core/.*/include/.*' \
             --warnings-as-errors='*'
 
