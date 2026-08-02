@@ -1,9 +1,9 @@
 #include <cmath>
-#include <core/physical/types/type_registry.h>
+#include <core/physical/types/value_type_registry.h>
 
 namespace sierra::odyplan::v3::core::physical::types {
-    TypeRegistry TypeRegistry::withBuiltins() {
-        TypeRegistry registry;
+    ValueTypeRegistry ValueTypeRegistry::withBuiltins() {
+        ValueTypeRegistry registry;
 
         registry.registerBuiltin();
 
@@ -11,8 +11,8 @@ namespace sierra::odyplan::v3::core::physical::types {
     }
 
     // NOLINTNEXTLINE(readability-function-size)
-    void TypeRegistry::registerType(
-        TypeId typeId,
+    void ValueTypeRegistry::registerType(
+        ValueTypeId valueTypeId,
         std::string typeName,
         const std::size_t typeByteSize,
         LLVMTypeFactory typeLLVMFactory,
@@ -20,8 +20,8 @@ namespace sierra::odyplan::v3::core::physical::types {
         HashFn typeHashFunction,
         EqualFn typeEqualFunction) {
         mStorage.emplace(
-            typeId,
-            TypeRegistryEntry
+            valueTypeId,
+            ValueTypeRegistryEntry
             {
                 .typeName = std::move(typeName),
                 .typeByteSize = typeByteSize,
@@ -36,10 +36,10 @@ namespace sierra::odyplan::v3::core::physical::types {
     }
 
     // NOLINTNEXTLINE(readability-function-size)
-    void TypeRegistry::registerPtrType(
-        TypeId typeId,
+    void ValueTypeRegistry::registerPtrType(
+        ValueTypeId valueTypeId,
         std::string typeName,
-        std::size_t typeByteSize,
+        const std::size_t typeByteSize,
         LLVMTypeFactory typeLLVMFactory,
         ConstantFactory typeConstantFactory,
         HashFn typeHashFunction,
@@ -47,8 +47,8 @@ namespace sierra::odyplan::v3::core::physical::types {
         RetainFn typeRetainFunction,
         ReleaseFn typeReleaseFunction) {
         mStorage.emplace(
-            typeId,
-            TypeRegistryEntry
+            valueTypeId,
+            ValueTypeRegistryEntry
             {
                 .typeName = std::move(typeName),
                 .typeByteSize = typeByteSize,
@@ -63,73 +63,73 @@ namespace sierra::odyplan::v3::core::physical::types {
     }
 
 
-    llvm::Type *TypeRegistry::resolveType(
-        const TypeId typeId,
+    llvm::Type *ValueTypeRegistry::resolveType(
+        const ValueTypeId valueTypeId,
         llvm::LLVMContext &llvmCtx) const {
-        return get(typeId).typeLLVMFactory(llvmCtx);
+        return get(valueTypeId).typeLLVMFactory(llvmCtx);
     }
 
 
-    llvm::Value *TypeRegistry::compileConstant(
-        const TypeId typeId,
+    llvm::Value *ValueTypeRegistry::compileConstant(
+        const ValueTypeId valueTypeId,
         llvm::IRBuilder<> &llvmBuilder,
         const std::string &value) const {
-        return get(typeId).typeConstantFactory(llvmBuilder, value);
+        return get(valueTypeId).typeConstantFactory(llvmBuilder, value);
     }
 
 
-    std::size_t TypeRegistry::getByteSize(const TypeId typeId) const {
-        return get(typeId).typeByteSize;
+    std::size_t ValueTypeRegistry::getByteSize(const ValueTypeId valueTypeId) const {
+        return get(valueTypeId).typeByteSize;
     }
 
-    bool TypeRegistry::isPointerType(const TypeId typeId) const {
-        return get(typeId).typeIsPointerType;
-    }
-
-
-    void *TypeRegistry::retain(const TypeId typeId, void *original) const {
-        return get(typeId).typeRetainFunction(original);
+    bool ValueTypeRegistry::isPointerType(const ValueTypeId valueTypeId) const {
+        return get(valueTypeId).typeIsPointerType;
     }
 
 
-    void TypeRegistry::release(const TypeId typeId, void *original) const {
-        get(typeId).typeReleaseFunction(original);
+    void *ValueTypeRegistry::retain(const ValueTypeId valueTypeId, void *original) const {
+        return get(valueTypeId).typeRetainFunction(original);
     }
 
 
-    TypeRegistry::HashFn TypeRegistry::getHashFunction(const TypeId typeId) const {
-        return get(typeId).typeHashFunction;
+    void ValueTypeRegistry::release(const ValueTypeId valueTypeId, void *original) const {
+        get(valueTypeId).typeReleaseFunction(original);
     }
 
 
-    TypeRegistry::EqualFn TypeRegistry::getEqualFunction(const TypeId typeId) const {
-        return get(typeId).typeEqualFunction;
+    ValueTypeRegistry::HashFn ValueTypeRegistry::getHashFunction(const ValueTypeId valueTypeId) const {
+        return get(valueTypeId).typeHashFunction;
     }
 
 
-    TypeRegistry::RetainFn TypeRegistry::defaultRetainFunction() {
+    ValueTypeRegistry::EqualFn ValueTypeRegistry::getEqualFunction(const ValueTypeId valueTypeId) const {
+        return get(valueTypeId).typeEqualFunction;
+    }
+
+
+    ValueTypeRegistry::RetainFn ValueTypeRegistry::defaultRetainFunction() {
         return [](void *ptr) {
             return ptr;
         };
     }
 
-    TypeRegistry::ReleaseFn TypeRegistry::defaultReleaseFunction() {
+    ValueTypeRegistry::ReleaseFn ValueTypeRegistry::defaultReleaseFunction() {
         return [](void *) {
         };
     }
 
-    const TypeRegistry::TypeRegistryEntry &TypeRegistry::get(const TypeId typeId) const {
-        const auto iter = mStorage.find(typeId);
+    const ValueTypeRegistry::ValueTypeRegistryEntry &ValueTypeRegistry::get(const ValueTypeId valueTypeId) const {
+        const auto iter = mStorage.find(valueTypeId);
         if (iter == mStorage.end()) {
-            throw std::invalid_argument("TypeRegistry: unknown typeId " + std::to_string(typeId));
+            throw std::invalid_argument("TypeRegistry: unknown typeId " + std::to_string(valueTypeId));
         }
         return iter->second;
     }
 
     // NOLINTNEXTLINE(readability-function-size)
-    void TypeRegistry::registerBuiltin() {
+    void ValueTypeRegistry::registerBuiltin() {
         registerType(
-            std::to_underlying(shared::types::BuiltinType::BOOL), "bool",
+            std::to_underlying(shared::types::BuiltinValueType::BOOL), "bool",
             sizeof(bool),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getInt1Ty(ctx);
@@ -149,7 +149,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::INT8), "int8",
+            std::to_underlying(shared::types::BuiltinValueType::INT8), "int8",
             sizeof(std::int8_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getInt8Ty(ctx);
@@ -169,7 +169,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::INT16), "int16",
+            std::to_underlying(shared::types::BuiltinValueType::INT16), "int16",
             sizeof(std::int16_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getInt16Ty(ctx);
@@ -189,7 +189,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::INT32), "int32",
+            std::to_underlying(shared::types::BuiltinValueType::INT32), "int32",
             sizeof(std::int32_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getInt32Ty(ctx);
@@ -209,7 +209,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::INT64), "int64",
+            std::to_underlying(shared::types::BuiltinValueType::INT64), "int64",
             sizeof(std::int64_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getInt64Ty(ctx);
@@ -229,7 +229,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::FLOAT), "float",
+            std::to_underlying(shared::types::BuiltinValueType::FLOAT), "float",
             sizeof(std::float_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getFloatTy(ctx);
@@ -256,7 +256,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerType(
-            std::to_underlying(shared::types::BuiltinType::DOUBLE), "double",
+            std::to_underlying(shared::types::BuiltinValueType::DOUBLE), "double",
             sizeof(std::double_t),
             [](llvm::LLVMContext &ctx) {
                 return llvm::Type::getDoubleTy(ctx);
@@ -283,7 +283,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         );
 
         registerPtrType(
-            std::to_underlying(shared::types::BuiltinType::STRING), "string",
+            std::to_underlying(shared::types::BuiltinValueType::STRING), "string",
             sizeof(const char *),
             [](llvm::LLVMContext &ctx) {
                 return llvm::PointerType::getUnqual(ctx);

@@ -8,12 +8,12 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 
-#include <core/shared/type/type_id.h>
+#include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::core::physical::types {
-    class TypeRegistry {
+    class ValueTypeRegistry {
     public:
-    	using TypeId = shared::types::TypeId;
+    	using ValueTypeId = shared::types::ValueTypeId;
 
         using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
 
@@ -27,10 +27,10 @@ namespace sierra::odyplan::v3::core::physical::types {
 
         using EqualFn = std::function<bool(const std::byte*, const std::byte*)>;
 
-        [[nodiscard]] static TypeRegistry withBuiltins();
+        [[nodiscard]] static ValueTypeRegistry withBuiltins();
 
         void registerType(
-            TypeId typeId,
+            ValueTypeId valueTypeId,
             std::string typeName,
             std::size_t typeByteSize,
             LLVMTypeFactory typeLLVMFactory,
@@ -40,7 +40,7 @@ namespace sierra::odyplan::v3::core::physical::types {
 		);
 
         void registerPtrType(
-            TypeId typeId,
+            ValueTypeId valueTypeId,
             std::string typeName,
             std::size_t typeByteSize,
             LLVMTypeFactory typeLLVMFactory,
@@ -52,30 +52,30 @@ namespace sierra::odyplan::v3::core::physical::types {
 		);
 
         [[nodiscard]] llvm::Type* resolveType(
-			TypeId typeId,
+			ValueTypeId valueTypeId,
 			llvm::LLVMContext& llvmCtx
 		) const;
 
 		[[nodiscard]] llvm::Value* compileConstant(
-			TypeId typeId,
+			ValueTypeId valueTypeId,
 			llvm::IRBuilder<>& llvmBuilder,
 			const std::string& value
 		) const;
 
-		[[nodiscard]] std::size_t getByteSize(TypeId typeId) const;
+		[[nodiscard]] std::size_t getByteSize(ValueTypeId valueTypeId) const;
 
-		[[nodiscard]] bool isPointerType(TypeId typeId) const;
+		[[nodiscard]] bool isPointerType(ValueTypeId valueTypeId) const;
 
-		[[nodiscard]] void* retain(TypeId typeId, void* original) const;
+		[[nodiscard]] void* retain(ValueTypeId valueTypeId, void* original) const;
 
-		void release(TypeId typeId, void* original) const;
+		void release(ValueTypeId valueTypeId, void* original) const;
 
-		[[nodiscard]] HashFn getHashFunction(TypeId typeId) const;
+		[[nodiscard]] HashFn getHashFunction(ValueTypeId valueTypeId) const;
 
-		[[nodiscard]] EqualFn getEqualFunction(TypeId typeId) const;
+		[[nodiscard]] EqualFn getEqualFunction(ValueTypeId valueTypeId) const;
 
     private:
-        struct TypeRegistryEntry {
+        struct ValueTypeRegistryEntry {
             std::string typeName;
             std::size_t typeByteSize;
             bool typeIsPointerType;
@@ -87,13 +87,13 @@ namespace sierra::odyplan::v3::core::physical::types {
             EqualFn typeEqualFunction;
         };
 
-        std::unordered_map<TypeId, TypeRegistryEntry> mStorage;
+        std::unordered_map<ValueTypeId, ValueTypeRegistryEntry> mStorage;
 
         [[nodiscard]] static RetainFn defaultRetainFunction();
 
         [[nodiscard]] static ReleaseFn defaultReleaseFunction();
 
-        [[nodiscard]] const TypeRegistryEntry& get(TypeId typeId) const;
+        [[nodiscard]] const ValueTypeRegistryEntry& get(ValueTypeId valueTypeId) const;
 
     	void registerBuiltin();
     };
