@@ -1,7 +1,7 @@
 #include <stdexcept>
-#include <core/logical/operators/sinks/sink_operator.h>
+#include <core/logical/operators/sink/sink_operator.h>
 
-namespace sierra::odyplan::v3::core::logical::operators::sinks {
+namespace sierra::odyplan::v3::core::logical::operators::sink {
     bool ISinkOperator::hasInputPorts() const {
         return true;
     }

@@ -1,19 +1,19 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLES_BINDABLE_OPERATOR_HPP
-#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLES_BINDABLE_OPERATOR_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLE_BINDABLE_OPERATOR_HPP
+#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLE_BINDABLE_OPERATOR_HPP
 
 #include <core/shared/identifiers/port_id.h>
-#include <core/logical/ports/port.h>
+#include <core/logical/port/port.h>
 
-namespace sierra::odyplan::v3::core::logical::plans {
+namespace sierra::odyplan::v3::core::logical::plan {
     class Plan;
 }
 
-namespace sierra::odyplan::v3::core::logical::operators::bindables {
+namespace sierra::odyplan::v3::core::logical::operators::bindable {
     class IBindableOperator {
-        friend class plans::Plan;
+        friend class plan::Plan;
     public:
     	using PortId = shared::identifiers::PortId;
-        using Port = ports::Port;
+        using Port = port::Port;
 
         IBindableOperator() = default;
 
@@ -33,4 +33,4 @@ namespace sierra::odyplan::v3::core::logical::operators::bindables {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLES_BINDABLE_OPERATOR_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_BINDABLE_BINDABLE_OPERATOR_HPP

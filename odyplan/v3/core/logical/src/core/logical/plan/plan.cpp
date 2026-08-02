@@ -1,8 +1,9 @@
 #include <algorithm>
 #include <stdexcept>
-#include <core/logical/plans/plan.h>
+#include <unordered_set>
+#include <core/logical/plan/plan.h>
 
-namespace sierra::odyplan::v3::core::logical::plans {
+namespace sierra::odyplan::v3::core::logical::plan {
     void Plan::connect(const OperatorPortReference& fromOperator, const OperatorPortReference& toOperator) {
         validateConnectionRequest(fromOperator, toOperator);
 

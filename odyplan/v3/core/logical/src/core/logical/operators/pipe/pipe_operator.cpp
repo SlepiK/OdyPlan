@@ -1,6 +1,6 @@
-#include <core/logical/operators/pipes/pipe_operator.h>
+#include <core/logical/operators/pipe/pipe_operator.h>
 
-namespace sierra::odyplan::v3::core::logical::operators::pipes {
+namespace sierra::odyplan::v3::core::logical::operators::pipe {
     bool IPipeOperator::hasInputPorts() const {
         return true;
     }

@@ -2,7 +2,7 @@
 #define SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_IOPERATOR_HPP
 
 #include <core/shared/types/operator_type_id.h>
-#include <core/logical/ports/port.h>
+#include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::core::builder {
     class PlanBuilder;
@@ -18,7 +18,7 @@ namespace sierra::odyplan::v3::core::logical::operators {
         friend class builder::PlanBuilder;
     public:
         using OperatorTypeId = shared::types::OperatorTypeId;
-        using Ports = ports::Ports;
+        using Ports = port::Ports;
 
         IOperator() = default;
 

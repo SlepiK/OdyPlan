@@ -1,6 +1,6 @@
-#include <core/logical/operators/sources/source_operator.h>
+#include <core/logical/operators/source/source_operator.h>
 
-namespace sierra::odyplan::v3::core::logical::operators::sources {
+namespace sierra::odyplan::v3::core::logical::operators::source {
     bool ISourceOperator::hasInputPorts() const {
         return false;
     }

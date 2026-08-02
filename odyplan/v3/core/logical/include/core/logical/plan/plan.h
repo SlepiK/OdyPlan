@@ -1,24 +1,23 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLANS_PLAN_HPP
-#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLANS_PLAN_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLAN_PLAN_HPP
+#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLAN_PLAN_HPP
 
 #include <vector>
-#include <unordered_set>
 #include <unordered_map>
 #include <memory>
 
 #include <core/logical/operators/operator_port_reference.h>
 #include <core/logical/operators/operator_port_reference_connection.h>
 #include <core/shared/identifiers/operator_id.h>
-#include <core/logical/operators/bindables/bindable_operator.h>
+#include <core/logical/operators/bindable/bindable_operator.h>
 #include <core/logical/operators/operator.h>
 
-namespace sierra::odyplan::v3::core::logical::plans {
+namespace sierra::odyplan::v3::core::logical::plan {
     class Plan {
     public:
         using OperatorId = shared::identifiers::OperatorId;
         using OperatorPortReference = operators::OperatorPortReference;
         using OperatorPortReferenceConnection = operators::OperatorPortReferenceConnection;
-        using IBindableOperator = operators::bindables::IBindableOperator;
+        using IBindableOperator = operators::bindable::IBindableOperator;
         using IOperator = operators::IOperator;
 
         template <typename T>
@@ -66,4 +65,4 @@ namespace sierra::odyplan::v3::core::logical::plans {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLANS_PLAN_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLAN_PLAN_HPP

@@ -1,10 +1,10 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORTS_PORT_DESCRIPTION_HPP
-#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORTS_PORT_DESCRIPTION_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
+#define SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
 
 #include <string>
 #include <core/shared/types/value_type_id.h>
 
-namespace sierra::odyplan::v3::core::logical::ports {
+namespace sierra::odyplan::v3::core::logical::port {
     struct PortDescription {
         using ValueTypeId = shared::types::ValueTypeId;
         using PortTypeJsonName = std::string;
@@ -18,4 +18,4 @@ namespace sierra::odyplan::v3::core::logical::ports {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORTS_PORT_DESCRIPTION_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
