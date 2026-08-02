@@ -4,6 +4,10 @@
 #include <core/shared/types/operator_type_id.h>
 #include <core/logical/ports/port.h>
 
+namespace sierra::odyplan::v3::core::builder {
+    class PlanBuilder;
+}
+
 namespace sierra::odyplan::v3::core::logical::plans {
     class Plan;
 }
@@ -11,7 +15,7 @@ namespace sierra::odyplan::v3::core::logical::plans {
 namespace sierra::odyplan::v3::core::logical::operators {
     class IOperator {
         friend class plans::Plan;
-        //friend class builder::PlanBuilder;
+        friend class builder::PlanBuilder;
     public:
         using OperatorTypeId = shared::types::OperatorTypeId;
         using Ports = ports::Ports;
