@@ -4,10 +4,13 @@
 #include <core/shared/identifiers/port_id.h>
 #include <core/logical/ports/port.h>
 
+namespace sierra::odyplan::v3::core::logical::plans {
+    class Plan;
+}
 
 namespace sierra::odyplan::v3::core::logical::operators::bindables {
     class IBindableOperator {
-        //friend class plan::Plan;
+        friend class plans::Plan;
     public:
     	using PortId = shared::identifiers::PortId;
         using Port = ports::Port;
