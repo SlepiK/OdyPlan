@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace sierra::odyplan::v3::core::shared::operators {
+namespace sierra::odyplan::v3::core::shared::types {
     using OperatorTypeId = std::uint8_t;
 
     enum class BuiltinOperatorType : OperatorTypeId {
