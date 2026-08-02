@@ -38,6 +38,17 @@ else()
 endif()
 
 function(odyplan_link_llvm TARGET_NAME VISIBILITY)
+    target_include_directories(${TARGET_NAME} SYSTEM ${VISIBILITY}
+            ${LLVM_INCLUDE_DIRS}
+    )
+
+    separate_arguments(_llvm_defs_list UNIX_COMMAND "${LLVM_DEFINITIONS}")
+    if(_llvm_defs_list)
+        target_compile_definitions(${TARGET_NAME} ${VISIBILITY}
+                ${_llvm_defs_list}
+        )
+    endif()
+
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         target_link_libraries(${TARGET_NAME} ${VISIBILITY}
                 -Wl,--start-group
