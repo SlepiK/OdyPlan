@@ -2,8 +2,9 @@
 #define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_CONSUMER_HPP
 
 #include <core/physical/segment/segment_context.h>
-#include <core/physical/data/data_consumer.h>
+#include <core/physical/segment/segment_data_consumer.h>
 #include <core/physical/data/data_package.h>
+#include <core/shared/identifiers/port_id.h>
 
 namespace sierra::odyplan::v3::core::physical::flow {
     class IConsumer {
@@ -14,8 +15,8 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IConsumer& operator =(IConsumer const&) = delete;
         IConsumer(IConsumer&&) = delete;
         IConsumer& operator=(IConsumer&&) = delete;
-        virtual void consume(segment::SegmentContext& segmentCtx, common::identifier::PortId inputPort, const data::DataPackage& data, const data::DataConsumers& consumers) = 0;
-        virtual void end(segment::SegmentContext& segmentCtx, common::identifier::PortId inputPort, const data::DataConsumers& consumers) {
+        virtual void consume(segment::SegmentContext& segmentCtx, shared::identifiers::PortId inputPort, const data::DataPackage& data, const segment::SegmentDataConsumers& consumers) = 0;
+        virtual void end(segment::SegmentContext& segmentCtx, shared::identifiers::PortId inputPort, const segment::SegmentDataConsumers& consumers) {
         }
     };
 }

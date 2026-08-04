@@ -1,8 +1,13 @@
-//
-// Created by simon on 04.08.26.
-//
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SINK_TYPED_SINK_OPERATOR_HPP
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SINK_TYPED_SINK_OPERATOR_HPP
 
-#ifndef ODYPLAN_TYPED_SINK_OPERATOR_H
-#define ODYPLAN_TYPED_SINK_OPERATOR_H
+#include <core/physical/operators/sink/sink_operator.h>
 
-#endif //ODYPLAN_TYPED_SINK_OPERATOR_H
+namespace sierra::odyplan::v3::core::physical::operators::sink {
+    class TypedSinkOperator : public ISinkOperator {
+    public:
+        explicit TypedSinkOperator(port::Port inputPort);
+    };
+}
+
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SINK_TYPED_SINK_OPERATOR_HPP

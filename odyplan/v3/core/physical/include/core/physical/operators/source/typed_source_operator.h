@@ -1,8 +1,13 @@
-//
-// Created by simon on 04.08.26.
-//
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP
 
-#ifndef ODYPLAN_TYPED_SOURCE_OPERATOR_H
-#define ODYPLAN_TYPED_SOURCE_OPERATOR_H
+#include <core/physical/operators/source/source_operator.h>
 
-#endif //ODYPLAN_TYPED_SOURCE_OPERATOR_H
+namespace sierra::odyplan::v3::core::physical::operators::source {
+    class TypedSourceOperator : public ISourceOperator {
+    public:
+        explicit TypedSourceOperator(port::Port outputPort);
+    };
+}
+
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP
