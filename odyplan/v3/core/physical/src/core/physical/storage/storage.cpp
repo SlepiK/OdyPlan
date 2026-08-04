@@ -1,6 +1,6 @@
-#include <core/physical/storages/storage.h>
+#include <core/physical/storage/storage.h>
 
-namespace sierra::odyplan::v3::core::physical::storages {
+namespace sierra::odyplan::v3::core::physical::storage {
     Storage::Storage(llvm::Function& fn, llvm::LLVMContext& ctx, const types::ValueTypeRegistry& valueTypeRegistry)
         : mFn(&fn), mCtx(&ctx), mValueTypeRegistry(&valueTypeRegistry) {
     }

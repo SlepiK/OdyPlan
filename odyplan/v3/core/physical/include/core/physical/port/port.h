@@ -6,7 +6,7 @@
 #include <core/physical/port/port_description.h>
 
 namespace sierra::odyplan::v3::core::physical::port {
-    using Port = std::vector<PortDescriptor>;
+    using Port = std::vector<PortDescription>;
     using Ports = std::vector<Port>;
 }
 

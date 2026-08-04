@@ -1,19 +1,34 @@
 #include <core/physical/operators/operator.h>
 
 namespace sierra::odyplan::v3::core::physical::operators {
-    [[nodiscard]] virtual bool isSegmentBreaker() const;
+    bool IOperator::isSegmentBreaker() const {
+        return false;
+    }
 
-    [[nodiscard]] const port::Ports& getInputPorts() const;
+    const port::Ports& IOperator::getInputPorts() const {
+        return mInputPorts;
+    }
 
-    [[nodiscard]] const port::Ports& getOutputPorts() const;
+    const port::Ports& IOperator::getOutputPorts() const {
+        return mOutputPorts;
+    }
 
-    virtual void declareState(state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context);
+    void IOperator::declareState(state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context) {
+    }
 
-    [[nodiscard]] common::identifier::OperatorId getId() const;
+    shared::identifiers::OperatorId IOperator::getId() const {
+        return mId;
+    }
 
-    void setId(const common::identifier::OperatorId id);
+    void IOperator::setId(const shared::identifiers::OperatorId id) {
+        mId = id;
+    }
 
-    port::Ports& getInputPortsRef();
+    port::Ports& IOperator::getInputPortsRef() {
+        return mInputPorts;
+    }
 
-    port::Ports& getOutputPortsRef();
+    port::Ports& IOperator::getOutputPortsRef() {
+        return mOutputPorts;
+    }
 }

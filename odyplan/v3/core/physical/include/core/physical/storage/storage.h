@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGES_STORAGE_H
-#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGES_STORAGE_H
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGE_STORAGE_H
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGE_STORAGE_H
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
@@ -8,7 +8,7 @@
 
 #include <core/shared/types/value_type_id.h>
 
-namespace sierra::odyplan::v3::core::physical::storages {
+namespace sierra::odyplan::v3::core::physical::storage {
     class Storage {
     public:
     	using ValueTypeId = shared::types::ValueTypeId;
@@ -24,8 +24,8 @@ namespace sierra::odyplan::v3::core::physical::storages {
 
         std::unordered_map<ValueTypeId, llvm::AllocaInst*> mSlots;
 
-        [[nodiscard]] llvm::AllocaInst* createAlloca(const ValueTypeId valueTypeId) const;
+        [[nodiscard]] llvm::AllocaInst* createAlloca(ValueTypeId valueTypeId) const;
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGES_STORAGE_H
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STORAGE_STORAGE_H

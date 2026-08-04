@@ -1,8 +1,9 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_IOPERATOR_HPP
 #define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_IOPERATOR_HPP
 
-#include <core/shared/types/operator_type_id.h>
+#include <core/shared/identifiers/operator_id.h>
 #include <core/physical/operators/operator_role.h>
+#include <core/physical/state/state_registry.h>
 #include <core/physical/port/port.h>
 
 namespace sierra::odyplan::v3::core::physical::operators {
@@ -36,14 +37,14 @@ namespace sierra::odyplan::v3::core::physical::operators {
 
         virtual void declareState(state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context);
 
-        [[nodiscard]] common::identifier::OperatorId getId() const;
+        [[nodiscard]] shared::identifiers::OperatorId getId() const;
 
-        void setId(const common::identifier::OperatorId id);
+        void setId(shared::identifiers::OperatorId id);
 
     private:
         Ports mInputPorts;
         Ports mOutputPorts;
-        common::identifier::OperatorId mId = 0;
+        shared::identifiers::OperatorId mId = 0;
 
     protected:
         Ports& getInputPortsRef();
