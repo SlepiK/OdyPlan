@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_IOPERATOR_HPP
-#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_IOPERATOR_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_OPERATOR_HPP
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_OPERATOR_HPP
 
 #include <core/shared/identifiers/operator_id.h>
 #include <core/physical/operators/operator_role.h>
@@ -53,4 +53,4 @@ namespace sierra::odyplan::v3::core::physical::operators {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_IOPERATOR_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_OPERATOR_HPP

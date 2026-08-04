@@ -12,9 +12,9 @@ namespace sierra::odyplan::v3::core::physical::data {
 
         [[nodiscard]] std::size_t size() const;
 
-        [[nodiscard]] llvm::Value* at(const std::size_t index) const;
+        [[nodiscard]] llvm::Value* at(std::size_t index) const;
 
-        [[nodiscard]] llvm::Value* operator[](const std::size_t index) const;
+        [[nodiscard]] llvm::Value* operator[](std::size_t index) const;
 
         [[nodiscard]] auto begin() const;
 
@@ -22,7 +22,7 @@ namespace sierra::odyplan::v3::core::physical::data {
 
         void pushBack(llvm::Value* value);
 
-        void reserve(const std::size_t size);
+        void reserve(std::size_t size);
     };
 }
 

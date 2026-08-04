@@ -1,0 +1,8 @@
+//
+// Created by simon on 04.08.26.
+//
+
+#ifndef ODYPLAN_TYPED_PIPE_OPERATOR_H
+#define ODYPLAN_TYPED_PIPE_OPERATOR_H
+
+#endif //ODYPLAN_TYPED_PIPE_OPERATOR_H

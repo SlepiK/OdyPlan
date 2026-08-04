@@ -1,0 +1,8 @@
+//
+// Created by simon on 04.08.26.
+//
+
+#ifndef ODYPLAN_SOURCE_OPERATOR_H
+#define ODYPLAN_SOURCE_OPERATOR_H
+
+#endif //ODYPLAN_SOURCE_OPERATOR_H
