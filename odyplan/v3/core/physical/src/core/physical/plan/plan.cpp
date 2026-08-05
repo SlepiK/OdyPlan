@@ -51,11 +51,11 @@ namespace sierra::odyplan::v3::core::physical::plan {
             }
         }
 
-        segment::SegmentDataConsumer noopConsumer = [](segment::SegmentContext&, const data::DataPackage&) {};
+        segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&, const data::DataPackage&) {};
 
         detail::PlanConstruction detailBuilder{.chains=mChains, .outgoingEdges=mOutgoingEdges, .inDegree=inDegreeCache,
-            .noopConsumer=noopConsumer, .module=module, .ctx=ctx, .functions=functions, .valueTypeRegistry=mValueTypeRegistry,
-            .ioRestartRoots=ioFunctionsRestart, .computeRestartRoots=computeFunctionsRestart};
+            .noopConsumer=noopConsumer, .module=&module, .ctx=&ctx, .functions=&functions, .valueTypeRegistry=mValueTypeRegistry,
+            .ioRestartRoots=&ioFunctionsRestart, .computeRestartRoots=&computeFunctionsRestart};
 
         for (const auto& [id, chain] : mChains) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {

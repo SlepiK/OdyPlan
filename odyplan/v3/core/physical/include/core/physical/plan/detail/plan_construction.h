@@ -22,17 +22,17 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         using OperatorPortReferenceConnection = shared::operators::OperatorPortReferenceConnection;
         using IOperator = operators::IOperator;
 
-        const std::unordered_map<OperatorId, segment::Segment>& chains;
-        const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>& outgoingEdges;
-        const std::unordered_map<OperatorId, std::size_t>& inDegree;
-        const segment::SegmentDataConsumer& noopConsumer;
-        llvm::Module& module;
-        llvm::LLVMContext& ctx;
-        std::vector<llvm::Function*>& functions;
+        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> chains;
+        std::reference_wrapper<const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingEdges;
+        std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegree;
+        std::reference_wrapper<const segment::SegmentDataConsumer> noopConsumer;
+        llvm::Module* module;
+        llvm::LLVMContext* ctx;
+        std::vector<llvm::Function*>* functions;
         const types::ValueTypeRegistry* valueTypeRegistry;
 
-        std::vector<llvm::Function*>& ioRestartRoots;
-        std::vector<llvm::Function*>& computeRestartRoots;
+        std::vector<llvm::Function*>* ioRestartRoots;
+        std::vector<llvm::Function*>* computeRestartRoots;
 
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> exitCache;
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> afterEntryCache;

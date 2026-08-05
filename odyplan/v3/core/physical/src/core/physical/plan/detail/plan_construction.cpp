@@ -6,10 +6,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.at(operatorId);
-        const auto edgeIt = outgoingEdges.find(operatorId);
+        const auto& chain = chains.get().at(operatorId);
+        const auto edgeIt = outgoingEdges.get().find(operatorId);
         static const std::vector<OperatorPortReferenceConnection> emptyEdges{};
-        const auto& outEdges = edgeIt != outgoingEdges.end() ? edgeIt->second : emptyEdges;
+        const auto& outEdges = edgeIt != outgoingEdges.get().end() ? edgeIt->second : emptyEdges;
 
         std::unordered_map<shared::identifiers::PortId, std::vector<OperatorPortReferenceConnection>> byPort;
         for (const auto& edge : outEdges) {
@@ -48,25 +48,25 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
     void PlanConstruction::spawnBlockingRoot(const OperatorId operatorId, const std::string& suffix,
             flow::IProducer* producer, const segment::SegmentDataConsumers& next) {
-            auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
+            auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx), {}, false);
             auto* fn = llvm::Function::Create(fnType, llvm::Function::ExternalLinkage,
-                "ody_root_blocking_" + std::to_string(operatorId) + "_" + suffix, &module);
-            auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
+                "ody_root_blocking_" + std::to_string(operatorId) + "_" + suffix, module);
+            auto* entryBB = llvm::BasicBlock::Create(*ctx, "basicEntry", fn);
 
-            segment::SegmentContext segmentContext(fn, entryBB, ctx, *valueTypeRegistry);
+            segment::SegmentContext segmentContext(fn, entryBB, *ctx, *valueTypeRegistry);
             producer->produce(segmentContext, next);
             segmentContext.builder.CreateRetVoid();
 
             if (producer->isComputeBound()) {
-                computeRestartRoots.push_back(fn);
+                computeRestartRoots->push_back(fn);
             } else {
-                ioRestartRoots.push_back(fn);
+                ioRestartRoots->push_back(fn);
             }
     }
 
     segment::SegmentDataConsumer PlanConstruction::buildEnter(const OperatorPortReferenceConnection& edge) {
         const auto id = edge.toOperatorPortReference.operatorId;
-        const auto& chain = chains.at(id);
+        const auto& chain = chains.get().at(id);
         const auto inputIndex = edge.toOperatorPortReference.portId;
 
         flow::IConsumer* entryOpr = chain.nodes.front().asConsumer;
@@ -85,7 +85,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.at(operatorId);
+        const auto& chain = chains.get().at(operatorId);
 
         segment::SegmentDataConsumers rest;
 
@@ -95,8 +95,8 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             rest = {buildContinue(operatorId, chain, 1)};
         }
 
-        const auto degreeIt = inDegree.find(operatorId);
-        const auto degree = degreeIt != inDegree.end() ? degreeIt->second : std::size_t{0};
+        const auto degreeIt = inDegree.get().find(operatorId);
+        const auto degree = degreeIt != inDegree.get().end() ? degreeIt->second : std::size_t{0};
         if (degree > 1) {
             if (chain.nodes.size() > 1 && chain.exitSchemas.size() > 1) {
                 throw std::logic_error("Plan::codegen: Operation transform from a logical operator with > 1 Inputs to more then 1 physical operator is not supported!");
@@ -122,7 +122,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
     segment::SegmentDataConsumer PlanConstruction::buildContinue(const OperatorId operatorId, const segment::Segment& chain, const std::size_t index) {
         if (index >= chain.nodes.size()) {
             const auto exit = buildExit(operatorId);
-            return exit.empty() ? noopConsumer : exit.front();
+            return exit.empty() ? noopConsumer.get() : exit.front();
         }
 
         const auto& node = chain.nodes[index];
@@ -147,7 +147,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
     segment::SegmentDataConsumer PlanConstruction::compileAsFunction(const OperatorId operatorId,
         const shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner) {
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i64Ty = llvm::Type::getInt64Ty(*ctx);
 
         std::vector<llvm::Type*> paramTypes;
         paramTypes.reserve(portSchema.size() + 1);
@@ -156,11 +156,11 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             paramTypes.push_back(descriptor.llvmType);
         }
 
-        auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), paramTypes, false);
-        auto* fn = llvm::Function::Create(fnType, llvm::Function::InternalLinkage, "ody_fanin_exit_" + std::to_string(operatorId) + "_" + std::to_string(portId), &module);
-        auto* entryBB = llvm::BasicBlock::Create(ctx, "fanInEntry", fn);
+        auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx), paramTypes, false);
+        auto* fn = llvm::Function::Create(fnType, llvm::Function::InternalLinkage, "ody_fanin_exit_" + std::to_string(operatorId) + "_" + std::to_string(portId), module);
+        auto* entryBB = llvm::BasicBlock::Create(*ctx, "fanInEntry", fn);
 
-        segment::SegmentContext segmentContext(fn, entryBB, ctx, *valueTypeRegistry);
+        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *valueTypeRegistry);
 
         data::DataPackage reconstructed;
         reconstructed.timestamp = fn->getArg(0);
