@@ -1,1 +1,0 @@
-#include <core/logical/operators/sink/typed_sink_operator.h>

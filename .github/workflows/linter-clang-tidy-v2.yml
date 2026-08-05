@@ -60,23 +60,12 @@ jobs:
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
-            -DLLVM_INSTALL_DIR=$HOME/llvm-22
+            -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
+            -DENABLE_TOOLING=ON \
+            -DENABLE_CLANG_TIDY=ON
           
-      - name: Run clang-tidy
-        run: |
-          if [[ ! -d odyplan/v3/core ]]; then
-            echo "No v3/core directory found. Skipping clang-tidy."
-            exit 0
-          fi
-            
-          FILES=$(find odyplan/v3/core/*/include -type f -name '*.h' 2>/dev/null)
-            
-          if [[ -z "$FILES" ]]; then
-            echo "No header files found. Skipping clang-tidy."
-            exit 0
-          fi
-            
-          echo "$FILES" | xargs clang-tidy -p build \
-            --header-filter='odyplan/v3/core/.*/include/.*' \
-            --warnings-as-errors='*'
+      - name: Configure
+        run: cmake -S . -B build -DENABLE_TOOLING=ON -DENABLE_CLANG_TIDY=ON -DLLVM_INSTALL_DIR=...
 
+      - name: Run clang-tidy
+        run: cmake --build build --target tidy
