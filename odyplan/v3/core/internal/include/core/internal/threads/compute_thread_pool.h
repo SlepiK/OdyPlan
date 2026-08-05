@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_WORK_THREAD_POOL_HPP
-#define SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_WORK_THREAD_POOL_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP
+#define SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP
 
 #include <condition_variable>
 #include <cstdint>
@@ -12,18 +12,18 @@
 #include <core/internal/tasks/task.h>
 
 namespace sierra::odyplan::v3::core::internal::threads {
-	class WorkThreadPool {
+	class ComputeThreadPool {
 	public:
 		using Task = tasks::Task;
 
-		explicit WorkThreadPool(std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
+		explicit ComputeThreadPool(std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
 
-		~WorkThreadPool();
+		~ComputeThreadPool();
 
-		WorkThreadPool(const WorkThreadPool&) = delete;
-        WorkThreadPool& operator=(const WorkThreadPool&) = delete;
-        WorkThreadPool(WorkThreadPool&&) = delete;
-        WorkThreadPool& operator=(WorkThreadPool&&) = delete;
+		ComputeThreadPool(const ComputeThreadPool&) = delete;
+        ComputeThreadPool& operator=(const ComputeThreadPool&) = delete;
+        ComputeThreadPool(ComputeThreadPool&&) = delete;
+        ComputeThreadPool& operator=(ComputeThreadPool&&) = delete;
 
 		std::future<void> submitTask(Task task);
 
@@ -45,4 +45,4 @@ namespace sierra::odyplan::v3::core::internal::threads {
 	};
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_WORK_THREAD_POOL_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP

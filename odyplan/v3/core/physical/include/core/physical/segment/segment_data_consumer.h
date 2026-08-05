@@ -5,7 +5,7 @@
 #include <core/physical/data/data_package.h>
 
 namespace sierra::odyplan::v3::core::physical::segment {
-    using SegmentDataConsumer = std::function<void(SegmentContext& , const data::DataPackage&)>;
+    using SegmentDataConsumer = std::function<void(SegmentContext&, const data::DataPackage&)>;
     using SegmentDataConsumers = std::vector<SegmentDataConsumer>;
 }
 

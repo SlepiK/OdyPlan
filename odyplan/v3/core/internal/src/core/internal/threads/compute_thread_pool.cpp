@@ -1,7 +1,7 @@
-#include <core/internal/threads/work_thread_pool.h>
+#include <core/internal/threads/compute_thread_pool.h>
 
 namespace sierra::odyplan::v3::core::internal::threads {
-    WorkThreadPool::WorkThreadPool(const std::size_t poolSize)
+    ComputeThreadPool::ComputeThreadPool(const std::size_t poolSize)
         : mQueueMutexes(poolSize), mQueues(poolSize){
         mWorkers.reserve(poolSize);
         for (std::size_t i = 0; i < poolSize; ++i) {
@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::core::internal::threads {
         }
     }
 
-    WorkThreadPool::~WorkThreadPool() {
+    ComputeThreadPool::~ComputeThreadPool() {
         mShutdown.store(true, std::memory_order_release);
         mWakeCV.notify_all();
         for (auto& worker : mWorkers) {
@@ -19,7 +19,7 @@ namespace sierra::odyplan::v3::core::internal::threads {
         }
     }
 
-    std::future<void> WorkThreadPool::submitTask(Task task) {
+    std::future<void> ComputeThreadPool::submitTask(Task task) {
         auto prom = std::make_shared<std::promise<void>>();
         std::future<void> fut = prom->get_future();
 
@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::core::internal::threads {
         return fut;
     }
 
-    void WorkThreadPool::workerLoop(std::size_t workerId) {
+    void ComputeThreadPool::workerLoop(std::size_t workerId) {
         std::mt19937 rng(std::random_device{}());
 
         while (!mShutdown.load(std::memory_order_acquire)) {
@@ -57,7 +57,7 @@ namespace sierra::odyplan::v3::core::internal::threads {
         }
     }
 
-    bool WorkThreadPool::tryPopOwn(const std::size_t workerId, Task& task) {
+    bool ComputeThreadPool::tryPopOwn(const std::size_t workerId, Task& task) {
         const std::scoped_lock lock(mQueueMutexes.at(workerId));
         if (mQueues.at(workerId).empty()) {
             return false;
@@ -67,7 +67,7 @@ namespace sierra::odyplan::v3::core::internal::threads {
         return true;
     }
 
-    bool WorkThreadPool::trySteal(const std::size_t workerId, Task& task, std::mt19937& rng) {
+    bool ComputeThreadPool::trySteal(const std::size_t workerId, Task& task, std::mt19937& rng) {
         const auto scale = mQueues.size();
         if (scale <= 1) {
             return false;

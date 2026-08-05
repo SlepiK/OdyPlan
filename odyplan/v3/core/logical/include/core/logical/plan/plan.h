@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <memory>
 
-#include <core/logical/operators/operator_port_reference.h>
-#include <core/logical/operators/operator_port_reference_connection.h>
+#include <core/shared/operators/operator_port_reference.h>
+#include <core/shared/operators/operator_port_reference_connection.h>
 #include <core/shared/identifiers/operator_id.h>
 #include <core/logical/operators/bindable/bindable_operator.h>
 #include <core/logical/operators/operator.h>
@@ -15,8 +15,8 @@ namespace sierra::odyplan::v3::core::logical::plan {
     class Plan {
     public:
         using OperatorId = shared::identifiers::OperatorId;
-        using OperatorPortReference = operators::OperatorPortReference;
-        using OperatorPortReferenceConnection = operators::OperatorPortReferenceConnection;
+        using OperatorPortReference = shared::operators::OperatorPortReference;
+        using OperatorPortReferenceConnection = shared::operators::OperatorPortReferenceConnection;
         using IBindableOperator = operators::bindable::IBindableOperator;
         using IOperator = operators::IOperator;
 
