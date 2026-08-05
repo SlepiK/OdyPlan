@@ -1,6 +1,6 @@
-#include <core/internal/threads/compute_thread_pool.h>
+#include <core/internal/thread/compute_thread_pool.h>
 
-namespace sierra::odyplan::v3::core::internal::threads {
+namespace sierra::odyplan::v3::core::internal::thread {
     ComputeThreadPool::ComputeThreadPool(const std::size_t poolSize)
         : mQueueMutexes(poolSize), mQueues(poolSize){
         mWorkers.reserve(poolSize);

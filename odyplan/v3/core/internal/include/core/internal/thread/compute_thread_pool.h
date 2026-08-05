@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP
-#define SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_COMPUTE_THREAD_POOL_HPP
+#define SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_COMPUTE_THREAD_POOL_HPP
 
 #include <condition_variable>
 #include <cstdint>
@@ -9,12 +9,12 @@
 #include <cstddef>
 #include <random>
 
-#include <core/internal/tasks/task.h>
+#include <core/internal/task/task.h>
 
-namespace sierra::odyplan::v3::core::internal::threads {
+namespace sierra::odyplan::v3::core::internal::thread {
 	class ComputeThreadPool {
 	public:
-		using Task = tasks::Task;
+		using Task = task::Task;
 
 		explicit ComputeThreadPool(std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
 
@@ -45,4 +45,4 @@ namespace sierra::odyplan::v3::core::internal::threads {
 	};
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREADS_COMPUTE_THREAD_POOL_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_COMPUTE_THREAD_POOL_HPP

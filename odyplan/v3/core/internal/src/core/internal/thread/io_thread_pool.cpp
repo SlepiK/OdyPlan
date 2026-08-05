@@ -1,6 +1,6 @@
-#include <core/internal/threads/io_thread_pool.h>
+#include <core/internal/thread/io_thread_pool.h>
 
-namespace sierra::odyplan::v3::core::internal::threads {
+namespace sierra::odyplan::v3::core::internal::thread {
     IoThreadPool::~IoThreadPool() {
         {
             const std::scoped_lock lock(mMutex);
