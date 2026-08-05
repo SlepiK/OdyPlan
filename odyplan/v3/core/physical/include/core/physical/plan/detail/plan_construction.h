@@ -37,18 +37,18 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> exitCache;
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> afterEntryCache;
 
-        segment::SegmentDataConsumers buildExit(const OperatorId operatorId);
+        segment::SegmentDataConsumers buildExit(OperatorId operatorId);
 
-        void spawnBlockingRoot(const OperatorId operatorId, const std::string& suffix,
+        void spawnBlockingRoot(OperatorId operatorId, const std::string& suffix,
                 flow::IProducer* producer, const segment::SegmentDataConsumers& next);
 
         segment::SegmentDataConsumer buildEnter(const OperatorPortReferenceConnection& edge);
 
-        segment::SegmentDataConsumers afterEntry(const OperatorId operatorId);
+        segment::SegmentDataConsumers afterEntry(OperatorId operatorId);
 
-        segment::SegmentDataConsumer buildContinue(const OperatorId operatorId, const segment::Segment& chain, const std::size_t index);
+        segment::SegmentDataConsumer buildContinue(OperatorId operatorId, const segment::Segment& chain, std::size_t index);
 
-        segment::SegmentDataConsumer compileAsFunction(const OperatorId operatorId, const shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner);
+        segment::SegmentDataConsumer compileAsFunction(OperatorId operatorId, shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner);
     };
 }
 
