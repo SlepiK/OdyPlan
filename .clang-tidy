@@ -10,6 +10,7 @@ Checks: >
   misc-*,
   hicpp-*,
   -*include-cleaner,
+  -misc-multiple-inheritance
 
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,

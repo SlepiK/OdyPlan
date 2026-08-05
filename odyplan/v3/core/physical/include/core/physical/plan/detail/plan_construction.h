@@ -52,4 +52,4 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP
