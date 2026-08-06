@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
         return TYPE_ID;
     }
 
-    [[nodiscard]] const core::common::expression::IExpression &SelectOperator::getPredicate() const {
+    [[nodiscard]] const basic::expression::IExpression &SelectOperator::getPredicate() const {
         return *mPredicate;
     }
 
