@@ -40,7 +40,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         segment::SegmentDataConsumers buildExit(OperatorId operatorId);
 
         void spawnBlockingRoot(OperatorId operatorId, const std::string& suffix,
-                flow::IProducer* producer, const segment::SegmentDataConsumers& next);
+                flow::IProducer* producer, const segment::SegmentDataConsumers& next) const;
 
         segment::SegmentDataConsumer buildEnter(const OperatorPortReferenceConnection& edge);
 
@@ -48,7 +48,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         segment::SegmentDataConsumer buildContinue(OperatorId operatorId, const segment::Segment& chain, std::size_t index);
 
-        segment::SegmentDataConsumer compileAsFunction(OperatorId operatorId, shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner);
+        segment::SegmentDataConsumer compileAsFunction(OperatorId operatorId, shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner) const;
     };
 }
 
