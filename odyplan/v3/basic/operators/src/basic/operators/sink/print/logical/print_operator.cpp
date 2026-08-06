@@ -3,7 +3,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
     PrintOperator::PrintOperator(PortFieldIndexV indices)
-            : mPortFieldIndices(std::move(indices)) {
+        : mPortFieldIndices(std::move(indices)) {
     }
 
     PrintOperator::PrintOperator(PortFieldNameV names)
@@ -29,7 +29,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
                 auto iter = std::ranges::find_if(inputPort,
                                                  [&](const core::logical::port::PortDescription &pd) {
                                                      return pd.fieldName == name &&
-                                                            core::shared::types::isBuiltinValueTypePrintable(static_cast<core::shared::types::BuiltinValueType>(pd.valueTypeId));
+                                                            core::shared::types::isBuiltinValueTypePrintable(
+                                                                static_cast<core::shared::types::BuiltinValueType>(pd.
+                                                                    valueTypeId));
                                                  });
 
                 if (iter == inputPort.end()) {

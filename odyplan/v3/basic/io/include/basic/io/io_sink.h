@@ -2,7 +2,7 @@
 #define SIERRA_ODYPLAN_V3_BASIC_IO_IO_SINK_HPP
 
 #include <cstdint>
-#include <core/shared/types/value_type.h>
+#include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::basic::io {
     using IOSinkId = std::uint64_t;
