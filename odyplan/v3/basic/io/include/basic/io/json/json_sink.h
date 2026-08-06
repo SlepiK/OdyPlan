@@ -35,7 +35,7 @@ namespace sierra::odyplan::v3::basic::io::json {
         }
 
         void write(const char* key, const core::shared::types::ValueTypeId typeId, const void* rawData) override {
-            using T = core::shared::types::BuiltinOperatorType;
+            using T = core::shared::types::BuiltinValueType;
 
             // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             switch (typeId) {

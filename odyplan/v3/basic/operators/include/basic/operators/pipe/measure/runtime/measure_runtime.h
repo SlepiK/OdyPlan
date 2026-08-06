@@ -5,25 +5,25 @@
 #include <cstdint>
 #include <mutex>
 
-#include <basic/operators/pipe/measure/details/measure_state.h>
+#include <basic/operators/pipe/measure/runtime/details/measure_state.h>
 
 constexpr std::uint64_t MEASUREMENT_AFTER_LINES_REPORT = 2;
 
 extern "C" {
     inline void* rtCreateMeasure(const void* /*typeRegistry*/, const char* label) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        auto* state = new sierra::odyplan::v2::core::runtime::measure::MeasureState();
+        auto* state = new sierra::odyplan::v2::core::runtime::measure::details::MeasureState();
         state->label = label;
         return state;
     }
 
     inline void rtDestroyMeasure(void* measureState) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        delete static_cast<sierra::odyplan::v2::core::runtime::measure::MeasureState*>(measureState);
+        delete static_cast<sierra::odyplan::v2::core::runtime::measure::details::MeasureState*>(measureState);
     }
 
     inline void rtMeasureTick(void* measureState) {
-        auto* state = static_cast<sierra::odyplan::v2::core::runtime::measure::MeasureState*>(measureState);
+        auto* state = static_cast<sierra::odyplan::v2::core::runtime::measure::details::MeasureState*>(measureState);
         const auto n = state->counter.fetch_add(1, std::memory_order_relaxed) + 1;
 
         if (n % MEASUREMENT_AFTER_LINES_REPORT == 0) {
@@ -37,7 +37,7 @@ extern "C" {
     }
 
     inline void rtMeasureFinalReport(void* measureState) {
-        auto* state = static_cast<sierra::odyplan::v2::core::runtime::measure::MeasureState*>(measureState);
+        auto* state = static_cast<sierra::odyplan::v2::core::runtime::measure::details::MeasureState*>(measureState);
         const auto total = state->counter.load(std::memory_order_relaxed);
         const auto elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - state->start).count();
 
