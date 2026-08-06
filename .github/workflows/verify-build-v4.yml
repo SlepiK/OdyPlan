@@ -1,4 +1,4 @@
-name: verify-build-v4
+name: verify-build-v5
 on:
   pull_request:
     branches:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   clang-tidy:
-    name: verify-build v4
+    name: verify-build v5
     runs-on: ubuntu-24.04
 
     steps:
