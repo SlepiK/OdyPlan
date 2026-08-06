@@ -1,7 +1,7 @@
 #include <basic/operators/pipe/select/logical/select_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
-    SelectOperator::SelectOperator(std::unique_ptr<core::common::expression::IExpression> predicate)
+    SelectOperator::SelectOperator(std::unique_ptr<basic::expression::IExpression> predicate)
             : mPredicate(std::move(predicate)) {
     }
 
