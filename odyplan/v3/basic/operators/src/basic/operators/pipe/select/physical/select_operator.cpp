@@ -2,14 +2,14 @@
 #include <basic/operators/pipe/select/physical/select_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
-    SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort,
+    SelectOperator::SelectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort,
                        const basic::expression::IExpression &predicate)
             : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                                 core::physical::port::Ports{std::move(outputPort)}),
               mPredicate(predicate) {
     }
 
-    void consume(core::physical::segment::SegmentContext &segmentCtx,
+    void SelectOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
                  core::shared::identifiers::PortId /*inputPort*/, const core::physical::data::DataPackage &tuple,
                  const core::physical::segment::SegmentDataConsumers &consumers) {
         llvm::LLVMContext &ctx = segmentCtx.builder.getContext();
@@ -29,11 +29,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
         segmentCtx.builder.SetInsertPoint(mergeBB);
     }
 
-    void end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
+    void SelectOperator::end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
              const core::physical::segment::SegmentDataConsumers &consumers) override {
     }
 
-    static llvm::Value *codegenExpression(core::physical::segment::SegmentContext &segmentCtx,
+    static llvm::Value *SelectOperator::codegenExpression(core::physical::segment::SegmentContext &segmentCtx,
                                               const core::physical::data::DataPackage &tuple,
                                               const basic::expression::IExpression &expression) {
             switch (expression.getExpressionType()) {
@@ -50,7 +50,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
                     // NOLINTNEXTLINE
                     const auto &constExpression = static_cast<const basic::expression::ConstantExpression &>(
                         expression);
-                    return segmentCtx.typeRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder,
+                    return segmentCtx.valueTypeRegistry.compileConstant(constExpression.getTypeId(), segmentCtx.builder,
                                                                    constExpression.getSerializedValue());
                 }
                 case basic::expression::ExpressionType::COMPARE: {
@@ -86,7 +86,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
             }
         }
 
-        static llvm::Value *codegenCompare(llvm::IRBuilder<> &builder, llvm::Value *left, llvm::Value *right,
+        static llvm::Value *SelectOperator::codegenCompare(llvm::IRBuilder<> &builder, llvm::Value *left, llvm::Value *right,
                                            const basic::expression::CompareExpression::CompareOp opr) {
             const bool isFloat = left->getType()->isFloatingPointTy();
             // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
