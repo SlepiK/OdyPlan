@@ -34,8 +34,8 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
             mCurrent = nlohmann::json::object();
         }
 
-        void write(const char* key, const core::common::identifier::TypeId typeId, const void* rawData) override {
-            using T = core::common::identifier::Type;
+        void write(const char* key, const core::shared::types::ValueTypeId typeId, const void* rawData) override {
+            using T = core::shared::types::BuiltinOperatorType;
 
             // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             switch (typeId) {
