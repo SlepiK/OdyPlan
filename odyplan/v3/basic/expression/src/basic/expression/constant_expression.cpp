@@ -8,7 +8,7 @@ namespace sierra::odyplan::v3::basic::expression
     {
     }
 
-    ExpressionType ConstantExpression::getExpressionType() const override
+    ExpressionType ConstantExpression::getExpressionType() const
     {
         return ExpressionType::CONSTANT;
     }

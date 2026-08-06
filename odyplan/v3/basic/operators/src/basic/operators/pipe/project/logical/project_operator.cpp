@@ -43,7 +43,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         }
     }
 
-    static ProjectOperator::IndexMapping ProjectOperator::resolveNameMapping(const core::logical::port::Port &inputPort,
+    ProjectOperator::IndexMapping ProjectOperator::resolveNameMapping(const core::logical::port::Port &inputPort,
                                                const NameMapping &nameMapping) {
         IndexMapping mapping;
         mapping.reserve(nameMapping.size());
