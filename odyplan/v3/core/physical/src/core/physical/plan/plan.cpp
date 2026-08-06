@@ -112,7 +112,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
         llvm::IRBuilder builder(basicBlock);
 
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
