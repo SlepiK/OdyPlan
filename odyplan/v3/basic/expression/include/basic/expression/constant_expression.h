@@ -3,6 +3,7 @@
 
 #include <core/shared/types/value_type_id.h>
 #include <string>
+#include <basic/expression/expression.h>
 
 namespace sierra::odyplan::v3::basic::expression
 {
