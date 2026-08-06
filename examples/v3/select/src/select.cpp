@@ -25,7 +25,7 @@
 #include <core/runtime/time_runtime.h>
 
 
-void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
+static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
     llvm::LoopAnalysisManager loopAnaMgr;
     llvm::FunctionAnalysisManager fnAnaMgr;
     llvm::ModuleAnalysisManager modAnaMgr;

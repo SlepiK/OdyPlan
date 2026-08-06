@@ -23,7 +23,8 @@ if(ENABLE_LOOPED_SOURCE)
 endif ()
 
 target_link_libraries(${TARGET_NAME} PRIVATE
-        OdyPlanV2
+        odyplan::core
+        odyplan::basic
 )
 
 enable_clang_tidy_on_target(${TARGET_NAME})

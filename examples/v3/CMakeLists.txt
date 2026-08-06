@@ -1,5 +1,5 @@
 add_subdirectory(logical_plan)
-#add_subdirectory(full)
+add_subdirectory(full)
 #add_subdirectory(project)
 add_subdirectory(select)
 #add_subdirectory(read_ndjson)
