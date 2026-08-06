@@ -8,7 +8,7 @@ namespace sierra::odyplan::v3::basic::expression
                 mOpr(opr) {
     }
 
-    ExpressionType CompareExpression::getExpressionType() const override {
+    ExpressionType CompareExpression::getExpressionType() const {
         return ExpressionType::COMPARE;
     }
 
@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::expression
         return *mRightPart;
     }
 
-    CompareOp CompareExpression::getOpr() const {
+    CompareExpression::CompareOp CompareExpression::getOpr() const {
         return mOpr;
     }
 }

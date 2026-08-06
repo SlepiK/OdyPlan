@@ -26,7 +26,7 @@ namespace sierra::odyplan::v3::basic::expression
         return mRightPart.get();
     }
 
-    LogicalOp LogicalExpression::getOpr() const {
+    LogicalExpression::LogicalOp LogicalExpression::getOpr() const {
         return mOpr;
     }
 
