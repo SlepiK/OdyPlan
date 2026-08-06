@@ -25,7 +25,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
         consumers.front()(segmentCtx, projected);
     }
 
-    void end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
+    void ProjectOperator::end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
              const core::physical::segment::SegmentDataConsumers &consumers) {
     }
 }
