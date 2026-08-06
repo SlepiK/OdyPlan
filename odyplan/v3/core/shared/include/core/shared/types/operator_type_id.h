@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::core::shared::types {
         PROJECT = 10,
         SELECT = 11,
         MERGE = 12,
-        INTERVAL_JOIN = 13,
+        JOIN = 13,
         PRINT = 20,
         READ = 21,
         WRITE = 22,

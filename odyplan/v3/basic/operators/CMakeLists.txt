@@ -25,6 +25,7 @@ target_link_libraries(${TARGET_NAME}
         odyplan::core::shared
         odyplan::basic::io
         odyplan::basic::expression
+        odyplan::basic::window
         PRIVATE
         odyplan::core::internal
         nlohmann_json::nlohmann_json
