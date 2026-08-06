@@ -5,7 +5,7 @@
 #include <vector>
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
 
-namespace sierra::odyplan::v2::common::opr::pipe::physical {
+namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
     class ProjectOperator : public core::physical::operators::pipe::TypedPipeOperator {
     public:
         using Mapping = std::vector<std::size_t>;

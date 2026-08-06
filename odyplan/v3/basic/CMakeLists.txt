@@ -26,6 +26,7 @@ target_link_libraries(${FACADE_TARGET} INTERFACE
 add_custom_target(odyplan_basic_all)
 add_dependencies(odyplan_basic_all
         odyplan_basic_io
+        odyplan_basic_expression
         odyplan_basic_operators
 )
 
