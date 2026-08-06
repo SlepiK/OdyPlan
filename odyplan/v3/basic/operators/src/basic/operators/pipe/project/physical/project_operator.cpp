@@ -11,7 +11,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
     void ProjectOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
                  core::shared::identifiers::PortId /*inputPort*/, const core::physical::data::DataPackage &tuple,
                  const core::physical::segment::SegmentDataConsumers &consumers) {
-        core::physical::port::PortTuple projected;
+        core::physical::data::DataPackage projected;
         projected.reserve(mMapping.size());
         projected.timestamp = tuple.timestamp;
 
