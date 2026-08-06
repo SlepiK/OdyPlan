@@ -4,3 +4,4 @@ project(OdyPlanV3
 )
 
 add_subdirectory(core)
+add_subdirectory(basic)

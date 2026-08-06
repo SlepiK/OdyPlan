@@ -16,6 +16,12 @@ namespace sierra::odyplan::v3::core::shared::types {
         DOUBLE = 11,
         STRING = 20
     };
+
+    inline bool isBuiltinValueTypePrintable(const BuiltinValueType type) {
+        return type == BuiltinValueType::BOOL || type == BuiltinValueType::INT8 || type == BuiltinValueType::INT16 ||
+               type == BuiltinValueType::INT32 || type == BuiltinValueType::INT64 || type == BuiltinValueType::FLOAT ||
+               type == BuiltinValueType::DOUBLE || type == BuiltinValueType::STRING;
+    }
 }
 
 #endif //SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_VALUE_TYPE_ID_HPP
