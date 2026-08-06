@@ -55,7 +55,7 @@ if(ENABLE_TOOLING)
     register_tidy_sources(${SOURCES})
 
     if(ENABLE_CLANG_TIDY)
-        add_header_tidy_check(odyplan_builder_header_check
+        add_header_tidy_check(odyplan_io_header_check
                 HEADERS ${HEADERS}
                 LINK_LIBS ${TARGET_NAME}
         )
