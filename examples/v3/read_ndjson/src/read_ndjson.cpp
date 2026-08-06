@@ -19,7 +19,6 @@
 #include <basic/operators/sink/print/runtime/print_runtime.h>
 
 #include <basic/io/io_registry.h>
-#include <basic/io/io_runtime.h>
 
 #include <core/runtime/core_runtime.h>
 #include <core/runtime/time_runtime.h>

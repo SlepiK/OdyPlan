@@ -6,7 +6,41 @@
 #include <stdexcept>
 #include <core/runtime/task_runtime.h>
 
+inline std::vector<std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSource>> gSources;
+
+inline sierra::odyplan::v3::basic::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSource> source) {
+    gSources.push_back(std::move(source));
+    return gSources.size() - 1;
+}
+
 extern "C" {
+    inline bool rtIOSourceHasNext(const sierra::odyplan::v3::basic::io::IOSourceId index) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index >= gSources.size()) {
+            return false;
+        }
+
+        return gSources.at(index)->available();
+    }
+
+    inline const char* rtIOSourceGetField(const sierra::odyplan::v3::basic::io::IOSourceId index, const char* fieldName) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index >= gSources.size() || fieldName == nullptr) {
+            return nullptr;
+        }
+
+        const sierra::odyplan::v3::basic::io::IOData& current = gSources.at(index)->current();
+        const auto iter = current.find(fieldName);
+        return iter != current.end() ? iter->second.c_str() : nullptr;
+    }
+
+    inline void rtIOSourceReset(const sierra::odyplan::v3::basic::io::IOSourceId index) {
+        assert(index < gSources.size() && "invalid IOSource");
+        if (index < gSources.size()) {
+            (*gSources.at(index)).reset();
+        }
+    }
+
     inline bool rtParseBool(const char* str) {
         if (str == nullptr) {
             throw std::invalid_argument("rtParseBool: invalid argument");
