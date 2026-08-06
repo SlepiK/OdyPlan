@@ -2,11 +2,11 @@
 #include <basic/operators/pipe/project/logical/project_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
-    explicit ProjectOperator::ProjectOperator(IndexMapping mapping)
+    ProjectOperator::ProjectOperator(IndexMapping mapping)
             : mMapping(std::move(mapping)) {
     }
 
-    explicit ProjectOperator::ProjectOperator(NameMapping mapping)
+    ProjectOperator::ProjectOperator(NameMapping mapping)
         : mNameMapping(std::move(mapping)) {
     }
 
@@ -14,7 +14,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         return TYPE_ID;
     }
 
-    [[nodiscard]] const IndexMapping &ProjectOperator::getMapping() const {
+    [[nodiscard]] const ProjectOperator::IndexMapping &ProjectOperator::getMapping() const {
         return mMapping;
     }
 
@@ -43,14 +43,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         }
     }
 
-    static IndexMapping ProjectOperator::resolveNameMapping(const core::logical::port::Port &inputPort,
+    static ProjectOperator::IndexMapping ProjectOperator::resolveNameMapping(const core::logical::port::Port &inputPort,
                                                const NameMapping &nameMapping) {
         IndexMapping mapping;
         mapping.reserve(nameMapping.size());
 
         for (const auto &name: nameMapping) {
             auto iter = std::ranges::find_if(inputPort,
-                                             [&](const core::logical::port::PortDescriptor &pd) {
+                                             [&](const core::logical::port::PortDescription &pd) {
                                                  return pd.fieldName == name;
                                              });
             if (iter == inputPort.end()) {
