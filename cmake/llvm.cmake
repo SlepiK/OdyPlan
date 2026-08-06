@@ -49,6 +49,12 @@ function(odyplan_link_llvm TARGET_NAME VISIBILITY)
         )
     endif()
 
+    if(MSVC)
+        target_compile_options(${TARGET_NAME} ${VISIBILITY} /GR-)
+    else()
+        target_compile_options(${TARGET_NAME} ${VISIBILITY} -fno-rtti)
+    endif()
+
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         target_link_libraries(${TARGET_NAME} ${VISIBILITY}
                 -Wl,--start-group

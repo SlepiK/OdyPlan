@@ -26,7 +26,7 @@ extern "C" {
     inline ComputeTaskHandle rtComputeTaskSpawn(void (*fn)()) {
         try {
             const auto handle = gNextComputeHandle.fetch_add(1, std::memory_order_relaxed) | (1ULL << 63ULL);
-            auto future = gWorkPool().submitWork([fn] {fn();});
+            auto future = gComputeThreadPool().submitTask([fn] {fn();});
             {
                 const std::scoped_lock lock(gComputeMutex);
                 gComputeFutures.emplace(handle, std::move(future));
@@ -53,11 +53,11 @@ extern "C" {
     }
 
     inline IOTaskHandle rtIOTaskSpawn(void (*fn)()) {
-        return gIOPool.submitTask([fn] {fn();});
+        return gIoThreadPool.submitTask([fn] {fn();});
     }
 
     inline void rtIOTaskJoin(IOTaskHandle ioTaskHandle) {
-        gIOPool.joinTask(ioTaskHandle);
+        gIoThreadPool.joinWorker(ioTaskHandle);
     }
 
     inline void rtSleepMs(const std::int64_t ms) {

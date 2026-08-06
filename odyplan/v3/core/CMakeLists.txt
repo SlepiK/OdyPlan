@@ -22,6 +22,7 @@ target_link_libraries(${FACADE_TARGET} INTERFACE
         odyplan::core::shared
         odyplan::core::builder
         odyplan::core::runtime
+        odyplan::core::internal
 )
 
 #option(ODYPLAN_V3_ENABLE_LOOPED_SOURCE "Enable looped source feature (v3)" OFF)
