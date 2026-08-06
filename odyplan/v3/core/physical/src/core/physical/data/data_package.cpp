@@ -13,11 +13,11 @@ namespace sierra::odyplan::v3::core::physical::data {
         return fields.at(index);
     }
 
-    auto DataPackage::begin() const {
+    std::vector<llvm::Value*>::const_iterator DataPackage::begin() const {
         return fields.begin();
     }
 
-    auto DataPackage::end() const {
+    std::vector<llvm::Value*>::const_iterator DataPackage::end() const {
         return fields.end();
     }
 

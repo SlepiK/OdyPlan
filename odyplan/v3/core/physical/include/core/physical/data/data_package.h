@@ -16,9 +16,9 @@ namespace sierra::odyplan::v3::core::physical::data {
 
         [[nodiscard]] llvm::Value* operator[](std::size_t index) const;
 
-        [[nodiscard]] auto begin() const;
+        [[nodiscard]] std::vector<llvm::Value*>::const_iterator begin() const;
 
-        [[nodiscard]] auto end() const;
+        [[nodiscard]] std::vector<llvm::Value*>::const_iterator end() const;
 
         void pushBack(llvm::Value* value);
 

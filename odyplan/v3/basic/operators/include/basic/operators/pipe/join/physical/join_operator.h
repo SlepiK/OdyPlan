@@ -1,0 +1,55 @@
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_OPERATOR_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_OPERATOR_HPP
+
+#include <basic/expression/expression.h>
+#include <basic/expression/compare_expression.h>
+#include <basic/expression/logical_expression.h>
+#include <basic/expression/constant_expression.h>
+#include <basic/expression/field_reference_expression.h>
+#include <core/logical/port/port.h>
+#include <basic/operators/pipe/join/logical/details/join_config.h>
+#include <basic/operators/pipe/join/physical/details/join_predmod.h>
+#include <core/physical/operators/pipe/typed_pipe_operator.h>
+
+namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
+    class JoinOperator : public core::physical::operators::pipe::TypedPipeOperator {
+    public:
+        JoinOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort,
+            logical::details::JoinConfig config, core::logical::port::Ports schemas,
+            const basic::expression::IExpression* predicate);
+
+        void consume(core::physical::segment::SegmentContext &segmentCtx,
+                     core::shared::identifiers::PortId inputPort, const core::physical::data::DataPackage &tuple,
+                     const core::physical::segment::SegmentDataConsumers &consumers) override;
+
+        void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module,
+                          llvm::LLVMContext &context) override;
+
+    private:
+        logical::details::JoinConfig mConfig;
+        core::logical::port::Port mLeftSchema;
+        core::logical::port::Port mRightSchema;
+        const basic::expression::IExpression* mPredicate;
+        core::physical::state::StateHandle mState;
+
+        llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
+
+        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state, llvm::Value* timestamp, const bool callFromLeft);
+
+        static llvm::GlobalVariable* buildTypeIds(llvm::Module& module, llvm::LLVMContext& ctx, const core::logical::port::Port& schema, const std::string& name);
+
+        void emitMatch(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state,
+            const core::physical::data::DataPackage& tuple, const bool onLeft, const core::physical::segment::SegmentDataConsumers& consumers);
+
+        static void codegenSide(core::physical::segment::SegmentContext &segmentCtx, llvm::Value* state, const core::physical::data::DataPackage& tuple,
+                         const core::logical::port::Port& schema, const char* beginFnName,
+                         const char* pushFnName, const char* endFnName);
+
+        llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::data::DataPackage& tuple,
+            const basic::expression::IExpression& expression);
+
+        static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, const basic::expression::CompareExpression::CompareOp opr);
+    };
+}
+
+#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_OPERATOR_HPP
