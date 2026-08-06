@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_SELECT_LOGICAL_SELECT_OPERATOR_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_SELECT_LOGICAL_SELECT_OPERATOR_HPP
 
+#include <memory>
 #include <utility>
 
 #include <core/logical/operators/pipe/typed_pipe_operator.h>
