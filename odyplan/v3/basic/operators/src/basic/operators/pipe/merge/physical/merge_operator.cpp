@@ -1,7 +1,7 @@
 #include <basic/operators/pipe/merge/physical/merge_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::merge::physical {
-    MergeMergeOperator::Operator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
+    MergeOperator::Operator(core::physical::port::Port inputPort, core::physical::port::Port outputPort)
             : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                                 core::physical::port::Ports{std::move(outputPort)}) {
     }
