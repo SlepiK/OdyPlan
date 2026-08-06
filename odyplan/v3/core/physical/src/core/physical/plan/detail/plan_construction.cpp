@@ -47,7 +47,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
     }
 
     void PlanConstruction::spawnBlockingRoot(const OperatorId operatorId, const std::string& suffix,
-            flow::IProducer* producer, const segment::SegmentDataConsumers& next) {
+            flow::IProducer* producer, const segment::SegmentDataConsumers& next) const {
             auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx), {}, false);
             auto* fn = llvm::Function::Create(fnType, llvm::Function::ExternalLinkage,
                 "ody_root_blocking_" + std::to_string(operatorId) + "_" + suffix, module);
@@ -146,7 +146,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
     }
 
     segment::SegmentDataConsumer PlanConstruction::compileAsFunction(const OperatorId operatorId,
-        const shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner) {
+        const shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner) const {
         auto* i64Ty = llvm::Type::getInt64Ty(*ctx);
 
         std::vector<llvm::Type*> paramTypes;
