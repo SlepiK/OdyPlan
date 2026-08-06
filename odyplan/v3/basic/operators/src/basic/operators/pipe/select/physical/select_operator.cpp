@@ -30,10 +30,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
     }
 
     void SelectOperator::end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
-             const core::physical::segment::SegmentDataConsumers &consumers) override {
+             const core::physical::segment::SegmentDataConsumers &consumers) {
     }
 
-    static llvm::Value *SelectOperator::codegenExpression(core::physical::segment::SegmentContext &segmentCtx,
+    llvm::Value *SelectOperator::codegenExpression(core::physical::segment::SegmentContext &segmentCtx,
                                               const core::physical::data::DataPackage &tuple,
                                               const basic::expression::IExpression &expression) {
             switch (expression.getExpressionType()) {
@@ -86,7 +86,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
             }
         }
 
-        static llvm::Value *SelectOperator::codegenCompare(llvm::IRBuilder<> &builder, llvm::Value *left, llvm::Value *right,
+        llvm::Value *SelectOperator::codegenCompare(llvm::IRBuilder<> &builder, llvm::Value *left, llvm::Value *right,
                                            const basic::expression::CompareExpression::CompareOp opr) {
             const bool isFloat = left->getType()->isFloatingPointTy();
             // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
