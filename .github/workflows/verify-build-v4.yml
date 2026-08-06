@@ -69,5 +69,5 @@ jobs:
 
       # ---- library ----
 
-      - name: Build odyplan_core_all
+      - name: Build odyplan_basic_all
         run: cmake --build build --target odyplan_basic_all

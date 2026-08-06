@@ -1,4 +1,5 @@
 add_subdirectory(io)
+add_subdirectory(expression)
 add_subdirectory(operators)
 set(FACADE_TARGET odyplan_basic)
 
