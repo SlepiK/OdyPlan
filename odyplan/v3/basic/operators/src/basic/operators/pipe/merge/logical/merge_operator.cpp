@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <basic/operators/pipe/merge/logical/merge_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical {

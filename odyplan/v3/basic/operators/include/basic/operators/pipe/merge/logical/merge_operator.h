@@ -16,7 +16,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical {
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
     protected:
-        void validateInput();
+        void validateInput() override;
     };
 }
 
