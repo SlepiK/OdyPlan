@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
         ProjectOperator(core::physical::port::Port inputPort, core::physical::port::Port outputPort, Mapping mapping);
 
         void consume(core::physical::segment::SegmentContext &segmentCtx,
-                     core::shared::identifiers::PortId /*inputPort*/, const core::physical::port::PortTuple &tuple,
+                     core::shared::identifiers::PortId /*inputPort*/, const core::physical::data::DataPackage &tuple,
                      const core::physical::segment::SegmentDataConsumers &consumers) override;
 
         void end(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId inputPort,

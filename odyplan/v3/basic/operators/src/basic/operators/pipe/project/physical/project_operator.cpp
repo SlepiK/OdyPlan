@@ -9,8 +9,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
     }
 
     void ProjectOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
-                 core::shared::identifiers::PortId /*inputPort*/, const core::physical::port::PortTuple &tuple,
-                 const core::physical::segment::SegmentDataConsumers &consumers) override {
+                 core::shared::identifiers::PortId /*inputPort*/, const core::physical::data::DataPackage &tuple,
+                 const core::physical::segment::SegmentDataConsumers &consumers) {
         core::physical::port::PortTuple projected;
         projected.reserve(mMapping.size());
         projected.timestamp = tuple.timestamp;
@@ -26,6 +26,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
     }
 
     void end(core::physical::segment::SegmentContext &segmentCtx, const core::shared::identifiers::PortId inputPort,
-             const core::physical::segment::SegmentDataConsumers &consumers) override {
+             const core::physical::segment::SegmentDataConsumers &consumers) {
     }
 }
