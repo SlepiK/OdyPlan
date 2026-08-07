@@ -27,8 +27,8 @@ namespace sierra::odyplan::v3::core::physical::plan {
         mChains.emplace(logicalOperatorId, std::move(chain));
     }
 
-    void Plan::addOutgoingEdge(OperatorId logicalOperatorId, std::vector<OperatorPortReferenceConnection> edges) {
-        mOutgoingEdges.emplace(logicalOperatorId, edges);
+    void Plan::addOutgoingEdge(OperatorId logicalOperatorId, std::vector<OperatorPortReferenceConnection>edges) {
+        mOutgoingEdges.emplace(logicalOperatorId, std::move(edges));
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
@@ -122,10 +122,12 @@ namespace sierra::odyplan::v3::core::physical::plan {
         std::vector<llvm::Value*> ioHandles;
         std::vector<llvm::Value*> computeHandles;
 
+        ioHandles.reserve(ioRoots.size());
         for (auto* root : ioRoots) {
             ioHandles.push_back(builder.CreateCall(ioSpawnFn, {root}));
         }
 
+        computeHandles.reserve(computeRoots.size());
         for (auto* root : computeRoots) {
             computeHandles.push_back(builder.CreateCall(computeSpawnFn, {root}));
         }

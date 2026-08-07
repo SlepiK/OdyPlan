@@ -17,7 +17,7 @@ namespace sierra::odyplan::v3::basic::expression
 
         LogicalExpression(std::unique_ptr<IExpression> leftPart, LogicalOp opr, std::unique_ptr<IExpression> rightPart);
 
-        LogicalExpression(const LogicalOp opr, std::unique_ptr<IExpression> oprAffected);
+        LogicalExpression(LogicalOp opr, std::unique_ptr<IExpression> oprAffected);
 
         [[nodiscard]] ExpressionType getExpressionType() const override;
 

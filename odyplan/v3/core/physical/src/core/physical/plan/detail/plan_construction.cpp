@@ -26,15 +26,20 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
             const auto& edgesForPort = found->second;
 
+
+            if (portIndex >= result.size()) {
+                result.resize(portIndex + 1);
+            }
+
             if (edgesForPort.size() == 1) {
-                result[portIndex] = buildEnter(edgesForPort.front());
+                result.at(portIndex) = buildEnter(edgesForPort.front());
             } else {
                 segment::SegmentDataConsumers branches;
                 branches.reserve(edgesForPort.size());
                 for (const auto& edge : edgesForPort) {
                     branches.push_back(buildEnter(edge));
                 }
-                result[portIndex] = [branches](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
+                result.at(portIndex) = [branches](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
                     for (const auto& branch : branches) {
                         branch(sCtx, tuple);
                     }
@@ -106,7 +111,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
             segment::SegmentDataConsumers wrapped;
             for (std::size_t i = 0; i < rest.size(); ++i) {
-                wrapped.push_back(compileAsFunction(operatorId, i, schemas.at(i), rest[i]));
+                wrapped.push_back(compileAsFunction(operatorId, i, schemas.at(i), rest.at(i)));
             }
             rest = wrapped;
         }
@@ -125,7 +130,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return exit.empty() ? noopConsumer.get() : exit.front();
         }
 
-        const auto& node = chain.nodes[index];
+        const auto& node = chain.nodes.at(index);
         segment::SegmentDataConsumers rest;
 
         if (index + 1 >= chain.nodes.size()) {

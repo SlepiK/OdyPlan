@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
                      const core::physical::segment::SegmentDataConsumers &consumers) override;
 
         void end(core::physical::segment::SegmentContext &segmentCtx,
-                 const core::shared::identifiers::PortId /*inputPort*/,
+                 core::shared::identifiers::PortId /*inputPort*/,
                  const core::physical::segment::SegmentDataConsumers & /*consumers*/) override;
 
         void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module,

@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = std::to_underlying(
             core::shared::types::BuiltinOperatorType::JOIN);
 
-        explicit JoinOperator(const details::JoinConfig config,
+        explicit JoinOperator(details::JoinConfig config,
                                       const basic::expression::IExpression* predicate = nullptr);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         [[nodiscard]] const basic::expression::IExpression* getPredicate() const;
 
     protected:
-        void bindInput(const core::shared::identifiers::PortId portId, const core::logical::port::Port input) override;
+        void bindInput(core::shared::identifiers::PortId portId, core::logical::port::Port input) override;
 
         void validateInput() override;
 

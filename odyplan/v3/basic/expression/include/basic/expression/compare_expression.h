@@ -18,7 +18,7 @@ namespace sierra::odyplan::v3::basic::expression
             GE, //GREATER_THAN_OR_EQUAL
         };
 
-        explicit CompareExpression(std::unique_ptr<IExpression> leftPart, const CompareOp opr, std::unique_ptr<IExpression> rightPart);
+        explicit CompareExpression(std::unique_ptr<IExpression> leftPart, CompareOp opr, std::unique_ptr<IExpression> rightPart);
 
         [[nodiscard]] ExpressionType getExpressionType() const override;
 

@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::basic::expression
 {
     class ConstantExpression : public IExpression {
     public:
-        explicit ConstantExpression(const core::shared::types::ValueTypeId typeId, std::string serializedValue);
+        explicit ConstantExpression(core::shared::types::ValueTypeId typeId, std::string serializedValue);
 
         [[nodiscard]] ExpressionType getExpressionType() const override;
 

@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = std::to_underlying(
             core::shared::types::BuiltinOperatorType::WRITE);
 
-        explicit WriteOperator(const io::IOFormatType ioFormat, nlohmann::json ioConfig);
+        explicit WriteOperator(io::IOFormatType ioFormat, nlohmann::json ioConfig);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
