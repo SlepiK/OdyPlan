@@ -23,7 +23,6 @@ target_link_libraries(${TARGET_NAME}
         odyplan::core::physical
         odyplan::core::shared
         PRIVATE
-        odyplan::core::internal
         nlohmann_json::nlohmann_json
         spdlog::spdlog
 )

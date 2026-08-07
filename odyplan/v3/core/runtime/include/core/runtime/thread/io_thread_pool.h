@@ -1,13 +1,13 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_IO_THREAD_POOL_HPP
-#define SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_IO_THREAD_POOL_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP
+#define SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP
 
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
 
-#include <core/internal/task/task.h>
+#include <core/runtime/task/task.h>
 
-namespace sierra::odyplan::v3::core::internal::thread {
+namespace sierra::odyplan::v3::core::runtime::thread {
     class IoThreadPool {
     public:
 		using Task = task::Task;
@@ -40,4 +40,4 @@ namespace sierra::odyplan::v3::core::internal::thread {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_INTERNAL_THREAD_IO_THREAD_POOL_HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP

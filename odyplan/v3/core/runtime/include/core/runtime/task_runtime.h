@@ -4,13 +4,13 @@
 #include <iostream>
 #include <ostream>
 
-#include <core/internal/thread/compute_thread_pool.h>
-#include <core/internal/thread/io_thread_pool.h>
+#include <core/runtime/thread/compute_thread_pool.h>
+#include <core/runtime/thread/io_thread_pool.h>
 
 using ComputeTaskHandle = std::uint64_t;
 
-inline sierra::odyplan::v3::core::internal::thread::ComputeThreadPool& gComputeThreadPool() {
-    static sierra::odyplan::v3::core::internal::thread::ComputeThreadPool instance;
+inline sierra::odyplan::v3::core::runtime::thread::ComputeThreadPool& gComputeThreadPool() {
+    static sierra::odyplan::v3::core::runtime::thread::ComputeThreadPool instance;
     return instance;
 }
 
@@ -18,7 +18,7 @@ inline std::mutex gComputeMutex;
 inline std::unordered_map<ComputeTaskHandle, std::future<void>> gComputeFutures;
 inline std::atomic_uint64_t gNextComputeHandle{0};
 
-inline sierra::odyplan::v3::core::internal::thread::IoThreadPool gIoThreadPool;
+inline sierra::odyplan::v3::core::runtime::thread::IoThreadPool gIoThreadPool;
 
 using IOTaskHandle = std::uint64_t;
 

@@ -27,7 +27,6 @@ target_link_libraries(${TARGET_NAME}
         odyplan::basic::expression
         odyplan::basic::window
         PRIVATE
-        odyplan::core::internal
         nlohmann_json::nlohmann_json
         spdlog::spdlog
 )

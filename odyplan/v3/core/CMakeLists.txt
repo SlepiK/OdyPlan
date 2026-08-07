@@ -1,5 +1,4 @@
 add_subdirectory(shared)
-add_subdirectory(internal)
 add_subdirectory(logical)
 add_subdirectory(physical)
 add_subdirectory(builder)
@@ -22,7 +21,6 @@ target_link_libraries(${FACADE_TARGET} INTERFACE
         odyplan::core::shared
         odyplan::core::builder
         odyplan::core::runtime
-        odyplan::core::internal
 )
 
 #option(ODYPLAN_V3_ENABLE_LOOPED_SOURCE "Enable looped source feature (v3)" OFF)
@@ -35,7 +33,6 @@ target_link_libraries(${FACADE_TARGET} INTERFACE
 add_custom_target(odyplan_core_all)
 add_dependencies(odyplan_core_all
         odyplan_core_shared
-        odyplan_core_internal
         odyplan_core_logical
         odyplan_core_physical
         odyplan_core_builder
