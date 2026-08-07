@@ -34,12 +34,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 
-        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state, llvm::Value* timestamp, const bool callFromLeft);
+        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state, llvm::Value* timestamp, bool callFromLeft);
 
         static llvm::GlobalVariable* buildTypeIds(llvm::Module& module, llvm::LLVMContext& ctx, const core::logical::port::Port& schema, const std::string& name);
 
         void emitMatch(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* state,
-            const core::physical::data::DataPackage& tuple, const bool onLeft, const core::physical::segment::SegmentDataConsumers& consumers);
+            const core::physical::data::DataPackage& tuple, bool onLeft, const core::physical::segment::SegmentDataConsumers& consumers);
 
         static void codegenSide(core::physical::segment::SegmentContext &segmentCtx, llvm::Value* state, const core::physical::data::DataPackage& tuple,
                          const core::logical::port::Port& schema, const char* beginFnName,
@@ -48,7 +48,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx, const core::physical::data::DataPackage& tuple,
             const basic::expression::IExpression& expression);
 
-        static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, const basic::expression::CompareExpression::CompareOp opr);
+        static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder, llvm::Value* left, llvm::Value* right, basic::expression::CompareExpression::CompareOp opr);
     };
 }
 
