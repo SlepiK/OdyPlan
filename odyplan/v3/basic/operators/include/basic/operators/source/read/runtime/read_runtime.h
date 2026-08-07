@@ -1,10 +1,14 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_RUNTIME_READ_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_RUNTIME_READ_RUNTIME_HPP
 
+#include <cassert>
+#include <memory>
+#include <vector>
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
 #include <core/runtime/task_runtime.h>
+#include <basic/io/io_source.h>
 
 inline std::vector<std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSource>> gSources;
 
