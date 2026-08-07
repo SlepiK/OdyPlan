@@ -36,3 +36,34 @@ if(LLVM_ENABLE_ABI_BREAKING_CHECKS)
 else()
     add_definitions(-DLLVM_ENABLE_ABI_BREAKING_CHECKS=0)
 endif()
+
+function(odyplan_link_llvm TARGET_NAME VISIBILITY)
+    target_include_directories(${TARGET_NAME} SYSTEM ${VISIBILITY}
+            ${LLVM_INCLUDE_DIRS}
+    )
+
+    separate_arguments(_llvm_defs_list UNIX_COMMAND "${LLVM_DEFINITIONS}")
+    if(_llvm_defs_list)
+        target_compile_definitions(${TARGET_NAME} ${VISIBILITY}
+                ${_llvm_defs_list}
+        )
+    endif()
+
+    if(MSVC)
+        target_compile_options(${TARGET_NAME} ${VISIBILITY} /GR-)
+    else()
+        target_compile_options(${TARGET_NAME} ${VISIBILITY} -fno-rtti)
+    endif()
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(${TARGET_NAME} ${VISIBILITY}
+                -Wl,--start-group
+                ${LLVM_LIBS}
+                -Wl,--end-group
+        )
+    else()
+        target_link_libraries(${TARGET_NAME} ${VISIBILITY}
+                ${LLVM_LIBS}
+        )
+    endif()
+endfunction()

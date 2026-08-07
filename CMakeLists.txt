@@ -10,7 +10,8 @@ option(ENABLE_CLANG_TIDY "Run clang-tidy as part of the build" OFF)
 option(ENABLE_CLANG_FORMAT_CHECK "Enable clang-format/format-check targets" OFF)
 
 option(ODYPLAN_V1 "Run OdyPlanV1 as part of the build" OFF)
-option(ODYPLAN_V2 "Run OdyPlanV2 as part of the build" ON)
+option(ODYPLAN_V2 "Run OdyPlanV2 as part of the build" OFF)
+option(ODYPLAN_V3 "Run OdyPlanV3 as part of the build" ON)
 
 define_property(GLOBAL PROPERTY LINT_SOURCE_FILES_GLOBAL
         BRIEF_DOCS "Aggregated list of source and header files for linting"
