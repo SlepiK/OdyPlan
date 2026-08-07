@@ -1,0 +1,73 @@
+name: verify-build-v5
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  clang-tidy:
+    name: verify-build v5
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install CMake 4.1
+        run: |
+          pip install cmake==4.1.0
+          echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
+
+      - name: Install Ninja
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libstdc++-14-dev zstd ninja-build
+
+      - name: Cache LLVM 22
+        uses: actions/cache@v6
+        id: cache-llvm
+        with:
+          path: ~/llvm-22
+          key: llvm-22.1.0-linux-x64
+
+      - name: Download LLVM 22
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.0/LLVM-22.1.0-Linux-X64.tar.xz
+          mkdir -p ~/llvm-22
+          tar -xf LLVM-22.1.0-Linux-X64.tar.xz -C ~/llvm-22 --strip-components=1
+
+      - name: Remove system LLVM/Clang
+        run: |
+          sudo apt-get remove -y llvm* clang* libclang*
+          sudo apt-get autoremove -y
+
+      - name: Add LLVM to PATH
+        run: echo "/home/runner/llvm-22/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain
+        run: |
+          clang-tidy --version
+          clang++ --version
+          cmake --version
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
+            -DENABLE_V2_EXAMPLES=ON
+
+      # ---- library ----
+
+      - name: Build odyplan_core_all
+        run: cmake --build build --target odyplan_core_all
+
+      # ---- library ----
+
+      - name: Build odyplan_basic_all
+        run: cmake --build build --target odyplan_basic_all
