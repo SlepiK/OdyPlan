@@ -207,20 +207,20 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
-    symbolMap[jit->mangleAndIntern("rtJoinCreate")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinCreate), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinDestroy")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinDestroy), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinLock), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinUnlock), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinBeginLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinBeginLeft), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinBeginRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinBeginRight), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinPushLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinPushLeft), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinPushRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinPushRight), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinEndLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinEndLeft), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinEndRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinEndRight), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinGetCandidateSize")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinGetCandidateSize), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinGetCandidatePtr")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinGetCandidatePtr), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinGetCandidateTimestamp")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinGetCandidateTimestamp), llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtJoinEvict")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtJoinEvict), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinCreate")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinCreate), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinDestroy")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinDestroy), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinLock), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinUnlock), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinBeginLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinBeginLeft), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinBeginRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinBeginRight), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinPushLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinPushLeft), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinPushRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinPushRight), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinEndLeft")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinEndLeft), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinEndRight")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinEndRight), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinGetCandidateSize")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinGetCandidateSize), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinGetCandidatePtr")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinGetCandidatePtr), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinGetCandidateTimestamp")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinGetCandidateTimestamp), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtJoinEvict")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinEvict), llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
