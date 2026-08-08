@@ -3,23 +3,15 @@
 
 #include <mutex>
 
-extern "C" {
-    inline void* rtCreateMergeLock(const void* /*typeRegistry*/) {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new std::mutex();
-    }
+namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime {
+    extern "C" {
+        void* rtCreateMergeLock(const void* /*typeRegistry*/);
 
-    inline void rtDestroyMergeLock(void* state) {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        delete static_cast<std::mutex*>(state);
-    }
+        void rtDestroyMergeLock(void* state);
 
-    inline void rtMergeLock(void* state) {
-        static_cast<std::mutex*>(state)->lock();
-    }
+        void rtMergeLock(void* state);
 
-    inline void rtMergeUnlock(void* state) {
-        static_cast<std::mutex*>(state)->unlock();
+        void rtMergeUnlock(void* state);
     }
 }
 

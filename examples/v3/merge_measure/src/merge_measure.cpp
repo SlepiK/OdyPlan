@@ -210,10 +210,10 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtMeasureTick")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtMeasureTick),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtMeasureFinalReport")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtMeasureFinalReport),llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateMergeLock),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyMergeLock),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeLock),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMergeUnlock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtCreateMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtDestroyMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeLock),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeUnlock),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
