@@ -205,10 +205,10 @@ int main() {
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
 
-    symbolMap[jit->mangleAndIntern("rtCreateMeasure")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateMeasure),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtDestroyMeasure")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyMeasure),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtMeasureTick")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMeasureTick),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtMeasureFinalReport")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtMeasureFinalReport),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtCreateMeasure")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtCreateMeasure),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtDestroyMeasure")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtDestroyMeasure),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMeasureTick")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtMeasureTick),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtMeasureFinalReport")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::measure::runtime::rtMeasureFinalReport),llvm::JITSymbolFlags::Exported);
 
     symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtCreateMergeLock),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&rtDestroyMergeLock),llvm::JITSymbolFlags::Exported);
