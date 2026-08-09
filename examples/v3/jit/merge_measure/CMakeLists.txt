@@ -6,7 +6,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME odyplan_example_write_json)
+set(TARGET_NAME odyplan_example_merge_measure)
 
 add_executable(${TARGET_NAME}
         ${SOURCES}
@@ -31,10 +31,10 @@ odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
 
 enable_clang_tidy_on_target(${TARGET_NAME})
 
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.json
-        ${CMAKE_CURRENT_BINARY_DIR}/read.json
-        COPYONLY
+file(COPY
+        data/read.ndjson
+        data/read2.ndjson
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 if(ENABLE_TOOLING)
