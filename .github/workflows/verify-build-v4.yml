@@ -73,13 +73,7 @@ jobs:
         run: cmake --build build --target odyplan_basic_all
 
 
-      # ---- library ----
+      # ---- examples ----
 
       - name: Build odyplan_example_all
         run: cmake --build build --target odyplan_example_all
-
-
-      # ---- library ----
-
-      - name: Build odyplan_aot_example_all
-        run: cmake --build build --target odyplan_example_aot_all
