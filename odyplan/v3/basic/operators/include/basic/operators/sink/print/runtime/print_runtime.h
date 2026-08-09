@@ -3,34 +3,21 @@
 #include <iostream>
 #include <cstdint>
 
-extern "C" {
-    inline void rtOdyPrintString(const char* data) {
-        std::cout << data;
-    }
+namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
+    extern "C" {
+        void rtOdyPrintString(const char* data);
 
-    inline void rtOdyPrintDouble(const double value) {
-        std::cout << value;
-    }
+        void rtOdyPrintDouble(double value);
 
-    inline void rtOdyPrintFloat(const float value) {
-        std::cout << value;
-    }
+        void rtOdyPrintFloat(float value);
 
-    inline void rtOdyPrintInt(const std::int64_t value) {
-        std::cout << value;
-    }
+        void rtOdyPrintInt(std::int64_t value);
 
-    inline void rtOdyPrintSeperator() {
-        std::cout << " ";
-    }
+        void rtOdyPrintSeperator();
 
-    inline void rtOdyPrintTimeStamp(const std::int64_t value) {
-        std::cout << value << "]";
-    }
+        void rtOdyPrintTimeStamp(std::int64_t value);
 
-    inline void rtOdyPrintNewline() {
-        std::cout << "\n";
-        std::cout.flush();
+        void rtOdyPrintNewline();
     }
 }
 
