@@ -97,8 +97,10 @@ int main() {
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
             ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::physical::ReadOperator>(
-                outputPorts.front(),
-                registerSource(ioRegistry.createSourceIO(concrete.getIOFormat(), concrete.getIOConfig())),
+            outputPorts.front(),
+        concrete.getOperatorTypeId(),
+        concrete.getIOConfig(),
+        concrete.getIOFormat(),
                 concrete.getOutputPorts().at(0)
                 ));
             return ot;
@@ -193,6 +195,8 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtWindowGetData")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtWindowGetData), llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtWindowGetTimestamp")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtWindowGetTimestamp), llvm::JITSymbolFlags::Exported);
 
+    symbolMap[jit->mangleAndIntern("rtIOSourceCreate")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::source::read::runtime::rtIOSourceCreate),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOSourceDestroy")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::source::read::runtime::rtIOSourceDestroy),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceHasNext")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::source::read::runtime::rtIOSourceHasNext),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceGetField")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::source::read::runtime::rtIOSourceGetField),llvm::JITSymbolFlags::Exported);
     symbolMap[jit->mangleAndIntern("rtIOSourceReset")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::source::read::runtime::rtIOSourceReset),llvm::JITSymbolFlags::Exported);

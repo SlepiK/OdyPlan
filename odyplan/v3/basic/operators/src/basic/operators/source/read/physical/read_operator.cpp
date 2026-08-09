@@ -1,11 +1,13 @@
 #include <basic/operators/source/read/physical/read_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
-    ReadOperator::ReadOperator(core::physical::port::Port outputPort, const io::IOSourceId ioSourceId,
+    ReadOperator::ReadOperator(core::physical::port::Port outputPort, const core::shared::identifiers::OperatorId lOpId, const nlohmann::json &ioConfig, const io::IOFormatType ioFormat,
                      core::logical::port::Port dataSchema, const std::optional<std::size_t> timestampFieldIndex,
                      const std::chrono::milliseconds rowDelay)
             : TypedSourceOperator(std::move(outputPort)),
-              mIOSourceId(ioSourceId),
+                mLogicalOperatorId(lOpId),
+              mIOConfig(ioConfig),
+                mIOFormat(ioFormat),
               mDataSchema(std::move(dataSchema)),
                 mTimestampFieldIndex(timestampFieldIndex),
                 mRowDelay(rowDelay) {
@@ -30,7 +32,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             auto *i1Ty = llvm::Type::getInt1Ty(ctx);
             auto *idTy = llvm::Type::getInt64Ty(ctx);
 
-            llvm::Value *sourceId = llvm::ConstantInt::get(idTy, mIOSourceId);
+            llvm::Value *state = loadStatePtr(segmentCtx);
 
             auto *loopBB = llvm::BasicBlock::Create(ctx, "read_loop", fn);
             auto *produceBB = llvm::BasicBlock::Create(ctx, "read_produce", fn);
@@ -40,8 +42,9 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             segmentCtx.builder.SetInsertPoint(loopBB);
 
             const auto hasNextFn = module->getOrInsertFunction("rtIOSourceHasNext",
-                                                               llvm::FunctionType::get(i1Ty, {idTy}, false));
-            llvm::Value *hasNext = segmentCtx.builder.CreateCall(hasNextFn, {sourceId});
+                                                   llvm::FunctionType::get(i1Ty, {ptrTy}, false));
+
+            llvm::Value *hasNext = segmentCtx.builder.CreateCall(hasNextFn, {state});
 
             if (mRowDelay.count() > 0) {
                 auto* i64Ty = llvm::Type::getInt64Ty(ctx);
@@ -60,7 +63,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             segmentCtx.builder.SetInsertPoint(produceBB);
 
             const auto getFieldFn = module->getOrInsertFunction("rtIOSourceGetField",
-                                                                llvm::FunctionType::get(ptrTy, {idTy, ptrTy}, false));
+                                                    llvm::FunctionType::get(ptrTy, {ptrTy, ptrTy}, false));
 
             core::physical::data::DataPackage tuple;
             tuple.reserve(mDataSchema.size());
@@ -68,7 +71,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             for (const auto &dataField: mDataSchema) {
                 llvm::Value *fieldName = segmentCtx.builder.CreateGlobalString(
                     dataField.fieldName, "field_" + dataField.fieldName, 0, module);
-                llvm::Value *strValue = segmentCtx.builder.CreateCall(getFieldFn, {sourceId, fieldName});
+                llvm::Value *strValue = segmentCtx.builder.CreateCall(getFieldFn, {state, fieldName});
                 tuple.pushBack(codegenField(segmentCtx, strValue, dataField.valueTypeId));
             }
 
@@ -84,6 +87,38 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
             segmentCtx.builder.SetInsertPoint(exitBB);
         }
+
+    void ReadOperator::declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module, llvm::LLVMContext &context) {
+        auto* i8Ty = llvm::Type::getInt8Ty(context);
+        auto* ptrTy = llvm::PointerType::getUnqual(context);
+
+        const std::string path = mIOConfig.at("path").get<std::string>();
+
+        auto* strConstant = llvm::ConstantDataArray::getString(context, path, true);
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+        auto* gPath = new llvm::GlobalVariable(module, strConstant->getType(), true, llvm::GlobalValue::ExternalLinkage, strConstant, "read_path" + std::to_string(mLogicalOperatorId));
+
+        llvm::Value* pathPtr = llvm::ConstantExpr::getInBoundsGetElementPtr(
+            gPath->getValueType(), gPath,
+            std::vector<llvm::Value*>{
+            llvm::ConstantInt::get(llvm::Type::getInt64Ty(context),0),
+            llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)
+        });
+
+        mState = stateRegistry.createHandle(
+        "read_source_" + std::to_string(mLogicalOperatorId),
+        "rtIOSourceCreate",
+        { llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mIOFormat)), pathPtr },
+        { i8Ty, ptrTy },
+        "rtIOSourceDestroy"
+        );
+    }
+
+    [[nodiscard]] llvm::Value* ReadOperator::loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const {
+        auto* ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
+        return segmentCtx.builder.CreateLoad(ptrTy, mState.var);
+    }
 
     llvm::Value *ReadOperator::codegenField(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *stringValue,
                                          const core::shared::types::ValueTypeId typeId) {

@@ -24,6 +24,9 @@
 #include <core/runtime/core_runtime.h>
 #include <core/runtime/time_runtime.h>
 
+#include "basic/operators/source/read/logical/read_operator.h"
+#include "basic/operators/source/read/runtime/read_runtime.h"
+
 
 static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
     llvm::LoopAnalysisManager loopAnaMgr;
