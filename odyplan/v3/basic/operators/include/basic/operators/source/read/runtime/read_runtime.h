@@ -10,20 +10,17 @@
 #include <core/runtime/task_runtime.h>
 #include <basic/io/io_source.h>
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSource>> gSources;
-
-inline sierra::odyplan::v3::basic::io::IOSourceId registerSource(std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSource> source) {
-    gSources.push_back(std::move(source));
-    return gSources.size() - 1;
-}
-
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
     extern "C" {
-        bool rtIOSourceHasNext(io::IOSourceId index);
+        void* rtIOSourceCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
 
-        const char* rtIOSourceGetField(io::IOSourceId index, const char* fieldName);
+        void rtIOSourceDestroy(void* state);
 
-        void rtIOSourceReset(io::IOSourceId index);
+        bool rtIOSourceHasNext(void* state);
+
+        const char* rtIOSourceGetField(void* state, const char* fieldName);
+
+        void rtIOSourceReset(void* state);
 
         bool rtParseBool(const char* str);
 

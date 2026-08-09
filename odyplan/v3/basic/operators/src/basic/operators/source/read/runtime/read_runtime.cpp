@@ -1,33 +1,35 @@
 #include <basic/operators/source/read/runtime/read_runtime.h>
 
+#include "basic/io/io_registry.h"
+
 
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
     extern "C" {
-        bool rtIOSourceHasNext(const sierra::odyplan::v3::basic::io::IOSourceId index) {
-            assert(index < gSources.size() && "invalid IOSource");
-            if (index >= gSources.size()) {
-                return false;
-            }
-
-            return gSources.at(index)->available();
+        void* rtIOSourceCreate(const void* /*typeRegistryRawPtr*/, const std::uint8_t ioFormat, const char* path) {
+            const io::IORegistry ioRegistry = io::IORegistry::withBuiltins();
+            const nlohmann::json config = {{"path", path}};
+            auto source = ioRegistry.createSourceIO(static_cast<sierra::odyplan::v3::basic::io::IOFormatType>(ioFormat), config);
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+            return source.release();
         }
 
-        const char* rtIOSourceGetField(const sierra::odyplan::v3::basic::io::IOSourceId index, const char* fieldName) {
-            assert(index < gSources.size() && "invalid IOSource");
-            if (index >= gSources.size() || fieldName == nullptr) {
-                return nullptr;
-            }
-
-            const sierra::odyplan::v3::basic::io::IOData& current = gSources.at(index)->current();
-            const auto iter = current.find(fieldName);
-            return iter != current.end() ? iter->second.c_str() : nullptr;
+        void rtIOSourceDestroy(void* state) {
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+            delete static_cast<io::IIOSource*>(state);
         }
 
-        void rtIOSourceReset(const sierra::odyplan::v3::basic::io::IOSourceId index) {
-            assert(index < gSources.size() && "invalid IOSource");
-            if (index < gSources.size()) {
-                (*gSources.at(index)).reset();
-            }
+        bool rtIOSourceHasNext(void* state) {
+            return static_cast<io::IIOSource*>(state)->available();
+        }
+
+        const char* rtIOSourceGetField(void* state, const char* fieldName) {
+            const auto& current = static_cast<io::IIOSource*>(state)->current();
+            const auto it = current.find(fieldName);
+            return it != current.end() ? it->second.c_str() : nullptr;
+        }
+
+        void rtIOSourceReset(void* state) {
+            static_cast<io::IIOSource*>(state)->reset();
         }
 
         bool rtParseBool(const char* str) {
