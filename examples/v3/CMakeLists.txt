@@ -11,6 +11,8 @@ add_subdirectory(merge)
 add_subdirectory(merge_measure)
 add_subdirectory(join)
 
+add_subdirectory(aot)
+
 add_custom_target(odyplan_example_all)
 add_dependencies(odyplan_example_all
         odyplan_example_logical_plan

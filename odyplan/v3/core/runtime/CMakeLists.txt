@@ -25,7 +25,7 @@ target_link_libraries(${TARGET_NAME}
         spdlog::spdlog
 )
 
-odyplan_link_llvm(${TARGET_NAME} PRIVATE)
+odyplan_llvm_include_dirs(${TARGET_NAME} PRIVATE)
 
 if(WIN32)
     target_compile_definitions(${TARGET_NAME} PUBLIC
