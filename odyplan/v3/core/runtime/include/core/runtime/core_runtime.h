@@ -10,7 +10,7 @@ inline std::atomic atStop{false};
 extern "C" {
     inline void rtEnd() {
 #ifdef SIERRA_RUNTIME_IO
-        rtIOSinkFlushAll();
+        sierra::odyplan::v3::basic::operators::sink::write::runtime::rtIOSinkFlushAll();
 #endif
     }
 

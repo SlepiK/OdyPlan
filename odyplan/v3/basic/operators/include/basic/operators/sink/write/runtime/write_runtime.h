@@ -12,27 +12,17 @@ inline sierra::odyplan::v3::basic::io::IOSinkId registerSink(std::unique_ptr<sie
     return gSinks.size() - 1;
 }
 
-extern "C" {
-    inline void rtIOSinkBeginData(const sierra::odyplan::v3::basic::io::IOSinkId index) {
-        gSinks.at(index)->begin();
-    }
+namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
+    extern "C" {
+        void rtIOSinkBeginData(io::IOSinkId index);
 
-    inline void rtIOSinkWrite(const sierra::odyplan::v3::basic::io::IOSinkId index, const sierra::odyplan::v3::core::shared::types::ValueTypeId typeId, const char* key, const void* value) {
-        gSinks.at(index)->write(key, typeId, value);
-    }
+        void rtIOSinkWrite(io::IOSinkId index, core::shared::types::ValueTypeId typeId, const char* key, const void* value);
 
-    inline void rtIOSinkEndData(const sierra::odyplan::v3::basic::io::IOSinkId index) {
-        gSinks.at(index)->end();
-    }
+        void rtIOSinkEndData(io::IOSinkId index);
 
-    inline void rtIOSinkFlush(const sierra::odyplan::v3::basic::io::IOSinkId index) {
-        gSinks.at(index)->flush();
-    }
+        void rtIOSinkFlush(io::IOSinkId index);
 
-    inline void rtIOSinkFlushAll() {
-        for (const auto& sink : gSinks) {
-            sink->flush();
-        }
+        void rtIOSinkFlushAll();
     }
 }
 
