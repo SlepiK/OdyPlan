@@ -27,6 +27,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         odyplan::basic
 )
 
+odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
+
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 configure_file(

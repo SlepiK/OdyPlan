@@ -44,8 +44,27 @@ static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLev
     modPassMgr.run(module, modAnaMgr);
 }
 
+static void initializeSupportedTargets() {
+#ifdef ODYPLAN_TARGET_X86
+    LLVMInitializeX86TargetInfo();
+    LLVMInitializeX86Target();
+    LLVMInitializeX86TargetMC();
+    LLVMInitializeX86AsmPrinter();
+    LLVMInitializeX86AsmParser();
+#endif
+
+#ifdef ODYPLAN_TARGET_AArch64
+    LLVMInitializeAArch64TargetInfo();
+    LLVMInitializeAArch64Target();
+    LLVMInitializeAArch64TargetMC();
+    LLVMInitializeAArch64AsmPrinter();
+    LLVMInitializeAArch64AsmParser();
+#endif
+}
+
 int main(int argc, char** argv) {
     const std::string outputPath = argc > 1 ? argv[1] : "aot_select_plan.o";
+    const std::string targetTripleStr = argc > 2 ? argv[2] : llvm::sys::getDefaultTargetTriple();
 
     sierra::odyplan::v3::core::logical::plan::Plan logicalPlan;
 
@@ -73,7 +92,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Logical Plan: OK\n";
 
-std::cout << "Building Physical Plan...\n";
+    std::cout << "Building Physical Plan...\n";
     auto typeRegistry = sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
 
     sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
@@ -129,11 +148,8 @@ std::cout << "Building Physical Plan...\n";
 
     std::cout << "Running LLVM-AoT Stuff...\n";
 
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
+    initializeSupportedTargets();
 
-    const auto targetTripleStr = llvm::sys::getDefaultTargetTriple();
     const llvm::Triple targetTriple(targetTripleStr);
     module->setTargetTriple(targetTriple);
 
@@ -178,5 +194,4 @@ std::cout << "Building Physical Plan...\n";
 
     std::cout << "Object file written to: " << outputPath << "\n";
     return 0;
-
 }

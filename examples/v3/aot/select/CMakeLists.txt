@@ -19,6 +19,8 @@ target_link_libraries(${COMPILER_TARGET_NAME} PRIVATE
         odyplan::basic
 )
 
+odyplan_link_llvm_aot(${COMPILER_TARGET_NAME} PRIVATE)
+
 # 2. Generate o.-File of Plan
 
 set(GENERATED_PLAN_OBJECT ${CMAKE_CURRENT_BINARY_DIR}/select_plan.o)
@@ -64,6 +66,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         odyplan::core
         odyplan::basic
 )
+
+odyplan_link_llvm_aot(${TARGET_NAME} PRIVATE)
 
 enable_clang_tidy_on_target(${TARGET_NAME})
 
