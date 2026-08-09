@@ -5,24 +5,19 @@
 #include <vector>
 #include <basic/io/io_sink.h>
 
-inline std::vector<std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSink>> gSinks;
-
-inline sierra::odyplan::v3::basic::io::IOSinkId registerSink(std::unique_ptr<sierra::odyplan::v3::basic::io::IIOSink> sink) {
-    gSinks.push_back(std::move(sink));
-    return gSinks.size() - 1;
-}
-
 namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
     extern "C" {
-        void rtIOSinkBeginData(io::IOSinkId index);
+        void* rtIOSinkCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
 
-        void rtIOSinkWrite(io::IOSinkId index, core::shared::types::ValueTypeId typeId, const char* key, const void* value);
+        void rtIOSinkDestroy(void* state);
 
-        void rtIOSinkEndData(io::IOSinkId index);
+        void rtIOSinkBeginData(void* state);
 
-        void rtIOSinkFlush(io::IOSinkId index);
+        void rtIOSinkWrite(void* state, core::shared::types::ValueTypeId typeId, const char* key, const void* value);
 
-        void rtIOSinkFlushAll();
+        void rtIOSinkEndData(void* state);
+
+        void rtIOSinkFlush(void* state);
     }
 }
 

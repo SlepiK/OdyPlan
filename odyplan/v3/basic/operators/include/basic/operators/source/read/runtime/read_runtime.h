@@ -11,6 +11,25 @@
 #include <basic/io/io_source.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
+    namespace detail {
+        template <typename T>
+        T parseInt(const char* str, const char* func) {
+            if (str == nullptr) {
+                throw std::invalid_argument(std::string(func) +": invalid argument");
+            }
+
+            char* end = nullptr;
+            errno = 0;
+            const long value = std::strtoll(str, &end, 10);
+
+            if (end == str || *end != '\0' || errno == ERANGE || value < std::numeric_limits<T>::min() || value > std::numeric_limits<T>::max()) {
+                throw std::invalid_argument(std::string(func) +": invalid argument or out of range");
+            }
+
+            return static_cast<T>(value);
+        }
+    }
+
     extern "C" {
         void* rtIOSourceCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
 

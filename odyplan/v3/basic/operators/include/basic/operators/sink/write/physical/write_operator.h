@@ -14,24 +14,31 @@
 #include <core/physical/operators/sink/typed_sink_operator.h>
 #include <core/physical/port/port.h>
 
+#include "basic/io/io_format.h"
+
 namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     class WriteOperator : public core::physical::operators::sink::TypedSinkOperator {
     public:
-        WriteOperator(const core::physical::port::Port &inputPort, io::IOSinkId ioSinkId,
+        WriteOperator(const core::physical::port::Port &inputPort, core::shared::identifiers::OperatorId lOpId, const nlohmann::json &ioConfig, io::IOFormatType ioFormat,
                       core::logical::port::Port dataSchema);
 
         void consume(core::physical::segment::SegmentContext &segmentCtx,
                      core::shared::identifiers::PortId /*inputPort*/, const core::physical::data::DataPackage &tuple,
                      const core::physical::segment::SegmentDataConsumers & /*consumers*/) override;
 
-        void end(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId inputPort,
-                 const core::physical::segment::SegmentDataConsumers &consumers) override;
+        void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module, llvm::LLVMContext &context) override;
 
+        void end(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId inputPort, const core::physical::segment::SegmentDataConsumers &consumers) override;
     private:
-        io::IOSinkId mIOSinkId;
+        core::shared::identifiers::OperatorId mLogicalOperatorId;
+        io::IOFormatType mIOFormat;
         core::logical::port::Port mDataSchema;
+        core::physical::state::StateHandle mState;
+        nlohmann::json mIOConfig;
 
-        static void codegenField(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *index,
+        [[nodiscard]] llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
+
+        static void codegenField(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *state,
                                  llvm::Value *fieldName, llvm::Value *fieldValue,
                                  core::shared::types::ValueTypeId typeId);
     };
