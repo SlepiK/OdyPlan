@@ -13,8 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
         }
 
         void rtIOSinkDestroy(void* state) {
-            auto* sink = static_cast<io::IIOSink*>(state);
-            sink->flush();
+            const auto* sink = static_cast<io::IIOSink*>(state);
             // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
             delete sink;
         }
