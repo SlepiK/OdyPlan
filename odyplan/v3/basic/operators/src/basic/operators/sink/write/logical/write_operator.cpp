@@ -2,9 +2,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::sink::write::logical {
     WriteOperator::WriteOperator(const io::IOFormatType ioFormat, nlohmann::json ioConfig)
-        : mIOFormat(ioFormat),
-          mIOConfig(std::move(ioConfig)) {
-    }
+        : mIOFormat(ioFormat), mIOConfig(std::move(ioConfig)) {}
 
     core::shared::types::OperatorTypeId WriteOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -14,10 +12,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::logical {
         return mIOFormat;
     }
 
-    [[nodiscard]] const nlohmann::json &WriteOperator::getIOConfig() const {
+    [[nodiscard]] const nlohmann::json& WriteOperator::getIOConfig() const {
         return mIOConfig;
     }
 
-    void WriteOperator::validateInput() {
-    }
-}
+    void WriteOperator::validateInput() {}
+}  // namespace sierra::odyplan::v3::basic::operators::sink::write::logical

@@ -1,17 +1,17 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SINK_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SINK_HPP
 
+#include <nlohmann/json.hpp>
+
+#include <basic/io/io_sink.h>
 #include <fstream>
 #include <string>
-#include <nlohmann/json.hpp>
 #include <utility>
-#include <basic/io/io_sink.h>
 
 namespace sierra::odyplan::v3::basic::io::ndjson {
     class NDJSONSink : public IIOSink {
     public:
-        explicit NDJSONSink(std::string  path)
-            : mPath(std::move(path)) {
+        explicit NDJSONSink(std::string path) : mPath(std::move(path)) {
             mFileHandle.open(mPath, std::ios::out | std::ios::trunc);
 
             if (!mFileHandle.is_open()) {
@@ -30,8 +30,11 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         }
 
         NDJSONSink(NDJSONSink const&) = delete;
-        NDJSONSink& operator =(NDJSONSink const&) = delete;
+
+        NDJSONSink& operator=(NDJSONSink const&) = delete;
+
         NDJSONSink(NDJSONSink&&) = delete;
+
         NDJSONSink& operator=(NDJSONSink&&) = delete;
 
         void begin() override {
@@ -39,7 +42,9 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
             mInUse = true;
         }
 
-        void write(const char* key, const core::shared::types::ValueTypeId typeId, const void* rawData) override {
+        void write(const char* key,
+                   const core::shared::types::ValueTypeId typeId,
+                   const void* rawData) override {
             using T = core::shared::types::BuiltinValueType;
 
             // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -109,6 +114,6 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         nlohmann::ordered_json mCurrent;
         bool mInUse = false;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::io::ndjson
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SINK_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SINK_HPP

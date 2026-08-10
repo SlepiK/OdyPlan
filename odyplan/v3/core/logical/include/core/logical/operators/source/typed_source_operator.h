@@ -11,6 +11,6 @@ namespace sierra::odyplan::v3::core::logical::operators::source {
 
         explicit TypedSourceOperator(Port outputPort);
     };
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::source
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP

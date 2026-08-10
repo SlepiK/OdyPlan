@@ -34,17 +34,13 @@ namespace sierra::odyplan::v3::core::runtime::thread {
         mCompletion[workerId] = false;
         lock.unlock();
 
-        mWorkers.emplace_back([this, workerId] {
-            workerLoop(workerId);
-        });
+        mWorkers.emplace_back([this, workerId] { workerLoop(workerId); });
         return workerId;
     }
 
     void IoThreadPool::joinWorker(const std::size_t workerId) {
         std::unique_lock<std::mutex> lock(mMutex);
-        mDoneCV.wait(lock, [this, workerId] {
-            return mCompletion.at(workerId);
-        });
+        mDoneCV.wait(lock, [this, workerId] { return mCompletion.at(workerId); });
     }
 
     void IoThreadPool::workerLoop(std::size_t workerId) {
@@ -75,4 +71,4 @@ namespace sierra::odyplan::v3::core::runtime::thread {
             mDoneCV.notify_all();
         }
     }
-}
+}  // namespace sierra::odyplan::v3::core::runtime::thread

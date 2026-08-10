@@ -10,4 +10,4 @@ namespace sierra::odyplan::v3::basic::window {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_TYPE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_TYPE_HPP

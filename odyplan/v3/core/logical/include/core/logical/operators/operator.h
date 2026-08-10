@@ -1,8 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_OPERATOR_HPP
 #define SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_OPERATOR_HPP
 
-#include <core/shared/types/operator_type_id.h>
 #include <core/logical/port/port.h>
+#include <core/shared/types/operator_type_id.h>
 
 namespace sierra::odyplan::v3::core::builder {
     class PlanBuilder;
@@ -51,9 +51,8 @@ namespace sierra::odyplan::v3::core::logical::operators {
 
         Ports& getOutputPortsRef();
 
-        virtual void validate() const {
-        }
+        virtual void validate() const {}
     };
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_OPERATOR_HPP

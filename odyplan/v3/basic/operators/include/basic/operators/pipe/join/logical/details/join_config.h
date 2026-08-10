@@ -8,6 +8,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical::details {
         std::chrono::milliseconds leftWindowSize;
         std::chrono::milliseconds rightWindowSize;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical::details
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_LOGICAL_DETAILS_JOIN_CONFIG_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_LOGICAL_DETAILS_JOIN_CONFIG_HPP

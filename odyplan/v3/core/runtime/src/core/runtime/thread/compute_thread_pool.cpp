@@ -2,7 +2,7 @@
 
 namespace sierra::odyplan::v3::core::runtime::thread {
     ComputeThreadPool::ComputeThreadPool(const std::size_t poolSize)
-        : mQueueMutexes(poolSize), mQueues(poolSize){
+        : mQueueMutexes(poolSize), mQueues(poolSize) {
         mWorkers.reserve(poolSize);
         for (std::size_t i = 0; i < poolSize; ++i) {
             mWorkers.emplace_back([this, i] {});
@@ -28,7 +28,8 @@ namespace sierra::odyplan::v3::core::runtime::thread {
             prom->set_value();
         };
 
-        const auto index = mRoundRobin.fetch_add(1, std::memory_order_relaxed) % mQueueMutexes.size();
+        const auto index =
+            mRoundRobin.fetch_add(1, std::memory_order_relaxed) % mQueueMutexes.size();
         {
             const std::scoped_lock lock(mQueueMutexes.at(index));
             mQueues.at(index).push_front(std::move(wrapped));
@@ -52,7 +53,8 @@ namespace sierra::odyplan::v3::core::runtime::thread {
 
             std::unique_lock<std::mutex> lock(mWakeMutex);
             mWakeCV.wait_for(lock, std::chrono::milliseconds(1), [this] {
-                return mShutdown.load(std::memory_order_acquire) || mPending.load(std::memory_order_relaxed);
+                return mShutdown.load(std::memory_order_acquire) ||
+                       mPending.load(std::memory_order_relaxed);
             });
         }
     }
@@ -73,7 +75,7 @@ namespace sierra::odyplan::v3::core::runtime::thread {
             return false;
         }
 
-        std::uniform_int_distribution<std::size_t> dist(0, scale-1);
+        std::uniform_int_distribution<std::size_t> dist(0, scale - 1);
         for (std::size_t a = 0; a < scale; ++a) {
             const auto object = dist(rng);
             if (object == workerId) {
@@ -90,4 +92,4 @@ namespace sierra::odyplan::v3::core::runtime::thread {
 
         return false;
     }
-}
+}  // namespace sierra::odyplan::v3::core::runtime::thread

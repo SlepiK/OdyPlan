@@ -1,32 +1,25 @@
-#include <iostream>
-#include <llvm/Support/TargetSelect.h>
+#include "basic/operators/source/read/logical/read_operator.h"
+#include "basic/operators/source/read/runtime/read_runtime.h"
+#include "const_int_source_operator.h"
 
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
-#include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/OptimizationLevel.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_os_ostream.h>
 
-#include "const_int_source_operator.h"
-
-#include <core/logical/plan/plan.h>
-#include <core/builder/plan_builder.h>
-
+#include <basic/expression/builtin_expressions.h>
 #include <basic/operators/pipe/select/logical/select_operator.h>
 #include <basic/operators/pipe/select/physical/select_operator.h>
-
 #include <basic/operators/sink/print/logical/print_operator.h>
 #include <basic/operators/sink/print/physical/print_operator.h>
 #include <basic/operators/sink/print/runtime/print_runtime.h>
-
-#include <basic/expression/builtin_expressions.h>
-
+#include <core/builder/plan_builder.h>
+#include <core/logical/plan/plan.h>
 #include <core/runtime/core_runtime.h>
 #include <core/runtime/time_runtime.h>
-
-#include "basic/operators/source/read/logical/read_operator.h"
-#include "basic/operators/source/read/runtime/read_runtime.h"
-
+#include <iostream>
 
 static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
     llvm::LoopAnalysisManager loopAnaMgr;
@@ -52,81 +45,105 @@ int main() {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(
+        std::make_unique<
+            sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator>());
 
-    auto selectPredicate = sierra::odyplan::v3::basic::expression::LE(
-        sierra::odyplan::v3::basic::expression::field(0),
-        sierra::odyplan::v3::basic::expression::cInt(6));
+    auto selectPredicate =
+        sierra::odyplan::v3::basic::expression::LE(sierra::odyplan::v3::basic::expression::field(0),
+                                                   sierra::odyplan::v3::basic::expression::cInt(6));
 
-    auto selectId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator>(
-        std::move(selectPredicate)
-    ));
+    auto selectId = logicalPlan.addOperator(
+        std::make_unique<
+            sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator>(
+            std::move(selectPredicate)));
 
-    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
-        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV {0}
-    ));
+    auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::
+                                                               sink::print::logical::PrintOperator>(
+        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{
+            0}));
 
     logicalPlan.connect(
-        sierra::odyplan::v3::core::shared::operators::OperatorPortReference {.operatorId=sourceId,.portId=0},
-        sierra::odyplan::v3::core::shared::operators::OperatorPortReference {.operatorId=selectId,.portId=0});
+        sierra::odyplan::v3::core::shared::operators::OperatorPortReference{.operatorId = sourceId,
+                                                                            .portId = 0},
+        sierra::odyplan::v3::core::shared::operators::OperatorPortReference{.operatorId = selectId,
+                                                                            .portId = 0});
 
     logicalPlan.connect(
-        sierra::odyplan::v3::core::shared::operators::OperatorPortReference {.operatorId=selectId,.portId=0},
-        sierra::odyplan::v3::core::shared::operators::OperatorPortReference {.operatorId=sinkId,.portId=0});
+        sierra::odyplan::v3::core::shared::operators::OperatorPortReference{.operatorId = selectId,
+                                                                            .portId = 0},
+        sierra::odyplan::v3::core::shared::operators::OperatorPortReference{.operatorId = sinkId,
+                                                                            .portId = 0});
 
     std::cout << "Logical Plan: OK\n";
 
     std::cout << "Building Physical Plan...\n";
-    auto typeRegistry = sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
+    auto typeRegistry =
+        sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
 
     sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator::TYPE_ID,
         [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports&,
-            const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator&>(op);
+           const sierra::odyplan::v3::core::physical::port::Ports&,
+           const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
+            -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            const auto& concrete = static_cast<
+                const sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator&>(
+                op);
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::example::select::physical::ConstantIntSourceOperator>(outputPorts.front()));
+            ot.operators.push_back(
+                std::make_unique<
+                    sierra::odyplan::v3::example::select::physical::ConstantIntSourceOperator>(
+                    outputPorts.front()));
             return ot;
-        }
-    );
+        });
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::TYPE_ID,
         [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v3::core::physical::port::Ports&) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(op);
+           const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
+           const sierra::odyplan::v3::core::physical::port::Ports&)
+            -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            const auto& concrete = static_cast<
+                const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(
+                op);
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices()));
+            ot.operators.push_back(
+                std::make_unique<
+                    sierra::odyplan::v3::basic::operators::sink::print::physical::PrintOperator>(
+                    inputPorts.front(), concrete.getPortFieldIndices()));
             return ot;
-        }
-    );
+        });
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator::TYPE_ID,
         [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator&>(op);
+           const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
+           const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
+            -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::
+                                                   select::logical::SelectOperator&>(op);
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::select::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate()));
+            ot.operators.push_back(
+                std::make_unique<
+                    sierra::odyplan::v3::basic::operators::pipe::select::physical::SelectOperator>(
+                    inputPorts.front(), outputPorts.front(), concrete.getPredicate()));
             return ot;
-        }
-    );
+        });
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
-    sierra::odyplan::v3::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);
+    sierra::odyplan::v3::core::physical::plan::Plan const physicalPlan =
+        builder.build(logicalPlan, *ctx);
 
     std::cout << "Physical Plan: OK\n";
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("exampleSelect",*ctx);
+    auto module = std::make_unique<llvm::Module>("exampleSelect", *ctx);
     physicalPlan.codegen(*module, *ctx);
 
     std::cout << "\n\n";
@@ -160,40 +177,77 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
-    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtIOTaskSpawn),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtIOTaskJoin),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtComputeTaskSpawn),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtComputeTaskJoin),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtIOTaskSpawn),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtIOTaskJoin")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtIOTaskJoin),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskSpawn")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtComputeTaskSpawn),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtComputeTaskJoin")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtComputeTaskJoin),
+        llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintSeperator),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintSeperator),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(
+            &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),
+        llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtSleepMs")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtSleepMs), llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtSleepMs")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtSleepMs),
+        llvm::JITSymbolFlags::Exported);
 
-    symbolMap[jit->mangleAndIntern("rtNow")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtNow),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::odyStop),llvm::JITSymbolFlags::Exported);
-    symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtEnd),llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtNow")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtNow),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::odyStop),
+        llvm::JITSymbolFlags::Exported);
+    symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(
+        llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtEnd),
+        llvm::JITSymbolFlags::Exported);
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";
         return 1;
     }
 
-    auto threadSafeModule = llvm::orc::ThreadSafeModule(std::move(module),std::move(ctx));
+    auto threadSafeModule = llvm::orc::ThreadSafeModule(std::move(module), std::move(ctx));
 
     if (auto err = jit->addIRModule(std::move(threadSafeModule))) {
         std::cerr << "Failed to add IR module: " << llvm::toString(std::move(err)) << "\n";
         return 1;
     }
 
-    auto odyMain = jit->lookup("ody_main")->toPtr<void(*)()>();
-    auto odyInit = jit->lookup("ody_init")->toPtr<void(*)(const void*)>();
-    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void(*)()>();
+    auto odyMain = jit->lookup("ody_main")->toPtr<void (*)()>();
+    auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void*)>();
+    auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
     odyInit(&typeRegistry);
     odyMain();

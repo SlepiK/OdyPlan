@@ -1,18 +1,21 @@
 #include <algorithm>
+#include <core/logical/plan/plan.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <core/logical/plan/plan.h>
 
 namespace sierra::odyplan::v3::core::logical::plan {
-    void Plan::connect(const OperatorPortReference& fromOperator, const OperatorPortReference& toOperator) {
+    void Plan::connect(const OperatorPortReference& fromOperator,
+                       const OperatorPortReference& toOperator) {
         validateConnectionRequest(fromOperator, toOperator);
 
         if (!areConnectionTypesCompatible(fromOperator, toOperator)) {
-            throw std::invalid_argument("Plan::connect: incompatible port types between fromOperator and toOperator");
+            throw std::invalid_argument(
+                "Plan::connect: incompatible port types between fromOperator and toOperator");
         }
 
         if (wouldCreateCycle(fromOperator.operatorId, toOperator.operatorId)) {
-            throw std::invalid_argument("Plan::connect: connection would create a cycle in the plan");
+            throw std::invalid_argument(
+                "Plan::connect: connection would create a cycle in the plan");
         }
 
         const auto edge = OperatorPortReferenceConnection(fromOperator, toOperator);
@@ -32,29 +35,35 @@ namespace sierra::odyplan::v3::core::logical::plan {
     void Plan::validateConnectionRequest(const OperatorPortReference& fromOperator,
                                          const OperatorPortReference& toOperator) {
         if (fromOperator.operatorId >= mOperators.size()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator.operatorId out of range");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: fromOperator.operatorId out of range");
         }
 
         if (toOperator.operatorId >= mOperators.size()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: toOperator.operatorId out of range");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: toOperator.operatorId out of range");
         }
 
         const auto& from = op(fromOperator.operatorId);
 
         if (!from.hasOutputPorts()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output ports");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: fromOperator has no output ports");
         }
 
         if (from.getOutputPorts().empty()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator has no output schema");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: fromOperator has no output schema");
         }
 
         if (std::ranges::find(mSourceOperators, toOperator.operatorId) != mSourceOperators.end()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: source operator cant get a connection");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: source operator cant get a connection");
         }
 
         if (fromOperator.portId > from.getOutputPorts().size() - 1) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: source operator dont support the given port");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: source operator dont support the given port");
         }
 
         const auto& bindable = mBindables.at(toOperator.operatorId);
@@ -66,31 +75,35 @@ namespace sierra::odyplan::v3::core::logical::plan {
         const auto& to = op(toOperator.operatorId);
 
         if (!to.hasInputPorts()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: toOperator has no input ports");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: toOperator has no input ports");
         }
 
         if (fromOperator.portId >= from.getOutputPorts().size()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: fromOperator.portId is out of range");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: fromOperator.portId is out of range");
         }
 
         if (toOperator.portId >= to.getInputPorts().size()) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: toOperator.portId is out of range");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: toOperator.portId is out of range");
         }
 
         // No Fan-in # only one edge to one input port allowed!
-        const bool alreadyConnected = std::ranges::any_of(
-            mEdges,[&](const OperatorPortReferenceConnection& edge) {
+        const bool alreadyConnected =
+            std::ranges::any_of(mEdges, [&](const OperatorPortReferenceConnection& edge) {
                 return edge.toOperatorPortReference.operatorId == toOperator.operatorId &&
-                    edge.toOperatorPortReference.portId == toOperator.portId;
-            }
-        );
+                       edge.toOperatorPortReference.portId == toOperator.portId;
+            });
 
         if (alreadyConnected) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: input port is already used");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: input port is already used");
         }
 
         if (fromOperator.operatorId == toOperator.operatorId) {
-            throw std::invalid_argument("Plan::validateConnectionRequest: self-loops are not allowed");
+            throw std::invalid_argument(
+                "Plan::validateConnectionRequest: self-loops are not allowed");
         }
     }
 
@@ -102,11 +115,11 @@ namespace sierra::odyplan::v3::core::logical::plan {
         result.reserve(mOperators.size());
 
         for (std::size_t operatorId = 0; operatorId < mOperators.size(); ++operatorId) {
-            //Get all edges coming in the operator (source_operator has 0!)
+            // Get all edges coming in the operator (source_operator has 0!)
             const auto operatorDegree = getInEdgesFromOperator(operatorId).size();
             inDegree[operatorId] = operatorDegree;
             if (operatorDegree == 0) {
-                //source_operator dont need further processing
+                // source_operator dont need further processing
                 ready.push_back(operatorId);
             }
         }
@@ -117,7 +130,8 @@ namespace sierra::odyplan::v3::core::logical::plan {
             result.push_back(currentOperatorId);
 
             for (const auto& currentOperatorOutEdge : getOutEdgesFromOperator(currentOperatorId)) {
-                const auto nextOperatorId = currentOperatorOutEdge.toOperatorPortReference.operatorId;
+                const auto nextOperatorId =
+                    currentOperatorOutEdge.toOperatorPortReference.operatorId;
                 if (--inDegree[nextOperatorId] == 0) {
                     ready.push_back(nextOperatorId);
                 }
@@ -125,14 +139,16 @@ namespace sierra::odyplan::v3::core::logical::plan {
         }
 
         if (result.size() != mOperators.size()) {
-            //If a operator is added but not connected, it should also exit here
-            throw std::logic_error("Plan::topologicalOrder: Missmatch of size. Cycle or missing connected operator detected");
+            // If a operator is added but not connected, it should also exit here
+            throw std::logic_error("Plan::topologicalOrder: Missmatch of size. Cycle or missing "
+                                   "connected operator detected");
         }
 
         return result;
     }
 
-    bool Plan::areConnectionTypesCompatible(const OperatorPortReference& fromOperator, const OperatorPortReference& toOperator) const {
+    bool Plan::areConnectionTypesCompatible(const OperatorPortReference& fromOperator,
+                                            const OperatorPortReference& toOperator) const {
         const auto& outPort = op(fromOperator.operatorId).getOutputPorts().at(fromOperator.portId);
         const auto& inPort = op(toOperator.operatorId).getInputPorts().at(toOperator.portId);
 
@@ -165,7 +181,7 @@ namespace sierra::odyplan::v3::core::logical::plan {
                 continue;
             }
 
-            for (const auto&[fromOperator, toOperator] : mEdges) {
+            for (const auto& [fromOperator, toOperator] : mEdges) {
                 if (fromOperator.operatorId == current) {
                     operatorStack.push_back(toOperator.operatorId);
                 }
@@ -175,13 +191,17 @@ namespace sierra::odyplan::v3::core::logical::plan {
         return false;
     }
 
-    [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection> Plan::getInEdgesFromOperator(const OperatorId id) const {
+    [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection>
+    Plan::getInEdgesFromOperator(const OperatorId id) const {
         const auto it = mIncomingEdges.find(id);
-        return it != mIncomingEdges.end() ? it->second : std::vector<OperatorPortReferenceConnection>();
+        return it != mIncomingEdges.end() ? it->second
+                                          : std::vector<OperatorPortReferenceConnection>();
     }
 
-    [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection> Plan::getOutEdgesFromOperator(const OperatorId id) const {
+    [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection>
+    Plan::getOutEdgesFromOperator(const OperatorId id) const {
         const auto it = mOutgoingEdges.find(id);
-        return it != mOutgoingEdges.end() ? it->second : std::vector<OperatorPortReferenceConnection>();
+        return it != mOutgoingEdges.end() ? it->second
+                                          : std::vector<OperatorPortReferenceConnection>();
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::plan

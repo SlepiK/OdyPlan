@@ -8,13 +8,13 @@ namespace sierra::odyplan::v3::core::physical::operators::pipe {
         if (outputPorts.empty()) {
             throw std::invalid_argument("TypedPipeOperator: outputPorts must not be empty");
         }
-        if (std::ranges::any_of(inputPorts, [](const port::Port &port) { return port.empty(); })) {
+        if (std::ranges::any_of(inputPorts, [](const port::Port& port) { return port.empty(); })) {
             throw std::invalid_argument("TypedPipeOperator: no empty input port allowed");
         }
-        if (std::ranges::any_of(outputPorts, [](const port::Port &port) { return port.empty(); })) {
+        if (std::ranges::any_of(outputPorts, [](const port::Port& port) { return port.empty(); })) {
             throw std::invalid_argument("TypedPipeOperator: no empty output port allowed");
         }
         getInputPortsRef() = std::move(inputPorts);
         getOutputPortsRef() = std::move(outputPorts);
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::pipe

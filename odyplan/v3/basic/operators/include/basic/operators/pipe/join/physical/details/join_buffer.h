@@ -1,17 +1,18 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
-#include <chrono>
-#include <mutex>
-
 #include <basic/operators/pipe/join/physical/details/join_side.h>
+#include <chrono>
 #include <core/physical/types/value_type_registry.h>
+#include <mutex>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     class JoinBuffer {
     public:
-        JoinBuffer(core::logical::port::Port leftSchema, core::logical::port::Port rightSchema,
-            const core::physical::types::ValueTypeRegistry& typeRegistry, std::chrono::milliseconds leftWindowSize,
-            std::chrono::milliseconds rightWindowSize);
+        JoinBuffer(core::logical::port::Port leftSchema,
+                   core::logical::port::Port rightSchema,
+                   const core::physical::types::ValueTypeRegistry& typeRegistry,
+                   std::chrono::milliseconds leftWindowSize,
+                   std::chrono::milliseconds rightWindowSize);
 
         ~JoinBuffer();
 
@@ -30,7 +31,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void beginRight();
 
-        auto pushLeft(std::size_t index, const void *data) -> void;
+        auto pushLeft(std::size_t index, const void* data) -> void;
 
         void pushRight(std::size_t index, const void* data);
 
@@ -42,12 +43,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::size_t getCandidateSize() const;
 
-        [[nodiscard]] const std::byte* getCandidatePtr(std::size_t candidateIndex, std::size_t fieldIndex) const;
+        [[nodiscard]] const std::byte* getCandidatePtr(std::size_t candidateIndex,
+                                                       std::size_t fieldIndex) const;
 
         [[nodiscard]] Timestamp getCandidateTimestamp(std::size_t candidateIndex) const;
 
-        void enableEqui(std::size_t leftFieldIndex, std::size_t rightFieldIndex,
-            core::physical::types::ValueTypeRegistry::HashFn hashFunction, core::physical::types::ValueTypeRegistry::EqualFn equalFunction);
+        void enableEqui(std::size_t leftFieldIndex,
+                        std::size_t rightFieldIndex,
+                        core::physical::types::ValueTypeRegistry::HashFn hashFunction,
+                        core::physical::types::ValueTypeRegistry::EqualFn equalFunction);
 
     private:
         JoinSide mLeftSide;
@@ -58,6 +62,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         bool mCandidateOnRight = false;
         bool mAllReleased = false;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP

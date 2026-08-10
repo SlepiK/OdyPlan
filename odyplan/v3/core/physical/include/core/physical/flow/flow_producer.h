@@ -10,13 +10,14 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IProducer() = default;
         virtual ~IProducer() = default;
         IProducer(IProducer const&) = delete;
-        IProducer& operator =(IProducer const&) = delete;
+        IProducer& operator=(IProducer const&) = delete;
         IProducer(IProducer&&) = delete;
         IProducer& operator=(IProducer&&) = delete;
-        virtual void produce(segment::SegmentContext& segmentCtx, const segment::SegmentDataConsumers& consumers) = 0;
+        virtual void produce(segment::SegmentContext& segmentCtx,
+                             const segment::SegmentDataConsumers& consumers) = 0;
 
         [[nodiscard]] virtual bool isComputeBound() const;
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::flow
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_PRODUCER_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_PRODUCER_HPP

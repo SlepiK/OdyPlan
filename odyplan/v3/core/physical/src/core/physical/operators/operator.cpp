@@ -13,8 +13,9 @@ namespace sierra::odyplan::v3::core::physical::operators {
         return mOutputPorts;
     }
 
-    void IOperator::declareState(state::StateRegistry& stateRegistry, llvm::Module& module, llvm::LLVMContext& context) {
-    }
+    void IOperator::declareState(state::StateRegistry& stateRegistry,
+                                 llvm::Module& module,
+                                 llvm::LLVMContext& context) {}
 
     shared::identifiers::OperatorId IOperator::getId() const {
         return mId;
@@ -31,4 +32,4 @@ namespace sierra::odyplan::v3::core::physical::operators {
     port::Ports& IOperator::getOutputPortsRef() {
         return mOutputPorts;
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators

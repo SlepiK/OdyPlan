@@ -1,5 +1,5 @@
-#include <stdexcept>
 #include <core/logical/operators/sink/sink_operator.h>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::core::logical::operators::sink {
     bool ISinkOperator::hasInputPorts() const {
@@ -23,4 +23,4 @@ namespace sierra::odyplan::v3::core::logical::operators::sink {
 
         inputPorts.at(portId) = std::move(input);
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::sink

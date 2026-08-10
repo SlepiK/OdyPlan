@@ -1,9 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_DATA_DATA_PACKAGE_HPP
 #define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_DATA_DATA_PACKAGE_HPP
 
-#include <vector>
-#include <cstdint>
 #include <llvm/IR/Value.h>
+
+#include <cstdint>
+#include <vector>
 
 namespace sierra::odyplan::v3::core::physical::data {
     struct DataPackage {
@@ -24,6 +25,6 @@ namespace sierra::odyplan::v3::core::physical::data {
 
         void reserve(std::size_t size);
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::data
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_DATA_DATA_PACKAGE_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_DATA_DATA_PACKAGE_HPP

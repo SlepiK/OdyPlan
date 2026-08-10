@@ -10,6 +10,6 @@ namespace sierra::odyplan::v3::core::physical::segment {
         flow::IProducer* asProducer = nullptr;
         bool isBreaker = false;
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::segment
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_SEGMENT_SEGMENT_NODE_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_SEGMENT_SEGMENT_NODE_HPP

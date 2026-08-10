@@ -1,14 +1,10 @@
-#include <stdexcept>
 #include <basic/operators/sink/print/logical/print_operator.h>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
-    PrintOperator::PrintOperator(PortFieldIndexV indices)
-        : mPortFieldIndices(std::move(indices)) {
-    }
+    PrintOperator::PrintOperator(PortFieldIndexV indices) : mPortFieldIndices(std::move(indices)) {}
 
-    PrintOperator::PrintOperator(PortFieldNameV names)
-        : mPortFieldNames(std::move(names)) {
-    }
+    PrintOperator::PrintOperator(PortFieldNameV names) : mPortFieldNames(std::move(names)) {}
 
     core::shared::types::OperatorTypeId PrintOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -23,16 +19,16 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
             PortFieldIndexV indices;
             indices.reserve(mPortFieldNames.size());
 
-            const auto &inputPort = getInputPorts().at(0);
+            const auto& inputPort = getInputPorts().at(0);
 
-            for (const auto &name: mPortFieldNames) {
-                auto iter = std::ranges::find_if(inputPort,
-                                                 [&](const core::logical::port::PortDescription &pd) {
-                                                     return pd.fieldName == name &&
-                                                            core::shared::types::isBuiltinValueTypePrintable(
-                                                                static_cast<core::shared::types::BuiltinValueType>(pd.
-                                                                    valueTypeId));
-                                                 });
+            for (const auto& name : mPortFieldNames) {
+                auto iter = std::ranges::find_if(
+                    inputPort, [&](const core::logical::port::PortDescription& pd) {
+                        return pd.fieldName == name &&
+                               core::shared::types::isBuiltinValueTypePrintable(
+                                   static_cast<core::shared::types::BuiltinValueType>(
+                                       pd.valueTypeId));
+                    });
 
                 if (iter == inputPort.end()) {
                     throw std::invalid_argument("PrintOperator: name not found in inputPort");
@@ -44,4 +40,4 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
             mPortFieldIndices = std::move(indices);
         }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::sink::print::logical

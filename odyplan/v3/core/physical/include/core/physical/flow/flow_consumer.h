@@ -1,9 +1,9 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_CONSUMER_HPP
 #define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_CONSUMER_HPP
 
+#include <core/physical/data/data_package.h>
 #include <core/physical/segment/segment_context.h>
 #include <core/physical/segment/segment_data_consumer.h>
-#include <core/physical/data/data_package.h>
 #include <core/shared/identifiers/port_id.h>
 
 namespace sierra::odyplan::v3::core::physical::flow {
@@ -12,13 +12,17 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IConsumer() = default;
         virtual ~IConsumer() = default;
         IConsumer(IConsumer const&) = delete;
-        IConsumer& operator =(IConsumer const&) = delete;
+        IConsumer& operator=(IConsumer const&) = delete;
         IConsumer(IConsumer&&) = delete;
         IConsumer& operator=(IConsumer&&) = delete;
-        virtual void consume(segment::SegmentContext& segmentCtx, shared::identifiers::PortId inputPort, const data::DataPackage& data, const segment::SegmentDataConsumers& consumers) = 0;
-        virtual void end(segment::SegmentContext& segmentCtx, shared::identifiers::PortId inputPort, const segment::SegmentDataConsumers& consumers) {
-        }
+        virtual void consume(segment::SegmentContext& segmentCtx,
+                             shared::identifiers::PortId inputPort,
+                             const data::DataPackage& data,
+                             const segment::SegmentDataConsumers& consumers) = 0;
+        virtual void end(segment::SegmentContext& segmentCtx,
+                         shared::identifiers::PortId inputPort,
+                         const segment::SegmentDataConsumers& consumers) {}
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::flow
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_CONSUMER_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_FLOW_FLOW_CONSUMER_HPP

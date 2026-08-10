@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::basic::window {
         IWindowBuffer() = default;
         virtual ~IWindowBuffer() = default;
         IWindowBuffer(IWindowBuffer const&) = delete;
-        IWindowBuffer& operator =(IWindowBuffer const&) = delete;
+        IWindowBuffer& operator=(IWindowBuffer const&) = delete;
         IWindowBuffer(IWindowBuffer&&) = delete;
         IWindowBuffer& operator=(IWindowBuffer&&) = delete;
 
@@ -29,10 +29,12 @@ namespace sierra::odyplan::v3::basic::window {
 
         [[nodiscard]] virtual std::size_t getRowCountInWindow(std::size_t index) const = 0;
 
-        [[nodiscard]] virtual const std::byte* getData(std::size_t windowIndex, std::size_t rowIndex, std::size_t fieldIndex) const = 0;
+        [[nodiscard]] virtual const std::byte*
+        getData(std::size_t windowIndex, std::size_t rowIndex, std::size_t fieldIndex) const = 0;
 
-        [[nodiscard]] virtual std::chrono::sys_time<std::chrono::milliseconds> getTimestamp(std::size_t windowIndex, std::size_t rowIndex) const = 0;
+        [[nodiscard]] virtual std::chrono::sys_time<std::chrono::milliseconds>
+        getTimestamp(std::size_t windowIndex, std::size_t rowIndex) const = 0;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::window
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_BUFFER_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_BUFFER_HPP

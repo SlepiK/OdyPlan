@@ -1,10 +1,9 @@
-#include <set>
 #include <core/physical/plan/plan.h>
+#include <set>
 
 namespace sierra::odyplan::v3::core::physical::plan {
     Plan::Plan(const types::ValueTypeRegistry& valueTypeRegistry)
-            : mValueTypeRegistry(&valueTypeRegistry) {
-    }
+        : mValueTypeRegistry(&valueTypeRegistry) {}
 
     void Plan::addOperator(std::unique_ptr<IOperator> opr) {
         if (!opr) {
@@ -21,13 +20,15 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         const auto& front = chain.nodes.front();
         if (front.asProducer == nullptr && front.asConsumer == nullptr) {
-            throw std::invalid_argument("Plan::addChain: first node in chain must have at least one valid entry point");
+            throw std::invalid_argument(
+                "Plan::addChain: first node in chain must have at least one valid entry point");
         }
         mOrder.push_back(logicalOperatorId);
         mChains.emplace(logicalOperatorId, std::move(chain));
     }
 
-    void Plan::addOutgoingEdge(OperatorId logicalOperatorId, std::vector<OperatorPortReferenceConnection>edges) {
+    void Plan::addOutgoingEdge(OperatorId logicalOperatorId,
+                               std::vector<OperatorPortReferenceConnection> edges) {
         mOutgoingEdges.emplace(logicalOperatorId, std::move(edges));
     }
 
@@ -47,31 +48,45 @@ namespace sierra::odyplan::v3::core::physical::plan {
         for (const auto& [fromOperatorId, edgeLists] : mOutgoingEdges) {
             for (const auto& edge : edgeLists) {
                 ++inDegreeCache[edge.toOperatorPortReference.operatorId];
-                incomingInputIndices[edge.toOperatorPortReference.operatorId].insert(edge.toOperatorPortReference.portId);
+                incomingInputIndices[edge.toOperatorPortReference.operatorId].insert(
+                    edge.toOperatorPortReference.portId);
             }
         }
 
-        segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&, const data::DataPackage&) {};
+        segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&,
+                                                             const data::DataPackage&) {};
 
-        detail::PlanConstruction detailBuilder{.chains=mChains, .outgoingEdges=mOutgoingEdges, .inDegree=inDegreeCache,
-            .noopConsumer=noopConsumer, .module=&module, .ctx=&ctx, .functions=&functions, .valueTypeRegistry=mValueTypeRegistry,
-            .ioRestartRoots=&ioFunctionsRestart, .computeRestartRoots=&computeFunctionsRestart};
+        detail::PlanConstruction detailBuilder{.chains = mChains,
+                                               .outgoingEdges = mOutgoingEdges,
+                                               .inDegree = inDegreeCache,
+                                               .noopConsumer = noopConsumer,
+                                               .module = &module,
+                                               .ctx = &ctx,
+                                               .functions = &functions,
+                                               .valueTypeRegistry = mValueTypeRegistry,
+                                               .ioRestartRoots = &ioFunctionsRestart,
+                                               .computeRestartRoots = &computeFunctionsRestart};
 
         for (const auto& [id, chain] : mChains) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
                 auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
-                auto* fn = llvm::Function::Create(fnType, llvm::Function::ExternalLinkage, "ody_rsource_" + std::to_string(id), &module);
+                auto* fn = llvm::Function::Create(fnType,
+                                                  llvm::Function::ExternalLinkage,
+                                                  "ody_rsource_" + std::to_string(id),
+                                                  &module);
                 auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
                 segment::SegmentContext segmentContext(fn, entryBB, ctx, *mValueTypeRegistry);
 
-                chain.nodes.front().asProducer->produce(segmentContext, detailBuilder.afterEntry(id));
+                chain.nodes.front().asProducer->produce(segmentContext,
+                                                        detailBuilder.afterEntry(id));
                 segmentContext.builder.CreateRetVoid();
                 functions.push_back(fn);
             }
         }
 
         auto* endFnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
-        auto* endFn = llvm::Function::Create(endFnType, llvm::Function::ExternalLinkage, "ody_end_phase", &module);
+        auto* endFn = llvm::Function::Create(
+            endFnType, llvm::Function::ExternalLinkage, "ody_end_phase", &module);
         auto* endEntryBB = llvm::BasicBlock::Create(ctx, "basicEntry", endFn);
 
         segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mValueTypeRegistry);
@@ -103,9 +118,14 @@ namespace sierra::odyplan::v3::core::physical::plan {
         codegenMain(module, ctx, ioRoots, computeFunctionsRestart, endFn);
     }
 
-    void Plan::codegenMain(llvm::Module& module, llvm::LLVMContext& ctx, const std::vector<llvm::Function*>& ioRoots, const std::vector<llvm::Function*>& computeRoots, llvm::Function* endPhase) {
+    void Plan::codegenMain(llvm::Module& module,
+                           llvm::LLVMContext& ctx,
+                           const std::vector<llvm::Function*>& ioRoots,
+                           const std::vector<llvm::Function*>& computeRoots,
+                           llvm::Function* endPhase) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
-        auto* mainFn = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
+        auto* mainFn = llvm::Function::Create(
+            functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
 
         auto* basicBlock = llvm::BasicBlock::Create(ctx, "basicEntry", mainFn);
 
@@ -114,10 +134,15 @@ namespace sierra::odyplan::v3::core::physical::plan {
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
-        auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        auto ioJoinFn = module.getOrInsertFunction("rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
-        auto computeSpawnFn = module.getOrInsertFunction("rtComputeTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        auto computeJoinFn = module.getOrInsertFunction("rtComputeTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+        auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn",
+                                                    llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        auto ioJoinFn = module.getOrInsertFunction(
+            "rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+        auto computeSpawnFn = module.getOrInsertFunction(
+            "rtComputeTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        auto computeJoinFn = module.getOrInsertFunction(
+            "rtComputeTaskJoin",
+            llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
 
         std::vector<llvm::Value*> ioHandles;
         std::vector<llvm::Value*> computeHandles;
@@ -144,9 +169,10 @@ namespace sierra::odyplan::v3::core::physical::plan {
             builder.CreateCall(endPhase);
         }
 
-        const auto endFn = module.getOrInsertFunction("rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
+        const auto endFn = module.getOrInsertFunction(
+            "rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
         builder.CreateCall(endFn, {});
 
         builder.CreateRetVoid();
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::plan

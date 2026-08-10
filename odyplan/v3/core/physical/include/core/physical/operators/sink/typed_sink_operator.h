@@ -8,6 +8,6 @@ namespace sierra::odyplan::v3::core::physical::operators::sink {
     public:
         explicit TypedSinkOperator(port::Port inputPort);
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::sink
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SINK_TYPED_SINK_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SINK_TYPED_SINK_OPERATOR_HPP

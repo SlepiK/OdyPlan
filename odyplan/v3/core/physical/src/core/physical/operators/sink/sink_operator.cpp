@@ -12,4 +12,4 @@ namespace sierra::odyplan::v3::core::physical::operators::sink {
     OperatorRole ISinkOperator::getRole() const {
         return OperatorRole::SINK;
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::sink

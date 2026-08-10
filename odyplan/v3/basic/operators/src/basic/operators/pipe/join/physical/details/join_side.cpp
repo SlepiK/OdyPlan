@@ -1,24 +1,25 @@
 #include <basic/operators/pipe/join/physical/details/join_side.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
-    JoinSide::JoinSide(core::logical::port::Port schema, const core::physical::types::ValueTypeRegistry &typeRegistry,
+    JoinSide::JoinSide(core::logical::port::Port schema,
+                       const core::physical::types::ValueTypeRegistry& typeRegistry,
                        const std::chrono::milliseconds windowSize)
-        : mLayout(std::move(schema), typeRegistry),
-          mWindowSize(windowSize) {
-    }
+        : mLayout(std::move(schema), typeRegistry), mWindowSize(windowSize) {}
 
     void JoinSide::begin() {
         mLayout.begin();
     }
 
-    void JoinSide::push(const std::size_t index, const void *data) {
+    void JoinSide::push(const std::size_t index, const void* data) {
         mLayout.push(index, data);
     }
 
     void JoinSide::evict(const Timestamp otherMark) {
-        while (!mBufferedRows.empty() && (mBufferedRows.front().timestamp + mWindowSize) <= otherMark) {
+        while (!mBufferedRows.empty() &&
+               (mBufferedRows.front().timestamp + mWindowSize) <= otherMark) {
             if (mKeyFieldIndex) {
-                const auto *keyPtr = mBufferedRows.front().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
+                const auto* keyPtr =
+                    mBufferedRows.front().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
                 const auto hashValue = mHashFunction(keyPtr);
                 auto [v, g] = mKeyIndex.equal_range(hashValue);
                 for (auto iter = v; iter != g; ++iter) {
@@ -40,7 +41,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mBufferedRows.push_back(RowBuffer{.values = mLayout.pop(), .timestamp = timestamp});
 
         if (mKeyFieldIndex) {
-            const auto *keyPtr = mBufferedRows.back().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
+            const auto* keyPtr =
+                mBufferedRows.back().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
             mKeyIndex.emplace(mHashFunction(keyPtr), absoluteIndex);
         }
 
@@ -52,7 +54,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinSide::release() {
-        for (auto &[values, timestampMs]: mBufferedRows) {
+        for (auto& [values, timestampMs] : mBufferedRows) {
             mLayout.releaseRow(values);
         }
         mBufferedRows.clear();
@@ -71,21 +73,26 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mWindowSize;
     }
 
-    const std::byte *JoinSide::getFieldPtr(const std::size_t rowIndex, const std::size_t fieldIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).values.data() + mLayout.offsetOf(fieldIndex);
+    const std::byte* JoinSide::getFieldPtr(const std::size_t rowIndex,
+                                           const std::size_t fieldIndex) const {
+        return mBufferedRows.at(rowIndex - mBasisIndex).values.data() +
+               mLayout.offsetOf(fieldIndex);
     }
 
-    bool JoinSide::isOver(const Timestamp otherTimestamp, const std::chrono::milliseconds otherWindowSize,
+    bool JoinSide::isOver(const Timestamp otherTimestamp,
+                          const std::chrono::milliseconds otherWindowSize,
                           const std::size_t rowIndex) const {
-        const auto &[values, timestamp] = mBufferedRows.at(rowIndex - mBasisIndex);
-        return (otherTimestamp < (timestamp + mWindowSize)) && (timestamp < (otherTimestamp + otherWindowSize));
+        const auto& [values, timestamp] = mBufferedRows.at(rowIndex - mBasisIndex);
+        return (otherTimestamp < (timestamp + mWindowSize)) &&
+               (timestamp < (otherTimestamp + otherWindowSize));
     }
 
     Timestamp JoinSide::getTimestamp(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).timestamp;
     }
 
-    void JoinSide::enableKeyIdx(const std::size_t fieldIndex, core::physical::types::ValueTypeRegistry::HashFn hashFunction,
+    void JoinSide::enableKeyIdx(const std::size_t fieldIndex,
+                                core::physical::types::ValueTypeRegistry::HashFn hashFunction,
                                 core::physical::types::ValueTypeRegistry::EqualFn equalFunction) {
         mKeyFieldIndex = fieldIndex;
         mHashFunction = std::move(hashFunction);
@@ -104,14 +111,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLastAbsoluteIndex;
     }
 
-    std::vector<std::uint64_t> JoinSide::hashLookup(const std::byte *query) {
+    std::vector<std::uint64_t> JoinSide::hashLookup(const std::byte* query) {
         std::vector<std::uint64_t> result;
         const auto hashValue = mHashFunction(query);
         const auto [z, h] = mKeyIndex.equal_range(hashValue);
         for (auto iter = z; iter != h; ++iter) {
             const auto candidateIndex = iter->second;
-            //NOLINTNEXTLINE(bugprone-unchecked-optional-access,-warnings-as-errors)
-            const auto *candidate = getFieldPtr(candidateIndex, *mKeyFieldIndex);
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access,-warnings-as-errors)
+            const auto* candidate = getFieldPtr(candidateIndex, *mKeyFieldIndex);
             if (mEqualFunction(candidate, query)) {
                 result.push_back(candidateIndex);
             }
@@ -122,4 +129,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     std::uint64_t JoinSide::getBaseIndex() const {
         return mBasisIndex;
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

@@ -9,30 +9,35 @@ namespace sierra::odyplan::v3::example::full {
     constexpr core::shared::types::ValueTypeId TYPE_INT = 1;
 
     inline core::logical::port::Port createIntPort() {
-        return { core::logical::port::PortDescription {.valueTypeId= std::to_underlying(core::shared::types::BuiltinValueType::INT32),.typeJsonName="int"} };
+        return {core::logical::port::PortDescription{
+            .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
+            .typeJsonName = "int"}};
     }
 
     namespace logical {
-        class ConstantIntSourceOperator final : public core::logical::operators::source::TypedSourceOperator {
+        class ConstantIntSourceOperator final
+            : public core::logical::operators::source::TypedSourceOperator {
         public:
             static constexpr core::shared::types::OperatorTypeId TYPE_ID = 0;
 
-            explicit ConstantIntSourceOperator() : TypedSourceOperator(std::move(createIntPort())) {
-            }
+            explicit ConstantIntSourceOperator()
+                : TypedSourceOperator(std::move(createIntPort())) {}
 
             [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override {
                 return TYPE_ID;
             }
         };
-    }
+    }  // namespace logical
 
     namespace physical {
-        class ConstantIntSourceOperator final : public core::physical::operators::source::TypedSourceOperator {
+        class ConstantIntSourceOperator final
+            : public core::physical::operators::source::TypedSourceOperator {
         public:
-            explicit ConstantIntSourceOperator(core::physical::port::Port outputPort) : TypedSourceOperator(std::move(outputPort)) {
-            }
+            explicit ConstantIntSourceOperator(core::physical::port::Port outputPort)
+                : TypedSourceOperator(std::move(outputPort)) {}
 
-            void produce(core::physical::segment::SegmentContext& segmentCtx, const core::physical::segment::SegmentDataConsumers& consumers) override {
+            void produce(core::physical::segment::SegmentContext& segmentCtx,
+                         const core::physical::segment::SegmentDataConsumers& consumers) override {
                 llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
                 llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 #ifdef ENABLE_LOOPED_SOURCE
@@ -45,22 +50,25 @@ namespace sierra::odyplan::v3::example::full {
                 segmentCtx.builder.CreateBr(loopBB);
                 segmentCtx.builder.SetInsertPoint(loopBB);
 
-                auto* stopFnType = llvm::FunctionType::get(
-                    llvm::Type::getInt1Ty(ctx), {}, false);
+                auto* stopFnType = llvm::FunctionType::get(llvm::Type::getInt1Ty(ctx), {}, false);
 
-                llvm::FunctionCallee stopFn = segmentCtx.builder.GetInsertBlock()->getModule()->getOrInsertFunction("odyStop", stopFnType);
+                llvm::FunctionCallee stopFn =
+                    segmentCtx.builder.GetInsertBlock()->getModule()->getOrInsertFunction(
+                        "odyStop", stopFnType);
                 llvm::Value* stop = segmentCtx.builder.CreateCall(stopFn, {});
                 segmentCtx.builder.CreateCondBr(stop, exitBB, produceBB);
                 segmentCtx.builder.SetInsertPoint(produceBB);
 #endif
-                llvm::Value* value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(segmentCtx.builder.getContext()),5);
+                llvm::Value* value = llvm::ConstantInt::get(
+                    llvm::Type::getInt32Ty(segmentCtx.builder.getContext()), 5);
 
                 core::physical::data::DataPackage tuple;
                 tuple.reserve(getOutputPorts().size());
 
                 tuple.pushBack(value);
 
-                const auto nowFn = module->getOrInsertFunction("rtNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
+                const auto nowFn = module->getOrInsertFunction(
+                    "rtNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
                 consumers.front()(segmentCtx, tuple);
@@ -70,8 +78,8 @@ namespace sierra::odyplan::v3::example::full {
 #endif
             }
         };
-    }
+    }  // namespace physical
 
-}
+}  // namespace sierra::odyplan::v3::example::full
 
-#endif //SIERRA_ODYPLAN_V3_EXAMPLE_FULL_CONSTINTSOURCEOPERATOR_H
+#endif  // SIERRA_ODYPLAN_V3_EXAMPLE_FULL_CONSTINTSOURCEOPERATOR_H
