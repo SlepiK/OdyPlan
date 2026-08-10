@@ -20,8 +20,12 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         }
 
         ~NDJSONSink() override {
-            if (mFileHandle.is_open()) {
-                mFileHandle.flush();
+            try {
+                if (mInUse) {
+                    NDJSONSink::flush();
+                }
+            } catch (...) {
+                std::fputs("NDJSONSink: flush failed in destructor (unknown exception)\n", stderr);
             }
         }
 
@@ -32,6 +36,7 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
 
         void begin() override {
             mCurrent = nlohmann::json::object();
+            mInUse = true;
         }
 
         void write(const char* key, const core::shared::types::ValueTypeId typeId, const void* rawData) override {
@@ -67,21 +72,42 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
                     throw std::invalid_argument("NDJSONSink: Unknown typeId");
             }
             // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+            mInUse = true;
         }
 
         void end() override {
             mFileHandle << mCurrent.dump() << '\n';
+
+            if (!mFileHandle) {
+                throw std::runtime_error("NDJSONSink: failed to write record");
+            }
+
             mCurrent.clear();
+            mInUse = true;
         }
 
         void flush() override {
-            mFileHandle.flush();
+            flushImpl(false);
         }
 
     private:
+        void flushImpl(const bool force) {
+            if (!mCurrent.empty()) {
+                end();
+            }
+
+            if (!force && !mInUse) {
+                return;
+            }
+
+            mFileHandle.flush();
+            mInUse = false;
+        }
+
         std::string mPath;
         std::ofstream mFileHandle;
         nlohmann::ordered_json mCurrent;
+        bool mInUse = false;
     };
 }
 

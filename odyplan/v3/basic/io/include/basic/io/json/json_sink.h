@@ -12,12 +12,12 @@ namespace sierra::odyplan::v3::basic::io::json {
     public:
         explicit JSONSink(std::string  path)
             : mPath(std::move(path)),
-                mData(nlohmann::json::array()) {
+                mData(nlohmann::ordered_json::array()) {
         }
 
         ~JSONSink() override {
             try {
-                if (!mData.empty()) {
+                if (mInUse) {
                     JSONSink::flush();
                 }
             } catch (...) {
@@ -32,6 +32,7 @@ namespace sierra::odyplan::v3::basic::io::json {
 
         void begin() override {
             mCurrent = nlohmann::json::object();
+            mInUse = true;
         }
 
         void write(const char* key, const core::shared::types::ValueTypeId typeId, const void* rawData) override {
@@ -67,14 +68,29 @@ namespace sierra::odyplan::v3::basic::io::json {
                     throw std::invalid_argument("JsonSink: Unknown typeId");
             }
             // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+            mInUse = true;
         }
 
         void end() override {
             mData.push_back(mCurrent);
             mCurrent.clear();
+            mInUse = true;
         }
 
         void flush() override {
+            flushImpl(false);
+        }
+
+    private:
+        void flushImpl(const bool force) {
+            if (!mCurrent.empty()) {
+                end();
+            }
+
+            if (!force && !mInUse) {
+                return;
+            }
+
             std::ofstream file(mPath);
 
             if (!file.is_open()) {
@@ -84,12 +100,13 @@ namespace sierra::odyplan::v3::basic::io::json {
             file << mData.dump(2);
 
             mData.clear();
+            mInUse = false;
         }
 
-    private:
         std::string mPath;
         nlohmann::ordered_json mData;
         nlohmann::ordered_json mCurrent;
+        bool mInUse = false;
     };
 }
 
