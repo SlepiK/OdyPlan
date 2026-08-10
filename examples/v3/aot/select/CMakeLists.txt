@@ -40,7 +40,7 @@ add_custom_target(odyplan_example_aot_select_plan DEPENDS ${GENERATED_PLAN_OBJEC
 set(TARGET_NAME odyplan_example_aot_select)
 
 add_executable(${TARGET_NAME}
-        src/select_entry.cpp
+        src/odypipe.cpp
         ${GENERATED_PLAN_OBJECT}
 )
 
