@@ -81,7 +81,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
-        [&ioRegistry](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports&,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
             // NOLINTNEXTLINE
