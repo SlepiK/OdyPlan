@@ -32,7 +32,7 @@ namespace sierra::odyplan::v3::core::runtime {
 
         void rtIOTaskJoin(IOTaskHandle ioTaskHandle);
 
-        void rtSleepMs(const std::int64_t ms);
+        void rtSleepMs(std::int64_t ms);
     }
 }
 
