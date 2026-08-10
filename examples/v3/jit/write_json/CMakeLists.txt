@@ -6,7 +6,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME odyplan_example_select)
+set(TARGET_NAME odyplan_example_write_json)
 
 add_executable(${TARGET_NAME}
         ${SOURCES}
@@ -30,6 +30,12 @@ target_link_libraries(${TARGET_NAME} PRIVATE
 odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
 
 enable_clang_tidy_on_target(${TARGET_NAME})
+
+configure_file(
+        data/read.json
+        ${CMAKE_CURRENT_BINARY_DIR}/read.json
+        COPYONLY
+)
 
 if(ENABLE_TOOLING)
     register_lint_sources(${SOURCES} ${HEADERS})

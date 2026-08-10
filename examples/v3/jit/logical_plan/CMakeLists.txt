@@ -13,7 +13,7 @@ add_executable(${TARGET_NAME}
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "include"
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE

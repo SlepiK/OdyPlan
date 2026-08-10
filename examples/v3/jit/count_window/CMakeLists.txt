@@ -6,7 +6,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME odyplan_example_read_ndjson)
+set(TARGET_NAME odyplan_example_count_window)
 
 add_executable(${TARGET_NAME}
         ${SOURCES}
@@ -16,9 +16,11 @@ target_include_directories(${TARGET_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_compile_definitions(${TARGET_NAME} PRIVATE
-        SIERRA_USER_PROGRAM_CLOCK
-)
+if(ENABLE_LOOPED_SOURCE)
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+            ENABLE_LOOPED_SOURCE
+    )
+endif ()
 
 target_link_libraries(${TARGET_NAME} PRIVATE
         odyplan::core
@@ -30,7 +32,7 @@ odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/data/read.ndjson
+        data/read.ndjson
         ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
         COPYONLY
 )
