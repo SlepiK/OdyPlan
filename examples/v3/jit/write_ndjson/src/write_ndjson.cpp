@@ -20,8 +20,6 @@
 #include <basic/operators/sink/write/physical/write_operator.h>
 #include <basic/operators/sink/write/runtime/write_runtime.h>
 
-#include <basic/io/io_registry.h>
-
 #include <core/runtime/core_runtime.h>
 #include <core/runtime/time_runtime.h>
 
@@ -68,13 +66,12 @@ int main() {
 
     std::cout << "Building Physical Plan...\n";
     auto typeRegistry = sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
-    auto ioRegistry = sierra::odyplan::v3::basic::io::IORegistry::withBuiltins();
 
     sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
-        [&ioRegistry](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports&,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
             // NOLINTNEXTLINE
@@ -94,7 +91,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::sink::write::logical::WriteOperator::TYPE_ID,
-        [&ioRegistry](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v3::core::physical::port::Ports&) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
             const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::sink::write::logical::WriteOperator&>(op);

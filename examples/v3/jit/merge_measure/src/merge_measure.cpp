@@ -26,8 +26,6 @@
 #include <basic/operators/sink/print/physical/print_operator.h>
 #include <basic/operators/sink/print/runtime/print_runtime.h>
 
-#include <basic/io/io_registry.h>
-
 #include <core/runtime/core_runtime.h>
 #include <core/runtime/time_runtime.h>
 
@@ -95,13 +93,12 @@ int main() {
 
     std::cout << "Building Physical Plan...\n";
     auto typeRegistry = sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
-    auto ioRegistry = sierra::odyplan::v3::basic::io::IORegistry::withBuiltins();
 
     sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
-        [&ioRegistry](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports&,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
             // NOLINTNEXTLINE
@@ -122,7 +119,7 @@ int main() {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::pipe::measure::logical::MeasureOperator::TYPE_ID,
-        [&ioRegistry](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
             // NOLINTNEXTLINE
