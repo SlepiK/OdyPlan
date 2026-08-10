@@ -6,7 +6,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME odyplan_example_project)
+set(TARGET_NAME odyplan_example_jit_project)
 
 add_executable(${TARGET_NAME}
         ${SOURCES}

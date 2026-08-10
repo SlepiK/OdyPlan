@@ -1,4 +1,3 @@
-add_subdirectory(logical_plan)
 add_subdirectory(full)
 add_subdirectory(project)
 add_subdirectory(select)
@@ -13,16 +12,15 @@ add_subdirectory(join)
 
 add_custom_target(odyplan_example_jit_all)
 add_dependencies(odyplan_example_jit_all
-        odyplan_example_logical_plan
-        odyplan_example_full
-        odyplan_example_project
-        odyplan_example_select
-        odyplan_example_read_ndjson
-        odyplan_example_write_json
-        odyplan_example_count_window
-        odyplan_example_time_window
-        odyplan_example_write_ndjson
-        odyplan_example_merge
-        odyplan_example_merge_measure
-        odyplan_example_join
+        odyplan_example_jit_full
+        odyplan_example_jit_project
+        odyplan_example_jit_select
+        odyplan_example_jit_read_ndjson
+        odyplan_example_jit_write_json
+        odyplan_example_jit_count_window
+        odyplan_example_jit_time_window
+        odyplan_example_jit_write_ndjson
+        odyplan_example_jit_merge
+        odyplan_example_jit_merge_measure
+        odyplan_example_jit_join
 )

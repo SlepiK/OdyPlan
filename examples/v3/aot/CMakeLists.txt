@@ -1,6 +1,26 @@
+add_subdirectory(count_window)
+add_subdirectory(full)
+add_subdirectory(join)
+add_subdirectory(merge)
+add_subdirectory(merge_measure)
+add_subdirectory(project)
+add_subdirectory(read_ndjson)
 add_subdirectory(select)
+add_subdirectory(time_window)
+add_subdirectory(write_json)
+add_subdirectory(write_ndjson)
 
 add_custom_target(odyplan_example_aot_all)
 add_dependencies(odyplan_example_aot_all
+        odyplan_example_aot_count_window
+        odyplan_example_aot_full
+        odyplan_example_aot_join
+        odyplan_example_aot_merge
+        odyplan_example_aot_merge_measure
+        odyplan_example_aot_project
         odyplan_example_aot_select
+        odyplan_example_aot_time_window
+        odyplan_example_aot_write_json
+        odyplan_example_aot_write_ndjson
+        odyplan_example_aot_read_ndjson
 )
