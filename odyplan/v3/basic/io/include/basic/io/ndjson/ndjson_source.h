@@ -1,12 +1,13 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SOURCE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SOURCE_HPP
 
-#include <fstream>
 #include <nlohmann/json.hpp>
+
 #include <basic/io/io_source.h>
+#include <fstream>
 
 namespace sierra::odyplan::v3::basic::io::ndjson {
-    class NDJSONSource : public IIOSource{
+    class NDJSONSource : public IIOSource {
     public:
         explicit NDJSONSource(const std::string& path) {
             mFileHandle.open(path);
@@ -19,8 +20,11 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         ~NDJSONSource() override = default;
 
         NDJSONSource(NDJSONSource const&) = delete;
-        NDJSONSource& operator =(NDJSONSource const&) = delete;
+
+        NDJSONSource& operator=(NDJSONSource const&) = delete;
+
         NDJSONSource(NDJSONSource&&) = delete;
+
         NDJSONSource& operator=(NDJSONSource&&) = delete;
 
         [[nodiscard]] bool available() override {
@@ -36,8 +40,9 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
                 nlohmann::json dataObj;
                 try {
                     dataObj = nlohmann::json::parse(currentLine);
-                } catch ( const nlohmann::json::parse_error& err) {
-                    throw std::runtime_error("NDJSONSource: parsing error: " + std::string(err.what()));
+                } catch (const nlohmann::json::parse_error& err) {
+                    throw std::runtime_error("NDJSONSource: parsing error: " +
+                                             std::string(err.what()));
                 }
 
                 if (!dataObj.is_object()) {
@@ -57,7 +62,6 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
             }
 
             return false;
-
         }
 
         [[nodiscard]] const IOData& current() const override {
@@ -77,6 +81,6 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         std::size_t mIndex{0};
         IOData mCurrentData;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::io::ndjson
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SOURCE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_IO_NDJSON_NDJSON_SOURCE_HPP

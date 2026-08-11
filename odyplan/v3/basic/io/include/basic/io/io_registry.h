@@ -1,10 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_IO_IO_REGISTRY_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_IO_IO_REGISTRY_HPP
 
-#include <functional>
-#include <memory>
 #include <nlohmann/json.hpp>
-#include <utility>
 
 #include <basic/io/io_format.h>
 #include <basic/io/io_sink.h>
@@ -13,6 +10,9 @@
 #include <basic/io/json/json_source.h>
 #include <basic/io/ndjson/ndjson_sink.h>
 #include <basic/io/ndjson/ndjson_source.h>
+#include <functional>
+#include <memory>
+#include <utility>
 
 namespace sierra::odyplan::v3::basic::io {
     class IORegistry {
@@ -42,27 +42,33 @@ namespace sierra::odyplan::v3::basic::io {
             registerSinkIO(static_cast<IOFormatType>(format), std::move(factory));
         }
 
-        [[nodiscard]] std::unique_ptr<IIOSource> createSourceIO(const IOFormatType format, const nlohmann::json& config) const {
+        [[nodiscard]] std::unique_ptr<IIOSource>
+        createSourceIO(const IOFormatType format, const nlohmann::json& config) const {
             const auto iter = mIOSourceFactory.find(format);
             if (iter == mIOSourceFactory.end()) {
-                throw std::invalid_argument("IORegistry: source is not registered" + std::to_string(format));
+                throw std::invalid_argument("IORegistry: source is not registered" +
+                                            std::to_string(format));
             }
             return iter->second(config);
         }
 
-        [[nodiscard]] std::unique_ptr<IIOSource> createSourceIO(const BuiltinIOFormat format, const nlohmann::json& config) const {
+        [[nodiscard]] std::unique_ptr<IIOSource>
+        createSourceIO(const BuiltinIOFormat format, const nlohmann::json& config) const {
             return createSourceIO(static_cast<IOFormatType>(format), config);
         }
 
-        [[nodiscard]] std::unique_ptr<IIOSink> createSinkIO(const IOFormatType format, const nlohmann::json& config) const {
+        [[nodiscard]] std::unique_ptr<IIOSink> createSinkIO(const IOFormatType format,
+                                                            const nlohmann::json& config) const {
             const auto iter = mIOSinkFactory.find(format);
             if (iter == mIOSinkFactory.end()) {
-                throw std::invalid_argument("IORegistry: sink is not registered" + std::to_string(format));
+                throw std::invalid_argument("IORegistry: sink is not registered" +
+                                            std::to_string(format));
             }
             return iter->second(config);
         }
 
-        [[nodiscard]] std::unique_ptr<IIOSink> createSinkIO(const BuiltinIOFormat format, const nlohmann::json& config) const {
+        [[nodiscard]] std::unique_ptr<IIOSink> createSinkIO(const BuiltinIOFormat format,
+                                                            const nlohmann::json& config) const {
             return createSinkIO(static_cast<IOFormatType>(format), config);
         }
 
@@ -90,10 +96,11 @@ namespace sierra::odyplan::v3::basic::io {
         [[nodiscard]] bool hasSinkIO(const IOFormatType format) const {
             return mIOSinkFactory.contains(format);
         }
+
     private:
         std::unordered_map<IOFormatType, IOSourceFactory> mIOSourceFactory;
         std::unordered_map<IOFormatType, IOSinkFactory> mIOSinkFactory;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::io
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_IO_IO_REGISTRY_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_IO_IO_REGISTRY_HPP

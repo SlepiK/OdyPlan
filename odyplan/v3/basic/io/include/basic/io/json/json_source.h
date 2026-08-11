@@ -1,12 +1,13 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_IO_JSON_JSON_SOURCE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_IO_JSON_JSON_SOURCE_HPP
 
-#include <fstream>
 #include <nlohmann/json.hpp>
+
 #include <basic/io/io_source.h>
+#include <fstream>
 
 namespace sierra::odyplan::v3::basic::io::json {
-    class JSONSource : public IIOSource{
+    class JSONSource : public IIOSource {
     public:
         explicit JSONSource(const std::string& path) {
             std::ifstream file(path);
@@ -18,15 +19,19 @@ namespace sierra::odyplan::v3::basic::io::json {
             mData = nlohmann::json::parse(file);
 
             if (!mData.is_array()) {
-                throw std::invalid_argument("JsonSource: root of the json source must be a json array");
+                throw std::invalid_argument(
+                    "JsonSource: root of the json source must be a json array");
             }
         }
 
         ~JSONSource() override = default;
 
         JSONSource(JSONSource const&) = delete;
-        JSONSource& operator =(JSONSource const&) = delete;
+
+        JSONSource& operator=(JSONSource const&) = delete;
+
         JSONSource(JSONSource&&) = delete;
+
         JSONSource& operator=(JSONSource&&) = delete;
 
         [[nodiscard]] bool available() override {
@@ -49,7 +54,6 @@ namespace sierra::odyplan::v3::basic::io::json {
             }
 
             return true;
-
         }
 
         [[nodiscard]] const IOData& current() const override {
@@ -66,6 +70,6 @@ namespace sierra::odyplan::v3::basic::io::json {
         std::size_t mIndex{0};
         IOData mCurrentData;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::io::json
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_IO_JSON_JSON_SOURCE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_IO_JSON_JSON_SOURCE_HPP

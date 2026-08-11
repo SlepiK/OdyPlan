@@ -1,5 +1,5 @@
-#include <stdexcept>
 #include <basic/operators/pipe/merge/logical/merge_operator.h>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical {
     core::shared::types::OperatorTypeId MergeOperator::getOperatorTypeId() const {
@@ -7,14 +7,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical {
     }
 
     void MergeOperator::validateInput() {
-        const auto &inputPortsRef = getInputPortsRef();
-        const auto &outputPortRef = getOutputPortsRef().at(0);
+        const auto& inputPortsRef = getInputPortsRef();
+        const auto& outputPortRef = getOutputPortsRef().at(0);
 
-        for (const auto &inputPortRef: inputPortsRef) {
+        for (const auto& inputPortRef : inputPortsRef) {
             if (inputPortRef != outputPortRef) {
-                throw std::logic_error(
-                    "MergeOperator::validate: all InputPorts and the first OutputPort need to be the same");
+                throw std::logic_error("MergeOperator::validate: all InputPorts and the first "
+                                       "OutputPort need to be the same");
             }
         }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical

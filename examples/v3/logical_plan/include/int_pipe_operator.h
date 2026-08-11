@@ -15,9 +15,8 @@ namespace sierra::odyplan::v3::example::logical_plan {
         }
 
     protected:
-        void validateInput() override {
-        }
+        void validateInput() override {}
     };
-}
+}  // namespace sierra::odyplan::v3::example::logical_plan
 
-#endif //SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_INTPIPEOPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_INTPIPEOPERATOR_HPP

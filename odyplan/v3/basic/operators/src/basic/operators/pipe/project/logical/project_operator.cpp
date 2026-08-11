@@ -1,20 +1,16 @@
-#include <stdexcept>
 #include <basic/operators/pipe/project/logical/project_operator.h>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
-    ProjectOperator::ProjectOperator(IndexMapping mapping)
-            : mMapping(std::move(mapping)) {
-    }
+    ProjectOperator::ProjectOperator(IndexMapping mapping) : mMapping(std::move(mapping)) {}
 
-    ProjectOperator::ProjectOperator(NameMapping mapping)
-        : mNameMapping(std::move(mapping)) {
-    }
+    ProjectOperator::ProjectOperator(NameMapping mapping) : mNameMapping(std::move(mapping)) {}
 
     [[nodiscard]] core::shared::types::OperatorTypeId ProjectOperator::getOperatorTypeId() const {
         return TYPE_ID;
     }
 
-    [[nodiscard]] const ProjectOperator::IndexMapping &ProjectOperator::getMapping() const {
+    [[nodiscard]] const ProjectOperator::IndexMapping& ProjectOperator::getMapping() const {
         return mMapping;
     }
 
@@ -27,8 +23,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         }
 
         core::logical::port::Port output;
-        auto &outputRef = getOutputPortsRef().at(0);
-        for (const auto &index: mMapping) {
+        auto& outputRef = getOutputPortsRef().at(0);
+        for (const auto& index : mMapping) {
             if (index >= outputRef.size()) {
                 throw std::invalid_argument("ProjectOperator: index out of range");
             }
@@ -43,14 +39,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         }
     }
 
-    ProjectOperator::IndexMapping ProjectOperator::resolveNameMapping(const core::logical::port::Port &inputPort,
-                                               const NameMapping &nameMapping) {
+    ProjectOperator::IndexMapping
+    ProjectOperator::resolveNameMapping(const core::logical::port::Port& inputPort,
+                                        const NameMapping& nameMapping) {
         IndexMapping mapping;
         mapping.reserve(nameMapping.size());
 
-        for (const auto &name: nameMapping) {
+        for (const auto& name : nameMapping) {
             auto iter = std::ranges::find_if(inputPort,
-                                             [&](const core::logical::port::PortDescription &pd) {
+                                             [&](const core::logical::port::PortDescription& pd) {
                                                  return pd.fieldName == name;
                                              });
             if (iter == inputPort.end()) {
@@ -61,4 +58,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
 
         return mapping;
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::project::logical

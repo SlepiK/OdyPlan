@@ -8,6 +8,6 @@ namespace sierra::odyplan::v3::core::shared::operators {
         OperatorPortReference fromOperatorPortReference;
         OperatorPortReference toOperatorPortReference;
     };
-}
+}  // namespace sierra::odyplan::v3::core::shared::operators
 
-#endif //SIERRA_ODYPLAN_V3_CORE_SHARED_OPERATORS_OPERATOR_PORT_REFERENCE_CONNECTION_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_SHARED_OPERATORS_OPERATOR_PORT_REFERENCE_CONNECTION_HPP

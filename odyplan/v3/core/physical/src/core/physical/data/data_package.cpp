@@ -27,4 +27,4 @@ namespace sierra::odyplan::v3::core::physical::data {
     void DataPackage::reserve(const std::size_t size) {
         fields.reserve(size);
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::data

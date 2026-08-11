@@ -12,6 +12,6 @@ namespace sierra::odyplan::v3::core::physical::port {
         ValueTypeId valueTypeId;
         llvm::Type* llvmType;
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::port
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PORT_PORT_DESCRIPTION_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PORT_PORT_DESCRIPTION_HPP

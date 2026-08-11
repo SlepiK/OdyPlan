@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_PHYSICAL_READ_OPERATOR_HPP
 
 #include <llvm/IR/Module.h>
+
 #include <nlohmann/json.hpp>
 
 #include <basic/io/io_format.h>
@@ -12,14 +13,21 @@
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     class ReadOperator : public core::physical::operators::source::TypedSourceOperator {
     public:
-        ReadOperator(core::physical::port::Port outputPort, core::shared::identifiers::OperatorId lOpId, const nlohmann::json &ioConfig, io::IOFormatType ioFormat,
-                     core::logical::port::Port dataSchema, std::optional<std::size_t> timestampFieldIndex = std::nullopt,
+        ReadOperator(core::physical::port::Port outputPort,
+                     core::shared::identifiers::OperatorId lOpId,
+                     nlohmann::json ioConfig,
+                     io::IOFormatType ioFormat,
+                     core::logical::port::Port dataSchema,
+                     bool useProgramClock = false,
+                     std::optional<std::size_t> timestampFieldIndex = std::nullopt,
                      std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0));
 
-        void produce(core::physical::segment::SegmentContext &segmentCtx,
-                     const core::physical::segment::SegmentDataConsumers &consumers) override;
+        void produce(core::physical::segment::SegmentContext& segmentCtx,
+                     const core::physical::segment::SegmentDataConsumers& consumers) override;
 
-        void declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module, llvm::LLVMContext &context) override;
+        void declareState(core::physical::state::StateRegistry& stateRegistry,
+                          llvm::Module& module,
+                          llvm::LLVMContext& context) override;
 
     private:
         core::shared::identifiers::OperatorId mLogicalOperatorId;
@@ -29,13 +37,15 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         std::chrono::milliseconds mRowDelay;
         core::physical::state::StateHandle mState;
         nlohmann::json mIOConfig;
+        bool mUseProgramClock;
 
-        [[nodiscard]] llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
+        [[nodiscard]] llvm::Value*
+        loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 
-        static llvm::Value *codegenField(core::physical::segment::SegmentContext &segmentCtx,
-            llvm::Value *stringValue,
-            core::shared::types::ValueTypeId typeId);
+        static llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx,
+                                         llvm::Value* stringValue,
+                                         core::shared::types::ValueTypeId typeId);
     };
-}
+}  // namespace sierra::odyplan::v3::basic::operators::source::read::physical
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_PHYSICAL_READ_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_PHYSICAL_READ_OPERATOR_HPP

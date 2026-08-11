@@ -2,32 +2,32 @@
 #define SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_COMPUTE_THREAD_POOL_HPP
 
 #include <condition_variable>
-#include <cstdint>
-#include <mutex>
-#include <future>
-#include <deque>
+#include <core/runtime/task/task.h>
 #include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <future>
+#include <mutex>
 #include <random>
 
-#include <core/runtime/task/task.h>
-
 namespace sierra::odyplan::v3::core::runtime::thread {
-	class ComputeThreadPool {
-	public:
-		using Task = task::Task;
+    class ComputeThreadPool {
+    public:
+        using Task = task::Task;
 
-		explicit ComputeThreadPool(std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
+        explicit ComputeThreadPool(
+            std::size_t poolSize = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
 
-		~ComputeThreadPool();
+        ~ComputeThreadPool();
 
-		ComputeThreadPool(const ComputeThreadPool&) = delete;
+        ComputeThreadPool(const ComputeThreadPool&) = delete;
         ComputeThreadPool& operator=(const ComputeThreadPool&) = delete;
         ComputeThreadPool(ComputeThreadPool&&) = delete;
         ComputeThreadPool& operator=(ComputeThreadPool&&) = delete;
 
-		std::future<void> submitTask(Task task);
+        std::future<void> submitTask(Task task);
 
-	private:
+    private:
         std::mutex mWakeMutex;
         std::condition_variable mWakeCV;
         std::atomic_bool mShutdown{false};
@@ -37,12 +37,12 @@ namespace sierra::odyplan::v3::core::runtime::thread {
         std::vector<std::thread> mWorkers;
         std::vector<std::deque<Task>> mQueues;
 
-		void workerLoop(std::size_t workerId);
+        void workerLoop(std::size_t workerId);
 
-		bool tryPopOwn(std::size_t workerId, Task& task);
+        bool tryPopOwn(std::size_t workerId, Task& task);
 
-		bool trySteal(std::size_t workerId, Task& task, std::mt19937& rng);
-	};
-}
+        bool trySteal(std::size_t workerId, Task& task, std::mt19937& rng);
+    };
+}  // namespace sierra::odyplan::v3::core::runtime::thread
 
-#endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_COMPUTE_THREAD_POOL_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_COMPUTE_THREAD_POOL_HPP

@@ -7,4 +7,4 @@ namespace sierra::odyplan::v3::core::physical::operators::sink {
         }
         getInputPortsRef().push_back(std::move(inputPort));
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::sink

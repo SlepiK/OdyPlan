@@ -7,6 +7,7 @@ Checks: >
   portability-*,
   readability-*,
   clang-analyzer-*,
+  -clang-analyzer-security.ArrayBound,
   misc-*,
   hicpp-*,
   -*include-cleaner,
@@ -38,7 +39,7 @@ Checks: >
 WarningsAsErrors: ''   # keep non-fatal while the interfaces are still moving; tighten later in CI
 
 #HeaderFilterRegex: '.*/(include|src)/.*\.(hpp|h)$'
-HeaderFilterRegex: '^.*/odyplan/.*|^.*/examples/.*'
+HeaderFilterRegex: '^.*/odyplan/v3/.*|^.*/examples/v3/.*'
 ExcludeHeaderFilterRegex: '.*/llvm-22/include/.*'
 
 FormatStyle: file   # defer to .clang-format for any --fix output

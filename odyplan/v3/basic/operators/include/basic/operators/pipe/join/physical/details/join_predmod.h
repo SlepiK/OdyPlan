@@ -1,13 +1,12 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
+#include <basic/expression/compare_expression.h>
+#include <basic/expression/expression.h>
+#include <basic/expression/field_reference_expression.h>
+#include <core/logical/port/port.h>
+#include <core/shared/types/value_type_id.h>
 #include <cstddef>
 #include <optional>
-
-#include <basic/expression/expression.h>
-#include <basic/expression/compare_expression.h>
-#include <basic/expression/field_reference_expression.h>
-#include <core/shared/types/value_type_id.h>
-#include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     struct EquiKeyInfo {
@@ -17,7 +16,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     };
 
     inline std::optional<EquiKeyInfo> tryGetEquiKey(const basic::expression::IExpression* predicate,
-        const core::logical::port::Port& leftSchema, const core::logical::port::Port& rightSchema) {
+                                                    const core::logical::port::Port& leftSchema,
+                                                    const core::logical::port::Port& rightSchema) {
         if (predicate == nullptr) {
             return std::nullopt;
         }
@@ -26,7 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             return std::nullopt;
         }
 
-        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
         const auto& compare = static_cast<const basic::expression::CompareExpression&>(*predicate);
 
         if (compare.getOpr() != basic::expression::CompareExpression::CompareOp::EQ) {
@@ -45,10 +45,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             return std::nullopt;
         }
 
-        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
-        const auto leftIndex = static_cast<const basic::expression::FieldReferenceExpression&>(left).getFieldIndex();
-        //NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
-        const auto rightIndex = static_cast<const basic::expression::FieldReferenceExpression&>(right).getFieldIndex();
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
+        const auto leftIndex =
+            static_cast<const basic::expression::FieldReferenceExpression&>(left).getFieldIndex();
+        const auto rightIndex =
+            static_cast<const basic::expression::FieldReferenceExpression&>(right).getFieldIndex();
+        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
         const auto leftSize = leftSchema.size();
         const auto rightSize = rightSchema.size();
@@ -59,7 +61,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         if (leftIndex < leftSize && rightIndex >= leftSize && rightIndex < leftSize + rightSize) {
             leftFieldIndex = leftIndex;
             rightFieldIndex = rightIndex - leftSize;
-        } else if (rightIndex < leftSize && leftIndex >= leftSize && leftIndex < leftSize + rightSize) {
+        } else if (rightIndex < leftSize && leftIndex >= leftSize &&
+                   leftIndex < leftSize + rightSize) {
             leftFieldIndex = rightIndex;
             rightFieldIndex = leftIndex - leftSize;
         } else {
@@ -68,12 +71,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         const auto leftTypeId = leftSchema.at(leftFieldIndex).valueTypeId;
 
-        if (const auto rightTypeId = rightSchema.at(rightFieldIndex).valueTypeId; leftTypeId != rightTypeId) {
+        if (const auto rightTypeId = rightSchema.at(rightFieldIndex).valueTypeId;
+            leftTypeId != rightTypeId) {
             return std::nullopt;
         }
 
         return EquiKeyInfo(leftFieldIndex, rightFieldIndex, leftTypeId);
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP

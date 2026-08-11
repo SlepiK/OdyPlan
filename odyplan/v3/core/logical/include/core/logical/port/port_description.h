@@ -1,8 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
 #define SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
 
-#include <string>
 #include <core/shared/types/value_type_id.h>
+#include <string>
 
 namespace sierra::odyplan::v3::core::logical::port {
     struct PortDescription {
@@ -16,6 +16,6 @@ namespace sierra::odyplan::v3::core::logical::port {
 
         bool operator==(const PortDescription&) const = default;
     };
-}
+}  // namespace sierra::odyplan::v3::core::logical::port
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_LOGICAL_PORT_PORT_DESCRIPTION_HPP

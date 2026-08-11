@@ -18,10 +18,11 @@ namespace sierra::odyplan::v3::core::shared::types {
     };
 
     inline bool isBuiltinValueTypePrintable(const BuiltinValueType type) {
-        return type == BuiltinValueType::BOOL || type == BuiltinValueType::INT8 || type == BuiltinValueType::INT16 ||
-               type == BuiltinValueType::INT32 || type == BuiltinValueType::INT64 || type == BuiltinValueType::FLOAT ||
+        return type == BuiltinValueType::BOOL || type == BuiltinValueType::INT8 ||
+               type == BuiltinValueType::INT16 || type == BuiltinValueType::INT32 ||
+               type == BuiltinValueType::INT64 || type == BuiltinValueType::FLOAT ||
                type == BuiltinValueType::DOUBLE || type == BuiltinValueType::STRING;
     }
-}
+}  // namespace sierra::odyplan::v3::core::shared::types
 
-#endif //SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_VALUE_TYPE_ID_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_VALUE_TYPE_ID_HPP

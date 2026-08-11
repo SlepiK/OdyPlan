@@ -3,6 +3,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+
 #include <core/physical/state/state_handle.h>
 
 namespace sierra::odyplan::v3::core::physical::state {
@@ -10,9 +11,11 @@ namespace sierra::odyplan::v3::core::physical::state {
     public:
         StateRegistry(llvm::Module* module, llvm::LLVMContext* context);
 
-        StateHandle createHandle(const std::string& uniqueName, const std::string& createFnName,
-            const std::vector<llvm::Value*>& extraArgs, const std::vector<llvm::Type*>& extraArgTypes,
-            const std::string& destroyFnName);
+        StateHandle createHandle(const std::string& uniqueName,
+                                 const std::string& createFnName,
+                                 const std::vector<llvm::Value*>& extraArgs,
+                                 const std::vector<llvm::Type*>& extraArgTypes,
+                                 const std::string& destroyFnName);
 
         void finish();
     private:
@@ -23,6 +26,6 @@ namespace sierra::odyplan::v3::core::physical::state {
         std::unique_ptr<llvm::IRBuilder<>> mInitBuilder;
         std::unique_ptr<llvm::IRBuilder<>> mShutdownBuilder;
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::state
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STATE_STATE_REGISTRY_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_STATE_STATE_REGISTRY_HPP

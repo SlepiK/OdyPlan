@@ -1,5 +1,5 @@
-#include <stdexcept>
 #include <core/logical/operators/source/typed_source_operator.h>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::core::logical::operators::source {
     TypedSourceOperator::TypedSourceOperator(Port outputPort) {
@@ -8,4 +8,4 @@ namespace sierra::odyplan::v3::core::logical::operators::source {
         }
         getOutputPortsRef().push_back(std::move(outputPort));
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::source

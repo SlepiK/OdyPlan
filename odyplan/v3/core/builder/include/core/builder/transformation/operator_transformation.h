@@ -7,6 +7,6 @@ namespace sierra::odyplan::v3::core::builder::transformation {
     struct OperatorTransformation {
         std::vector<std::unique_ptr<physical::operators::IOperator>> operators;
     };
-}
+}  // namespace sierra::odyplan::v3::core::builder::transformation
 
-#endif //SIERRA_ODYPLAN_V3_CORE_BUILDER_TRANSFORMATION_OPERATOR_TRANSFORMATION_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_BUILDER_TRANSFORMATION_OPERATOR_TRANSFORMATION_HPP

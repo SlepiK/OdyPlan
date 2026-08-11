@@ -12,4 +12,4 @@ namespace sierra::odyplan::v3::core::physical::operators::source {
     OperatorRole ISourceOperator::getRole() const {
         return OperatorRole::SOURCE;
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::source

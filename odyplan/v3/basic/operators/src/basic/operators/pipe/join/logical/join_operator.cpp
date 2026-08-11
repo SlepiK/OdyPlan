@@ -2,9 +2,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
     JoinOperator::JoinOperator(const details::JoinConfig config,
-                                      const basic::expression::IExpression* predicate)
-                : mConfig(config), mPredicate(predicate) {
-    }
+                               const basic::expression::IExpression* predicate)
+        : mConfig(config), mPredicate(predicate) {}
 
     core::shared::types::OperatorTypeId JoinOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -18,11 +17,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         return mPredicate;
     }
 
-    void JoinOperator::bindInput(const core::shared::identifiers::PortId portId, const core::logical::port::Port input) {
+    void JoinOperator::bindInput(const core::shared::identifiers::PortId portId,
+                                 const core::logical::port::Port input) {
         auto& inputPorts = getInputPortsRef();
 
         if (portId > 1) {
-            throw std::logic_error("IntervalJoinOperator::bindInput: port id out of range (0 and 1 only allowed)");
+            throw std::logic_error(
+                "IntervalJoinOperator::bindInput: port id out of range (0 and 1 only allowed)");
         }
 
         if (inputPorts.size() <= portId) {
@@ -57,4 +58,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
             throw std::logic_error("IntervalJoinOperator::validate: output schema never computed");
         }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical

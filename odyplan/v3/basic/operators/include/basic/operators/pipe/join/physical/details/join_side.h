@@ -1,19 +1,19 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
-#include <chrono>
-#include <deque>
-
 #include <basic/window/window_row_layout.h>
-#include <core/physical/types/value_type_registry.h>
+#include <chrono>
 #include <core/logical/port/port.h>
+#include <core/physical/types/value_type_registry.h>
+#include <deque>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
 
     class JoinSide {
     public:
-        JoinSide(core::logical::port::Port schema, const core::physical::types::ValueTypeRegistry& typeRegistry,
-            std::chrono::milliseconds windowSize);
+        JoinSide(core::logical::port::Port schema,
+                 const core::physical::types::ValueTypeRegistry& typeRegistry,
+                 std::chrono::milliseconds windowSize);
 
         void begin();
 
@@ -31,14 +31,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::chrono::milliseconds getWindowSize() const;
 
-        [[nodiscard]] const std::byte* getFieldPtr(std::size_t rowIndex, std::size_t fieldIndex) const;
+        [[nodiscard]] const std::byte* getFieldPtr(std::size_t rowIndex,
+                                                   std::size_t fieldIndex) const;
 
-        [[nodiscard]] bool isOver(Timestamp otherTimestamp, std::chrono::milliseconds otherWindowSize, std::size_t rowIndex) const;
+        [[nodiscard]] bool isOver(Timestamp otherTimestamp,
+                                  std::chrono::milliseconds otherWindowSize,
+                                  std::size_t rowIndex) const;
 
         [[nodiscard]] Timestamp getTimestamp(std::size_t rowIndex) const;
 
-        void enableKeyIdx(std::size_t fieldIndex, core::physical::types::ValueTypeRegistry::HashFn hashFunction,
-            core::physical::types::ValueTypeRegistry::EqualFn equalFunction);
+        void enableKeyIdx(std::size_t fieldIndex,
+                          core::physical::types::ValueTypeRegistry::HashFn hashFunction,
+                          core::physical::types::ValueTypeRegistry::EqualFn equalFunction);
 
         [[nodiscard]] std::optional<std::size_t> getKeyFieldIndex() const;
 
@@ -60,7 +64,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::chrono::milliseconds mWindowSize;
         std::deque<RowBuffer> mBufferedRows;
         std::optional<Timestamp> mMaxTimeStamp;
-        //Hash-Behavior for == predicate only
+        // Hash-Behavior for == predicate only
         std::optional<std::size_t> mKeyFieldIndex;
         std::unordered_multimap<std::size_t, std::uint64_t> mKeyIndex;
         core::physical::types::ValueTypeRegistry::HashFn mHashFunction;
@@ -69,6 +73,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::uint64_t mBasisIndex = 0;
         std::uint64_t mLastAbsoluteIndex = 0;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP

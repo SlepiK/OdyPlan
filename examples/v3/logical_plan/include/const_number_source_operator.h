@@ -8,36 +8,38 @@ namespace sierra::odyplan::v3::example::logical_plan {
     constexpr core::shared::types::ValueTypeId TYPE_DOUBLE = 2;
 
     inline core::logical::port::Port createIntPort() {
-        return { core::logical::port::PortDescription {.valueTypeId=TYPE_INT,.typeJsonName="int"} };
+        return {
+            core::logical::port::PortDescription{.valueTypeId = TYPE_INT, .typeJsonName = "int"}};
     }
 
     inline core::logical::port::Port createDoublePort() {
-        return { core::logical::port::PortDescription {.valueTypeId=TYPE_DOUBLE,.typeJsonName="double"} };
+        return {core::logical::port::PortDescription{.valueTypeId = TYPE_DOUBLE,
+                                                     .typeJsonName = "double"}};
     }
 
-    class ConstNumberSourceOperator final : public core::logical::operators::source::TypedSourceOperator {
+    class ConstNumberSourceOperator final
+        : public core::logical::operators::source::TypedSourceOperator {
     public:
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = 0;
 
-        ConstNumberSourceOperator() : TypedSourceOperator(createIntPort()) {
-        }
+        ConstNumberSourceOperator() : TypedSourceOperator(createIntPort()) {}
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
     };
 
-    class ConstDoubleNumberSourceOperator final : public core::logical::operators::source::TypedSourceOperator {
+    class ConstDoubleNumberSourceOperator final
+        : public core::logical::operators::source::TypedSourceOperator {
     public:
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = 3;
 
-        ConstDoubleNumberSourceOperator() : TypedSourceOperator(createDoublePort()) {
-        }
+        ConstDoubleNumberSourceOperator() : TypedSourceOperator(createDoublePort()) {}
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override {
             return TYPE_ID;
         }
     };
-}
+}  // namespace sierra::odyplan::v3::example::logical_plan
 
-#endif //SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_CONSTNUMBERSOURCEOPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_CONSTNUMBERSOURCEOPERATOR_HPP

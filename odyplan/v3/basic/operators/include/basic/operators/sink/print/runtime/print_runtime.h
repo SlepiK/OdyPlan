@@ -1,24 +1,24 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_PRINT_RUNTIME_PRINT_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_PRINT_RUNTIME_PRINT_RUNTIME_HPP
-#include <iostream>
 #include <cstdint>
+#include <iostream>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     extern "C" {
-        void rtOdyPrintString(const char* data);
+    void rtOdyPrintString(const char* data);
 
-        void rtOdyPrintDouble(double value);
+    void rtOdyPrintDouble(double value);
 
-        void rtOdyPrintFloat(float value);
+    void rtOdyPrintFloat(float value);
 
-        void rtOdyPrintInt(std::int64_t value);
+    void rtOdyPrintInt(std::int64_t value);
 
-        void rtOdyPrintSeperator();
+    void rtOdyPrintSeperator();
 
-        void rtOdyPrintTimeStamp(std::int64_t value);
+    void rtOdyPrintTimeStamp(std::int64_t value);
 
-        void rtOdyPrintNewline();
+    void rtOdyPrintNewline();
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_PRINT_RUNTIME_PRINT_RUNTIME_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_PRINT_RUNTIME_PRINT_RUNTIME_HPP

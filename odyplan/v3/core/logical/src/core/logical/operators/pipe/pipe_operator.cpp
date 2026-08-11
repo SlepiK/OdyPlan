@@ -28,4 +28,4 @@ namespace sierra::odyplan::v3::core::logical::operators::pipe {
             outputPort = std::move(input);
         }
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::pipe
