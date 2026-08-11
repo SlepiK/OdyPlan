@@ -9,6 +9,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         std::uint64_t size;
         std::uint64_t slide;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::window::count
 
-#endif //SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWCONFIG_H
+#endif  // SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWCONFIG_H

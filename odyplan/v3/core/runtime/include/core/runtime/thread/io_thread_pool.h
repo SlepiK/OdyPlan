@@ -2,15 +2,14 @@
 #define SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP
 
 #include <condition_variable>
+#include <core/runtime/task/task.h>
 #include <cstdint>
 #include <mutex>
-
-#include <core/runtime/task/task.h>
 
 namespace sierra::odyplan::v3::core::runtime::thread {
     class IoThreadPool {
     public:
-		using Task = task::Task;
+        using Task = task::Task;
 
         IoThreadPool() = default;
 
@@ -38,6 +37,6 @@ namespace sierra::odyplan::v3::core::runtime::thread {
 
         void workerLoop(std::size_t workerId);
     };
-}
+}  // namespace sierra::odyplan::v3::core::runtime::thread
 
-#endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_RUNTIME_THREAD_IO_THREAD_POOL_HPP

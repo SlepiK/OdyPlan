@@ -8,4 +8,4 @@ namespace sierra::odyplan::v3::core::logical::operators::source {
     bool ISourceOperator::hasOutputPorts() const {
         return true;
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::source

@@ -60,7 +60,7 @@ function(odyplan_llvm_include_dirs TARGET_NAME VISIBILITY)
             ${LLVM_INCLUDE_DIRS}
     )
 
-    separate_arguments(_llvm_defs_list UNIX_COMMAND "${LLVM_DEFINITIONS}")
+    separate_arguments(_llvm_defs_list NATIVE_COMMAND "${LLVM_DEFINITIONS}")
     if(_llvm_defs_list)
         target_compile_definitions(${TARGET_NAME} ${VISIBILITY}
                 ${_llvm_defs_list}

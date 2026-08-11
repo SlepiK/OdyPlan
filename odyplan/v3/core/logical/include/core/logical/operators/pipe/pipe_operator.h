@@ -1,11 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_PIPE_PIPE_OPERATOR_HPP
 #define SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_PIPE_PIPE_OPERATOR_HPP
 
-#include <core/shared/identifiers/port_id.h>
-#include <core/logical/port/port.h>
-
-#include <core/logical/operators/operator.h>
 #include <core/logical/operators/bindable/bindable_operator.h>
+#include <core/logical/operators/operator.h>
+#include <core/logical/port/port.h>
+#include <core/shared/identifiers/port_id.h>
 
 namespace sierra::odyplan::v3::core::logical::operators::pipe {
     class IPipeOperator : public IOperator, public bindable::IBindableOperator {
@@ -20,6 +19,6 @@ namespace sierra::odyplan::v3::core::logical::operators::pipe {
     protected:
         void bindInput(PortId portId, Port input) override;
     };
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators::pipe
 
-#endif //SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_PIPE_PIPE_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_LOGICAL_OPERATORS_PIPE_PIPE_OPERATOR_HPP

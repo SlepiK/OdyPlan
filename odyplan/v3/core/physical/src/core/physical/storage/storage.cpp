@@ -1,9 +1,10 @@
 #include <core/physical/storage/storage.h>
 
 namespace sierra::odyplan::v3::core::physical::storage {
-    Storage::Storage(llvm::Function& fn, llvm::LLVMContext& ctx, const types::ValueTypeRegistry& valueTypeRegistry)
-        : mFn(&fn), mCtx(&ctx), mValueTypeRegistry(&valueTypeRegistry) {
-    }
+    Storage::Storage(llvm::Function& fn,
+                     llvm::LLVMContext& ctx,
+                     const types::ValueTypeRegistry& valueTypeRegistry)
+        : mFn(&fn), mCtx(&ctx), mValueTypeRegistry(&valueTypeRegistry) {}
 
     llvm::Value* Storage::get(ValueTypeId valueTypeId) {
         if (const auto iter = mSlots.find(valueTypeId); iter != mSlots.end()) {
@@ -21,6 +22,7 @@ namespace sierra::odyplan::v3::core::physical::storage {
 
         llvm::IRBuilder<> builder(&mFn->getEntryBlock(), mFn->getEntryBlock().begin());
 
-        return builder.CreateAlloca(llvmType, nullptr, "Storage_ValueTypeId_" + std::to_string(valueTypeId));
+        return builder.CreateAlloca(
+            llvmType, nullptr, "Storage_ValueTypeId_" + std::to_string(valueTypeId));
     }
-}
+}  // namespace sierra::odyplan::v3::core::physical::storage

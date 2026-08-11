@@ -7,4 +7,4 @@ namespace sierra::odyplan::v3::core::runtime::task {
     using Task = std::function<void()>;
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_TASK_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_TASK_HPP

@@ -1,24 +1,27 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_WRITE_RUNTIME_WRITE_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_WRITE_RUNTIME_WRITE_RUNTIME_HPP
 
+#include <basic/io/io_sink.h>
 #include <memory>
 #include <vector>
-#include <basic/io/io_sink.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
     extern "C" {
-        void* rtIOSinkCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
+    void* rtIOSinkCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
 
-        void rtIOSinkDestroy(void* state);
+    void rtIOSinkDestroy(void* state);
 
-        void rtIOSinkBeginData(void* state);
+    void rtIOSinkBeginData(void* state);
 
-        void rtIOSinkWrite(void* state, core::shared::types::ValueTypeId typeId, const char* key, const void* value);
+    void rtIOSinkWrite(void* state,
+                       core::shared::types::ValueTypeId typeId,
+                       const char* key,
+                       const void* value);
 
-        void rtIOSinkEndData(void* state);
+    void rtIOSinkEndData(void* state);
 
-        void rtIOSinkFlush(void* state);
+    void rtIOSinkFlush(void* state);
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::sink::write::runtime
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_WRITE_RUNTIME_WRITE_RUNTIME_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_WRITE_RUNTIME_WRITE_RUNTIME_HPP

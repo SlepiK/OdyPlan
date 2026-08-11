@@ -1,8 +1,9 @@
 #include <basic/operators/pipe/window/logical/time_window_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
-    TimeWindowOperator::TimeWindowOperator(const basic::window::time::TimeWindowConfig &windowConfig)
-            : mWindowConfig(windowConfig) {
+    TimeWindowOperator::TimeWindowOperator(
+        const basic::window::time::TimeWindowConfig& windowConfig)
+        : mWindowConfig(windowConfig) {
         checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide);
     }
 
@@ -10,7 +11,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
         return TYPE_ID;
     }
 
-    const basic::window::time::TimeWindowConfig &TimeWindowOperator::getWindowConfig() const {
+    const basic::window::time::TimeWindowConfig& TimeWindowOperator::getWindowConfig() const {
         return mWindowConfig;
     }
 
@@ -23,9 +24,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
             throw std::invalid_argument("timestamp index out of range");
         }
 
-        if (getInputPorts().at(0).at(mWindowConfig.timestampIndex).valueTypeId != std::to_underlying(
-                core::shared::types::BuiltinValueType::INT64)) {
+        if (getInputPorts().at(0).at(mWindowConfig.timestampIndex).valueTypeId !=
+            std::to_underlying(core::shared::types::BuiltinValueType::INT64)) {
             throw std::invalid_argument("timestamp must be int64");
-                }
+        }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::window::logical

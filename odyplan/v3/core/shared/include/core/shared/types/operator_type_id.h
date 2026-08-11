@@ -18,6 +18,6 @@ namespace sierra::odyplan::v3::core::shared::types {
         WINDOW_TIME = 31,
         MEASURE = 40,
     };
-}
+}  // namespace sierra::odyplan::v3::core::shared::types
 
-#endif //SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_OPERATOR_TYPE_ID_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_OPERATOR_TYPE_ID_HPP

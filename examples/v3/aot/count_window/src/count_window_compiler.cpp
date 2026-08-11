@@ -28,39 +28,43 @@
 
 #include <basic/expression/builtin_expressions.h>
 
-static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
-    llvm::LoopAnalysisManager loopAnaMgr;
-    llvm::FunctionAnalysisManager fnAnaMgr;
-    llvm::ModuleAnalysisManager modAnaMgr;
-    llvm::CGSCCAnalysisManager cgsccAnaMgr;
+namespace {
+    void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
+        llvm::LoopAnalysisManager loopAnaMgr;
+        llvm::FunctionAnalysisManager fnAnaMgr;
+        llvm::ModuleAnalysisManager modAnaMgr;
+        llvm::CGSCCAnalysisManager cgsccAnaMgr;
 
-    llvm::PassBuilder passBuilder;
-    passBuilder.registerLoopAnalyses(loopAnaMgr);
-    passBuilder.registerFunctionAnalyses(fnAnaMgr);
-    passBuilder.registerModuleAnalyses(modAnaMgr);
-    passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
-    passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
+        llvm::PassBuilder passBuilder;
 
-    llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
-    modPassMgr.run(module, modAnaMgr);
-}
+        passBuilder.registerLoopAnalyses(loopAnaMgr);
+        passBuilder.registerFunctionAnalyses(fnAnaMgr);
+        passBuilder.registerModuleAnalyses(modAnaMgr);
+        passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
+        passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
 
-static void initializeSupportedTargets() {
+        llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
+
+        modPassMgr.run(module, modAnaMgr);
+    }
+
+    void initializeSupportedTargets() {
 #ifdef ODYPLAN_TARGET_X86
-    LLVMInitializeX86TargetInfo();
-    LLVMInitializeX86Target();
-    LLVMInitializeX86TargetMC();
-    LLVMInitializeX86AsmPrinter();
-    LLVMInitializeX86AsmParser();
+        LLVMInitializeX86TargetInfo();
+        LLVMInitializeX86Target();
+        LLVMInitializeX86TargetMC();
+        LLVMInitializeX86AsmPrinter();
+        LLVMInitializeX86AsmParser();
 #endif
 
 #ifdef ODYPLAN_TARGET_AArch64
-    LLVMInitializeAArch64TargetInfo();
-    LLVMInitializeAArch64Target();
-    LLVMInitializeAArch64TargetMC();
-    LLVMInitializeAArch64AsmPrinter();
-    LLVMInitializeAArch64AsmParser();
+        LLVMInitializeAArch64TargetInfo();
+        LLVMInitializeAArch64Target();
+        LLVMInitializeAArch64TargetMC();
+        LLVMInitializeAArch64AsmPrinter();
+        LLVMInitializeAArch64AsmParser();
 #endif
+    }
 }
 
 int main(int argc, char** argv) {

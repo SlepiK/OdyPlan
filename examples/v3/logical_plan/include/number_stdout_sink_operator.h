@@ -4,7 +4,8 @@
 #include <core/logical/operators/sink/typed_sink_operator.h>
 
 namespace sierra::odyplan::v3::example::logical_plan {
-    class NumberStdoutSinkOperator final : public core::logical::operators::sink::TypedSinkOperator {
+    class NumberStdoutSinkOperator final
+        : public core::logical::operators::sink::TypedSinkOperator {
     public:
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = 1;
 
@@ -15,11 +16,11 @@ namespace sierra::odyplan::v3::example::logical_plan {
         }
 
     protected:
-        void validateInput() override {
-        }
+        void validateInput() override {}
     };
 
-    class DoubleNumberStdoutSinkOperator final : public core::logical::operators::sink::TypedSinkOperator {
+    class DoubleNumberStdoutSinkOperator final
+        : public core::logical::operators::sink::TypedSinkOperator {
     public:
         static constexpr core::shared::types::OperatorTypeId TYPE_ID = 1;
 
@@ -30,9 +31,8 @@ namespace sierra::odyplan::v3::example::logical_plan {
         }
 
     protected:
-        void validateInput() override {
-        }
+        void validateInput() override {}
     };
-}
+}  // namespace sierra::odyplan::v3::example::logical_plan
 
-#endif //SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_NUMBERSTDOUTSINKOPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_EXAMPLE_LOGICALPLAN_NUMBERSTDOUTSINKOPERATOR_HPP

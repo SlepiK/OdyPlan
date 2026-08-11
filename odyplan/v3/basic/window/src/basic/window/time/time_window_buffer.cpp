@@ -1,11 +1,10 @@
 #include <basic/window/time/time_window_buffer.h>
 
 namespace sierra::odyplan::v3::basic::window::time {
-    TimeWindowBuffer::TimeWindowBuffer(const TimeWindowConfig &config, core::logical::port::Port mDataSchema,
-                                       const core::physical::types::ValueTypeRegistry &typeRegistry)
-        : mConfig(config),
-          mRowLayout(std::move(mDataSchema), typeRegistry) {
-    }
+    TimeWindowBuffer::TimeWindowBuffer(const TimeWindowConfig& config,
+                                       core::logical::port::Port mDataSchema,
+                                       const core::physical::types::ValueTypeRegistry& typeRegistry)
+        : mConfig(config), mRowLayout(std::move(mDataSchema), typeRegistry) {}
 
     TimeWindowBuffer::~TimeWindowBuffer() {
         assert(mClosed && "TimeWindowBuffer::close() was never called");
@@ -15,7 +14,7 @@ namespace sierra::odyplan::v3::basic::window::time {
         mRowLayout.begin();
     }
 
-    void TimeWindowBuffer::push(const std::size_t index, const void *rawData) {
+    void TimeWindowBuffer::push(const std::size_t index, const void* rawData) {
         mRowLayout.push(index, rawData);
     }
 
@@ -47,7 +46,8 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         const auto watermark = *mWatermark - mConfig.allowedLateness;
 
-        while (mNextWindowStart.has_value() && mNextWindowStart.value() + mConfig.size <= watermark) {
+        while (mNextWindowStart.has_value() &&
+               mNextWindowStart.value() + mConfig.size <= watermark) {
             const auto current = mNextWindowStart.value();
             emit(current);
             mNextWindowStart = current + mConfig.slide;
@@ -83,15 +83,16 @@ namespace sierra::odyplan::v3::basic::window::time {
         return mWindows.at(index).count;
     }
 
-    const std::byte *TimeWindowBuffer::getData(const std::size_t windowIndex, const std::size_t rowIndex,
+    const std::byte* TimeWindowBuffer::getData(const std::size_t windowIndex,
+                                               const std::size_t rowIndex,
                                                const std::size_t fieldIndex) const {
-        const auto &[start, count] = mWindows.at(windowIndex);
+        const auto& [start, count] = mWindows.at(windowIndex);
         const auto relIndex = start - mBaseIndex + rowIndex;
         return mRows.at(relIndex).values.data() + mRowLayout.offsetOf(fieldIndex);
     }
 
     void TimeWindowBuffer::close() {
-        for (auto &[values, timestamp]: mRows) {
+        for (auto& [values, timestamp] : mRows) {
             mRowLayout.releaseRow(values);
         }
 
@@ -101,7 +102,7 @@ namespace sierra::odyplan::v3::basic::window::time {
 
     TimeWindowBuffer::Timestamp TimeWindowBuffer::getTimestamp(const std::size_t windowIndex,
                                                                const std::size_t rowIndex) const {
-        const auto &[start, count] = mWindows.at(windowIndex);
+        const auto& [start, count] = mWindows.at(windowIndex);
         const auto relIndex = start - mBaseIndex + rowIndex;
         return mRows.at(relIndex).timestamp;
     }
@@ -123,14 +124,17 @@ namespace sierra::odyplan::v3::basic::window::time {
         const auto iterStart = std::ranges::lower_bound(mRows, start, {}, &Row::timestamp);
         const auto iterEnd = std::ranges::lower_bound(mRows, end, {}, &Row::timestamp);
 
-        if (const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd)); count > 0) {
-            const auto startIndex = static_cast<std::uint64_t>(std::distance(mRows.begin(), iterStart)) + mBaseIndex;
+        if (const auto count = static_cast<std::uint64_t>(std::distance(iterStart, iterEnd));
+            count > 0) {
+            const auto startIndex =
+                static_cast<std::uint64_t>(std::distance(mRows.begin(), iterStart)) + mBaseIndex;
             mWindows.push_back(WindowRange{.start = startIndex, .count = count});
         }
     }
 
-    void TimeWindowBuffer::insertAndSort(const Timestamp timestamp, std::vector<std::byte> &&values) {
+    void TimeWindowBuffer::insertAndSort(const Timestamp timestamp,
+                                         std::vector<std::byte>&& values) {
         const auto position = std::ranges::upper_bound(mRows, timestamp, {}, &Row::timestamp);
         mRows.insert(position, Row{.values = std::move(values), .timestamp = timestamp});
     }
-}
+}  // namespace sierra::odyplan::v3::basic::window::time

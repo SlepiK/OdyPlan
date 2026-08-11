@@ -1,12 +1,9 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP
 #define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
-
-#include <memory>
-#include <vector>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
 
 #include <core/physical/operators/operator.h>
 #include <core/physical/segment/segment.h>
@@ -14,6 +11,8 @@
 #include <core/physical/types/value_type_registry.h>
 #include <core/shared/operators/operator_port_reference.h>
 #include <core/shared/operators/operator_port_reference_connection.h>
+#include <memory>
+#include <vector>
 
 namespace sierra::odyplan::v3::core::physical::plan::detail {
     struct PlanConstruction {
@@ -23,7 +22,9 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         using IOperator = operators::IOperator;
 
         std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> chains;
-        std::reference_wrapper<const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingEdges;
+        std::reference_wrapper<
+            const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>>
+            outgoingEdges;
         std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegree;
         std::reference_wrapper<const segment::SegmentDataConsumer> noopConsumer;
         llvm::Module* module;
@@ -39,17 +40,24 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         segment::SegmentDataConsumers buildExit(OperatorId operatorId);
 
-        void spawnBlockingRoot(OperatorId operatorId, const std::string& suffix,
-                flow::IProducer* producer, const segment::SegmentDataConsumers& next) const;
+        void spawnBlockingRoot(OperatorId operatorId,
+                               const std::string& suffix,
+                               flow::IProducer* producer,
+                               const segment::SegmentDataConsumers& next) const;
 
         segment::SegmentDataConsumer buildEnter(const OperatorPortReferenceConnection& edge);
 
         segment::SegmentDataConsumers afterEntry(OperatorId operatorId);
 
-        segment::SegmentDataConsumer buildContinue(OperatorId operatorId, const segment::Segment& chain, std::size_t index);
+        segment::SegmentDataConsumer
+        buildContinue(OperatorId operatorId, const segment::Segment& chain, std::size_t index);
 
-        segment::SegmentDataConsumer compileAsFunction(OperatorId operatorId, shared::identifiers::PortId portId, const port::Port& portSchema, const segment::SegmentDataConsumer& inner) const;
+        segment::SegmentDataConsumer
+        compileAsFunction(OperatorId operatorId,
+                          shared::identifiers::PortId portId,
+                          const port::Port& portSchema,
+                          const segment::SegmentDataConsumer& inner) const;
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::plan::detail
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_PLAN_DETAIL_PLAN_CONSTRUCTION_HPP

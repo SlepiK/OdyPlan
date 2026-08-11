@@ -16,4 +16,4 @@ namespace sierra::odyplan::v3::core::logical::operators {
     IOperator::Ports& IOperator::getOutputPortsRef() {
         return mOutputPorts;
     }
-}
+}  // namespace sierra::odyplan::v3::core::logical::operators

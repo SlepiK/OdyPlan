@@ -16,10 +16,6 @@ target_include_directories(${TARGET_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_compile_definitions(${TARGET_NAME} PRIVATE
-        #SIERRA_USER_PROGRAM_CLOCK
-)
-
 target_link_libraries(${TARGET_NAME} PRIVATE
         odyplan::core
         odyplan::basic

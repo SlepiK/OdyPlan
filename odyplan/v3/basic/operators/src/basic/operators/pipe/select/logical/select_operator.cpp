@@ -2,14 +2,13 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
     SelectOperator::SelectOperator(std::unique_ptr<basic::expression::IExpression> predicate)
-            : mPredicate(std::move(predicate)) {
-    }
+        : mPredicate(std::move(predicate)) {}
 
     [[nodiscard]] core::shared::types::OperatorTypeId SelectOperator::getOperatorTypeId() const {
         return TYPE_ID;
     }
 
-    [[nodiscard]] const basic::expression::IExpression &SelectOperator::getPredicate() const {
+    [[nodiscard]] const basic::expression::IExpression& SelectOperator::getPredicate() const {
         return *mPredicate;
     }
 
@@ -18,4 +17,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
             throw std::invalid_argument("SelectOperator: predicate must be non-null");
         }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::select::logical

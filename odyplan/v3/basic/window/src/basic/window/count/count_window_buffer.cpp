@@ -1,11 +1,11 @@
 #include <basic/window/count/count_window_buffer.h>
 
 namespace sierra::odyplan::v3::basic::window::count {
-    CountWindowBuffer::CountWindowBuffer(const CountWindowConfig &config, core::logical::port::Port mDataSchema,
-                                         const core::physical::types::ValueTypeRegistry &typeRegistry)
-        : mConfig(config),
-          mRowLayout(std::move(mDataSchema), typeRegistry) {
-    }
+    CountWindowBuffer::CountWindowBuffer(
+        const CountWindowConfig& config,
+        core::logical::port::Port mDataSchema,
+        const core::physical::types::ValueTypeRegistry& typeRegistry)
+        : mConfig(config), mRowLayout(std::move(mDataSchema), typeRegistry) {}
 
     CountWindowBuffer::~CountWindowBuffer() {
         assert(mClosed && "CountWindowBuffer::close() was never called");
@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         mRowLayout.begin();
     }
 
-    void CountWindowBuffer::push(const std::size_t index, const void *rawData) {
+    void CountWindowBuffer::push(const std::size_t index, const void* rawData) {
         mRowLayout.push(index, rawData);
     }
 
@@ -53,15 +53,16 @@ namespace sierra::odyplan::v3::basic::window::count {
         return mWindows.at(index).count;
     }
 
-    const std::byte *CountWindowBuffer::getData(const std::size_t windowIndex, const std::size_t rowIndex,
+    const std::byte* CountWindowBuffer::getData(const std::size_t windowIndex,
+                                                const std::size_t rowIndex,
                                                 const std::size_t fieldIndex) const {
-        const auto &[start, count] = mWindows.at(windowIndex);
+        const auto& [start, count] = mWindows.at(windowIndex);
         const auto relIndex = start - mBaseIndex + rowIndex;
         return mRows.at(relIndex).data() + mRowLayout.offsetOf(fieldIndex);
     }
 
     void CountWindowBuffer::close() {
-        for (auto &row: mRows) {
+        for (auto& row : mRows) {
             mRowLayout.releaseRow(row);
         }
 
@@ -72,7 +73,7 @@ namespace sierra::odyplan::v3::basic::window::count {
 
     CountWindowBuffer::Timestamp CountWindowBuffer::getTimestamp(const std::size_t windowIndex,
                                                                  const std::size_t rowIndex) const {
-        const auto &[start, count] = mWindows.at(windowIndex);
+        const auto& [start, count] = mWindows.at(windowIndex);
         const auto relIndex = start - mBaseIndex + rowIndex;
         return mTimestamps.at(relIndex);
     }
@@ -85,4 +86,4 @@ namespace sierra::odyplan::v3::basic::window::count {
             ++mBaseIndex;
         }
     }
-}
+}  // namespace sierra::odyplan::v3::basic::window::count

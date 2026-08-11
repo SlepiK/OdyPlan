@@ -1,11 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_RUNTIME_HPP
 
-#include <iostream>
-#include <ostream>
-
 #include <core/runtime/thread/compute_thread_pool.h>
 #include <core/runtime/thread/io_thread_pool.h>
+#include <iostream>
+#include <ostream>
 
 using ComputeTaskHandle = std::uint64_t;
 
@@ -24,16 +23,16 @@ using IOTaskHandle = std::uint64_t;
 
 namespace sierra::odyplan::v3::core::runtime {
     extern "C" {
-        ComputeTaskHandle rtComputeTaskSpawn(void (*fn)());
+    ComputeTaskHandle rtComputeTaskSpawn(void (*fn)());
 
-        void rtComputeTaskJoin(ComputeTaskHandle ioTaskHandle);
+    void rtComputeTaskJoin(ComputeTaskHandle ioTaskHandle);
 
-        IOTaskHandle rtIOTaskSpawn(void (*fn)());
+    IOTaskHandle rtIOTaskSpawn(void (*fn)());
 
-        void rtIOTaskJoin(IOTaskHandle ioTaskHandle);
+    void rtIOTaskJoin(IOTaskHandle ioTaskHandle);
 
-        void rtSleepMs(std::int64_t ms);
+    void rtSleepMs(std::int64_t ms);
     }
-}
+}  // namespace sierra::odyplan::v3::core::runtime
 
-#endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_RUNTIME_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_RUNTIME_HPP

@@ -8,6 +8,6 @@ namespace sierra::odyplan::v3::core::physical::operators::source {
     public:
         explicit TypedSourceOperator(port::Port outputPort);
     };
-}
+}  // namespace sierra::odyplan::v3::core::physical::operators::source
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP
+#endif  // SIERRA_ODYPLAN_V3_CORE_PHYSICAL_OPERATORS_SOURCE_TYPED_SOURCE_OPERATOR_HPP

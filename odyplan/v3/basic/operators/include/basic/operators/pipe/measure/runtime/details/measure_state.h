@@ -1,10 +1,10 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAILS_MEASURE_STATE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAILS_MEASURE_STATE_HPP
 
-#include <string>
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <string>
 
 namespace sierra::odyplan::v2::core::runtime::measure::details {
     struct MeasureState {
@@ -14,6 +14,6 @@ namespace sierra::odyplan::v2::core::runtime::measure::details {
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::mutex printMutex;
     };
-}
+}  // namespace sierra::odyplan::v2::core::runtime::measure::details
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAIL_MEASURE_STATE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAIL_MEASURE_STATE_HPP

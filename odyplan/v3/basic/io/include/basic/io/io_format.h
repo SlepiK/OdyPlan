@@ -10,6 +10,6 @@ namespace sierra::odyplan::v3::basic::io {
         JSON = 0,
         NDJSON = 1,
     };
-}
+}  // namespace sierra::odyplan::v3::basic::io
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_IO_IO_FORMAT_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_IO_IO_FORMAT_HPP

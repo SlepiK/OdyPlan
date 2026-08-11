@@ -1,8 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
 
-#include <cstddef>
 #include <basic/expression/expression.h>
+#include <cstddef>
 
 namespace sierra::odyplan::v3::basic::expression {
     class FieldReferenceExpression : public IExpression {
@@ -16,6 +16,6 @@ namespace sierra::odyplan::v3::basic::expression {
     private:
         std::size_t mFieldIndex;
     };
-}
+}  // namespace sierra::odyplan::v3::basic::expression
 
-#endif //SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
