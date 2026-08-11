@@ -1,13 +1,27 @@
 #include <cmath>
 #include <cstring>
 #include <utility>
-#include <core/physical/types/runtime_type_registry.h>
+#include <core/runtime/types/runtime_type_registry.h>
 
-namespace sierra::odyplan::v3::core::physical::types {
-
+namespace sierra::odyplan::v3::core::runtime::types {
+    // NOLINTNEXTLINE(readability-function-size)
     RuntimeTypeRegistry RuntimeTypeRegistry::withBuiltins() {
         using T = shared::types::BuiltinValueType;
         RuntimeTypeRegistry registry;
+
+        registry.registerType(
+            std::to_underlying((T::BOOL)),
+            sizeof(bool),
+            false,
+            [](const std::byte* ptr) -> std::size_t {
+                bool v{};
+                std::memcpy(&v, ptr, sizeof(v));
+                return std::hash<bool>{}(v);
+            },
+        [](const std::byte* a, const std::byte* b) -> bool {
+                return std::memcmp(a, b, sizeof(bool)) == 0;
+            }
+        );
 
         registry.registerType(
             std::to_underlying((T::INT8)),

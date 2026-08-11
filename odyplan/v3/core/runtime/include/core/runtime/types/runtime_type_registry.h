@@ -1,12 +1,12 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_RUNTIME_TYPE_REGISTRY_HPP
-#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_RUNTIME_TYPE_REGISTRY_HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_RUNTIME_TYPES_RUNTIME_TYPE_REGISTRY_HPP
+#define SIERRA_ODYPLAN_V3_CORE_RUNTIME_TYPES_RUNTIME_TYPE_REGISTRY_HPP
 #include <cstddef>
 #include <stdexcept>
 #include <unordered_map>
 
 #include "core/shared/types/value_type_id.h"
 
-namespace sierra::odyplan::v3::core::physical::types {
+namespace sierra::odyplan::v3::core::runtime::types {
     class RuntimeTypeRegistry {
     public:
         using HashFunctionPtr = std::size_t (*)(const std::byte*);
@@ -24,13 +24,13 @@ namespace sierra::odyplan::v3::core::physical::types {
         };
 
         void registerType(
-            shared::types::ValueTypeId id,
-            std::size_t byteSize,
-            bool isPointerType,
-            HashFunctionPtr hashFunction,
-            EqualFunctionPtr equalFunction,
-            RetainFunctionPtr retainFunction = &defaultRetain,
-            ReleaseFunctionPtr releaseFunction = &defaultRelease
+            const shared::types::ValueTypeId id,
+            const std::size_t byteSize,
+            const bool isPointerType,
+            const HashFunctionPtr hashFunction,
+            const EqualFunctionPtr equalFunction,
+            const RetainFunctionPtr retainFunction = &defaultRetain,
+            const ReleaseFunctionPtr releaseFunction = &defaultRelease
         ) {
             mStorage.emplace(id, Entry {
                 .byteSize = byteSize,
@@ -42,27 +42,27 @@ namespace sierra::odyplan::v3::core::physical::types {
             });
         }
 
-        [[nodiscard]] std::size_t byteSize(shared::types::ValueTypeId id) const noexcept(false) {
+        [[nodiscard]] std::size_t byteSize(const shared::types::ValueTypeId id) const noexcept(false) {
             return get(id).byteSize;
         }
 
-        [[nodiscard]] bool isPointerType(shared::types::ValueTypeId id) const noexcept(false) {
+        [[nodiscard]] bool isPointerType(const shared::types::ValueTypeId id) const noexcept(false) {
             return get(id).isPointerType;
         }
 
-        [[nodiscard]] std::size_t hash(shared::types::ValueTypeId id, const std::byte* ptr) const noexcept(false) {
+        [[nodiscard]] std::size_t hash(const shared::types::ValueTypeId id, const std::byte* ptr) const noexcept(false) {
             return get(id).hashFunction(ptr);
         }
 
-        [[nodiscard]] bool equal(shared::types::ValueTypeId id, const std::byte* ptrA, const std::byte* ptrB) const noexcept(false) {
+        [[nodiscard]] bool equal(const shared::types::ValueTypeId id, const std::byte* ptrA, const std::byte* ptrB) const noexcept(false) {
             return get(id).equalFunction(ptrA, ptrB);
         }
 
-        [[nodiscard]] void* retain(shared::types::ValueTypeId id, const void* ptr) const noexcept(false) {
+        [[nodiscard]] void* retain(const shared::types::ValueTypeId id, const void* ptr) const noexcept(false) {
             return get(id).retainFunction(ptr);
         }
 
-        void release(shared::types::ValueTypeId id, void* ptr) const noexcept(false) {
+        void release(const shared::types::ValueTypeId id, void* ptr) const noexcept(false) {
             get(id).releaseFunction(ptr);
         }
 
@@ -71,7 +71,7 @@ namespace sierra::odyplan::v3::core::physical::types {
     private:
         std::pmr::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
 
-        [[nodiscard]] const Entry& get(shared::types::ValueTypeId id) const {
+        [[nodiscard]] const Entry& get(const shared::types::ValueTypeId id) const {
             const auto it = mStorage.find(id);
             if (it == mStorage.end()) {
                 throw std::invalid_argument("RuntimeTypeRegistry: unknown typeid \"" +std::to_string(id) + "\"");
@@ -87,4 +87,4 @@ namespace sierra::odyplan::v3::core::physical::types {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_RUNTIME_TYPE_REGISTRY_HPP
+#endif //SIERRA_ODYPLAN_SIERRA_ODYPLAN_V3_CORE_RUNTIME_TYPES_RUNTIME_TYPE_REGISTRY_HPPV3_CORE_PHYSICAL_TYPES_RUNTIME_TYPE_REGISTRY_HPP
