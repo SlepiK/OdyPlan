@@ -70,7 +70,7 @@ namespace sierra::odyplan::v3::core::builder {
                             auto* blockingPipe =
                                 static_cast<physical::operators::pipe::TypedBlockingPipeOperator*>(
                                     oprs.at(i).get());
-                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
+                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                             node.asConsumer = blockingPipe;
                             node.asProducer = blockingPipe;
                             node.isBreaker = true;
