@@ -1,0 +1,10 @@
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_CODEGEN_TYPE_REGISTRY_HPP
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_CODEGEN_TYPE_REGISTRY_HPP
+
+namespace sierra::odyplan::v3::core::physical::types {
+    class CodegenTypeRegistry {
+
+    };
+}
+
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TYPES_CODEGEN_TYPE_REGISTRY_HPP
