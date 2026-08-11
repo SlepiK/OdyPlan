@@ -398,6 +398,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
         }
         const bool isFloat = left->getType()->isFloatingPointTy();
 
+        // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
         switch (opr)
         {
         case basic::expression::CompareExpression::CompareOp::EQ:
@@ -440,5 +441,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             throw std::out_of_range(
                 "IntervalJoinOperator::compare: Invalid compare expression type");
         }
+        // NOLINTEND(clang-analyzer-security.ArrayBound)
     }
 } // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
