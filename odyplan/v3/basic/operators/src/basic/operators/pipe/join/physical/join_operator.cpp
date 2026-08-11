@@ -297,7 +297,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     return segmentCtx.builder.CreateNot(left);
                 }
 
-                llvm::Value* right = codegenExpression(segmentCtx, tuple, *logicExp.getRightPart());
+                const auto* rightPart = logicExp.getRightPart();
+                if (rightPart == nullptr) {
+                    throw std::invalid_argument("JoinOperator: binary logical expression missing right part");
+                }
+
+                llvm::Value* right = codegenExpression(segmentCtx, tuple, *rightPart);
 
                 switch (logicExp.getOpr()) {
                     case basic::expression::LogicalExpression::LogicalOp::AND: {
