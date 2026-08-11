@@ -288,9 +288,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 return codegenCompare(segmentCtx.builder, left, right, cmpExp.getOpr());
             }
             case basic::expression::ExpressionType::LOGICAL: {
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& logicExp =
                     static_cast<const basic::expression::LogicalExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left = codegenExpression(segmentCtx, tuple, logicExp.getLeftPart());
                 if (logicExp.isUnary()) {
                     return segmentCtx.builder.CreateNot(left);

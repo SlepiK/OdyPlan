@@ -41,14 +41,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     std::uint64_t rtWindowGetRowCountInWindow(void* state, std::uint64_t windowIndex);
 
-    const void* rtWindowGetData(void* state,
-                                uint64_t windowIndex,
-                                uint64_t rowIndex,
-                                uint64_t fieldIndex);
+    const void*
+    rtWindowGetData(void* state, uint64_t windowIndex, uint64_t rowIndex, uint64_t fieldIndex);
 
-    std::int64_t rtWindowGetTimestamp(void* state,
-                                      std::uint64_t windowIndex,
-                                      std::uint64_t rowIndex);
+    std::int64_t
+    rtWindowGetTimestamp(void* state, std::uint64_t windowIndex, std::uint64_t rowIndex);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
 

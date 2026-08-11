@@ -19,24 +19,26 @@
 #include <core/runtime/time_runtime.h>
 #include <iostream>
 
-static void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
-    llvm::LoopAnalysisManager loopAnaMgr;
-    llvm::FunctionAnalysisManager fnAnaMgr;
-    llvm::ModuleAnalysisManager modAnaMgr;
-    llvm::CGSCCAnalysisManager cgsccAnaMgr;
+namespace {
+    void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
+        llvm::LoopAnalysisManager loopAnaMgr;
+        llvm::FunctionAnalysisManager fnAnaMgr;
+        llvm::ModuleAnalysisManager modAnaMgr;
+        llvm::CGSCCAnalysisManager cgsccAnaMgr;
 
-    llvm::PassBuilder passBuilder;
+        llvm::PassBuilder passBuilder;
 
-    passBuilder.registerLoopAnalyses(loopAnaMgr);
-    passBuilder.registerFunctionAnalyses(fnAnaMgr);
-    passBuilder.registerModuleAnalyses(modAnaMgr);
-    passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
-    passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
+        passBuilder.registerLoopAnalyses(loopAnaMgr);
+        passBuilder.registerFunctionAnalyses(fnAnaMgr);
+        passBuilder.registerModuleAnalyses(modAnaMgr);
+        passBuilder.registerCGSCCAnalyses(cgsccAnaMgr);
+        passBuilder.crossRegisterProxies(loopAnaMgr, fnAnaMgr, cgsccAnaMgr, modAnaMgr);
 
-    llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
+        llvm::ModulePassManager modPassMgr = passBuilder.buildPerModuleDefaultPipeline(level);
 
-    modPassMgr.run(module, modAnaMgr);
-}
+        modPassMgr.run(module, modAnaMgr);
+    }
+}  // namespace
 
 int main() {
     sierra::odyplan::v3::core::logical::plan::Plan logicalPlan;
@@ -169,6 +171,8 @@ int main() {
 
     auto& dylib = jit->getMainJITDylib();
     llvm::orc::SymbolMap symbolMap;
+
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
     symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(
         llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtIOTaskSpawn),
         llvm::JITSymbolFlags::Exported);
@@ -224,6 +228,7 @@ int main() {
     symbolMap[jit->mangleAndIntern("rtEnd")] = llvm::orc::ExecutorSymbolDef(
         llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtEnd),
         llvm::JITSymbolFlags::Exported);
+    // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
     if (auto err = dylib.define(llvm::orc::absoluteSymbols(symbolMap))) {
         std::cerr << "Failed to register symbol: " << llvm::toString(std::move(err)) << "\n";

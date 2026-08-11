@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     public:
         ReadOperator(core::physical::port::Port outputPort,
                      core::shared::identifiers::OperatorId lOpId,
-                     const nlohmann::json& ioConfig,
+                     nlohmann::json ioConfig,
                      io::IOFormatType ioFormat,
                      core::logical::port::Port dataSchema,
                      std::optional<std::size_t> timestampFieldIndex = std::nullopt,

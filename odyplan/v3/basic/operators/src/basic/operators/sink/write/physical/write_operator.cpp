@@ -5,7 +5,7 @@
 namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     WriteOperator::WriteOperator(const core::physical::port::Port& inputPort,
                                  const core::shared::identifiers::OperatorId lOpId,
-                                 const nlohmann::json& ioConfig,
+                                 nlohmann::json ioConfig,
                                  const io::IOFormatType ioFormat,
                                  core::logical::port::Port dataSchema)
         : TypedSinkOperator(inputPort),

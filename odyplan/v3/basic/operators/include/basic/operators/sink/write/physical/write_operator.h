@@ -22,7 +22,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     public:
         WriteOperator(const core::physical::port::Port& inputPort,
                       core::shared::identifiers::OperatorId lOpId,
-                      const nlohmann::json& ioConfig,
+                      nlohmann::json ioConfig,
                       io::IOFormatType ioFormat,
                       core::logical::port::Port dataSchema);
 
