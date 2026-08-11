@@ -57,24 +57,29 @@ namespace sierra::odyplan::v3::core::builder {
                             throw std::logic_error("PlanBuilder::build: source_operator needs to "
                                                    "be the first element of its chain");
                         }
-
+                        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                         node.asProducer =
                             static_cast<physical::operators::source::TypedSourceOperator*>(
                                 oprs.at(i).get());
+                        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                         break;
                     }
                     case physical::operators::OperatorRole::PIPE: {
                         if (oprs.at(i)->isSegmentBreaker()) {
+                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                             auto* blockingPipe =
                                 static_cast<physical::operators::pipe::TypedBlockingPipeOperator*>(
                                     oprs.at(i).get());
+                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                             node.asConsumer = blockingPipe;
                             node.asProducer = blockingPipe;
                             node.isBreaker = true;
                         } else {
+                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                             node.asConsumer =
                                 static_cast<physical::operators::pipe::TypedPipeOperator*>(
                                     oprs.at(i).get());
+                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                         }
                         break;
                     }
@@ -83,9 +88,11 @@ namespace sierra::odyplan::v3::core::builder {
                             throw std::logic_error("PlanBuilder::build: a sink_operator must be "
                                                    "the last element of its chain");
                         }
+                        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                         node.asConsumer =
                             static_cast<physical::operators::sink::TypedSinkOperator*>(
                                 oprs.at(i).get());
+                        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                         break;
                     }
                 }

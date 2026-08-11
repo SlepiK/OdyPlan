@@ -10,11 +10,11 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                const std::chrono::milliseconds rowDelay)
         : TypedSourceOperator(std::move(outputPort)),
           mLogicalOperatorId(lOpId),
-          mIOConfig(ioConfig),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
           mTimestampFieldIndex(timestampFieldIndex),
-          mRowDelay(rowDelay) {
+          mRowDelay(rowDelay),
+          mIOConfig(std::move(ioConfig)) {
         if (mDataSchema.empty()) {
             throw std::invalid_argument("ReadOperator: dataSchema is empty");
         }
@@ -108,7 +108,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
         auto* strConstant = llvm::ConstantDataArray::getString(context, path, true);
 
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         auto* gPath = new llvm::GlobalVariable(module,
                                                strConstant->getType(),
                                                true,
@@ -121,6 +121,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             gPath,
             std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
                                       llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
+        // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mState = stateRegistry.createHandle(
             "read_source_" + std::to_string(mLogicalOperatorId),

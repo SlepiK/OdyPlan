@@ -2,6 +2,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     extern "C" {
+    // NOLINTNEXTLINE(readability-function-size)
     void* rtJoinCreate(const void* typeRegistryRawPtr,
                        const core::shared::types::ValueTypeId* leftTypeIds,
                        const std::uint64_t leftFieldSize,

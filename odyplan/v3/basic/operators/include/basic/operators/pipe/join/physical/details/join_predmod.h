@@ -45,12 +45,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             return std::nullopt;
         }
 
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
         const auto leftIndex =
             static_cast<const basic::expression::FieldReferenceExpression&>(left).getFieldIndex();
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
         const auto rightIndex =
             static_cast<const basic::expression::FieldReferenceExpression&>(right).getFieldIndex();
+        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
         const auto leftSize = leftSchema.size();
         const auto rightSize = rightSchema.size();

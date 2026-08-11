@@ -261,25 +261,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                     const basic::expression::IExpression& expression) {
         switch (expression.getExpressionType()) {
             case basic::expression::ExpressionType::FIELD_REFERENCE: {
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& fieldRef =
                     static_cast<const basic::expression::FieldReferenceExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 if (fieldRef.getFieldIndex() >= tuple.size()) {
                     throw std::out_of_range("IntervalJoinOperator: Field index out of range");
                 }
                 return tuple.at(fieldRef.getFieldIndex());
             }
             case basic::expression::ExpressionType::CONSTANT: {
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& constExp =
                     static_cast<const basic::expression::ConstantExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 return segmentCtx.valueTypeRegistry.compileConstant(
                     constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
             }
             case basic::expression::ExpressionType::COMPARE: {
-                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast)
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& cmpExp =
                     static_cast<const basic::expression::CompareExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left = codegenExpression(segmentCtx, tuple, cmpExp.getLeftPart());
                 llvm::Value* right = codegenExpression(segmentCtx, tuple, cmpExp.getRightPart());
                 return codegenCompare(segmentCtx.builder, left, right, cmpExp.getOpr());

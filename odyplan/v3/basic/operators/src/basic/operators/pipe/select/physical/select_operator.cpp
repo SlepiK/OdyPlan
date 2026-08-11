@@ -40,27 +40,30 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
                                       const basic::expression::IExpression& expression) {
         switch (expression.getExpressionType()) {
             case basic::expression::ExpressionType::FIELD_REFERENCE: {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& fieldRefExpression =
                     static_cast<const basic::expression::FieldReferenceExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 if (fieldRefExpression.getFieldIndex() >= tuple.size()) {
                     throw std::out_of_range("SelectOperator: field index out of range");
                 }
                 return tuple.at(fieldRefExpression.getFieldIndex());
             }
             case basic::expression::ExpressionType::CONSTANT: {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& constExpression =
                     static_cast<const basic::expression::ConstantExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 return segmentCtx.valueTypeRegistry.compileConstant(
                     constExpression.getTypeId(),
                     segmentCtx.builder,
                     constExpression.getSerializedValue());
             }
             case basic::expression::ExpressionType::COMPARE: {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& compareExpression =
                     static_cast<const basic::expression::CompareExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left =
                     codegenExpression(segmentCtx, tuple, compareExpression.getLeftPart());
                 llvm::Value* right =
@@ -68,9 +71,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
                 return codegenCompare(segmentCtx.builder, left, right, compareExpression.getOpr());
             }
             case basic::expression::ExpressionType::LOGICAL: {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& logicalExpression =
                     static_cast<const basic::expression::LogicalExpression&>(expression);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left =
                     codegenExpression(segmentCtx, tuple, logicalExpression.getLeftPart());
                 if (logicalExpression.isUnary()) {

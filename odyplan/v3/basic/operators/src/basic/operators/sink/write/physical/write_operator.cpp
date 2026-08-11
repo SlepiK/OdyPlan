@@ -10,9 +10,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
                                  core::logical::port::Port dataSchema)
         : TypedSinkOperator(inputPort),
           mLogicalOperatorId(lOpId),
-          mIOConfig(ioConfig),
           mIOFormat(ioFormat),
-          mDataSchema(std::move(dataSchema)) {
+          mDataSchema(std::move(dataSchema)),
+          mIOConfig(std::move(ioConfig)) {
         if (mDataSchema.empty()) {
             throw std::invalid_argument("WriteOperator: dataSchema is empty");
         }
@@ -57,7 +57,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
 
         auto* strConstant = llvm::ConstantDataArray::getString(context, path, true);
 
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         auto* gPath = new llvm::GlobalVariable(module,
                                                strConstant->getType(),
                                                true,
@@ -70,6 +70,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
             gPath,
             std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
                                       llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
+        // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mState = stateRegistry.createHandle(
             "write_sink_" + std::to_string(mLogicalOperatorId),
@@ -86,8 +87,8 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     }
 
     void WriteOperator::end(core::physical::segment::SegmentContext& segmentCtx,
-                            core::shared::identifiers::PortId inputPort,
-                            const core::physical::segment::SegmentDataConsumers& consumers) {
+                            core::shared::identifiers::PortId /*inputPort*/,
+                            const core::physical::segment::SegmentDataConsumers& /*consumers*/) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
