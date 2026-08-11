@@ -87,7 +87,7 @@ namespace sierra::odyplan::v3::example::aot::project {
                 tuple.pushBack(valueField2);
 
                 const auto nowFn = module->getOrInsertFunction(
-                    "rtNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
+                    "rtTimeNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
                 consumers.front()(segmentCtx, tuple);

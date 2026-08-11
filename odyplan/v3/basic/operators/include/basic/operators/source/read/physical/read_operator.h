@@ -18,6 +18,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                      nlohmann::json ioConfig,
                      io::IOFormatType ioFormat,
                      core::logical::port::Port dataSchema,
+                     bool useProgramClock = false,
                      std::optional<std::size_t> timestampFieldIndex = std::nullopt,
                      std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0));
 
@@ -36,6 +37,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         std::chrono::milliseconds mRowDelay;
         core::physical::state::StateHandle mState;
         nlohmann::json mIOConfig;
+        bool mUseProgramClock;
 
         [[nodiscard]] llvm::Value*
         loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;

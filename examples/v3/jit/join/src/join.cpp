@@ -179,12 +179,15 @@ int main()
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
                     std::make_unique<
-                        sierra::odyplan::v3::basic::operators::source::read::physical::ReadOperator>(
+                        sierra::odyplan::v3::basic::operators::source::read::physical::ReadOperator> (
                         outputPorts.front(),
                         concrete.getOperatorTypeId(),
                         concrete.getIOConfig(),
                         concrete.getIOFormat(),
-                        concrete.getOutputPorts().at(0)));
+                        concrete.getOutputPorts().at(0),
+                        true,
+                        std::nullopt,
+                        concrete.getDelay()));
                 return ot;
             });
 
@@ -434,8 +437,11 @@ int main()
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtSleepMs),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtNow")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtNow),
+        symbolMap[jit->mangleAndIntern("rtTimeNow")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtTimeNow),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtProgramTimeNow")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtProgramTimeNow),
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("odyStop")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::odyStop),

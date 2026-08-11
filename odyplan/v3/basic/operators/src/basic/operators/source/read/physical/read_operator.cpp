@@ -6,6 +6,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                nlohmann::json ioConfig,
                                const io::IOFormatType ioFormat,
                                core::logical::port::Port dataSchema,
+                               const bool useProgramClock,
                                const std::optional<std::size_t> timestampFieldIndex,
                                const std::chrono::milliseconds rowDelay)
         : TypedSourceOperator(std::move(outputPort)),
@@ -14,7 +15,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
           mDataSchema(std::move(dataSchema)),
           mTimestampFieldIndex(timestampFieldIndex),
           mRowDelay(rowDelay),
-          mIOConfig(std::move(ioConfig)) {
+          mIOConfig(std::move(ioConfig)),
+          mUseProgramClock(useProgramClock) {
         if (mDataSchema.empty()) {
             throw std::invalid_argument("ReadOperator: dataSchema is empty");
         }
@@ -87,9 +89,15 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         if (mTimestampFieldIndex.has_value()) {
             tuple.timestamp = tuple.at(*mTimestampFieldIndex);
         } else {
-            const auto nowFn =
-                module->getOrInsertFunction("rtNow", llvm::FunctionType::get(idTy, {}, false));
-            tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+            if (mUseProgramClock) {
+                const auto nowFn =
+                    module->getOrInsertFunction("rtProgramTimeNow", llvm::FunctionType::get(idTy, {}, false));
+                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+            } else {
+                const auto nowFn =
+                    module->getOrInsertFunction("rtTimeNow", llvm::FunctionType::get(idTy, {}, false));
+                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+            }
         }
 
         consumers.front()(segmentCtx, tuple);
