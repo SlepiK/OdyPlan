@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #ifdef SIERRA_USER_PROGRAM_CLOCK
-inline const auto gClock = std::chrono::steady_clock::now();
+inline const auto RT_CLOCK = std::chrono::steady_clock::now();
 #endif
 
 namespace sierra::odyplan::v3::core::runtime {

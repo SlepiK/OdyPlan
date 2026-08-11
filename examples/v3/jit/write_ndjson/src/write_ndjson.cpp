@@ -42,6 +42,7 @@ namespace
     }
 } // namespace
 
+// NOLINTNEXTLINE(readability-function-size)
 int main()
 {
     try
