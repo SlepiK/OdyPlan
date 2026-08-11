@@ -85,8 +85,10 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<
                     const sierra::odyplan::v3::example::full::logical::ConstantIntSourceOperator&>(op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
@@ -103,9 +105,11 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports&)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<
                     const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(
                     op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
@@ -122,8 +126,10 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::
                     select::logical::SelectOperator&>(op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(

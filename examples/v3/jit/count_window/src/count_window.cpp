@@ -128,10 +128,11 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<
                     const sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator&>(
                     op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
@@ -152,8 +153,10 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::
                     window::logical::CountWindowOperator&>(op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& config = concrete.getWindowConfig();
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
@@ -170,10 +173,11 @@ int main()
                const sierra::odyplan::v3::core::physical::port::Ports&)
             -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation
             {
-                // NOLINTNEXTLINE
+                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& concrete = static_cast<
                     const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(
                     op);
+                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
