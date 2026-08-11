@@ -203,15 +203,15 @@ namespace sierra::odyplan::v3::core::physical::types {
             sizeof(std::float_t),
             [](llvm::LLVMContext& ctx) { return llvm::Type::getFloatTy(ctx); },
             [](const llvm::IRBuilder<>& b, const std::string& v) {
-                return llvm::ConstantInt::get(llvm::Type::getFloatTy(b.getContext()), std::stoi(v));
+                return llvm::ConstantFP::get(llvm::Type::getFloatTy(b.getContext()), std::stoi(v));
             },
             [](const std::byte* ptr) -> std::size_t {
                 std::float_t value = 0.0F;
                 std::memcpy(&value, ptr, sizeof(std::float_t));
-                if (value == 0.0F) {
-                    value = 0.0F;
+                if (std::isnan(value)) {
+                    return std::hash<std::float_t>{}(std::numeric_limits<float>::quiet_NaN());
                 }
-                return std::hash<std::float_t>{}(value);
+                return std::hash<std::float_t>{}(value + 0.0F);
             },
             [](const std::byte* a, const std::byte* b) -> bool {
                 std::float_t fA = 0.0F;
@@ -227,16 +227,16 @@ namespace sierra::odyplan::v3::core::physical::types {
             sizeof(std::double_t),
             [](llvm::LLVMContext& ctx) { return llvm::Type::getDoubleTy(ctx); },
             [](const llvm::IRBuilder<>& b, const std::string& v) {
-                return llvm::ConstantInt::get(llvm::Type::getDoubleTy(b.getContext()),
+                return llvm::ConstantFP::get(llvm::Type::getDoubleTy(b.getContext()),
                                               std::stoi(v));
             },
             [](const std::byte* ptr) -> std::size_t {
                 std::double_t value = 0.0;
                 std::memcpy(&value, ptr, sizeof(std::double_t));
-                if (value == 0.0) {
-                    value = 0.0;
+                if (std::isnan(value)) {
+                    return std::hash<std::double_t>{}(std::numeric_limits<double>::quiet_NaN());
                 }
-                return std::hash<std::double_t>{}(value);
+                return std::hash<std::double_t>{}(value + 0.0F);
             },
             [](const std::byte* a, const std::byte* b) -> bool {
                 std::double_t dA = 0.0;
