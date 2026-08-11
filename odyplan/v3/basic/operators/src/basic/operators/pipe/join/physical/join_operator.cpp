@@ -296,7 +296,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                 {
                     throw std::out_of_range("IntervalJoinOperator: Field index out of range");
                 }
-                return tuple.at(fieldRef.getFieldIndex());
+                auto* field = tuple.at(fieldRef.getFieldIndex());
+                if (field == nullptr) {
+                    throw std::out_of_range("IntervalJoinOperator: Field returned nullptr");
+                }
+                return field;
             }
         case basic::expression::ExpressionType::CONSTANT:
             {
@@ -337,6 +341,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                     static_cast<const basic::expression::LogicalExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left = codegenExpression(segmentCtx, tuple, logicExp.getLeftPart());
+
+                if (left == nullptr)
+                {
+                    throw std::invalid_argument("JoinOperator: failed to codegen left operand of logical expression");
+                }
+
                 if (logicExp.isUnary())
                 {
                     return segmentCtx.builder.CreateNot(left);
@@ -349,6 +359,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                 }
 
                 llvm::Value* right = codegenExpression(segmentCtx, tuple, *rightPart);
+
+                if (right == nullptr)
+                {
+                    throw std::invalid_argument("JoinOperator: failed to codegen right operand of logical expression");
+                }
 
                 switch (logicExp.getOpr())
                 {
@@ -376,8 +391,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                                  llvm::Value* right,
                                  const basic::expression::CompareExpression::CompareOp opr)
     {
+        if (left->getType() != right->getType())
+        {
+            throw std::invalid_argument(
+                "JoinOperator: expression operands have mismatched types");
+        }
         const bool isFloat = left->getType()->isFloatingPointTy();
-        // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
+
         switch (opr)
         {
         case basic::expression::CompareExpression::CompareOp::EQ:
@@ -420,6 +440,5 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             throw std::out_of_range(
                 "IntervalJoinOperator::compare: Invalid compare expression type");
         }
-        // NOLINTEND(clang-analyzer-security.ArrayBound)
     }
 } // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
