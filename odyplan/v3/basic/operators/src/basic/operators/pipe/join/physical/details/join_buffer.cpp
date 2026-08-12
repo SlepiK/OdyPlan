@@ -1,5 +1,5 @@
-#include <cassert>
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
+#include <cassert>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,

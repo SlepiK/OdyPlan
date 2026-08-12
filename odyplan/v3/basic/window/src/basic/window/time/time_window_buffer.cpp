@@ -1,10 +1,11 @@
-#include <cassert>
 #include <basic/window/time/time_window_buffer.h>
+#include <cassert>
 
 namespace sierra::odyplan::v3::basic::window::time {
-    TimeWindowBuffer::TimeWindowBuffer(const TimeWindowConfig& config,
-                                       core::logical::port::Port mDataSchema,
-                                       const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
+    TimeWindowBuffer::TimeWindowBuffer(
+        const TimeWindowConfig& config,
+        core::logical::port::Port mDataSchema,
+        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
         : mConfig(config), mRowLayout(std::move(mDataSchema), runtimeTypeRegistry) {}
 
     TimeWindowBuffer::~TimeWindowBuffer() {

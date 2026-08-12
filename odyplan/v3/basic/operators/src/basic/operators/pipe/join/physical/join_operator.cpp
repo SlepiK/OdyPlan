@@ -1,7 +1,6 @@
 #include <basic/operators/pipe/join/physical/join_operator.h>
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
-{
+namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     JoinOperator::JoinOperator(core::physical::port::Port inputPort,
                                core::physical::port::Port outputPort,
                                const logical::details::JoinConfig config,
@@ -12,15 +11,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
           mConfig(config),
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),
-          mPredicate(predicate)
-    {
-    }
+          mPredicate(predicate) {}
 
     void JoinOperator::consume(core::physical::segment::SegmentContext& segmentCtx,
                                core::shared::identifiers::PortId inputPort,
                                const core::physical::data::DataPackage& tuple,
-                               const core::physical::segment::SegmentDataConsumers& consumers)
-    {
+                               const core::physical::segment::SegmentDataConsumers& consumers) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -33,8 +29,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             "rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(lockFn, {state});
 
-        if (inputPort == 0)
-        {
+        if (inputPort == 0) {
             // left
             codegenSide(segmentCtx,
                         state,
@@ -45,9 +40,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                         "rtJoinEndLeft");
             emitMatch(segmentCtx, state, tuple, true, consumers);
             codegenEvict(segmentCtx, state, tuple.timestamp, true);
-        }
-        else
-        {
+        } else {
             // right
             codegenSide(segmentCtx,
                         state,
@@ -67,8 +60,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 
     void JoinOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                     llvm::Module& module,
-                                    llvm::LLVMContext& context)
-    {
+                                    llvm::LLVMContext& context) {
         auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* i8Ty = llvm::Type::getInt8Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
@@ -84,25 +76,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
         mState = stateRegistry.createHandle(
             "join_" + std::to_string(getId()),
             "rtJoinCreate",
-            {
-                leftSideTypesGlobal,
-                llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),
-                rightSideTypesGlobal,
-                llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
-                llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
-                llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
-                llvm::ConstantInt::get(i8Ty, hasEquiKey ? 1 : 0),
-                llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->leftFieldIndex : 0),
-                llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->rightFieldIndex : 0),
-                llvm::ConstantInt::get(i8Ty, hasEquiKey ? equiKey->typeId : 0)
-            },
+            {leftSideTypesGlobal,
+             llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),
+             rightSideTypesGlobal,
+             llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
+             llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
+             llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
+             llvm::ConstantInt::get(i8Ty, hasEquiKey ? 1 : 0),
+             llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->leftFieldIndex : 0),
+             llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->rightFieldIndex : 0),
+             llvm::ConstantInt::get(i8Ty, hasEquiKey ? equiKey->typeId : 0)},
             {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, i64Ty, i64Ty, i8Ty},
             "rtJoinDestroy");
     }
 
     llvm::Value*
-    JoinOperator::loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const
-    {
+    JoinOperator::loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const {
         auto* ptrTy = llvm::PointerType::getUnqual(segmentCtx.builder.getContext());
         return segmentCtx.builder.CreateLoad(ptrTy, mState.var);
     }
@@ -110,8 +99,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
     void JoinOperator::codegenEvict(core::physical::segment::SegmentContext& segmentCtx,
                                     llvm::Value* state,
                                     llvm::Value* timestamp,
-                                    const bool callFromLeft)
-    {
+                                    const bool callFromLeft) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -129,13 +117,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
     llvm::GlobalVariable* JoinOperator::buildTypeIds(llvm::Module& module,
                                                      llvm::LLVMContext& ctx,
                                                      const core::logical::port::Port& schema,
-                                                     const std::string& name)
-    {
+                                                     const std::string& name) {
         auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         std::vector<llvm::Constant*> values;
         values.reserve(schema.size());
-        for (const auto& slot : schema)
-        {
+        for (const auto& slot : schema) {
             values.push_back(llvm::ConstantInt::get(i8Ty, slot.valueTypeId));
         }
         auto* arrTy = llvm::ArrayType::get(i8Ty, values.size());
@@ -152,8 +138,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                                  llvm::Value* state,
                                  const core::physical::data::DataPackage& tuple,
                                  const bool onLeft,
-                                 const core::physical::segment::SegmentDataConsumers& consumers)
-    {
+                                 const core::physical::segment::SegmentDataConsumers& consumers) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
@@ -189,8 +174,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
         core::physical::data::DataPackage otherTuple;
         otherTuple.reserve(otherSchema.size());
 
-        for (std::size_t i = 0; i < otherSchema.size(); ++i)
-        {
+        for (std::size_t i = 0; i < otherSchema.size(); ++i) {
             llvm::Value* candidatePtr = segmentCtx.builder.CreateCall(
                 getCandidateFn, {state, index, llvm::ConstantInt::get(i64Ty, i)});
             llvm::Type* candidateTy =
@@ -204,13 +188,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             segmentCtx.builder.CreateCall(getCandidateTimestampFn, {state, index});
 
         core::physical::data::DataPackage combined;
-        if (onLeft)
-        {
+        if (onLeft) {
             combined.fields.insert(combined.end(), tuple.begin(), tuple.end());
             combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
-        }
-        else
-        {
+        } else {
             combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
             combined.fields.insert(combined.end(), tuple.begin(), tuple.end());
         }
@@ -220,8 +201,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
         combined.timestamp =
             segmentCtx.builder.CreateSelect(isNewerCondition, tuple.timestamp, otherTimestamp);
 
-        if (mPredicate != nullptr)
-        {
+        if (mPredicate != nullptr) {
             llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
 
             auto* passBB = llvm::BasicBlock::Create(ctx, "join_predicate_pass", fn);
@@ -233,9 +213,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             segmentCtx.builder.CreateBr(mergeBB);
 
             segmentCtx.builder.SetInsertPoint(mergeBB);
-        }
-        else
-        {
+        } else {
             consumers.at(0)(segmentCtx, combined);
         }
 
@@ -252,8 +230,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                                    const core::logical::port::Port& schema,
                                    const char* beginFnName,
                                    const char* pushFnName,
-                                   const char* endFnName)
-    {
+                                   const char* endFnName) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -267,8 +244,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 
         const auto pushFn = module->getOrInsertFunction(
             pushFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
-        for (std::size_t i = 0; i < schema.size(); ++i)
-        {
+        for (std::size_t i = 0; i < schema.size(); ++i) {
             llvm::Value* slot = segmentCtx.storage.get(schema.at(i).valueTypeId);
             segmentCtx.builder.CreateStore(tuple.at(i), slot);
             segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
@@ -282,18 +258,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
     llvm::Value*
     JoinOperator::codegenExpression(core::physical::segment::SegmentContext& segmentCtx,
                                     const core::physical::data::DataPackage& tuple,
-                                    const basic::expression::IExpression& expression)
-    {
-        switch (expression.getExpressionType())
-        {
-        case basic::expression::ExpressionType::FIELD_REFERENCE:
-            {
+                                    const basic::expression::IExpression& expression) {
+        switch (expression.getExpressionType()) {
+            case basic::expression::ExpressionType::FIELD_REFERENCE: {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& fieldRef =
                     static_cast<const basic::expression::FieldReferenceExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                if (fieldRef.getFieldIndex() >= tuple.size())
-                {
+                if (fieldRef.getFieldIndex() >= tuple.size()) {
                     throw std::out_of_range("IntervalJoinOperator: Field index out of range");
                 }
                 auto* field = tuple.at(fieldRef.getFieldIndex());
@@ -302,8 +274,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                 }
                 return field;
             }
-        case basic::expression::ExpressionType::CONSTANT:
-            {
+            case basic::expression::ExpressionType::CONSTANT: {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& constExp =
                     static_cast<const basic::expression::ConstantExpression&>(expression);
@@ -311,77 +282,69 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                 return segmentCtx.codegenTypeRegistry.compileConstant(
                     constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
             }
-        case basic::expression::ExpressionType::COMPARE:
-            {
+            case basic::expression::ExpressionType::COMPARE: {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& cmpExp =
                     static_cast<const basic::expression::CompareExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 llvm::Value* left = codegenExpression(segmentCtx, tuple, cmpExp.getLeftPart());
-                if (left == nullptr)
-                {
+                if (left == nullptr) {
                     throw std::invalid_argument(
                         "JoinOperator: failed to codegen left operand of compare expression");
                 }
 
                 llvm::Value* right = codegenExpression(segmentCtx, tuple, cmpExp.getRightPart());
-                if (right == nullptr)
-                {
+                if (right == nullptr) {
                     throw std::invalid_argument(
                         "JoinOperator: failed to codegen right operand of compare expression");
                 }
 
                 return codegenCompare(segmentCtx.builder, left, right, cmpExp.getOpr());
             }
-        case basic::expression::ExpressionType::LOGICAL:
-            {
+            case basic::expression::ExpressionType::LOGICAL: {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
                 const auto& logicExp =
                     static_cast<const basic::expression::LogicalExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                 llvm::Value* left = codegenExpression(segmentCtx, tuple, logicExp.getLeftPart());
 
-                if (left == nullptr)
-                {
-                    throw std::invalid_argument("JoinOperator: failed to codegen left operand of logical expression");
+                if (left == nullptr) {
+                    throw std::invalid_argument(
+                        "JoinOperator: failed to codegen left operand of logical expression");
                 }
 
-                if (logicExp.isUnary())
-                {
+                if (logicExp.isUnary()) {
                     return segmentCtx.builder.CreateNot(left);
                 }
 
                 const auto* rightPart = logicExp.getRightPart();
-                if (rightPart == nullptr)
-                {
-                    throw std::invalid_argument("JoinOperator: binary logical expression missing right part");
+                if (rightPart == nullptr) {
+                    throw std::invalid_argument(
+                        "JoinOperator: binary logical expression missing right part");
                 }
 
                 llvm::Value* right = codegenExpression(segmentCtx, tuple, *rightPart);
 
-                if (right == nullptr)
-                {
-                    throw std::invalid_argument("JoinOperator: failed to codegen right operand of logical expression");
+                if (right == nullptr) {
+                    throw std::invalid_argument(
+                        "JoinOperator: failed to codegen right operand of logical expression");
                 }
 
-                switch (logicExp.getOpr())
-                {
-                case basic::expression::LogicalExpression::LogicalOp::AND:
-                    {
+                switch (logicExp.getOpr()) {
+                    case basic::expression::LogicalExpression::LogicalOp::AND: {
                         return segmentCtx.builder.CreateAnd(left, right);
                     }
-                case basic::expression::LogicalExpression::LogicalOp::OR:
-                    {
+                    case basic::expression::LogicalExpression::LogicalOp::OR: {
                         return segmentCtx.builder.CreateOr(left, right);
                     }
-                default:
-                    throw std::out_of_range(
-                        "IntervalJoinOperator::logic: Type of expression not supported");
+                    default:
+                        throw std::out_of_range(
+                            "IntervalJoinOperator::logic: Type of expression not supported");
                 }
             }
-        default:
-            throw std::invalid_argument("IntervalJoinOperator: Invalid expression type");
+            default:
+                throw std::invalid_argument("IntervalJoinOperator: Invalid expression type");
         }
     }
 
@@ -389,58 +352,42 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
     JoinOperator::codegenCompare(llvm::IRBuilder<>& builder,
                                  llvm::Value* left,
                                  llvm::Value* right,
-                                 const basic::expression::CompareExpression::CompareOp opr)
-    {
-        if (left->getType() != right->getType())
-        {
-            throw std::invalid_argument(
-                "JoinOperator: expression operands have mismatched types");
+                                 const basic::expression::CompareExpression::CompareOp opr) {
+        if (left->getType() != right->getType()) {
+            throw std::invalid_argument("JoinOperator: expression operands have mismatched types");
         }
         const bool isFloat = left->getType()->isFloatingPointTy();
 
         // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
-        switch (opr)
-        {
-        case basic::expression::CompareExpression::CompareOp::EQ:
-            {
-                return isFloat
-                           ? builder.CreateFCmpOEQ(left, right)
-                           : builder.CreateICmpEQ(left, right);
+        switch (opr) {
+            case basic::expression::CompareExpression::CompareOp::EQ: {
+                return isFloat ? builder.CreateFCmpOEQ(left, right)
+                               : builder.CreateICmpEQ(left, right);
             }
-        case basic::expression::CompareExpression::CompareOp::NE:
-            {
-                return isFloat
-                           ? builder.CreateFCmpONE(left, right)
-                           : builder.CreateICmpNE(left, right);
+            case basic::expression::CompareExpression::CompareOp::NE: {
+                return isFloat ? builder.CreateFCmpONE(left, right)
+                               : builder.CreateICmpNE(left, right);
             }
-        case basic::expression::CompareExpression::CompareOp::LT:
-            {
-                return isFloat
-                           ? builder.CreateFCmpOLT(left, right)
-                           : builder.CreateICmpSLT(left, right);
+            case basic::expression::CompareExpression::CompareOp::LT: {
+                return isFloat ? builder.CreateFCmpOLT(left, right)
+                               : builder.CreateICmpSLT(left, right);
             }
-        case basic::expression::CompareExpression::CompareOp::LE:
-            {
-                return isFloat
-                           ? builder.CreateFCmpOLE(left, right)
-                           : builder.CreateICmpSLE(left, right);
+            case basic::expression::CompareExpression::CompareOp::LE: {
+                return isFloat ? builder.CreateFCmpOLE(left, right)
+                               : builder.CreateICmpSLE(left, right);
             }
-        case basic::expression::CompareExpression::CompareOp::GT:
-            {
-                return isFloat
-                           ? builder.CreateFCmpOGT(left, right)
-                           : builder.CreateICmpSGT(left, right);
+            case basic::expression::CompareExpression::CompareOp::GT: {
+                return isFloat ? builder.CreateFCmpOGT(left, right)
+                               : builder.CreateICmpSGT(left, right);
             }
-        case basic::expression::CompareExpression::CompareOp::GE:
-            {
-                return isFloat
-                           ? builder.CreateFCmpOGE(left, right)
-                           : builder.CreateICmpSGE(left, right);
+            case basic::expression::CompareExpression::CompareOp::GE: {
+                return isFloat ? builder.CreateFCmpOGE(left, right)
+                               : builder.CreateICmpSGE(left, right);
             }
-        default:
-            throw std::out_of_range(
-                "IntervalJoinOperator::compare: Invalid compare expression type");
+            default:
+                throw std::out_of_range(
+                    "IntervalJoinOperator::compare: Invalid compare expression type");
         }
         // NOLINTEND(clang-analyzer-security.ArrayBound)
     }
-} // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
+}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical

@@ -1,9 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_ROW_LAYOUT_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_ROW_LAYOUT_HPP
 #include <core/logical/port/port.h>
-#include <utility>
-
 #include <core/runtime/types/runtime_type_registry.h>
+#include <utility>
 
 namespace sierra::odyplan::v3::basic::window {
     class WindowRowLayout {

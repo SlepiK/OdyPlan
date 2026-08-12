@@ -1,5 +1,5 @@
-#include <cassert>
 #include <basic/window/count/count_window_buffer.h>
+#include <cassert>
 
 namespace sierra::odyplan::v3::basic::window::count {
     CountWindowBuffer::CountWindowBuffer(

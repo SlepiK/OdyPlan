@@ -39,9 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                                               std::chrono::milliseconds(rightWindowSize));
 
         if (hasEquiKey != 0) {
-            buffer->enableEqui(leftKeyFieldIndex,
-                               rightKeyFieldIndex,
-                               keyTypeId);
+            buffer->enableEqui(leftKeyFieldIndex, rightKeyFieldIndex, keyTypeId);
         }
 
         return buffer;

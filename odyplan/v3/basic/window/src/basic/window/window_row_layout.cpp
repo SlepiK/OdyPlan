@@ -1,9 +1,10 @@
-#include <cstring>
 #include <basic/window/window_row_layout.h>
+#include <cstring>
 
 namespace sierra::odyplan::v3::basic::window {
-    WindowRowLayout::WindowRowLayout(core::logical::port::Port dataSchema,
-                                     const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
+    WindowRowLayout::WindowRowLayout(
+        core::logical::port::Port dataSchema,
+        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
         : mDataSchema(std::move(dataSchema)), mRuntimeTypeRegistry(&runtimeTypeRegistry) {
         std::size_t offset = 0;
         mOffset.reserve(mDataSchema.size());

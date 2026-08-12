@@ -1,7 +1,8 @@
 #include <core/builder/plan_builder.h>
 
 namespace sierra::odyplan::v3::core::builder {
-    PlanBuilder::PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry) : mCodegenTypeRegistry(&codengenTypeRegistry) {}
+    PlanBuilder::PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry)
+        : mCodegenTypeRegistry(&codengenTypeRegistry) {}
 
     void PlanBuilder::registerOperatorTransformation(
         ValueTypeId lId, transformation::OperatorTransformationFactory factory) {
@@ -131,7 +132,8 @@ namespace sierra::odyplan::v3::core::builder {
             for (const auto& lPortDescriptor : lPort) {
                 pPort.push_back(physical::port::PortDescription{
                     .valueTypeId = lPortDescriptor.valueTypeId,
-                    .llvmType = mCodegenTypeRegistry->resolveType(lPortDescriptor.valueTypeId, ctx)});
+                    .llvmType =
+                        mCodegenTypeRegistry->resolveType(lPortDescriptor.valueTypeId, ctx)});
             }
 
             ret.push_back(std::move(pPort));

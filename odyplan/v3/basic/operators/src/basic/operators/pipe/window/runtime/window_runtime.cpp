@@ -50,7 +50,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new basic::window::time::TimeWindowBuffer(config, std::move(schema), *runtimeTypeRegistry);
+        return new basic::window::time::TimeWindowBuffer(
+            config, std::move(schema), *runtimeTypeRegistry);
     }
 
     void rtDestroyTimeWindowBuffer(void* state) {

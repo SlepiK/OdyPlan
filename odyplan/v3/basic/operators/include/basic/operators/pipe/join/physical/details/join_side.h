@@ -39,8 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] Timestamp getTimestamp(std::size_t rowIndex) const;
 
-        void enableKeyIdx(std::size_t fieldIndex,
-                          core::shared::types::ValueTypeId keyTypeId);
+        void enableKeyIdx(std::size_t fieldIndex, core::shared::types::ValueTypeId keyTypeId);
 
         [[nodiscard]] std::optional<std::size_t> getKeyFieldIndex() const;
 
@@ -65,9 +64,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         // Hash-Behavior for == predicate only
         std::optional<std::size_t> mKeyFieldIndex;
         std::unordered_multimap<std::size_t, std::uint64_t> mKeyIndex;
-        core::runtime::types::RuntimeTypeRegistry::HashFunctionPtr  mHashFunction  = nullptr;
+        core::runtime::types::RuntimeTypeRegistry::HashFunctionPtr mHashFunction = nullptr;
         core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction = nullptr;
-        const core::runtime::types::RuntimeTypeRegistry *mRuntimeTypeRegistry;
+        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::uint64_t mBasisIndex = 0;
         std::uint64_t mLastAbsoluteIndex = 0;

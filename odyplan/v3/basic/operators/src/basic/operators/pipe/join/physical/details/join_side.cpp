@@ -4,7 +4,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinSide::JoinSide(core::logical::port::Port schema,
                        const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
                        const std::chrono::milliseconds windowSize)
-        : mLayout(std::move(schema), *runtimeTypeRegistry), mWindowSize(windowSize), mRuntimeTypeRegistry(runtimeTypeRegistry) {}
+        : mLayout(std::move(schema), *runtimeTypeRegistry),
+          mWindowSize(windowSize),
+          mRuntimeTypeRegistry(runtimeTypeRegistry) {}
 
     void JoinSide::begin() {
         mLayout.begin();
@@ -94,7 +96,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     void JoinSide::enableKeyIdx(const std::size_t fieldIndex,
                                 core::shared::types::ValueTypeId keyTypeId) {
         mKeyFieldIndex = fieldIndex;
-        mHashFunction  = mRuntimeTypeRegistry->getHashFnPtr(keyTypeId);
+        mHashFunction = mRuntimeTypeRegistry->getHashFnPtr(keyTypeId);
         mEqualFunction = mRuntimeTypeRegistry->getEqualFnPtr(keyTypeId);
     }
 
