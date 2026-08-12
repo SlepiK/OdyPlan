@@ -2,8 +2,8 @@
 #include <set>
 
 namespace sierra::odyplan::v3::core::physical::plan {
-    Plan::Plan(const types::ValueTypeRegistry& valueTypeRegistry)
-        : mValueTypeRegistry(&valueTypeRegistry) {}
+    Plan::Plan(const types::CodegenTypeRegistry& codegenTypeRegistry)
+        : mCodegenTypeRegistry(&codegenTypeRegistry) {}
 
     void Plan::addOperator(std::unique_ptr<IOperator> opr) {
         if (!opr) {
@@ -63,7 +63,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                                .module = &module,
                                                .ctx = &ctx,
                                                .functions = &functions,
-                                               .valueTypeRegistry = mValueTypeRegistry,
+                                               .codegenTypeRegistry = mCodegenTypeRegistry,
                                                .ioRestartRoots = &ioFunctionsRestart,
                                                .computeRestartRoots = &computeFunctionsRestart};
 
@@ -75,7 +75,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                                   "ody_rsource_" + std::to_string(id),
                                                   &module);
                 auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
-                segment::SegmentContext segmentContext(fn, entryBB, ctx, *mValueTypeRegistry);
+                segment::SegmentContext segmentContext(fn, entryBB, ctx, *mCodegenTypeRegistry);
 
                 chain.nodes.front().asProducer->produce(segmentContext,
                                                         detailBuilder.afterEntry(id));
@@ -89,7 +89,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
             endFnType, llvm::Function::ExternalLinkage, "ody_end_phase", &module);
         auto* endEntryBB = llvm::BasicBlock::Create(ctx, "basicEntry", endFn);
 
-        segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mValueTypeRegistry);
+        segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mCodegenTypeRegistry);
 
         for (const auto id : mOrder) {
             const auto& chain = mChains.at(id);

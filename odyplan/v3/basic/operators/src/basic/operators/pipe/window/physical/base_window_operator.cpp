@@ -120,7 +120,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* entryBB = llvm::BasicBlock::Create(ctx, "drainEntry", drainFn);
 
         core::physical::segment::SegmentContext drainCtx(
-            drainFn, entryBB, ctx, segmentCtx.valueTypeRegistry);
+            drainFn, entryBB, ctx, segmentCtx.codegenTypeRegistry);
 
         llvm::Value* state = drainFn->getArg(0);
         drainWindows(drainCtx, state, consumer);
@@ -270,7 +270,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Value* ret =
             segmentCtx.builder.CreateCall(fn, {state, windowIndex, rowIndex, dataIndex});
 
-        llvm::Type* dataTy = segmentCtx.valueTypeRegistry.resolveType(typeId, ctx);
+        llvm::Type* dataTy = segmentCtx.codegenTypeRegistry.resolveType(typeId, ctx);
         return segmentCtx.builder.CreateLoad(dataTy, ret);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical

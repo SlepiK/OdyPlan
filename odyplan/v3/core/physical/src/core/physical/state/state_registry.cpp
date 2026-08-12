@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto* initFnType = llvm::FunctionType::get(voidTy, {ptrTy}, false);
         mInitFn = llvm::Function::Create(
             initFnType, llvm::Function::ExternalLinkage, "ody_init", *module);
-        mInitFn->getArg(0)->setName("typeRegistry");
+        mInitFn->getArg(0)->setName("runtimeTypeRegistry");
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
 

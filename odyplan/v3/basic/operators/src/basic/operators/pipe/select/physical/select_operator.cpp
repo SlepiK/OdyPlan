@@ -54,7 +54,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
                 const auto& constExpression =
                     static_cast<const basic::expression::ConstantExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                return segmentCtx.valueTypeRegistry.compileConstant(
+                return segmentCtx.codegenTypeRegistry.compileConstant(
                     constExpression.getTypeId(),
                     segmentCtx.builder,
                     constExpression.getSerializedValue());

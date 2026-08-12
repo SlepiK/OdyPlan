@@ -8,7 +8,6 @@
 #include <core/physical/operators/operator.h>
 #include <core/physical/segment/segment.h>
 #include <core/physical/segment/segment_data_consumer.h>
-#include <core/physical/types/value_type_registry.h>
 #include <core/shared/operators/operator_port_reference.h>
 #include <core/shared/operators/operator_port_reference_connection.h>
 #include <memory>
@@ -30,7 +29,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         llvm::Module* module;
         llvm::LLVMContext* ctx;
         std::vector<llvm::Function*>* functions;
-        const types::ValueTypeRegistry* valueTypeRegistry;
+        const types::CodegenTypeRegistry* codegenTypeRegistry;
 
         std::vector<llvm::Function*>* ioRestartRoots;
         std::vector<llvm::Function*>* computeRestartRoots;

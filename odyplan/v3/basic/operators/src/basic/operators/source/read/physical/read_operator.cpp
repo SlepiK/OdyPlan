@@ -90,12 +90,12 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             tuple.timestamp = tuple.at(*mTimestampFieldIndex);
         } else {
             if (mUseProgramClock) {
-                const auto nowFn =
-                    module->getOrInsertFunction("rtProgramTimeNow", llvm::FunctionType::get(idTy, {}, false));
+                const auto nowFn = module->getOrInsertFunction(
+                    "rtProgramTimeNow", llvm::FunctionType::get(idTy, {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
             } else {
-                const auto nowFn =
-                    module->getOrInsertFunction("rtTimeNow", llvm::FunctionType::get(idTy, {}, false));
+                const auto nowFn = module->getOrInsertFunction(
+                    "rtTimeNow", llvm::FunctionType::get(idTy, {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
             }
         }
@@ -157,7 +157,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         std::string fnName;
-        llvm::Type* retTy = segmentCtx.valueTypeRegistry.resolveType(typeId, ctx);
+        llvm::Type* retTy = segmentCtx.codegenTypeRegistry.resolveType(typeId, ctx);
 
         switch (typeId) {
             case std::to_underlying(core::shared::types::BuiltinValueType::BOOL): {

@@ -3,7 +3,6 @@
 
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
 #include <core/logical/port/port.h>
-#include <core/physical/types/value_type_registry.h>
 #include <cstdint>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {

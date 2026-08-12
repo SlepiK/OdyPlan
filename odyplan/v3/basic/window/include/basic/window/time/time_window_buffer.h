@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         TimeWindowBuffer(const TimeWindowConfig& config,
                          core::logical::port::Port mDataSchema,
-                         const core::physical::types::ValueTypeRegistry& typeRegistry);
+                         const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry);
 
         ~TimeWindowBuffer() override;
 

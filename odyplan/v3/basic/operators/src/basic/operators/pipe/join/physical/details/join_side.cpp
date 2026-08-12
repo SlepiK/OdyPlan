@@ -2,9 +2,11 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinSide::JoinSide(core::logical::port::Port schema,
-                       const core::physical::types::ValueTypeRegistry& typeRegistry,
+                       const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
                        const std::chrono::milliseconds windowSize)
-        : mLayout(std::move(schema), typeRegistry), mWindowSize(windowSize) {}
+        : mLayout(std::move(schema), *runtimeTypeRegistry),
+          mWindowSize(windowSize),
+          mRuntimeTypeRegistry(runtimeTypeRegistry) {}
 
     void JoinSide::begin() {
         mLayout.begin();
@@ -92,11 +94,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinSide::enableKeyIdx(const std::size_t fieldIndex,
-                                core::physical::types::ValueTypeRegistry::HashFn hashFunction,
-                                core::physical::types::ValueTypeRegistry::EqualFn equalFunction) {
+                                core::shared::types::ValueTypeId keyTypeId) {
         mKeyFieldIndex = fieldIndex;
-        mHashFunction = std::move(hashFunction);
-        mEqualFunction = std::move(equalFunction);
+        mHashFunction = mRuntimeTypeRegistry->getHashFnPtr(keyTypeId);
+        mEqualFunction = mRuntimeTypeRegistry->getEqualFnPtr(keyTypeId);
     }
 
     std::optional<std::size_t> JoinSide::getKeyFieldIndex() const {
