@@ -1,14 +1,16 @@
-#include <core/physical/types/value_type_registry.h>
+#include "core/runtime/types/runtime_type_registry.h"
 
 extern "C" {
-    void ody_init(const void* typeRegistry);
+    // NOLINTBEGIN(readability-identifier-naming)
+    void ody_init(const void* runtimeTypeRegistry);
     void ody_main();
     void ody_shutdown();
+    // NOLINTEND(readability-identifier-naming)
 }
 
 int main() {
-    auto typeRegistry = sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
-    ody_init(&typeRegistry);
+    auto runtimeTypeRegistry = sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
+    ody_init(&runtimeTypeRegistry);
     ody_main();
     ody_shutdown();
     return 0;

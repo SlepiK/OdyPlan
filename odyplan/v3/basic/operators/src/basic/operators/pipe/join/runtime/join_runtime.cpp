@@ -14,8 +14,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        const std::uint64_t leftKeyFieldIndex,
                        const std::uint64_t rightKeyFieldIndex,
                        const core::shared::types::ValueTypeId keyTypeId) {
-        const auto* typeRegistry =
-            static_cast<const core::physical::types::ValueTypeRegistry*>(typeRegistryRawPtr);
+        const auto* runtimeTypeRegistry =
+            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRawPtr);
 
         core::logical::port::Port leftSchema;
         core::logical::port::Port rightSchema;
@@ -34,15 +34,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         auto* buffer =
             new physical::details::JoinBuffer(std::move(leftSchema),
                                               std::move(rightSchema),
-                                              *typeRegistry,
+                                              runtimeTypeRegistry,
                                               std::chrono::milliseconds(leftWindowSize),
                                               std::chrono::milliseconds(rightWindowSize));
 
         if (hasEquiKey != 0) {
-            buffer->enableEqui(leftKeyFieldIndex,
-                               rightKeyFieldIndex,
-                               typeRegistry->getHashFunction(keyTypeId),
-                               typeRegistry->getEqualFunction(keyTypeId));
+            buffer->enableEqui(leftKeyFieldIndex, rightKeyFieldIndex, keyTypeId);
         }
 
         return buffer;

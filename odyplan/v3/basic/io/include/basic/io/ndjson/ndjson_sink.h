@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include <basic/io/io_sink.h>
+#include <basic/io/io_sink_helper.h>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -45,38 +46,7 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
         void write(const char* key,
                    const core::shared::types::ValueTypeId typeId,
                    const void* rawData) override {
-            using T = core::shared::types::BuiltinValueType;
-
-            // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
-            switch (typeId) {
-                case std::to_underlying(T::BOOL):
-                    mCurrent[key] = *static_cast<const bool*>(rawData);
-                    break;
-                case std::to_underlying(T::INT8):
-                    mCurrent[key] = *static_cast<const std::int8_t*>(rawData);
-                    break;
-                case std::to_underlying(T::INT16):
-                    mCurrent[key] = *static_cast<const std::int16_t*>(rawData);
-                    break;
-                case std::to_underlying(T::INT32):
-                    mCurrent[key] = *static_cast<const std::int32_t*>(rawData);
-                    break;
-                case std::to_underlying(T::INT64):
-                    mCurrent[key] = *static_cast<const std::int64_t*>(rawData);
-                    break;
-                case std::to_underlying(T::FLOAT):
-                    mCurrent[key] = *static_cast<const std::float_t*>(rawData);
-                    break;
-                case std::to_underlying(T::DOUBLE):
-                    mCurrent[key] = *static_cast<const std::double_t*>(rawData);
-                    break;
-                case std::to_underlying(T::STRING):
-                    mCurrent[key] = static_cast<const char*>(rawData);
-                    break;
-                default:
-                    throw std::invalid_argument("NDJSONSink: Unknown typeId");
-            }
-            // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+            detail::writeToJson(mCurrent, key, typeId, rawData);
             mInUse = true;
         }
 

@@ -1,11 +1,12 @@
 #include <basic/window/count/count_window_buffer.h>
+#include <cassert>
 
 namespace sierra::odyplan::v3::basic::window::count {
     CountWindowBuffer::CountWindowBuffer(
         const CountWindowConfig& config,
         core::logical::port::Port mDataSchema,
-        const core::physical::types::ValueTypeRegistry& typeRegistry)
-        : mConfig(config), mRowLayout(std::move(mDataSchema), typeRegistry) {}
+        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
+        : mConfig(config), mRowLayout(std::move(mDataSchema), runtimeTypeRegistry) {}
 
     CountWindowBuffer::~CountWindowBuffer() {
         assert(mClosed && "CountWindowBuffer::close() was never called");

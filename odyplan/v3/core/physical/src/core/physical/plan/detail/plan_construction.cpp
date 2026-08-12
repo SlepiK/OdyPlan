@@ -65,7 +65,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                                    module);
         auto* entryBB = llvm::BasicBlock::Create(*ctx, "basicEntry", fn);
 
-        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *valueTypeRegistry);
+        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *codegenTypeRegistry);
         producer->produce(segmentContext, next);
         segmentContext.builder.CreateRetVoid();
 
@@ -189,7 +189,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                                           module);
         auto* entryBB = llvm::BasicBlock::Create(*ctx, "fanInEntry", fn);
 
-        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *valueTypeRegistry);
+        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *codegenTypeRegistry);
 
         data::DataPackage reconstructed;
         reconstructed.timestamp = fn->getArg(0);

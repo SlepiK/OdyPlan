@@ -1,13 +1,14 @@
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
+#include <cassert>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
                            core::logical::port::Port rightSchema,
-                           const core::physical::types::ValueTypeRegistry& typeRegistry,
+                           const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
                            const std::chrono::milliseconds leftWindowSize,
                            const std::chrono::milliseconds rightWindowSize)
-        : mLeftSide(std::move(leftSchema), typeRegistry, leftWindowSize),
-          mRightSide(std::move(rightSchema), typeRegistry, rightWindowSize) {}
+        : mLeftSide(std::move(leftSchema), runtimeTypeRegistry, leftWindowSize),
+          mRightSide(std::move(rightSchema), runtimeTypeRegistry, rightWindowSize) {}
 
     JoinBuffer::~JoinBuffer() {
         assert(mAllReleased && "JoinBuffer: left and right side was never released!");
@@ -127,9 +128,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     void JoinBuffer::enableEqui(const std::size_t leftFieldIndex,
                                 const std::size_t rightFieldIndex,
-                                core::physical::types::ValueTypeRegistry::HashFn hashFunction,
-                                core::physical::types::ValueTypeRegistry::EqualFn equalFunction) {
-        mLeftSide.enableKeyIdx(leftFieldIndex, hashFunction, equalFunction);
-        mRightSide.enableKeyIdx(rightFieldIndex, std::move(hashFunction), std::move(equalFunction));
+                                core::shared::types::ValueTypeId keyTypeId) {
+        mLeftSide.enableKeyIdx(leftFieldIndex, keyTypeId);
+        mRightSide.enableKeyIdx(rightFieldIndex, keyTypeId);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

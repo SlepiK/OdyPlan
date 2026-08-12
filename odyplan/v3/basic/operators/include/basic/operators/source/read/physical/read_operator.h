@@ -8,7 +8,6 @@
 #include <basic/io/io_format.h>
 #include <core/logical/port/port.h>
 #include <core/physical/operators/source/typed_source_operator.h>
-#include <core/physical/types/value_type_registry.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     class ReadOperator : public core::physical::operators::source::TypedSourceOperator {

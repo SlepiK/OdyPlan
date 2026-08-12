@@ -3,8 +3,8 @@
 namespace sierra::odyplan::v3::core::physical::storage {
     Storage::Storage(llvm::Function& fn,
                      llvm::LLVMContext& ctx,
-                     const types::ValueTypeRegistry& valueTypeRegistry)
-        : mFn(&fn), mCtx(&ctx), mValueTypeRegistry(&valueTypeRegistry) {}
+                     const types::CodegenTypeRegistry& codegenTypeRegistry)
+        : mFn(&fn), mCtx(&ctx), mCodegenTypeRegistry(&codegenTypeRegistry) {}
 
     llvm::Value* Storage::get(ValueTypeId valueTypeId) {
         if (const auto iter = mSlots.find(valueTypeId); iter != mSlots.end()) {
@@ -18,7 +18,7 @@ namespace sierra::odyplan::v3::core::physical::storage {
     }
 
     llvm::AllocaInst* Storage::createAlloca(const ValueTypeId valueTypeId) const {
-        llvm::Type* llvmType = mValueTypeRegistry->resolveType(valueTypeId, *mCtx);
+        llvm::Type* llvmType = mCodegenTypeRegistry->resolveType(valueTypeId, *mCtx);
 
         llvm::IRBuilder<> builder(&mFn->getEntryBlock(), mFn->getEntryBlock().begin());
 

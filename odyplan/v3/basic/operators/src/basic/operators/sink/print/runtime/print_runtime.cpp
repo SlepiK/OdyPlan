@@ -1,34 +1,40 @@
 #include <basic/operators/sink/print/runtime/print_runtime.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
+    namespace {
+        thread_local std::string threadPrintBuffer;
+    }
+
     extern "C" {
     void rtOdyPrintString(const char* data) {
-        std::cout << data;
+        threadPrintBuffer += data;
     }
 
     void rtOdyPrintDouble(const double value) {
-        std::cout << value;
+        threadPrintBuffer += std::to_string(value);
     }
 
     void rtOdyPrintFloat(const float value) {
-        std::cout << value;
+        threadPrintBuffer += std::to_string(value);
     }
 
     void rtOdyPrintInt(const std::int64_t value) {
-        std::cout << value;
+        threadPrintBuffer += std::to_string(value);
     }
 
     void rtOdyPrintSeperator() {
-        std::cout << " ";
+        threadPrintBuffer += ' ';
     }
 
     void rtOdyPrintTimeStamp(const std::int64_t value) {
-        std::cout << value << "]";
+        threadPrintBuffer += std::to_string(value);
+        threadPrintBuffer += ']';
     }
 
     void rtOdyPrintNewline() {
-        std::cout << "\n";
-        std::cout.flush();
+        threadPrintBuffer += '\n';
+        std::osyncstream(std::cout) << threadPrintBuffer;
+        threadPrintBuffer.clear();
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime

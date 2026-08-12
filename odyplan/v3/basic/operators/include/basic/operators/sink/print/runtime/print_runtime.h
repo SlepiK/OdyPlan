@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SINK_PRINT_RUNTIME_PRINT_RUNTIME_HPP
 #include <cstdint>
 #include <iostream>
+#include <syncstream>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     extern "C" {

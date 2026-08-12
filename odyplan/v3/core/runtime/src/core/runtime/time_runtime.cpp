@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::core::runtime::thread {
     }
     std::int64_t rtProgramTimeNow() {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - PROGRAM_CLOCK)
+                   std::chrono::steady_clock::now() - PROGRAM_CLOCK)
             .count();
     }
     }

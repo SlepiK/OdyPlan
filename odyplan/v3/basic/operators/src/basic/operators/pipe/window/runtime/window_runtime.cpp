@@ -7,8 +7,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
                                     const std::int64_t slide,
                                     const core::shared::types::ValueTypeId* typeIds,
                                     const std::uint64_t fieldCount) {
-        const auto* typeRegistry =
-            static_cast<const core::physical::types::ValueTypeRegistry*>(typeRegistryRaw);
+        const auto* runtimeTypeRegistry =
+            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const basic::window::count::CountWindowConfig config{
             .size = static_cast<std::uint64_t>(size), .slide = static_cast<std::uint64_t>(slide)};
@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         return new basic::window::count::CountWindowBuffer(
-            config, std::move(schema), *typeRegistry);
+            config, std::move(schema), *runtimeTypeRegistry);
     }
 
     void rtDestroyCountWindowBuffer(void* state) {
@@ -36,8 +36,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
                                    const std::int64_t allowedLateness,
                                    const std::uint8_t* typeIds,
                                    const std::uint64_t fieldCount) {
-        const auto* typeRegistry =
-            static_cast<const core::physical::types::ValueTypeRegistry*>(typeRegistryRaw);
+        const auto* runtimeTypeRegistry =
+            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const basic::window::time::TimeWindowConfig config{
             .size = std::chrono::milliseconds(size),
@@ -50,7 +50,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new basic::window::time::TimeWindowBuffer(config, std::move(schema), *typeRegistry);
+        return new basic::window::time::TimeWindowBuffer(
+            config, std::move(schema), *runtimeTypeRegistry);
     }
 
     void rtDestroyTimeWindowBuffer(void* state) {
