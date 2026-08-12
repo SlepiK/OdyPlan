@@ -8,7 +8,6 @@
 #include <core/physical/operators/operator.h>
 #include <core/physical/plan/detail/plan_construction.h>
 #include <core/physical/segment/segment.h>
-#include <core/physical/types/value_type_registry.h>
 #include <core/shared/identifiers/operator_id.h>
 #include <core/shared/operators/operator_port_reference.h>
 #include <core/shared/operators/operator_port_reference_connection.h>

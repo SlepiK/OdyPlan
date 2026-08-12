@@ -1,3 +1,4 @@
+#include <cassert>
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {

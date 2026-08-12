@@ -3,7 +3,6 @@
 #include <basic/window/window_row_layout.h>
 #include <chrono>
 #include <core/logical/port/port.h>
-#include <core/physical/types/value_type_registry.h>
 #include <deque>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {

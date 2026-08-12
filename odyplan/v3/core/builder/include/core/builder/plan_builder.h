@@ -8,7 +8,6 @@
 #include <core/physical/operators/sink/typed_sink_operator.h>
 #include <core/physical/operators/source/typed_source_operator.h>
 #include <core/physical/plan/plan.h>
-#include <core/physical/types/value_type_registry.h>
 #include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::core::builder {

@@ -4,7 +4,6 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include <core/physical/storage/storage.h>
-#include <core/physical/types/value_type_registry.h>
 
 namespace sierra::odyplan::v3::core::physical::segment {
     struct SegmentContext {

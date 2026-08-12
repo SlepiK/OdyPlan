@@ -1,5 +1,3 @@
-#include <core/physical/types/value_type_registry.h>
-
 #include "core/runtime/types/runtime_type_registry.h"
 
 extern "C" {

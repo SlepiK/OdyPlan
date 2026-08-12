@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
 #include <basic/operators/pipe/join/physical/details/join_side.h>
 #include <chrono>
-#include <core/physical/types/value_type_registry.h>
 #include <mutex>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {

@@ -7,7 +7,6 @@
 #include <basic/expression/field_reference_expression.h>
 #include <basic/expression/logical_expression.h>
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
-#include <core/physical/types/value_type_registry.h>
 #include <vector>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
