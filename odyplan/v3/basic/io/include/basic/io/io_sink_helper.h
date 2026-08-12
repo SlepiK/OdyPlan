@@ -3,6 +3,9 @@
 
 #include <utility>
 #include <cstdint>
+#include <cmath>
+#include <stdexcept>
+#include <string>
 #include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::basic::io::detail {
@@ -32,10 +35,10 @@ namespace sierra::odyplan::v3::basic::io::detail {
                 target[key] = *static_cast<const std::int64_t*>(rawData);
                 break;
             case std::to_underlying(T::FLOAT):
-                target[key] = *static_cast<const std::float_t*>(rawData);
+                target[key] = *static_cast<const float*>(rawData);
                 break;
             case std::to_underlying(T::DOUBLE):
-                target[key] = *static_cast<const std::double_t*>(rawData);
+                target[key] = *static_cast<const double*>(rawData);
                 break;
             case std::to_underlying(T::STRING):
                 target[key] = static_cast<const char*>(rawData);
