@@ -1,14 +1,15 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_ROW_LAYOUT_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_WINDOW_WINDOW_ROW_LAYOUT_HPP
 #include <core/logical/port/port.h>
-#include <core/physical/types/value_type_registry.h>
 #include <utility>
+
+#include <core/runtime/types/runtime_type_registry.h>
 
 namespace sierra::odyplan::v3::basic::window {
     class WindowRowLayout {
     public:
         WindowRowLayout(core::logical::port::Port dataSchema,
-                        const core::physical::types::ValueTypeRegistry& typeRegistry);
+                        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry);
 
         void begin();
 
@@ -24,7 +25,7 @@ namespace sierra::odyplan::v3::basic::window {
 
     private:
         core::logical::port::Port mDataSchema;
-        const core::physical::types::ValueTypeRegistry* mTypeRegistry;
+        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
         std::vector<std::size_t> mOffset;
         std::size_t mRowByteSize = 0;
         std::vector<std::byte> mCurrentRow;

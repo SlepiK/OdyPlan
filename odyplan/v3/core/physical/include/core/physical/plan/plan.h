@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
         using OperatorPortReferenceConnection = shared::operators::OperatorPortReferenceConnection;
         using IOperator = operators::IOperator;
 
-        explicit Plan(const types::ValueTypeRegistry& valueTypeRegistry);
+        explicit Plan(const types::CodegenTypeRegistry& codegenTypeRegistry);
 
         void addOperator(std::unique_ptr<IOperator> opr);
 
@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
         std::unordered_map<OperatorId, segment::Segment> mChains;
         std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingEdges;
         std::vector<OperatorId> mOrder;
-        const types::ValueTypeRegistry* mValueTypeRegistry;
+        const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 
         static void codegenMain(llvm::Module& module,
                                 llvm::LLVMContext& ctx,

@@ -30,7 +30,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         llvm::Module* module;
         llvm::LLVMContext* ctx;
         std::vector<llvm::Function*>* functions;
-        const types::ValueTypeRegistry* valueTypeRegistry;
+        const types::CodegenTypeRegistry* codegenTypeRegistry;
 
         std::vector<llvm::Function*>* ioRestartRoots;
         std::vector<llvm::Function*>* computeRestartRoots;

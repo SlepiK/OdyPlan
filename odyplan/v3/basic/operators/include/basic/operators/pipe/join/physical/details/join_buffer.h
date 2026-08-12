@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     public:
         JoinBuffer(core::logical::port::Port leftSchema,
                    core::logical::port::Port rightSchema,
-                   const core::physical::types::ValueTypeRegistry& typeRegistry,
+                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
                    std::chrono::milliseconds leftWindowSize,
                    std::chrono::milliseconds rightWindowSize);
 
@@ -50,8 +50,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void enableEqui(std::size_t leftFieldIndex,
                         std::size_t rightFieldIndex,
-                        core::physical::types::ValueTypeRegistry::HashFn hashFunction,
-                        core::physical::types::ValueTypeRegistry::EqualFn equalFunction);
+                        core::shared::types::ValueTypeId keyTypeId);
 
     private:
         JoinSide mLeftSide;

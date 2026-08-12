@@ -20,6 +20,8 @@
 #include <core/runtime/time_runtime.h>
 #include <iostream>
 
+#include <core/runtime/types/runtime_type_registry.h>
+
 namespace
 {
     void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level)
@@ -74,10 +76,10 @@ int main()
         std::cout << "Logical Plan: OK\n";
 
         std::cout << "Building Physical Plan...\n";
-        auto typeRegistry =
-            sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
+        auto codegebTypeRegistry =
+            sierra::odyplan::v3::core::physical::types::CodegenTypeRegistry::withBuiltins();
 
-        sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
+        sierra::odyplan::v3::core::builder::PlanBuilder builder(codegebTypeRegistry);
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::example::full::logical::ConstantIntSourceOperator::TYPE_ID,
@@ -262,7 +264,9 @@ int main()
         auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void*)>();
         auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
-        odyInit(&typeRegistry);
+        auto runtimeTypeRegistry = sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
+
+        odyInit(&runtimeTypeRegistry);
         odyMain();
         odyShutdown();
 

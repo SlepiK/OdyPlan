@@ -66,10 +66,18 @@ namespace sierra::odyplan::v3::core::runtime::types {
             get(id).releaseFunction(ptr);
         }
 
+        [[nodiscard]] HashFunctionPtr getHashFnPtr(shared::types::ValueTypeId id) const {
+            return get(id).hashFunction;
+        }
+
+        [[nodiscard]] EqualFunctionPtr getEqualFnPtr(shared::types::ValueTypeId id) const {
+            return get(id).equalFunction;
+        }
+
         static RuntimeTypeRegistry withBuiltins();
 
     private:
-        std::pmr::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
+        std::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
 
         [[nodiscard]] const Entry& get(const shared::types::ValueTypeId id) const {
             const auto it = mStorage.find(id);

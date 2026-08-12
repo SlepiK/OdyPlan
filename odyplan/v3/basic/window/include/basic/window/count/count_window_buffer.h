@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::window::count {
 
         CountWindowBuffer(const CountWindowConfig& config,
                           core::logical::port::Port mDataSchema,
-                          const core::physical::types::ValueTypeRegistry& typeRegistry);
+                          const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry);
 
         ~CountWindowBuffer() override;
 

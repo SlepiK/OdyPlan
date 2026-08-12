@@ -4,8 +4,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 
-#include <core/physical/types/value_type_registry.h>
 #include <core/shared/types/value_type_id.h>
+#include <core/physical/types/codegen_type_registry.h>
 
 namespace sierra::odyplan::v3::core::physical::storage {
     class Storage {
@@ -14,14 +14,14 @@ namespace sierra::odyplan::v3::core::physical::storage {
 
         Storage(llvm::Function& fn,
                 llvm::LLVMContext& ctx,
-                const types::ValueTypeRegistry& valueTypeRegistry);
+                const types::CodegenTypeRegistry& codegenTypeRegistry);
 
         [[nodiscard]] llvm::Value* get(ValueTypeId valueTypeId);
 
     private:
         llvm::Function* mFn;
         llvm::LLVMContext* mCtx;
-        const types::ValueTypeRegistry* mValueTypeRegistry;
+        const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 
         std::unordered_map<ValueTypeId, llvm::AllocaInst*> mSlots;
 

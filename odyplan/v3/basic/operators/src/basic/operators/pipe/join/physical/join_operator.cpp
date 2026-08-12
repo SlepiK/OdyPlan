@@ -194,7 +194,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
             llvm::Value* candidatePtr = segmentCtx.builder.CreateCall(
                 getCandidateFn, {state, index, llvm::ConstantInt::get(i64Ty, i)});
             llvm::Type* candidateTy =
-                segmentCtx.valueTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+                segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
             otherTuple.pushBack(segmentCtx.builder.CreateLoad(candidateTy, candidatePtr));
         }
 
@@ -308,7 +308,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
                 const auto& constExp =
                     static_cast<const basic::expression::ConstantExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                return segmentCtx.valueTypeRegistry.compileConstant(
+                return segmentCtx.codegenTypeRegistry.compileConstant(
                     constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
             }
         case basic::expression::ExpressionType::COMPARE:

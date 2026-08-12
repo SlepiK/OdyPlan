@@ -119,10 +119,10 @@ int main()
         std::cout << "Logical Plan: OK\n";
 
         std::cout << "Building Physical Plan...\n";
-        auto typeRegistry =
-            sierra::odyplan::v3::core::physical::types::ValueTypeRegistry::withBuiltins();
+        auto codegebTypeRegistry =
+            sierra::odyplan::v3::core::physical::types::CodegenTypeRegistry::withBuiltins();
 
-        sierra::odyplan::v3::core::builder::PlanBuilder builder(typeRegistry);
+        sierra::odyplan::v3::core::builder::PlanBuilder builder(codegebTypeRegistry);
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
@@ -414,7 +414,9 @@ int main()
         auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void*)>();
         auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
-        odyInit(&typeRegistry);
+        auto runtimeTypeRegistry = sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
+
+        odyInit(&runtimeTypeRegistry);
         odyMain();
         odyShutdown();
 
