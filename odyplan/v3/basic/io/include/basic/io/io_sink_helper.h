@@ -1,6 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_IO_IO_SINK_HELPER_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_IO_IO_SINK_HELPER_HPP
 
+#include <utility>
+#include <cstdint>
 #include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::basic::io::detail {
