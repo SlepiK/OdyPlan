@@ -9,8 +9,8 @@
 namespace sierra::odyplan::v3::core::physical::types {
     class CodegenTypeRegistry {
     public:
-        using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext&)>;
-        using ConstantFactory = std::function<llvm::Value*(llvm::IRBuilder<>&, const std::string&)>;
+        using LLVMTypeFactory = std::function<llvm::Type*(llvm::LLVMContext &)>;
+        using ConstantFactory = std::function<llvm::Value*(llvm::IRBuilder<> &, const std::string &)>;
 
         struct Entry {
             std::string typeName;
@@ -24,19 +24,22 @@ namespace sierra::odyplan::v3::core::physical::types {
             mStorage.emplace(id, std::move(entry));
         }
 
-        [[nodiscard]] llvm::Type* resolveType(const shared::types::ValueTypeId id, llvm::LLVMContext& ctx) const {
+        [[nodiscard]] llvm::Type *resolveType(const shared::types::ValueTypeId id, llvm::LLVMContext &ctx) const {
             return get(id).llvmTypeFactory(ctx);
         }
 
-        [[nodiscard]] llvm::Value* compileConstant(const shared::types::ValueTypeId id, llvm::IRBuilder<>& builder, const std::string& value) const {
+        [[nodiscard]] llvm::Value *compileConstant(const shared::types::ValueTypeId id, llvm::IRBuilder<> &builder,
+                                                   const std::string &value) const {
             return get(id).constantFactory(builder, value);
         }
 
-        [[nodiscard]] llvm::Value* emitParseCall(const shared::types::ValueTypeId id, llvm::Value* strPtr, llvm::IRBuilder<>& builder, llvm::Module& module) const {
-            const auto& entry = get(id);
+        [[nodiscard]] llvm::Value *emitParseCall(const shared::types::ValueTypeId id, llvm::Value *strPtr,
+                                                 llvm::IRBuilder<> &builder, llvm::Module &module) const {
+            const auto &entry = get(id);
 
             if (entry.parseFunctionName.empty()) {
-                throw std::invalid_argument("CodegenTypeRegistry: no parse function registered for typeid \"" +std::to_string(id) + "\"");
+                throw std::invalid_argument(
+                    "CodegenTypeRegistry: no parse function registered for typeid \"" + std::to_string(id) + "\"");
             }
 
             const auto function = module.getOrInsertFunction(
@@ -51,7 +54,7 @@ namespace sierra::odyplan::v3::core::physical::types {
             return builder.CreateCall(function, {strPtr});
         }
 
-        [[nodiscard]] const std::string& typeName(const shared::types::ValueTypeId id) const {
+        [[nodiscard]] const std::string &typeName(const shared::types::ValueTypeId id) const {
             return get(id).typeName;
         }
 
@@ -60,13 +63,13 @@ namespace sierra::odyplan::v3::core::physical::types {
     private:
         std::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
 
-         [[nodiscard]] const Entry& get(const shared::types::ValueTypeId id) const {
-             const auto it = mStorage.find(id);
-             if (it == mStorage.end()) {
-                 throw std::invalid_argument("CodegenTypeRegistry: unknown typeid \"" +std::to_string(id) + "\"");
-             }
-             return it->second;
-         }
+        [[nodiscard]] const Entry &get(const shared::types::ValueTypeId id) const {
+            const auto it = mStorage.find(id);
+            if (it == mStorage.end()) {
+                throw std::invalid_argument("CodegenTypeRegistry: unknown typeid \"" + std::to_string(id) + "\"");
+            }
+            return it->second;
+        }
     };
 }
 
