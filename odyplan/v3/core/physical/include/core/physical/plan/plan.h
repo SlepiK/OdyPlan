@@ -33,6 +33,8 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         void codegen(llvm::Module& module, llvm::LLVMContext& ctx) const;
 
+        OperatorId getSize() const;
+
     private:
         std::vector<std::unique_ptr<IOperator>> mOperators;
         std::unordered_map<OperatorId, segment::Segment> mChains;
