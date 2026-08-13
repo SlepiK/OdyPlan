@@ -46,6 +46,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     std::int64_t rtJoinGetCandidateTimestamp(void* state, std::uint64_t candidateIndex);
 
     void rtJoinEvict(void* state, std::int64_t timestampMs, bool callFromLeft);
+
+    std::uint64_t rtJoinSnapshotAndUnlock(void* state, std::uint64_t timestamp, bool callFromLeft);
+
+    const void* rtJoinGetSnapshotPtr(void* state, std::uint64_t candidateIndex, std::uint64_t fieldIndex);
+
+    std::uint64_t rtJoinGetSnapshotTimestamp(void* state, std::uint64_t candidateIndex);
+
+    void rtJoinReleaseSnapshot(void* state);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

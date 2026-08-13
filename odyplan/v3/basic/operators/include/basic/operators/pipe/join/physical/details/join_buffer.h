@@ -51,10 +51,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                         std::size_t rightFieldIndex,
                         core::shared::types::ValueTypeId keyTypeId);
 
+        std::size_t snapshotAndEvict(Timestamp evictTs, bool callFromLeft);
+
+        [[nodiscard]] const std::byte* getSnapshotFieldPtr(std::size_t candidateIndex, std::size_t fieldIndex) const;
+
+        [[nodiscard]] Timestamp getSnapshotTimestamp(std::size_t candidateIndex) const;
+
+        void releaseSnapshot();
+
     private:
+        struct RetainPointer {
+            core::shared::types::ValueTypeId typeId;
+            void* ptr;
+        };
+
+        static thread_local std::vector<std::byte> tSnapshotVector;
+        static thread_local std::vector<Timestamp> tSnapshotTimestampVector;
+        static thread_local std::vector<RetainPointer> tRetainPointerVector;
+
         JoinSide mLeftSide;
         JoinSide mRightSide;
         std::mutex mMutex;
+        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::vector<std::size_t> mCandidates;
         bool mCandidateOnRight = false;

@@ -52,6 +52,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                        llvm::Value* state,
                        const core::physical::data::DataPackage& tuple,
                        bool onLeft,
+                       llvm::Value* candidateCount,
                        const core::physical::segment::SegmentDataConsumers& consumers);
 
         void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
@@ -70,6 +71,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                            llvm::Value* left,
                                            llvm::Value* right,
                                            basic::expression::CompareExpression::CompareOp opr);
+
+        llvm::Value* codegenSnapshotAndUnlock(core::physical::segment::SegmentContext& segmentCtx,
+                                            llvm::Value* state,
+                                            llvm::Value* timestamp,
+                                            bool callFromLeft);
+
+        void codegenReleaseSnapshot(core::physical::segment::SegmentContext& segmentCtx,
+                                            llvm::Value* state);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 

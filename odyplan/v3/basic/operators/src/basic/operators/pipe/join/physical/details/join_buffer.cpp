@@ -1,5 +1,6 @@
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
 #include <cassert>
+#include <cstring>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
@@ -8,7 +9,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                            const std::chrono::milliseconds leftWindowSize,
                            const std::chrono::milliseconds rightWindowSize)
         : mLeftSide(std::move(leftSchema), runtimeTypeRegistry, leftWindowSize),
-          mRightSide(std::move(rightSchema), runtimeTypeRegistry, rightWindowSize) {}
+            mRightSide(std::move(rightSchema), runtimeTypeRegistry, rightWindowSize),
+          mRuntimeTypeRegistry(runtimeTypeRegistry) {}
 
     JoinBuffer::~JoinBuffer() {
         assert(mAllReleased && "JoinBuffer: left and right side was never released!");
@@ -131,5 +133,68 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                                 core::shared::types::ValueTypeId keyTypeId) {
         mLeftSide.enableKeyIdx(leftFieldIndex, keyTypeId);
         mRightSide.enableKeyIdx(rightFieldIndex, keyTypeId);
+    }
+
+    thread_local std::vector<std::byte> JoinBuffer::tSnapshotVector;
+    thread_local std::vector<Timestamp> JoinBuffer::tSnapshotTimestampVector;
+    thread_local std::vector<JoinBuffer::RetainPointer> JoinBuffer::tRetainPointerVector;
+
+    std::size_t JoinBuffer::snapshotAndEvict(Timestamp evictTs, bool callFromLeft) {
+        auto& sourceSide = mCandidateOnRight ? mRightSide : mLeftSide;
+
+        const std::size_t rowBSize = sourceSide.getRowByteSize();
+        const std::size_t fieldCount = sourceSide.getFieldCount();
+        const std::size_t count = mCandidates.size();
+
+        tSnapshotVector.resize(count * rowBSize);
+        tSnapshotTimestampVector.resize(count);
+        tRetainPointerVector.clear();
+
+        for (std::size_t i = 0; i < count; ++i) {
+            const auto rowIndex = mCandidates.at(i);
+            const std::byte* rowData = sourceSide.getRowPtr(rowIndex);
+            std::memcpy(&tSnapshotVector[i * rowBSize], rowData, rowBSize);
+            tSnapshotTimestampVector[i] = sourceSide.getTimestamp(rowIndex);
+
+            for (std::size_t p = 0; p < fieldCount; ++p) {
+                const auto typeId = sourceSide.getFieldTypeId(p);
+                if (!mRuntimeTypeRegistry->isPointerType(typeId)) {
+                    continue;
+                }
+
+                const std::size_t offset = sourceSide.getFieldOffset(p);
+                void* oriPtr = nullptr;
+                std::memcpy(&oriPtr, &tSnapshotVector[i * rowBSize + offset], sizeof(void*));
+
+                void* retainPtr = mRuntimeTypeRegistry->retain(typeId, oriPtr);
+
+                std::memcpy(&tSnapshotVector[i * rowBSize + offset], &retainPtr, sizeof(void*));
+                tRetainPointerVector.push_back({typeId, retainPtr});
+            }
+        }
+
+        evict(evictTs, callFromLeft);
+
+        return count;
+    }
+
+    const std::byte* JoinBuffer::getSnapshotFieldPtr(const std::size_t candidateIndex, const std::size_t fieldIndex) const {
+        const auto& sourceSide = mCandidateOnRight ? mRightSide : mLeftSide;
+        const std::size_t row = sourceSide.getRowByteSize();
+        const std::size_t offset = sourceSide.getFieldOffset(fieldIndex);
+
+        return &tSnapshotVector[candidateIndex * row + offset];
+    }
+
+    Timestamp JoinBuffer::getSnapshotTimestamp(const std::size_t candidateIndex) const {
+        return tSnapshotTimestampVector.at(candidateIndex);
+    }
+
+    void JoinBuffer::releaseSnapshot() {
+        for (const auto& [typeId, ptr] : tRetainPointerVector) {
+            mRuntimeTypeRegistry->release(typeId, ptr);
+        }
+
+        tRetainPointerVector.clear();
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

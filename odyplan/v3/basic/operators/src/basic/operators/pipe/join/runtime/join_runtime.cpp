@@ -109,5 +109,26 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<physical::details::JoinBuffer*>(state)->evict(
             physical::details::Timestamp(std::chrono::milliseconds(timestampMs)), callFromLeft);
     }
+
+    std::uint64_t rtJoinSnapshotAndUnlock(void* state, const std::uint64_t timestamp, const bool callFromLeft) {
+        auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
+        const auto count = buffer->snapshotAndEvict(physical::details::Timestamp(std::chrono::milliseconds(timestamp)),callFromLeft);
+        buffer->unlock();
+        return static_cast<std::uint64_t>(count);
+    }
+
+    const void* rtJoinGetSnapshotPtr(void* state, const std::uint64_t candidateIndex, const std::uint64_t fieldIndex) {
+        const auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
+        return buffer->getSnapshotFieldPtr(static_cast<std::size_t>(candidateIndex), static_cast<std::size_t>(fieldIndex));
+    }
+
+    std::uint64_t rtJoinGetSnapshotTimestamp(void* state, const std::uint64_t candidateIndex) {
+        const auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
+        return buffer->getSnapshotTimestamp(static_cast<std::size_t>(candidateIndex)).time_since_epoch().count();
+    }
+
+    void rtJoinReleaseSnapshot(void* state) {
+        static_cast<physical::details::JoinBuffer*>(state)->releaseSnapshot();
+    }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
