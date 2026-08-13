@@ -25,6 +25,14 @@ namespace sierra::odyplan::v3::core::physical::operators {
         mId = id;
     }
 
+    shared::identifiers::OperatorId IOperator::getPId() const {
+        return pId;
+    }
+
+    void IOperator::setPId(const shared::identifiers::OperatorId id) {
+        pId = id;
+    }
+
     port::Ports& IOperator::getInputPortsRef() {
         return mInputPorts;
     }

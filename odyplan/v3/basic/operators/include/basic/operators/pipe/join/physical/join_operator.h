@@ -54,7 +54,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                        bool onLeft,
                        const core::physical::segment::SegmentDataConsumers& consumers);
 
-        static void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
+        void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
                                 llvm::Value* state,
                                 const core::physical::data::DataPackage& tuple,
                                 const core::logical::port::Port& schema,

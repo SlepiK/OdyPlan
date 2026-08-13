@@ -16,7 +16,8 @@ namespace sierra::odyplan::v3::core::physical::storage {
                 llvm::LLVMContext& ctx,
                 const types::CodegenTypeRegistry& codegenTypeRegistry);
 
-        [[nodiscard]] llvm::Value* get(ValueTypeId valueTypeId);
+        [[nodiscard]] llvm::Value* getNamed(const std::string& name, llvm::Type* llvmType);
+        [[nodiscard]] llvm::Value* getNamed(const std::string& name, ValueTypeId valueTypeId);
 
     private:
         llvm::Function* mFn;
@@ -24,8 +25,9 @@ namespace sierra::odyplan::v3::core::physical::storage {
         const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 
         std::unordered_map<ValueTypeId, llvm::AllocaInst*> mSlots;
+        std::unordered_map<std::string, llvm::AllocaInst*> mNamedSlots;
 
-        [[nodiscard]] llvm::AllocaInst* createAlloca(ValueTypeId valueTypeId) const;
+        [[nodiscard]] llvm::AllocaInst* createAlloca(llvm::Type* llvmType, const std::string& name) const;
     };
 }  // namespace sierra::odyplan::v3::core::physical::storage
 

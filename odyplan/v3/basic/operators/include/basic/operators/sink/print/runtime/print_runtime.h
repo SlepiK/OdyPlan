@@ -16,7 +16,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
 
     void rtOdyPrintSeperator();
 
-    void rtOdyPrintTimeStamp(std::int64_t value);
+    void rtOdyPrintTimeStamp(std::uint64_t value);
+
+    void rtOdyPrintWindowMetadata(std::uint64_t start, std::uint64_t end, bool hasEnd);
 
     void rtOdyPrintNewline();
     }

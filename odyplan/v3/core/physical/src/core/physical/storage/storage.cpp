@@ -6,23 +6,22 @@ namespace sierra::odyplan::v3::core::physical::storage {
                      const types::CodegenTypeRegistry& codegenTypeRegistry)
         : mFn(&fn), mCtx(&ctx), mCodegenTypeRegistry(&codegenTypeRegistry) {}
 
-    llvm::Value* Storage::get(ValueTypeId valueTypeId) {
-        if (const auto iter = mSlots.find(valueTypeId); iter != mSlots.end()) {
+    llvm::Value* Storage::getNamed(const std::string& name, llvm::Type* llvmType) {
+        if (const auto iter = mNamedSlots.find(name); iter != mNamedSlots.end()) {
             return iter->second;
         }
 
-        auto* newSlot = createAlloca(valueTypeId);
-        mSlots.emplace(valueTypeId, newSlot);
-
+        auto* newSlot = createAlloca(llvmType, "Stg.Named." + name);
+        mNamedSlots.emplace(name, newSlot);
         return newSlot;
     }
 
-    llvm::AllocaInst* Storage::createAlloca(const ValueTypeId valueTypeId) const {
-        llvm::Type* llvmType = mCodegenTypeRegistry->resolveType(valueTypeId, *mCtx);
+    llvm::Value* Storage::getNamed(const std::string& name, ValueTypeId valueTypeId) {
+        return getNamed(name, mCodegenTypeRegistry->resolveType(valueTypeId, *mCtx));
+    }
 
+    llvm::AllocaInst* Storage::createAlloca(llvm::Type* llvmType, const std::string& name) const {
         llvm::IRBuilder<> builder(&mFn->getEntryBlock(), mFn->getEntryBlock().begin());
-
-        return builder.CreateAlloca(
-            llvmType, nullptr, "Storage_ValueTypeId_" + std::to_string(valueTypeId));
+        return builder.CreateAlloca(llvmType, nullptr, name);
     }
 }  // namespace sierra::odyplan::v3::core::physical::storage

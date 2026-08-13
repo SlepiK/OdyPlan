@@ -68,7 +68,7 @@ namespace {
 }
 
 int main(int argc, char** argv) {
-    const std::string outputPath = argc > 1 ? argv[1] : "aot_select_plan.o";
+    const std::string outputPath = argc > 1 ? argv[1] : "time_window_plan.o";
     const std::string targetTripleStr = argc > 2 ? argv[2] : llvm::sys::getDefaultTargetTriple();
 
     sierra::odyplan::v3::core::logical::plan::Plan logicalPlan;
@@ -81,7 +81,14 @@ int main(int argc, char** argv) {
         sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),.typeJsonName="string", .fieldName = "name"}
     };
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(sourceOutput, std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON), nlohmann::json{{"path", "read.json"}}));
+    auto sourceId = logicalPlan.addOperator(
+        std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
+            sourceOutput,
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
+            nlohmann::json{{"path", "read.json"}},
+            std::chrono::milliseconds(5)
+        )
+    );
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
         sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
@@ -125,8 +132,10 @@ int main(int argc, char** argv) {
         concrete.getOperatorTypeId(),
         concrete.getIOConfig(),
         concrete.getIOFormat(),
-                concrete.getOutputPorts().at(0)
-                ));
+        concrete.getOutputPorts().at(0),
+                                             true,
+                                             std::nullopt,
+                                             concrete.getDelay()));
             return ot;
         }
     );
@@ -140,7 +149,7 @@ int main(int argc, char** argv) {
             const auto& config = concrete.getWindowConfig();
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config, concrete.getInputPorts().front()));
+            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config));
             return ot;
         }
     );
@@ -166,7 +175,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("exampleSelect", *ctx);
+    auto module = std::make_unique<llvm::Module>("example_time_window", *ctx);
     physicalPlan.codegen(*module, *ctx);
 
     llvm::raw_os_ostream ros(std::cout);

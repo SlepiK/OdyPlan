@@ -30,6 +30,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
         static void
         codegenPrintTimestamp(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* value);
 
+        static void
+        codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end, llvm::Value* hasEnd);
+
         static void codegenPrintField(llvm::IRBuilder<>& builder,
                                       llvm::Module* module,
                                       core::shared::types::ValueTypeId typeId,

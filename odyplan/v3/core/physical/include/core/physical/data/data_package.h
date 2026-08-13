@@ -7,8 +7,18 @@
 #include <vector>
 
 namespace sierra::odyplan::v3::core::physical::data {
+    struct WindowMetadata {
+        //i64 start = inclusive, end = exclusive
+        llvm::Value* windowStart = nullptr;
+        llvm::Value* windowEnd = nullptr;
+        llvm::Value* hasKnownEnd  = nullptr;
+    };
+
     struct DataPackage {
         llvm::Value* timestamp = nullptr;
+
+        std::optional<WindowMetadata> windowMetadata;
+
         std::vector<llvm::Value*> fields;
 
         [[nodiscard]] std::size_t size() const;
@@ -24,6 +34,8 @@ namespace sierra::odyplan::v3::core::physical::data {
         void pushBack(llvm::Value* value);
 
         void reserve(std::size_t size);
+
+        [[nodiscard]] bool hasWindowMetadata() const noexcept;
     };
 }  // namespace sierra::odyplan::v3::core::physical::data
 

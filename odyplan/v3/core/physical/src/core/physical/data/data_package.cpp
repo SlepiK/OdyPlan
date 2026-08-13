@@ -24,7 +24,12 @@ namespace sierra::odyplan::v3::core::physical::data {
     void DataPackage::pushBack(llvm::Value* value) {
         fields.push_back(value);
     }
+
     void DataPackage::reserve(const std::size_t size) {
         fields.reserve(size);
+    }
+
+    bool DataPackage::hasWindowMetadata() const noexcept {
+        return windowMetadata.has_value();
     }
 }  // namespace sierra::odyplan::v3::core::physical::data

@@ -150,8 +150,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                   llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         llvm::Value* size = segmentCtx.builder.CreateCall(sizeFn, {state});
 
-        auto* indexSlot = segmentCtx.storage.get(
-            std::to_underlying(core::shared::types::BuiltinValueType::INT64));
+        auto *indexSlot = segmentCtx.storage.getNamed("indexSlot." +std::to_string(getPId()), i64Ty);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), indexSlot);
 
         auto* headerBB = llvm::BasicBlock::Create(ctx, "join_match_header", fn);
@@ -245,7 +244,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const auto pushFn = module->getOrInsertFunction(
             pushFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
         for (std::size_t i = 0; i < schema.size(); ++i) {
-            llvm::Value* slot = segmentCtx.storage.get(schema.at(i).valueTypeId);
+            auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
             segmentCtx.builder.CreateStore(tuple.at(i), slot);
             segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
         }

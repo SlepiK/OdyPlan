@@ -6,6 +6,8 @@
 namespace sierra::odyplan::v3::basic::window {
     class IWindowBuffer {
     public:
+        using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
+
         IWindowBuffer() = default;
         virtual ~IWindowBuffer() = default;
         IWindowBuffer(IWindowBuffer const&) = delete;
@@ -34,6 +36,12 @@ namespace sierra::odyplan::v3::basic::window {
 
         [[nodiscard]] virtual std::chrono::sys_time<std::chrono::milliseconds>
         getTimestamp(std::size_t windowIndex, std::size_t rowIndex) const = 0;
+
+        [[nodiscard]] virtual std::chrono::sys_time<std::chrono::milliseconds>
+        getWindowStart(std::size_t windowIndex) const = 0;
+
+        [[nodiscard]] virtual std::optional<std::chrono::sys_time<std::chrono::milliseconds>>
+        getWindowEnd(std::size_t windowIndex) const = 0;
     };
 }  // namespace sierra::odyplan::v3::basic::window
 
