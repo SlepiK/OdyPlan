@@ -31,11 +31,15 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ']';
     }
 
-    void rtOdyPrintWindowMetadata(const std::uint64_t start, const std::uint64_t end) {
+    void rtOdyPrintWindowMetadata(const std::uint64_t start, const std::uint64_t end, const bool hasEnd) {
         threadPrintBuffer += '[';
         threadPrintBuffer += std::to_string(start);
         threadPrintBuffer += '|';
-        threadPrintBuffer += std::to_string(end);
+        if (hasEnd) {
+            threadPrintBuffer += std::to_string(end);
+        } else {
+            threadPrintBuffer += '-';
+        }
         threadPrintBuffer += ']';
     }
 

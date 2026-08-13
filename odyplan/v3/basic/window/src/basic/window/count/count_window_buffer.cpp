@@ -96,7 +96,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         return mTimestamps.at(relIndex);
     }
 
-    CountWindowBuffer::Timestamp CountWindowBuffer::getWindowEnd(std::size_t windowIndex) const {
+    std::optional<CountWindowBuffer::Timestamp> CountWindowBuffer::getWindowEnd(std::size_t windowIndex) const {
         const auto& [start, count] = mWindows.at(windowIndex);
         const auto lastRelIndex = start - mBaseIndex + count;
 
@@ -104,6 +104,6 @@ namespace sierra::odyplan::v3::basic::window::count {
             return mTimestamps.at(lastRelIndex);
         }
 
-        return mTimestamps.back() + std::chrono::milliseconds(1);
+        return std::nullopt;
     }
 }  // namespace sierra::odyplan::v3::basic::window::count

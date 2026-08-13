@@ -43,10 +43,15 @@ namespace sierra::odyplan::v3::core::physical::operators {
 
         void setId(shared::identifiers::OperatorId id);
 
+        [[nodiscard]] shared::identifiers::OperatorId getPId() const;
+
+        void setPId(shared::identifiers::OperatorId id);
+
     private:
         Ports mInputPorts;
         Ports mOutputPorts;
         shared::identifiers::OperatorId mId = 0;
+        shared::identifiers::OperatorId pId = 0;
 
     protected:
         Ports& getInputPortsRef();

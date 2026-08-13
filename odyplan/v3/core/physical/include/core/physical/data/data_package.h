@@ -11,6 +11,7 @@ namespace sierra::odyplan::v3::core::physical::data {
         //i64 start = inclusive, end = exclusive
         llvm::Value* windowStart = nullptr;
         llvm::Value* windowEnd = nullptr;
+        llvm::Value* hasKnownEnd  = nullptr;
     };
 
     struct DataPackage {

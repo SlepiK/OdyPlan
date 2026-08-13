@@ -23,7 +23,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         annotated.windowMetadata = core::physical::data::WindowMetadata{
             .windowStart = windowStart,
-            .windowEnd   = windowEnd
+            .windowEnd   = windowEnd,
+            .hasKnownEnd = llvm::ConstantInt::getTrue(segmentCtx.builder.getContext())
         };
 
         consumers.front()(segmentCtx, annotated);
@@ -88,8 +89,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Value* alignedStart = segmentCtx.builder.CreateMul(kMax, slideVal);
 
         //Counter for windows per tuple / datapackage
-        auto* iSlot = segmentCtx.storage.get(
-            std::to_underlying(core::shared::types::BuiltinValueType::INT64));
+        auto *iSlot = segmentCtx.storage.getNamed("iSlot." +std::to_string(getPId()), i64Ty);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), iSlot);
 
         auto* headerBB = llvm::BasicBlock::Create(ctx, "twLoopHeader", fn);

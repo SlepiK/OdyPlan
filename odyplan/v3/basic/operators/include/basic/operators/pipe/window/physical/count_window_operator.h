@@ -47,7 +47,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                           llvm::Value* state,
                           const core::physical::segment::SegmentDataConsumer& consumer) const;
 
-        static void codegenPush(core::physical::segment::SegmentContext& segmentCtx,
+        void codegenPush(core::physical::segment::SegmentContext& segmentCtx,
                                 llvm::Value* state,
                                 llvm::Value* value,
                                 core::shared::types::ValueTypeId typeId,

@@ -58,12 +58,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         static_cast<basic::window::IWindowBuffer*>(state)->flush();
     }
 
-    std::uint64_t rtWindowGetStart(void* state, std::int64_t windowIndex) {
+    std::uint64_t rtWindowGetStart(void* state, const std::uint64_t windowIndex) {
         return static_cast<basic::window::IWindowBuffer*>(state)->getWindowStart(static_cast<std::size_t>(windowIndex)).time_since_epoch().count();
     }
 
-    std::uint64_t rtWindowGetEnd(void* state, std::int64_t windowIndex) {
-        return static_cast<basic::window::IWindowBuffer*>(state)->getWindowEnd(static_cast<std::size_t>(windowIndex)).time_since_epoch().count();
+    std::uint64_t rtWindowGetEnd(void* state, const std::uint64_t windowIndex, bool* outHasEnd) {
+        auto* buffer = static_cast<basic::window::IWindowBuffer*>(state);
+        const auto end = buffer->getWindowEnd(static_cast<std::size_t>(windowIndex));
+        *outHasEnd = end.has_value();
+        return end.has_value() ? end->time_since_epoch().count() : 0;
     }
 
     std::uint64_t rtWindowGetCount(void* state) {

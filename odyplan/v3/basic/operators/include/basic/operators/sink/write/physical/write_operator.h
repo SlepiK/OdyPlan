@@ -49,7 +49,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
         [[nodiscard]] llvm::Value*
         loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 
-        static void codegenField(core::physical::segment::SegmentContext& segmentCtx,
+        void codegenField(core::physical::segment::SegmentContext& segmentCtx,
                                  llvm::Value* state,
                                  llvm::Value* fieldName,
                                  llvm::Value* fieldValue,

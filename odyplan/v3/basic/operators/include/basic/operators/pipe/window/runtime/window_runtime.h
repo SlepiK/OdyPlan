@@ -29,9 +29,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtWindowFlush(void* state);
 
-    std::uint64_t rtWindowGetStart(void* state, std::int64_t windowIndex);
+    std::uint64_t rtWindowGetStart(void* state, std::uint64_t windowIndex);
 
-    std::uint64_t rtWindowGetEnd(void* state, std::int64_t windowIndex);
+    std::uint64_t rtWindowGetEnd(void* state, std::uint64_t windowIndex, bool* outHasEnd);
 
     std::uint64_t rtWindowGetCount(void* state);
 

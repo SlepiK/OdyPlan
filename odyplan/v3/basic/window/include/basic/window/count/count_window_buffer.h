@@ -49,7 +49,7 @@ namespace sierra::odyplan::v3::basic::window::count {
 
         [[nodiscard]] Timestamp getWindowStart(std::size_t windowIndex) const override;
 
-        [[nodiscard]] Timestamp getWindowEnd(std::size_t windowIndex) const override;
+        [[nodiscard]] std::optional<Timestamp> getWindowEnd(std::size_t windowIndex) const override;
 
     private:
         CountWindowConfig mConfig;
