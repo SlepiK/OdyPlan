@@ -26,8 +26,16 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ' ';
     }
 
-    void rtOdyPrintTimeStamp(const std::int64_t value) {
+    void rtOdyPrintTimeStamp(const std::uint64_t value) {
         threadPrintBuffer += std::to_string(value);
+        threadPrintBuffer += ']';
+    }
+
+    void rtOdyPrintWindowMetadata(const std::uint64_t start, const std::uint64_t end) {
+        threadPrintBuffer += '[';
+        threadPrintBuffer += std::to_string(start);
+        threadPrintBuffer += '|';
+        threadPrintBuffer += std::to_string(end);
         threadPrintBuffer += ']';
     }
 

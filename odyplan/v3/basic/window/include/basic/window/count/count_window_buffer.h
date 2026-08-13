@@ -47,6 +47,10 @@ namespace sierra::odyplan::v3::basic::window::count {
         [[nodiscard]] Timestamp getTimestamp(std::size_t windowIndex,
                                              std::size_t rowIndex) const override;
 
+        [[nodiscard]] Timestamp getWindowStart(std::size_t windowIndex) const override;
+
+        [[nodiscard]] Timestamp getWindowEnd(std::size_t windowIndex) const override;
+
     private:
         CountWindowConfig mConfig;
         WindowRowLayout mRowLayout;

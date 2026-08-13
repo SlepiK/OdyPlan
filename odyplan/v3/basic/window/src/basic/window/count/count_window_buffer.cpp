@@ -30,7 +30,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         evict();
         mWindows.clear();
 
-        while (mNextWindowStart + mConfig.size <= mTotalPushed) {
+        while (mNextWindowStart + mConfig.size + 1 <= mTotalPushed) {
             mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = mConfig.size});
             mNextWindowStart += mConfig.slide;
         }
@@ -40,9 +40,11 @@ namespace sierra::odyplan::v3::basic::window::count {
         evict();
         mWindows.clear();
 
-        if (const std::uint64_t remaining = mTotalPushed - mNextWindowStart; remaining > 0) {
-            mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = remaining});
-            mNextWindowStart = mTotalPushed;
+        while (mNextWindowStart < mTotalPushed) {
+            const std::uint64_t remaining = mTotalPushed - mNextWindowStart;
+            const std::uint64_t count = std::min<std::uint64_t>(mConfig.size, remaining);
+            mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = count});
+            mNextWindowStart += mConfig.slide;
         }
     }
 
@@ -86,5 +88,22 @@ namespace sierra::odyplan::v3::basic::window::count {
             mTimestamps.pop_front();
             ++mBaseIndex;
         }
+    }
+
+    CountWindowBuffer::Timestamp CountWindowBuffer::getWindowStart(std::size_t windowIndex) const {
+        const auto& [start, count] = mWindows.at(windowIndex);
+        const auto relIndex = start - mBaseIndex;
+        return mTimestamps.at(relIndex);
+    }
+
+    CountWindowBuffer::Timestamp CountWindowBuffer::getWindowEnd(std::size_t windowIndex) const {
+        const auto& [start, count] = mWindows.at(windowIndex);
+        const auto lastRelIndex = start - mBaseIndex + count;
+
+        if (lastRelIndex < mTimestamps.size()) {
+            return mTimestamps.at(lastRelIndex);
+        }
+
+        return mTimestamps.back() + std::chrono::milliseconds(1);
     }
 }  // namespace sierra::odyplan::v3::basic::window::count

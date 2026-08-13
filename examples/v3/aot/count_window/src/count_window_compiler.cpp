@@ -80,10 +80,15 @@ int main(int argc, char** argv) {
         sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),.typeJsonName="double", .fieldName = "value"},
         sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),.typeJsonName="string", .fieldName = "name"}
     };
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(sourceOutput, std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON), nlohmann::json{{"path", "read.ndjson"}}));
+    auto sourceId = logicalPlan.addOperator(
+        std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
+            sourceOutput,
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "read.ndjson"}},
+            std::chrono::milliseconds(5)));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
-        sierra::odyplan::v3::basic::window::count::CountWindowConfig{.type = sierra::odyplan::v3::basic::window::WindowType::SLIDING, .size = 1, .slide = 1}
+        sierra::odyplan::v3::basic::window::count::CountWindowConfig{.type = sierra::odyplan::v3::basic::window::WindowType::SLIDING, .size = 2, .slide = 1}
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
@@ -119,8 +124,10 @@ int main(int argc, char** argv) {
             concrete.getOperatorTypeId(),
             concrete.getIOConfig(),
             concrete.getIOFormat(),
-                concrete.getOutputPorts().at(0)
-                ));
+            concrete.getOutputPorts().at(0),
+                                         true,
+                                         std::nullopt,
+                                         concrete.getDelay()));
             return ot;
         }
     );
