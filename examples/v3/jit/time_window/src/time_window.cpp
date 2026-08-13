@@ -70,15 +70,16 @@ int main() {
                 sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
                 sourceOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
-                nlohmann::json{{"path", "read.json"}}));
+                nlohmann::json{{"path", "read.json"}},
+                std::chrono::milliseconds(5)));
 
         auto pipeId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
                 sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
                     .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
-                    .size = std::chrono::milliseconds(1000),
-                    .slide = std::chrono::milliseconds(1000),
+                    .size = std::chrono::milliseconds(16),
+                    .slide = std::chrono::milliseconds(16),
                     .timestampIndex = 0}));
 
         auto sinkId = logicalPlan.addOperator(
@@ -125,7 +126,10 @@ int main() {
                                                        concrete.getOperatorTypeId(),
                                                        concrete.getIOConfig(),
                                                        concrete.getIOFormat(),
-                                                       concrete.getOutputPorts().at(0)));
+                                                       concrete.getOutputPorts().at(0),
+                                                       true,
+                                                       std::nullopt,
+                                                       concrete.getDelay()));
                 return ot;
             });
 
@@ -148,8 +152,7 @@ int main() {
                     std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::
                                          TimeWindowOperator>(inputPorts.front(),
                                                              outputPorts.front(),
-                                                             config,
-                                                             concrete.getInputPorts().front()));
+                                                             config));
                 return ot;
             });
 
@@ -239,10 +242,6 @@ int main() {
                 llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::
                                                      window::runtime::rtDestroyCountWindowBuffer),
                 llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCreateTimeWindowBuffer")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                                                 runtime::rtCreateTimeWindowBuffer),
-            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtDestroyTimeWindowBuffer")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
                                                  runtime::rtDestroyTimeWindowBuffer),
@@ -357,6 +356,10 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(

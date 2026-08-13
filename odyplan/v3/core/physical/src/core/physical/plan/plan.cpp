@@ -118,6 +118,10 @@ namespace sierra::odyplan::v3::core::physical::plan {
         codegenMain(module, ctx, ioRoots, computeFunctionsRestart, endFn);
     }
 
+    Plan::OperatorId Plan::getSize() const {
+        return mOperators.size();
+    }
+
     void Plan::codegenMain(llvm::Module& module,
                            llvm::LLVMContext& ctx,
                            const std::vector<llvm::Function*>& ioRoots,

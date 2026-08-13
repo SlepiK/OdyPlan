@@ -118,7 +118,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
         if (fieldValue->getType()->isPointerTy()) {
             ptrFieldValue = fieldValue;
         } else {
-            auto* slot = segmentCtx.storage.get(typeId);
+            auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), typeId);
             segmentCtx.builder.CreateStore(fieldValue, slot);
             ptrFieldValue = slot;
         }

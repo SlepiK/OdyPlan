@@ -30,30 +30,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         delete buffer;
     }
 
-    void* rtCreateTimeWindowBuffer(const void* typeRegistryRaw,
-                                   const std::int64_t size,
-                                   const std::int64_t slide,
-                                   const std::int64_t allowedLateness,
-                                   const std::uint8_t* typeIds,
-                                   const std::uint64_t fieldCount) {
-        const auto* runtimeTypeRegistry =
-            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
-
-        const basic::window::time::TimeWindowConfig config{
-            .size = std::chrono::milliseconds(size),
-            .slide = std::chrono::milliseconds(slide),
-            .allowedLateness = std::chrono::milliseconds(allowedLateness)};
-
-        core::logical::port::Port schema;
-        for (std::uint64_t i = 0; i < fieldCount; ++i) {
-            schema.push_back(core::logical::port::PortDescription{.valueTypeId = typeIds[i]});
-        }
-
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new basic::window::time::TimeWindowBuffer(
-            config, std::move(schema), *runtimeTypeRegistry);
-    }
-
     void rtDestroyTimeWindowBuffer(void* state) {
         auto* buffer = static_cast<basic::window::IWindowBuffer*>(state);
         buffer->close();
@@ -80,6 +56,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtWindowFlush(void* state) {
         static_cast<basic::window::IWindowBuffer*>(state)->flush();
+    }
+
+    std::uint64_t rtWindowGetStart(void* state, const std::uint64_t windowIndex) {
+        return static_cast<basic::window::IWindowBuffer*>(state)->getWindowStart(static_cast<std::size_t>(windowIndex)).time_since_epoch().count();
+    }
+
+    std::uint64_t rtWindowGetEnd(void* state, const std::uint64_t windowIndex, bool* outHasEnd) {
+        auto* buffer = static_cast<basic::window::IWindowBuffer*>(state);
+        const auto end = buffer->getWindowEnd(static_cast<std::size_t>(windowIndex));
+        *outHasEnd = end.has_value();
+        return end.has_value() ? end->time_since_epoch().count() : 0;
     }
 
     std::uint64_t rtWindowGetCount(void* state) {

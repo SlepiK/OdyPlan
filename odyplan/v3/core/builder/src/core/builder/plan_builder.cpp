@@ -113,6 +113,7 @@ namespace sierra::odyplan::v3::core::builder {
             pPlan.addOutgoingEdge(lOprId, std::move(outEdges));
 
             for (auto& opr : oprs) {
+                auto pid = pPlan.getSize();
                 pPlan.addOperator(std::move(opr));
             }
         }

@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_WINDOW_RUNTIME_HPP
 #include <algorithm>
 #include <basic/window/count/count_window_buffer.h>
-#include <basic/window/time/time_window_buffer.h>
 #include <basic/window/window_buffer.h>
 #include <memory>
 #include <vector>
@@ -18,13 +17,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtDestroyCountWindowBuffer(void* state);
 
-    void* rtCreateTimeWindowBuffer(const void* typeRegistryRaw,
-                                   std::int64_t size,
-                                   std::int64_t slide,
-                                   std::int64_t allowedLateness,
-                                   const std::uint8_t* typeIds,
-                                   std::uint64_t fieldCount);
-
     void rtDestroyTimeWindowBuffer(void* state);
 
     void rtWindowBeginRow(void* state);
@@ -36,6 +28,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     void rtWindowCompute(void* state);
 
     void rtWindowFlush(void* state);
+
+    std::uint64_t rtWindowGetStart(void* state, std::uint64_t windowIndex);
+
+    std::uint64_t rtWindowGetEnd(void* state, std::uint64_t windowIndex, bool* outHasEnd);
 
     std::uint64_t rtWindowGetCount(void* state);
 

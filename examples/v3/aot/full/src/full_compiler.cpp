@@ -67,7 +67,7 @@ namespace {
 }
 
 int main(int argc, char** argv) {
-    const std::string outputPath = argc > 1 ? argv[1] : "aot_select_plan.o";
+    const std::string outputPath = argc > 1 ? argv[1] : "full_plan.o";
     const std::string targetTripleStr = argc > 2 ? argv[2] : llvm::sys::getDefaultTargetTriple();
 
     sierra::odyplan::v3::core::logical::plan::Plan logicalPlan;
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Building LLVM-IR...\n";
 
-    auto module = std::make_unique<llvm::Module>("exampleSelect", *ctx);
+    auto module = std::make_unique<llvm::Module>("example_full", *ctx);
     physicalPlan.codegen(*module, *ctx);
 
     llvm::raw_os_ostream ros(std::cout);
