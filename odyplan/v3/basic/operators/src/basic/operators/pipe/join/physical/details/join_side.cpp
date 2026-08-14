@@ -130,4 +130,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     std::uint64_t JoinSide::getBaseIndex() const {
         return mBasisIndex;
     }
+
+    const std::byte* JoinSide::getRowPtr(const std::size_t rowIndex) const {
+        return mBufferedRows.at(rowIndex - mBasisIndex).values.data();
+    }
+
+    std::size_t JoinSide::getRowByteSize() const {
+        return mLayout.getTotalByteSize();
+    }
+
+    std::size_t JoinSide::getFieldCount() const {
+        return mLayout.getFieldCount();
+    }
+
+    core::shared::types::ValueTypeId JoinSide::getFieldTypeId(const std::size_t index) const {
+        return mLayout.getFieldTypeId(index);
+    }
+
+    std::size_t JoinSide::getFieldOffset(const std::size_t index) const {
+        return mLayout.offsetOf(index);
+    }
+
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

@@ -13,6 +13,11 @@ namespace sierra::odyplan::v3::core::physical::state {
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
 
+        mRuntimeTypeRegistryGlobal = new llvm::GlobalVariable(
+            *module, ptrTy, false, llvm::GlobalValue::InternalLinkage,
+            llvm::ConstantPointerNull::get(ptrTy), "ody_runtime_type_registry");
+        mInitBuilder->CreateStore(mInitFn->getArg(0), mRuntimeTypeRegistryGlobal);
+
         auto* shutdownFnType = llvm::FunctionType::get(voidTy, {}, false);
         mShutdownFn = llvm::Function::Create(
             shutdownFnType, llvm::Function::ExternalLinkage, "ody_shutdown", *module);
@@ -55,6 +60,10 @@ namespace sierra::odyplan::v3::core::physical::state {
         mShutdownBuilder->CreateCall(destroyFn, {loaded});
 
         return StateHandle{globalVar};
+    }
+
+    llvm::GlobalVariable* StateRegistry::getRuntimeTypeRegistryGlobal() const {
+        return mRuntimeTypeRegistryGlobal;
     }
 
     void StateRegistry::finish() {

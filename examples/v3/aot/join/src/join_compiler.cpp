@@ -151,8 +151,10 @@ int main(int argc, char** argv) {
             concrete.getOperatorTypeId(),
             concrete.getIOConfig(),
             concrete.getIOFormat(),
-                concrete.getOutputPorts().at(0)
-                ));
+            concrete.getOutputPorts().at(0),
+                                                   true,
+                                                   std::nullopt,
+                                                   concrete.getDelay()));
             return ot;
         }
     );

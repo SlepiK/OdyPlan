@@ -22,6 +22,12 @@ namespace sierra::odyplan::v3::basic::window {
 
         void discardCurrentRow();
 
+        [[nodiscard]] std::size_t getTotalByteSize() const noexcept;
+
+        [[nodiscard]] std::size_t getFieldCount() const noexcept;
+
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
+
     private:
         core::logical::port::Port mDataSchema;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
