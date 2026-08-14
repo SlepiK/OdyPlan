@@ -34,26 +34,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
         const basic::expression::IExpression* mPredicate;
+
         core::physical::state::StateHandle mState;
 
         llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
-
-        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx,
-                                 llvm::Value* state,
-                                 llvm::Value* timestamp,
-                                 bool callFromLeft);
 
         static llvm::GlobalVariable* buildTypeIds(llvm::Module& module,
                                                   llvm::LLVMContext& ctx,
                                                   const core::logical::port::Port& schema,
                                                   const std::string& name);
-
-        void emitMatch(core::physical::segment::SegmentContext& segmentCtx,
-                       llvm::Value* state,
-                       const core::physical::data::DataPackage& tuple,
-                       bool onLeft,
-                       llvm::Value* candidateCount,
-                       const core::physical::segment::SegmentDataConsumers& consumers);
 
         void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
                                 llvm::Value* state,
@@ -63,22 +52,23 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                 const char* pushFnName,
                                 const char* endFnName);
 
+        void emitMatchFromSnapshot(core::physical::segment::SegmentContext& segmentCtx,
+                llvm::Value* snapshot, bool onLeft,
+                const core::physical::segment::SegmentDataConsumers& consumers);
+
         llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx,
                                        const core::physical::data::DataPackage& tuple,
-                                       const basic::expression::IExpression& expression);
+                                       const expression::IExpression& expression);
+
+        static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx,
+                                 llvm::Value* state,
+                                 llvm::Value* timestamp,
+                                 bool callFromLeft);
 
         static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder,
                                            llvm::Value* left,
                                            llvm::Value* right,
                                            basic::expression::CompareExpression::CompareOp opr);
-
-        llvm::Value* codegenSnapshotAndUnlock(core::physical::segment::SegmentContext& segmentCtx,
-                                            llvm::Value* state,
-                                            llvm::Value* timestamp,
-                                            bool callFromLeft);
-
-        void codegenReleaseSnapshot(core::physical::segment::SegmentContext& segmentCtx,
-                                            llvm::Value* state);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 
