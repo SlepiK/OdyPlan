@@ -37,7 +37,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
         for (const auto& opr : mOperators) {
             opr->declareState(stateRegistry, module, ctx);
         }
-        stateRegistry.finish();
 
         std::vector<llvm::Function*> functions;
         std::vector<llvm::Function*> ioFunctionsRestart;
@@ -56,16 +55,17 @@ namespace sierra::odyplan::v3::core::physical::plan {
         segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&,
                                                              const data::DataPackage&) {};
 
-        detail::PlanConstruction detailBuilder{.chains = mChains,
-                                               .outgoingEdges = mOutgoingEdges,
-                                               .inDegree = inDegreeCache,
-                                               .noopConsumer = noopConsumer,
-                                               .module = &module,
-                                               .ctx = &ctx,
-                                               .functions = &functions,
-                                               .codegenTypeRegistry = mCodegenTypeRegistry,
-                                               .ioRestartRoots = &ioFunctionsRestart,
-                                               .computeRestartRoots = &computeFunctionsRestart};
+        detail::PlanConstruction detailBuilder(mChains,
+                                       mOutgoingEdges,
+                                       inDegreeCache,
+                                       noopConsumer,
+                                       &module,
+                                       &ctx,
+                                       &functions,
+                                       mCodegenTypeRegistry,
+                                       &ioFunctionsRestart,
+                                       &computeFunctionsRestart,
+                                       &stateRegistry);
 
         for (const auto& [id, chain] : mChains) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
@@ -109,6 +109,8 @@ namespace sierra::odyplan::v3::core::physical::plan {
             }
         }
         segmentContext.builder.CreateRetVoid();
+
+        stateRegistry.finish();
 
         std::vector<llvm::Function*> ioRoots = functions;
         for (auto* fn : ioFunctionsRestart) {

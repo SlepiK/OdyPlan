@@ -7,6 +7,33 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     class JoinBuffer {
     public:
+        struct RetainPointer {
+            core::shared::types::ValueTypeId typeId;
+            void* ptr;
+        };
+
+        struct JoinSnapshot {
+            bool wasLeft = false;
+            std::vector<std::byte> data;
+            std::vector<std::size_t> fieldOffsets;
+            std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
+            Timestamp timestamp;
+
+            std::vector<std::byte> candidateData;
+            std::vector<Timestamp> candidateTimestamps;
+            std::vector<std::size_t> candidateFieldOffsets;
+            std::vector<core::shared::types::ValueTypeId> candidateFieldTypeIds;
+            std::size_t candidateRowByteSize = 0;
+            std::size_t candidateCount = 0;
+
+            std::vector<RetainPointer> retainPointers;
+            const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry = nullptr;
+
+            [[nodiscard]] const std::byte* ownFieldPtr(std::size_t fieldIdx) const;
+
+            [[nodiscard]] const std::byte* candidateFieldPtr(std::size_t candidateIdx, std::size_t fieldIdx) const;
+        };
+
         JoinBuffer(core::logical::port::Port leftSchema,
                    core::logical::port::Port rightSchema,
                    const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
@@ -38,14 +65,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void endRight(Timestamp timestamp);
 
-        void evict(Timestamp timestamp, bool callFromLeft);
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        JoinSnapshot* snapshotForComputeAndUnlock(Timestamp evictTimestamp, bool callFromLeft);
 
-        [[nodiscard]] std::size_t getCandidateSize() const;
-
-        [[nodiscard]] const std::byte* getCandidatePtr(std::size_t candidateIndex,
-                                                       std::size_t fieldIndex) const;
-
-        [[nodiscard]] Timestamp getCandidateTimestamp(std::size_t candidateIndex) const;
+        static void releaseSnapshot(JoinSnapshot* snapshot);
 
         void enableEqui(std::size_t leftFieldIndex,
                         std::size_t rightFieldIndex,
@@ -55,10 +78,20 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         JoinSide mLeftSide;
         JoinSide mRightSide;
         std::mutex mMutex;
+        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::vector<std::size_t> mCandidates;
         bool mCandidateOnRight = false;
         bool mAllReleased = false;
+
+        void evict(Timestamp timestamp, bool callFromLeft);
+
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, std::size_t sourceKeyFieldIndex, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
+
+
+        void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
+                                 std::vector<std::size_t>& offsetsOut, std::vector<core::shared::types::ValueTypeId>& typeIdsOut,
+                                 std::vector<RetainPointer>& retainedOut) const;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 

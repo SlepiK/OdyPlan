@@ -52,6 +52,18 @@ namespace sierra::odyplan::v3::basic::window {
         }
     }
 
+    std::size_t WindowRowLayout::getTotalByteSize() const noexcept {
+        return mRowByteSize;
+    }
+
+    std::size_t WindowRowLayout::getFieldCount() const noexcept {
+        return mDataSchema.size();
+    }
+
+    core::shared::types::ValueTypeId WindowRowLayout::getFieldTypeId(std::size_t index) const {
+        return mDataSchema.at(index).valueTypeId;
+    }
+
     void WindowRowLayout::discardCurrentRow() {
         releaseRow(mCurrentRow);
         mCurrentRow.clear();

@@ -38,14 +38,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEndRight(void* state, std::int64_t timestamp);
 
-    std::uint64_t rtJoinGetCandidateSize(void* state);
+    void* rtJoinSnapshotForComputeAndUnlock(void* state, std::uint64_t timestamp, bool callFromLeft);
 
-    const void*
-    rtJoinGetCandidatePtr(void* state, std::uint64_t candidateIndex, std::uint64_t fieldIndex);
+    const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::uint64_t fieldIndex);
 
-    std::int64_t rtJoinGetCandidateTimestamp(void* state, std::uint64_t candidateIndex);
+    const void* rtJoinSnapshotGetCandidatePtr(void* snapshot, std::uint64_t index, std::uint64_t fieldIndex);
 
-    void rtJoinEvict(void* state, std::int64_t timestampMs, bool callFromLeft);
+    std::uint64_t rtJoinSnapshotGetCandidateTimestamp(void* snapshot, std::uint64_t index);
+
+    std::uint64_t rtJoinSnapshotGetOwnTimestamp(void* snapshot);
+
+    std::uint64_t rtJoinSnapshotGetCount(void* snapshot);
+
+    void rtJoinSnapshotRelease(void* snapshot);
+
+    bool rtJoinSnapshotGetWasLeft(void* snapshot);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

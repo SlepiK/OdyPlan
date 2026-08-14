@@ -1,5 +1,7 @@
 #include <basic/operators/pipe/join/physical/join_operator.h>
 
+#include <core/physical/segment/segment_builder.h>
+
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     JoinOperator::JoinOperator(core::physical::port::Port inputPort,
                                core::physical::port::Port outputPort,
@@ -22,6 +24,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         auto* voidTy = llvm::Type::getVoidTy(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);
 
@@ -29,7 +33,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             "rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(lockFn, {state});
 
-        if (inputPort == 0) {
+        const bool onLeft = (inputPort == 0);
+
+        if (onLeft) {
             // left
             codegenSide(segmentCtx,
                         state,
@@ -38,8 +44,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                         "rtJoinBeginLeft",
                         "rtJoinPushLeft",
                         "rtJoinEndLeft");
-            emitMatch(segmentCtx, state, tuple, true, consumers);
-            codegenEvict(segmentCtx, state, tuple.timestamp, true);
         } else {
             // right
             codegenSide(segmentCtx,
@@ -49,13 +53,119 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                         "rtJoinBeginRight",
                         "rtJoinPushRight",
                         "rtJoinEndRight");
-            emitMatch(segmentCtx, state, tuple, false, consumers);
-            codegenEvict(segmentCtx, state, tuple.timestamp, false);
         }
 
-        const auto unlockFn = module->getOrInsertFunction(
-            "rtJoinUnlock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        segmentCtx.builder.CreateCall(unlockFn, {state});
+        const auto snapshotFn = module->getOrInsertFunction("rtJoinSnapshotForComputeAndUnlock",
+            llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i1Ty}, false));
+
+        llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state, tuple.timestamp, llvm::ConstantInt::get(i1Ty, onLeft ? 1 : 0)});
+
+        emitMatchFromSnapshot(segmentCtx, snapshot, onLeft, consumers);
+
+        const auto releaseFn = module->getOrInsertFunction(
+            "rtJoinSnapshotRelease", llvm::FunctionType::get(voidTy, {ptrTy}, false));
+        segmentCtx.builder.CreateCall(releaseFn, {snapshot});
+    }
+
+    void JoinOperator::emitMatchFromSnapshot(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* snapshot,
+        const bool onLeft, const core::physical::segment::SegmentDataConsumers& consumers) {
+        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+        llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+
+        const auto countFn = module->getOrInsertFunction(
+            "rtJoinSnapshotGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
+
+        const auto& ownSchema = onLeft ? mLeftSchema : mRightSchema;
+        const auto getOwnFn = module->getOrInsertFunction(
+            "rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
+
+        core::physical::data::DataPackage ownTuple;
+        ownTuple.reserve(ownSchema.size());
+        for (std::size_t i = 0; i < ownSchema.size(); ++i) {
+            llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
+                getOwnFn, {snapshot, llvm::ConstantInt::get(i64Ty, i)});
+            llvm::Type* fieldTy =
+                segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
+            ownTuple.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
+        }
+
+        const auto getOwnTsFn = module->getOrInsertFunction(
+        "rtJoinSnapshotGetOwnTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        llvm::Value* ownTimestamp = segmentCtx.builder.CreateCall(getOwnTsFn, {snapshot});
+
+        auto* indexSlot = segmentCtx.storage.getNamed(
+            "computeIndexSlot." + std::to_string(getPId()), i64Ty);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), indexSlot);
+
+        auto* headerBB = llvm::BasicBlock::Create(ctx, "compute_match_header", fn);
+        auto* bodyBB = llvm::BasicBlock::Create(ctx, "compute_match_body", fn);
+        auto* exitBB = llvm::BasicBlock::Create(ctx, "compute_match_exit", fn);
+
+        segmentCtx.builder.CreateBr(headerBB);
+        segmentCtx.builder.SetInsertPoint(headerBB);
+
+        llvm::Value* index = segmentCtx.builder.CreateLoad(i64Ty, indexSlot);
+
+        segmentCtx.builder.CreateCondBr(
+            segmentCtx.builder.CreateICmpSLT(index, count), bodyBB, exitBB);
+
+        segmentCtx.builder.SetInsertPoint(bodyBB);
+
+        const auto& otherSchema = onLeft ? mRightSchema : mLeftSchema;
+        const auto getCandFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidatePtr",
+            llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
+
+        core::physical::data::DataPackage otherTuple;
+        otherTuple.reserve(otherSchema.size());
+        for (std::size_t i = 0; i < otherSchema.size(); ++i) {
+            llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
+                getCandFn, {snapshot, index, llvm::ConstantInt::get(i64Ty, i)});
+            llvm::Type* fieldTy =
+                segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+            otherTuple.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
+        }
+
+        const auto getCandTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateTimestamp",
+            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        llvm::Value* otherTimestamp = segmentCtx.builder.CreateCall(getCandTsFn, {snapshot, index});
+
+        core::physical::data::DataPackage combined;
+        if (onLeft) {
+            combined.fields.insert(combined.end(), ownTuple.begin(), ownTuple.end());
+            combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
+        } else {
+            combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
+            combined.fields.insert(combined.end(), ownTuple.begin(), ownTuple.end());
+        }
+
+        llvm::Value* isNewer = segmentCtx.builder.CreateICmpSGT(ownTimestamp, otherTimestamp);
+        combined.timestamp = segmentCtx.builder.CreateSelect(isNewer, ownTimestamp, otherTimestamp);
+
+        if (mPredicate != nullptr) {
+            llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
+            auto* passBB = llvm::BasicBlock::Create(ctx, "compute_predicate_pass", fn);
+            auto* mergeBB = llvm::BasicBlock::Create(ctx, "compute_predicate_merge", fn);
+            segmentCtx.builder.CreateCondBr(predicateResult, passBB, mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(passBB);
+            consumers.front()(segmentCtx, combined);
+            segmentCtx.builder.CreateBr(mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(mergeBB);
+        } else {
+            consumers.front()(segmentCtx, combined);
+        }
+
+        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(i64Ty, 1));
+        segmentCtx.builder.CreateStore(next, indexSlot);
+        segmentCtx.builder.CreateBr(headerBB);
+
+        segmentCtx.builder.SetInsertPoint(exitBB);
     }
 
     void JoinOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
@@ -126,101 +236,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
         auto* arrTy = llvm::ArrayType::get(i8Ty, values.size());
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
-        return new llvm::GlobalVariable(module,
-                                        arrTy,
-                                        true,
+        return new llvm::GlobalVariable(module, arrTy, true,
                                         llvm::GlobalValue::InternalLinkage,
-                                        llvm::ConstantArray::get(arrTy, values),
-                                        name);
-    }
-
-    void JoinOperator::emitMatch(core::physical::segment::SegmentContext& segmentCtx,
-                                 llvm::Value* state,
-                                 const core::physical::data::DataPackage& tuple,
-                                 const bool onLeft,
-                                 const core::physical::segment::SegmentDataConsumers& consumers) {
-        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
-        llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
-        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
-
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-
-        auto sizeFn = module->getOrInsertFunction("rtJoinGetCandidateSize",
-                                                  llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        llvm::Value* size = segmentCtx.builder.CreateCall(sizeFn, {state});
-
-        auto *indexSlot = segmentCtx.storage.getNamed("indexSlot." +std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), indexSlot);
-
-        auto* headerBB = llvm::BasicBlock::Create(ctx, "join_match_header", fn);
-        auto* bodyBB = llvm::BasicBlock::Create(ctx, "join_match_body", fn);
-        auto* exitBB = llvm::BasicBlock::Create(ctx, "join_match_exit", fn);
-
-        segmentCtx.builder.CreateBr(headerBB);
-        segmentCtx.builder.SetInsertPoint(headerBB);
-        llvm::Value* index = segmentCtx.builder.CreateLoad(i64Ty, indexSlot);
-        llvm::Value* condition = segmentCtx.builder.CreateICmpSLT(index, size);
-        segmentCtx.builder.CreateCondBr(condition, bodyBB, exitBB);
-
-        segmentCtx.builder.SetInsertPoint(bodyBB);
-
-        const auto& otherSchema = onLeft ? mRightSchema : mLeftSchema;
-
-        auto getCandidateFn = module->getOrInsertFunction(
-            "rtJoinGetCandidatePtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
-
-        core::physical::data::DataPackage otherTuple;
-        otherTuple.reserve(otherSchema.size());
-
-        for (std::size_t i = 0; i < otherSchema.size(); ++i) {
-            llvm::Value* candidatePtr = segmentCtx.builder.CreateCall(
-                getCandidateFn, {state, index, llvm::ConstantInt::get(i64Ty, i)});
-            llvm::Type* candidateTy =
-                segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
-            otherTuple.pushBack(segmentCtx.builder.CreateLoad(candidateTy, candidatePtr));
-        }
-
-        auto getCandidateTimestampFn = module->getOrInsertFunction(
-            "rtJoinGetCandidateTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        llvm::Value* otherTimestamp =
-            segmentCtx.builder.CreateCall(getCandidateTimestampFn, {state, index});
-
-        core::physical::data::DataPackage combined;
-        if (onLeft) {
-            combined.fields.insert(combined.end(), tuple.begin(), tuple.end());
-            combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
-        } else {
-            combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
-            combined.fields.insert(combined.end(), tuple.begin(), tuple.end());
-        }
-
-        llvm::Value* isNewerCondition =
-            segmentCtx.builder.CreateICmpSGT(tuple.timestamp, otherTimestamp);
-        combined.timestamp =
-            segmentCtx.builder.CreateSelect(isNewerCondition, tuple.timestamp, otherTimestamp);
-
-        if (mPredicate != nullptr) {
-            llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
-
-            auto* passBB = llvm::BasicBlock::Create(ctx, "join_predicate_pass", fn);
-            auto* mergeBB = llvm::BasicBlock::Create(ctx, "join_predicate_merge", fn);
-            segmentCtx.builder.CreateCondBr(predicateResult, passBB, mergeBB);
-
-            segmentCtx.builder.SetInsertPoint(passBB);
-            consumers.at(0)(segmentCtx, combined);
-            segmentCtx.builder.CreateBr(mergeBB);
-
-            segmentCtx.builder.SetInsertPoint(mergeBB);
-        } else {
-            consumers.at(0)(segmentCtx, combined);
-        }
-
-        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(i64Ty, 1));
-        segmentCtx.builder.CreateStore(next, indexSlot);
-        segmentCtx.builder.CreateBr(headerBB);
-
-        segmentCtx.builder.SetInsertPoint(exitBB);
+                                        llvm::ConstantArray::get(arrTy, values),name);
     }
 
     void JoinOperator::codegenSide(core::physical::segment::SegmentContext& segmentCtx,

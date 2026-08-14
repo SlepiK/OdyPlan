@@ -51,6 +51,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::uint64_t getBaseIndex() const;
 
+        [[nodiscard]] const std::byte* getRowPtr(std::size_t rowIndex) const;
+
+        [[nodiscard]] std::size_t getRowByteSize() const;
+
+        [[nodiscard]] std::size_t getFieldCount() const;
+
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
+
+        [[nodiscard]] std::size_t getFieldOffset(std::size_t index) const;
+
     private:
         struct RowBuffer {
             std::vector<std::byte> values;

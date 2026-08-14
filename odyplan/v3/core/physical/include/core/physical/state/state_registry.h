@@ -18,6 +18,8 @@ namespace sierra::odyplan::v3::core::physical::state {
                                  const std::string& destroyFnName);
 
         void finish();
+
+        [[nodiscard]] llvm::GlobalVariable* getRuntimeTypeRegistryGlobal() const;
     private:
         llvm::Module* mModule;
         llvm::LLVMContext* mContext;
@@ -25,6 +27,7 @@ namespace sierra::odyplan::v3::core::physical::state {
         llvm::Function* mShutdownFn;
         std::unique_ptr<llvm::IRBuilder<>> mInitBuilder;
         std::unique_ptr<llvm::IRBuilder<>> mShutdownBuilder;
+        llvm::GlobalVariable* mRuntimeTypeRegistryGlobal = nullptr;
     };
 }  // namespace sierra::odyplan::v3::core::physical::state
 
