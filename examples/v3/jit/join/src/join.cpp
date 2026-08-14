@@ -25,7 +25,7 @@
 #include <iostream>
 
 namespace {
-    void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
+    void optimizeLlvmModule(llvm::Module &module, const llvm::OptimizationLevel level) {
         llvm::LoopAnalysisManager loopAnaMgr;
         llvm::FunctionAnalysisManager fnAnaMgr;
         llvm::ModuleAnalysisManager modAnaMgr;
@@ -43,7 +43,7 @@ namespace {
 
         modPassMgr.run(module, modAnaMgr);
     }
-}  // namespace
+} // namespace
 
 // NOLINTNEXTLINE(readability-function-size)
 int main() {
@@ -57,17 +57,21 @@ int main() {
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
                 .typeJsonName = "int",
-                .fieldName = "id"},
+                .fieldName = "id"
+            },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
                 .typeJsonName = "int",
-                .fieldName = "l_id"},
+                .fieldName = "l_id"
+            },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
                 .typeJsonName = "string",
-                .fieldName = "first_name"}};
+                .fieldName = "first_name"
+            }
+        };
 
         auto sourceLeftId = logicalPlan.addOperator(
             std::make_unique<
@@ -82,12 +86,15 @@ int main() {
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
                 .typeJsonName = "int",
-                .fieldName = "id"},
+                .fieldName = "id"
+            },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
                 .typeJsonName = "string",
-                .fieldName = "last_name"}};
+                .fieldName = "last_name"
+            }
+        };
 
         auto sourceRightId = logicalPlan.addOperator(
             std::make_unique<
@@ -98,17 +105,18 @@ int main() {
                 std::chrono::milliseconds(2)));
 
         static auto joinPredicate =
-            std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
-                std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
-                    1),
-                sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
-                std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
-                    3));
+                std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
+                    std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
+                        1),
+                    sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
+                    std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
+                        3));
 
         auto joinConfig =
-            sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
-                .leftWindowSize = std::chrono::milliseconds(10),
-                .rightWindowSize = std::chrono::milliseconds(10)};
+                sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
+                    .leftWindowSize = std::chrono::milliseconds(10),
+                    .rightWindowSize = std::chrono::milliseconds(10)
+                };
 
         auto joinId = logicalPlan.addOperator(
             std::make_unique<
@@ -119,72 +127,79 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                    PortFieldIndexV{0, 2, 4}));
+                PortFieldIndexV{0, 2, 4}));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = sourceLeftId, .portId = 0},
+                .operatorId = sourceLeftId, .portId = 0
+            },
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = joinId, .portId = 0});
+                .operatorId = joinId, .portId = 0
+            });
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = sourceRightId, .portId = 0},
+                .operatorId = sourceRightId, .portId = 0
+            },
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = joinId, .portId = 1});
+                .operatorId = joinId, .portId = 1
+            });
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = joinId, .portId = 0},
+                .operatorId = joinId, .portId = 0
+            },
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
-                .operatorId = sinkId, .portId = 0});
+                .operatorId = sinkId, .portId = 0
+            });
 
         std::cout << "Logical Plan: OK\n";
 
         std::cout << "Building Physical Plan...\n";
         auto codegenTypeRegistry =
-            sierra::odyplan::v3::core::physical::types::CodegenTypeRegistry::withBuiltins();
+                sierra::odyplan::v3::core::physical::types::CodegenTypeRegistry::withBuiltins();
 
         sierra::odyplan::v3::core::builder::PlanBuilder builder(codegenTypeRegistry);
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-               const sierra::odyplan::v3::core::physical::port::Ports&,
-               const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
-                -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            [](const sierra::odyplan::v3::core::logical::operators::IOperator &op,
+               const sierra::odyplan::v3::core::physical::port::Ports &,
+               const sierra::odyplan::v3::core::physical::port::Ports &outputPorts)
+        -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::
-                                                       source::read::logical::ReadOperator&>(op);
+                const auto &concrete = static_cast<const sierra::odyplan::v3::basic::operators::
+                    source::read::logical::ReadOperator &>(op);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
                     std::make_unique<sierra::odyplan::v3::basic::operators::source::read::physical::
-                                         ReadOperator>(outputPorts.front(),
-                                                       concrete.getOperatorTypeId(),
-                                                       concrete.getIOConfig(),
-                                                       concrete.getIOFormat(),
-                                                       concrete.getOutputPorts().at(0),
-                                                       true,
-                                                       std::nullopt,
-                                                       concrete.getDelay()));
+                        ReadOperator>(outputPorts.front(),
+                                      concrete.getOperatorTypeId(),
+                                      concrete.getIOConfig(),
+                                      concrete.getIOFormat(),
+                                      concrete.getOutputPorts().at(0),
+                                      true,
+                                      std::nullopt,
+                                      concrete.getDelay()));
                 return ot;
             });
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-               const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-               const sierra::odyplan::v3::core::physical::port::Ports& outputPorts)
-                -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            [](const sierra::odyplan::v3::core::logical::operators::IOperator &op,
+               const sierra::odyplan::v3::core::physical::port::Ports &inputPorts,
+               const sierra::odyplan::v3::core::physical::port::Ports &outputPorts)
+        -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::
-                                                       pipe::join::logical::JoinOperator&>(op);
+                const auto &concrete = static_cast<const sierra::odyplan::v3::basic::operators::
+                    pipe::join::logical::JoinOperator &>(op);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 const sierra::odyplan::v3::core::logical::port::Ports schemas{
-                    concrete.getInputPorts().at(0), concrete.getInputPorts().at(1)};
+                    concrete.getInputPorts().at(0), concrete.getInputPorts().at(1)
+                };
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(
@@ -200,25 +215,25 @@ int main() {
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-               const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-               const sierra::odyplan::v3::core::physical::port::Ports&)
-                -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+            [](const sierra::odyplan::v3::core::logical::operators::IOperator &op,
+               const sierra::odyplan::v3::core::physical::port::Ports &inputPorts,
+               const sierra::odyplan::v3::core::physical::port::Ports &)
+        -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
                 // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::
-                                                       sink::print::logical::PrintOperator&>(op);
+                const auto &concrete = static_cast<const sierra::odyplan::v3::basic::operators::
+                    sink::print::logical::PrintOperator &>(op);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::
-                                                            sink::print::physical::PrintOperator>(
+                    sink::print::physical::PrintOperator>(
                     inputPorts.front(), concrete.getPortFieldIndices()));
                 return ot;
             });
 
         auto ctx = std::make_unique<llvm::LLVMContext>();
         sierra::odyplan::v3::core::physical::plan::Plan const physicalPlan =
-            builder.build(logicalPlan, *ctx);
+                builder.build(logicalPlan, *ctx);
 
         std::cout << "Physical Plan: OK\n";
         std::cout << "Building LLVM-IR...\n";
@@ -242,11 +257,11 @@ int main() {
         auto jitExpected = llvm::orc::LLJITBuilder().create();
         if (!jitExpected) {
             std::cerr << "Failed to create JIT: " << llvm::toString(jitExpected.takeError())
-                      << "\n";
+                    << "\n";
             return 1;
         }
 
-        auto& jit = *jitExpected;
+        auto &jit = *jitExpected;
 
         module->setDataLayout(jit->getDataLayout());
         optimizeLlvmModule(*module, llvm::OptimizationLevel::O2);
@@ -416,7 +431,7 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
-                llvm::JITSymbolFlags::Exported);
+            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
@@ -427,9 +442,9 @@ int main() {
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtComputeSegmentNullInit")] = llvm::orc::ExecutorSymbolDef(
-    llvm::orc::ExecutorAddr::fromPtr(
-        &sierra::odyplan::v3::core::runtime::rtComputeSegmentNullInit),
-    llvm::JITSymbolFlags::Exported);
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::core::runtime::rtComputeSegmentNullInit),
+            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtComputeSegmentGetOrCreate")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::core::runtime::rtComputeSegmentGetOrCreate),
@@ -439,10 +454,10 @@ int main() {
                 &sierra::odyplan::v3::core::runtime::rtComputeSegmentEnqueue),
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtComputeSegmentDestroyIfStarted")] =
-            llvm::orc::ExecutorSymbolDef(
-                llvm::orc::ExecutorAddr::fromPtr(
-                    &sierra::odyplan::v3::core::runtime::rtComputeSegmentDestroyIfStarted),
-                llvm::JITSymbolFlags::Exported);
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(
+                        &sierra::odyplan::v3::core::runtime::rtComputeSegmentDestroyIfStarted),
+                    llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtTypeRegistryRetain")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtTypeRegistryRetain),
@@ -489,18 +504,18 @@ int main() {
         }
 
         auto odyMain = jit->lookup("ody_main")->toPtr<void (*)()>();
-        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void*)>();
+        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void *)>();
         auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
         auto runtimeTypeRegistry =
-            sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
+                sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
 
         odyInit(&runtimeTypeRegistry);
         odyMain();
         odyShutdown();
 
         return 0;
-    } catch (const std::exception& err) {
+    } catch (const std::exception &err) {
         std::cerr << err.what() << '\n';
         return 1;
     }
