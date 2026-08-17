@@ -101,7 +101,7 @@ namespace sierra::odyplan::v3::core::builder {
                 chain.nodes.push_back(node);
             }
 
-            pPlan.addChain(lOprId, chain);
+            pPlan.addSegment(lOprId, chain);
 
             std::vector<shared::operators::OperatorPortReferenceConnection> outEdges;
             for (const auto& edge : lPlan.getOutEdgesFromOperator(lOprId)) {

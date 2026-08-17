@@ -13,18 +13,18 @@ namespace sierra::odyplan::v3::core::physical::plan {
         mOperators.push_back(std::move(opr));
     }
 
-    void Plan::addChain(OperatorId logicalOperatorId, segment::Segment chain) {
-        if (chain.nodes.empty()) {
+    void Plan::addSegment(OperatorId logicalOperatorId, segment::Segment segment) {
+        if (segment.nodes.empty()) {
             throw std::invalid_argument("Plan::addChain: chain must not be empty!");
         }
 
-        const auto& front = chain.nodes.front();
+        const auto& front = segment.nodes.front();
         if (front.asProducer == nullptr && front.asConsumer == nullptr) {
             throw std::invalid_argument(
                 "Plan::addChain: first node in chain must have at least one valid entry point");
         }
         mOrder.push_back(logicalOperatorId);
-        mChains.emplace(logicalOperatorId, std::move(chain));
+        mSegments.emplace(logicalOperatorId, std::move(segment));
     }
 
     void Plan::addOutgoingEdge(OperatorId logicalOperatorId,
@@ -55,7 +55,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
         segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&,
                                                              const data::DataPackage&) {};
 
-        detail::PlanConstruction detailBuilder(mChains,
+        detail::PlanConstruction detailBuilder(mSegments,
                                        mOutgoingEdges,
                                        inDegreeCache,
                                        noopConsumer,
@@ -67,7 +67,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                        &computeFunctionsRestart,
                                        &stateRegistry);
 
-        for (const auto& [id, chain] : mChains) {
+        for (const auto& [id, chain] : mSegments) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
                 auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
                 auto* fn = llvm::Function::Create(fnType,
@@ -92,7 +92,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
         segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mCodegenTypeRegistry);
 
         for (const auto id : mOrder) {
-            const auto& chain = mChains.at(id);
+            const auto& chain = mSegments.at(id);
             flow::IConsumer* entryOpr = chain.nodes.front().asConsumer;
             if (entryOpr == nullptr) {
                 continue;

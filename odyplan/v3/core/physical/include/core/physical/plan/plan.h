@@ -26,7 +26,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         void addOperator(std::unique_ptr<IOperator> opr);
 
-        void addChain(OperatorId logicalOperatorId, segment::Segment chain);
+        void addSegment(OperatorId logicalOperatorId, segment::Segment segment);
 
         void addOutgoingEdge(OperatorId logicalOperatorId,
                              std::vector<OperatorPortReferenceConnection> edges);
@@ -37,7 +37,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
     private:
         std::vector<std::unique_ptr<IOperator>> mOperators;
-        std::unordered_map<OperatorId, segment::Segment> mChains;
+        std::unordered_map<OperatorId, segment::Segment> mSegments;
         std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingEdges;
         std::vector<OperatorId> mOrder;
         const types::CodegenTypeRegistry* mCodegenTypeRegistry;
