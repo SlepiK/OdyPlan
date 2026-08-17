@@ -6,10 +6,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.get().at(operatorId);
-        const auto edgeIt = outgoingEdges.get().find(operatorId);
+        const auto& chain = segments.get().at(operatorId);
+        const auto edgeIt = outgoingConnections.get().find(operatorId);
         static const std::vector<OperatorPortReferenceConnection> emptyEdges{};
-        const auto& outEdges = edgeIt != outgoingEdges.get().end() ? edgeIt->second : emptyEdges;
+        const auto& outEdges = edgeIt != outgoingConnections.get().end() ? edgeIt->second : emptyEdges;
 
         std::unordered_map<shared::identifiers::PortId,
                            std::vector<OperatorPortReferenceConnection>>
@@ -62,7 +62,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
     segment::SegmentDataConsumer
     PlanConstruction::buildEnter(const OperatorPortReferenceConnection& edge) {
         const auto id = edge.toOperatorPortReference.operatorId;
-        const auto& chain = chains.get().at(id);
+        const auto& chain = segments.get().at(id);
         const auto inputIndex = edge.toOperatorPortReference.portId;
 
         flow::IConsumer* entryOpr = chain.nodes.front().asConsumer;
@@ -82,7 +82,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.get().at(operatorId);
+        const auto& chain = segments.get().at(operatorId);
 
         segment::SegmentDataConsumers rest;
 

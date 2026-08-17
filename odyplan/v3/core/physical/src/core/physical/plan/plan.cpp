@@ -39,8 +39,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
         }
 
         std::vector<llvm::Function*> functions;
-        std::vector<llvm::Function*> ioFunctionsRestart;
-        std::vector<llvm::Function*> computeFunctionsRestart;
 
         std::unordered_map<OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<OperatorId, std::set<std::size_t>> incomingInputIndices;
@@ -63,8 +61,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                        &ctx,
                                        &functions,
                                        mCodegenTypeRegistry,
-                                       &ioFunctionsRestart,
-                                       &computeFunctionsRestart,
                                        &stateRegistry);
 
         for (const auto& [id, chain] : mSegments) {
