@@ -28,8 +28,8 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         void addSegment(OperatorId logicalOperatorId, segment::Segment segment);
 
-        void addOutgoingEdge(OperatorId logicalOperatorId,
-                             std::vector<OperatorPortReferenceConnection> edges);
+        void addOutgoingConnection(OperatorId logicalOperatorId,
+                             std::vector<OperatorPortReferenceConnection> connections);
 
         void codegen(llvm::Module& module, llvm::LLVMContext& ctx) const;
 
@@ -38,7 +38,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
     private:
         std::vector<std::unique_ptr<IOperator>> mOperators;
         std::unordered_map<OperatorId, segment::Segment> mSegments;
-        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingEdges;
+        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingConnections;
         std::vector<OperatorId> mOrder;
         const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 

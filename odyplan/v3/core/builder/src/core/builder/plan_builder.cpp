@@ -110,7 +110,7 @@ namespace sierra::odyplan::v3::core::builder {
                     .toOperatorPortReference = edge.toOperatorPortReference});
             }
 
-            pPlan.addOutgoingEdge(lOprId, std::move(outEdges));
+            pPlan.addOutgoingConnection(lOprId, std::move(outEdges));
 
             for (auto& opr : oprs) {
                 auto pid = pPlan.getSize();

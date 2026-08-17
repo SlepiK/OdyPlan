@@ -27,9 +27,9 @@ namespace sierra::odyplan::v3::core::physical::plan {
         mSegments.emplace(logicalOperatorId, std::move(segment));
     }
 
-    void Plan::addOutgoingEdge(OperatorId logicalOperatorId,
-                               std::vector<OperatorPortReferenceConnection> edges) {
-        mOutgoingEdges.emplace(logicalOperatorId, std::move(edges));
+    void Plan::addOutgoingConnection(OperatorId logicalOperatorId,
+                               std::vector<OperatorPortReferenceConnection> connections) {
+        mOutgoingConnections.emplace(logicalOperatorId, std::move(connections));
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
@@ -44,7 +44,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         std::unordered_map<OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<OperatorId, std::set<std::size_t>> incomingInputIndices;
-        for (const auto& [fromOperatorId, edgeLists] : mOutgoingEdges) {
+        for (const auto& [fromOperatorId, edgeLists] : mOutgoingConnections) {
             for (const auto& edge : edgeLists) {
                 ++inDegreeCache[edge.toOperatorPortReference.operatorId];
                 incomingInputIndices[edge.toOperatorPortReference.operatorId].insert(
@@ -56,7 +56,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                                              const data::DataPackage&) {};
 
         detail::PlanConstruction detailBuilder(mSegments,
-                                       mOutgoingEdges,
+                                       mOutgoingConnections,
                                        inDegreeCache,
                                        noopConsumer,
                                        &module,
