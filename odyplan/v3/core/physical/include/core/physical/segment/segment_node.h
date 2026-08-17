@@ -8,7 +8,6 @@ namespace sierra::odyplan::v3::core::physical::segment {
     struct SegmentNode {
         flow::IConsumer* asConsumer = nullptr;
         flow::IProducer* asProducer = nullptr;
-        bool isBreaker = false;
     };
 }  // namespace sierra::odyplan::v3::core::physical::segment
 

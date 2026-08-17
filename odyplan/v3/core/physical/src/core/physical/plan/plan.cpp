@@ -112,12 +112,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         stateRegistry.finish();
 
-        std::vector<llvm::Function*> ioRoots = functions;
-        for (auto* fn : ioFunctionsRestart) {
-            ioRoots.push_back(fn);
-        }
-
-        codegenMain(module, ctx, ioRoots, computeFunctionsRestart, endFn);
+        codegenMain(module, ctx, functions, endFn);
     }
 
     Plan::OperatorId Plan::getSize() const {
@@ -126,8 +121,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
     void Plan::codegenMain(llvm::Module& module,
                            llvm::LLVMContext& ctx,
-                           const std::vector<llvm::Function*>& ioRoots,
-                           const std::vector<llvm::Function*>& computeRoots,
+                           const std::vector<llvm::Function*>& functions,
                            llvm::Function* endPhase) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* mainFn = llvm::Function::Create(
@@ -144,31 +138,17 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                                     llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         auto ioJoinFn = module.getOrInsertFunction(
             "rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
-        auto computeSpawnFn = module.getOrInsertFunction(
-            "rtComputeTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        auto computeJoinFn = module.getOrInsertFunction(
-            "rtComputeTaskJoin",
-            llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
 
         std::vector<llvm::Value*> ioHandles;
         std::vector<llvm::Value*> computeHandles;
 
-        ioHandles.reserve(ioRoots.size());
-        for (auto* root : ioRoots) {
+        ioHandles.reserve(functions.size());
+        for (auto* root : functions) {
             ioHandles.push_back(builder.CreateCall(ioSpawnFn, {root}));
-        }
-
-        computeHandles.reserve(computeRoots.size());
-        for (auto* root : computeRoots) {
-            computeHandles.push_back(builder.CreateCall(computeSpawnFn, {root}));
         }
 
         for (auto* handle : ioHandles) {
             builder.CreateCall(ioJoinFn, {handle});
-        }
-
-        for (auto* handle : computeHandles) {
-            builder.CreateCall(computeJoinFn, {handle});
         }
 
         if (endPhase != nullptr) {

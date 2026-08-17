@@ -66,22 +66,11 @@ namespace sierra::odyplan::v3::core::builder {
                         break;
                     }
                     case physical::operators::OperatorRole::PIPE: {
-                        if (oprs.at(i)->isSegmentBreaker()) {
-                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                            auto* blockingPipe =
-                                static_cast<physical::operators::pipe::TypedBlockingPipeOperator*>(
-                                    oprs.at(i).get());
-                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                            node.asConsumer = blockingPipe;
-                            node.asProducer = blockingPipe;
-                            node.isBreaker = true;
-                        } else {
-                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                            node.asConsumer =
-                                static_cast<physical::operators::pipe::TypedPipeOperator*>(
-                                    oprs.at(i).get());
-                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                        }
+                        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
+                        node.asConsumer =
+                            static_cast<physical::operators::pipe::TypedPipeOperator*>(
+                            oprs.at(i).get());
+                        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                         break;
                     }
                     case physical::operators::OperatorRole::SINK: {

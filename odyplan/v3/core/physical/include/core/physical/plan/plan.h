@@ -44,8 +44,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         static void codegenMain(llvm::Module& module,
                                 llvm::LLVMContext& ctx,
-                                const std::vector<llvm::Function*>& ioRoots,
-                                const std::vector<llvm::Function*>& computeRoots,
+                                const std::vector<llvm::Function*>& functions,
                                 llvm::Function* endPhase);
     };
 }  // namespace sierra::odyplan::v3::core::physical::plan

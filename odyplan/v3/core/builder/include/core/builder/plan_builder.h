@@ -3,7 +3,6 @@
 
 #include <core/builder/transformation/operator_transformation_factory.h>
 #include <core/logical/plan/plan.h>
-#include <core/physical/operators/pipe/typed_blocking_pipe_operator.h>
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
 #include <core/physical/operators/sink/typed_sink_operator.h>
 #include <core/physical/operators/source/typed_source_operator.h>

@@ -1,10 +1,6 @@
 #include <core/physical/operators/operator.h>
 
 namespace sierra::odyplan::v3::core::physical::operators {
-    bool IOperator::isSegmentBreaker() const {
-        return false;
-    }
-
     const port::Ports& IOperator::getInputPorts() const {
         return mInputPorts;
     }
