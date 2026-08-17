@@ -102,7 +102,7 @@ namespace sierra::odyplan::v3::core::builder {
             pPlan.addOutgoingConnection(lOprId, std::move(outEdges));
 
             for (auto& opr : oprs) {
-                auto pid = pPlan.getSize();
+                opr->setPId(pPlan.getSize());
                 pPlan.addOperator(std::move(opr));
             }
         }
