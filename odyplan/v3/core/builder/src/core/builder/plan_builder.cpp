@@ -38,7 +38,7 @@ namespace sierra::odyplan::v3::core::builder {
                 opr->setId(lOprId);
             }
 
-            const auto inEdgeCount = lPlan.getInEdgesFromOperator(lOprId).size();
+            const auto inEdgeCount = lPlan.getInConnectionsFromOperator(lOprId).size();
             if (inEdgeCount > 1 && oprs.size() > 1) {
                 throw std::logic_error(
                     "PlanBuilder::build: a logical operator with multiple input can currently only "
@@ -104,7 +104,7 @@ namespace sierra::odyplan::v3::core::builder {
             pPlan.addSegment(lOprId, chain);
 
             std::vector<shared::operators::OperatorPortReferenceConnection> outEdges;
-            for (const auto& edge : lPlan.getOutEdgesFromOperator(lOprId)) {
+            for (const auto& edge : lPlan.getOutConnectionsFromOperator(lOprId)) {
                 outEdges.push_back(shared::operators::OperatorPortReferenceConnection{
                     .fromOperatorPortReference = edge.fromOperatorPortReference,
                     .toOperatorPortReference = edge.toOperatorPortReference});

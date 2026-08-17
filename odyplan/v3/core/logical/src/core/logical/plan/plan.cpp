@@ -19,9 +19,9 @@ namespace sierra::odyplan::v3::core::logical::plan {
         }
 
         const auto edge = OperatorPortReferenceConnection(fromOperator, toOperator);
-        mEdges.push_back(edge);
-        mIncomingEdges[toOperator.operatorId].push_back(edge);
-        mOutgoingEdges[fromOperator.operatorId].push_back(edge);
+        mConnections.push_back(edge);
+        mIncomingConnections[toOperator.operatorId].push_back(edge);
+        mOutgoingConnections[fromOperator.operatorId].push_back(edge);
     }
 
     [[nodiscard]] Plan::IOperator& Plan::op(const OperatorId id) const {
@@ -91,7 +91,7 @@ namespace sierra::odyplan::v3::core::logical::plan {
 
         // No Fan-in # only one edge to one input port allowed!
         const bool alreadyConnected =
-            std::ranges::any_of(mEdges, [&](const OperatorPortReferenceConnection& edge) {
+            std::ranges::any_of(mConnections, [&](const OperatorPortReferenceConnection& edge) {
                 return edge.toOperatorPortReference.operatorId == toOperator.operatorId &&
                        edge.toOperatorPortReference.portId == toOperator.portId;
             });
@@ -116,7 +116,7 @@ namespace sierra::odyplan::v3::core::logical::plan {
 
         for (std::size_t operatorId = 0; operatorId < mOperators.size(); ++operatorId) {
             // Get all edges coming in the operator (source_operator has 0!)
-            const auto operatorDegree = getInEdgesFromOperator(operatorId).size();
+            const auto operatorDegree = getInConnectionsFromOperator(operatorId).size();
             inDegree[operatorId] = operatorDegree;
             if (operatorDegree == 0) {
                 // source_operator dont need further processing
@@ -129,7 +129,7 @@ namespace sierra::odyplan::v3::core::logical::plan {
             ready.pop_back();
             result.push_back(currentOperatorId);
 
-            for (const auto& currentOperatorOutEdge : getOutEdgesFromOperator(currentOperatorId)) {
+            for (const auto& currentOperatorOutEdge : getOutConnectionsFromOperator(currentOperatorId)) {
                 const auto nextOperatorId =
                     currentOperatorOutEdge.toOperatorPortReference.operatorId;
                 if (--inDegree[nextOperatorId] == 0) {
@@ -181,7 +181,7 @@ namespace sierra::odyplan::v3::core::logical::plan {
                 continue;
             }
 
-            for (const auto& [fromOperator, toOperator] : mEdges) {
+            for (const auto& [fromOperator, toOperator] : mConnections) {
                 if (fromOperator.operatorId == current) {
                     operatorStack.push_back(toOperator.operatorId);
                 }
@@ -192,16 +192,16 @@ namespace sierra::odyplan::v3::core::logical::plan {
     }
 
     [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection>
-    Plan::getInEdgesFromOperator(const OperatorId id) const {
-        const auto it = mIncomingEdges.find(id);
-        return it != mIncomingEdges.end() ? it->second
+    Plan::getInConnectionsFromOperator(const OperatorId id) const {
+        const auto it = mIncomingConnections.find(id);
+        return it != mIncomingConnections.end() ? it->second
                                           : std::vector<OperatorPortReferenceConnection>();
     }
 
     [[nodiscard]] std::vector<Plan::OperatorPortReferenceConnection>
-    Plan::getOutEdgesFromOperator(const OperatorId id) const {
-        const auto it = mOutgoingEdges.find(id);
-        return it != mOutgoingEdges.end() ? it->second
+    Plan::getOutConnectionsFromOperator(const OperatorId id) const {
+        const auto it = mOutgoingConnections.find(id);
+        return it != mOutgoingConnections.end() ? it->second
                                           : std::vector<OperatorPortReferenceConnection>();
     }
 }  // namespace sierra::odyplan::v3::core::logical::plan

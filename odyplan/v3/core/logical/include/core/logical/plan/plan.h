@@ -47,17 +47,17 @@ namespace sierra::odyplan::v3::core::logical::plan {
         [[nodiscard]] IOperator& op(OperatorId id) const;
 
         [[nodiscard]] std::vector<OperatorPortReferenceConnection>
-        getInEdgesFromOperator(OperatorId id) const;
+        getInConnectionsFromOperator(OperatorId id) const;
 
         [[nodiscard]] std::vector<OperatorPortReferenceConnection>
-        getOutEdgesFromOperator(OperatorId id) const;
+        getOutConnectionsFromOperator(OperatorId id) const;
     private:
         std::vector<OperatorId> mSourceOperators;
         std::vector<std::unique_ptr<IOperator>> mOperators;
-        std::vector<OperatorPortReferenceConnection> mEdges;
+        std::vector<OperatorPortReferenceConnection> mConnections;
         std::unordered_map<OperatorId, IBindableOperator*> mBindables;
-        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mIncomingEdges;
-        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingEdges;
+        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mIncomingConnections;
+        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingConnections;
 
         void validateConnectionRequest(const OperatorPortReference& fromOperator,
                                        const OperatorPortReference& toOperator);
