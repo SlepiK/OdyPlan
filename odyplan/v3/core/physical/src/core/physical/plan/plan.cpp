@@ -136,7 +136,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
             "rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
 
         std::vector<llvm::Value*> ioHandles;
-        std::vector<llvm::Value*> computeHandles;
 
         ioHandles.reserve(functions.size());
         for (auto* root : functions) {
