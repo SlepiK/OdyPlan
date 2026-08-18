@@ -21,7 +21,6 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     class WriteOperator : public core::physical::operators::sink::TypedSinkOperator {
     public:
         WriteOperator(const core::physical::port::Port& inputPort,
-                      core::shared::identifiers::OperatorId lOpId,
                       nlohmann::json ioConfig,
                       io::IOFormatType ioFormat,
                       core::logical::port::Port dataSchema);
@@ -40,7 +39,6 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
                  const core::physical::segment::SegmentDataConsumers& consumers) override;
 
     private:
-        core::shared::identifiers::OperatorId mLogicalOperatorId;
         io::IOFormatType mIOFormat;
         core::logical::port::Port mDataSchema;
         core::physical::state::StateHandle mState;

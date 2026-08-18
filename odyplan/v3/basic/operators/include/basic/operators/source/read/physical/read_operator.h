@@ -13,7 +13,6 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     class ReadOperator : public core::physical::operators::source::TypedSourceOperator {
     public:
         ReadOperator(core::physical::port::Port outputPort,
-                     core::shared::identifiers::OperatorId lOpId,
                      nlohmann::json ioConfig,
                      io::IOFormatType ioFormat,
                      core::logical::port::Port dataSchema,
@@ -29,7 +28,6 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                           llvm::LLVMContext& context) override;
 
     private:
-        core::shared::identifiers::OperatorId mLogicalOperatorId;
         io::IOFormatType mIOFormat;
         core::logical::port::Port mDataSchema;
         std::optional<std::size_t> mTimestampFieldIndex;

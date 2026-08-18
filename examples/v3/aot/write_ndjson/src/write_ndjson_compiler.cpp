@@ -104,7 +104,6 @@ int main(int argc, char** argv) {
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
             ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::physical::ReadOperator>(
             outputPorts.front(),
-            concrete.getOperatorTypeId(),
             concrete.getIOConfig(),
             concrete.getIOFormat(),
                 concrete.getOutputPorts().at(0)
@@ -123,7 +122,6 @@ int main(int argc, char** argv) {
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
             ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::sink::write::physical::WriteOperator>(
             inputPorts.front(),
-            concrete.getOperatorTypeId(),
             concrete.getIOConfig(),
             concrete.getIOFormat(),
                 concrete.getInputPorts().at(0)

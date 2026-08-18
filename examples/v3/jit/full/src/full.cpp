@@ -234,6 +234,11 @@ int main() {
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(
                         &sierra::odyplan::v3::core::runtime::rtComputeSegmentDestroyIfStarted),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtComputeSegmentDrain")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(
+                        &sierra::odyplan::v3::core::runtime::rtComputeSegmentDrain),
                     llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtTypeRegistryRetain")] = llvm::orc::ExecutorSymbolDef(

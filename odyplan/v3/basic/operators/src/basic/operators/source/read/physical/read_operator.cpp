@@ -2,7 +2,6 @@
 
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     ReadOperator::ReadOperator(core::physical::port::Port outputPort,
-                               const core::shared::identifiers::OperatorId lOpId,
                                nlohmann::json ioConfig,
                                const io::IOFormatType ioFormat,
                                core::logical::port::Port dataSchema,
@@ -10,7 +9,6 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                const std::optional<std::size_t> timestampFieldIndex,
                                const std::chrono::milliseconds rowDelay)
         : TypedSourceOperator(std::move(outputPort)),
-          mLogicalOperatorId(lOpId),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
           mTimestampFieldIndex(timestampFieldIndex),
@@ -122,7 +120,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                                true,
                                                llvm::GlobalValue::ExternalLinkage,
                                                strConstant,
-                                               "read_path" + std::to_string(mLogicalOperatorId));
+                                               "read_path" + std::to_string(getPId()));
 
         llvm::Value* pathPtr = llvm::ConstantExpr::getInBoundsGetElementPtr(
             gPath->getValueType(),
@@ -132,7 +130,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mState = stateRegistry.createHandle(
-            "read_source_" + std::to_string(mLogicalOperatorId),
+            "read_source_" + std::to_string(getPId()),
             "rtIOSourceCreate",
             {llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mIOFormat)), pathPtr},
             {i8Ty, ptrTy},

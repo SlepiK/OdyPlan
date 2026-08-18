@@ -17,9 +17,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(context);
 
         auto* typesGlobal = buildTypeIds(
-            module, context, mDataSchema, "count_window_types_" + std::to_string(getId()));
+            module, context, mDataSchema, "count_window_types_" + std::to_string(getPId()));
 
-        mState = stateRegistry.createHandle("count_window_" + std::to_string(getId()),
+        mState = stateRegistry.createHandle("count_window_" + std::to_string(getPId()),
                                             "rtCreateCountWindowBuffer",
                                             {llvm::ConstantInt::get(i64Ty, mConfig.size),
                                              llvm::ConstantInt::get(i64Ty, mConfig.slide),
@@ -101,7 +101,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* drainFn = llvm::Function::Create(
             llvm::FunctionType::get(voidTy, {ptrTy}, false),
             llvm::Function::InternalLinkage,
-            "ody_window_drain_" + std::to_string(getId()),
+            "ody_window_drain_" + std::to_string(getPId()),
             module);
 
         drainFn->getArg(0)->setName("windowHandle");
