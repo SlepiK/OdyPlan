@@ -6,10 +6,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.get().at(operatorId);
-        const auto edgeIt = outgoingEdges.get().find(operatorId);
+        const auto& chain = segments.get().at(operatorId);
+        const auto edgeIt = outgoingConnections.get().find(operatorId);
         static const std::vector<OperatorPortReferenceConnection> emptyEdges{};
-        const auto& outEdges = edgeIt != outgoingEdges.get().end() ? edgeIt->second : emptyEdges;
+        const auto& outEdges = edgeIt != outgoingConnections.get().end() ? edgeIt->second : emptyEdges;
 
         std::unordered_map<shared::identifiers::PortId,
                            std::vector<OperatorPortReferenceConnection>>
@@ -59,33 +59,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         return result;
     }
 
-    void PlanConstruction::spawnBlockingRoot(const OperatorId operatorId,
-                                             const std::string& suffix,
-                                             flow::IProducer* producer,
-                                             const segment::SegmentDataConsumers& next) const {
-        auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx), {}, false);
-        auto* fn =
-            llvm::Function::Create(fnType,
-                                   llvm::Function::ExternalLinkage,
-                                   "ody_root_blocking_" + std::to_string(operatorId) + "_" + suffix,
-                                   module);
-        auto* entryBB = llvm::BasicBlock::Create(*ctx, "basicEntry", fn);
-
-        segment::SegmentContext segmentContext(fn, entryBB, *ctx, *codegenTypeRegistry);
-        producer->produce(segmentContext, next);
-        segmentContext.builder.CreateRetVoid();
-
-        if (producer->isComputeBound()) {
-            computeRestartRoots->push_back(fn);
-        } else {
-            ioRestartRoots->push_back(fn);
-        }
-    }
-
     segment::SegmentDataConsumer
     PlanConstruction::buildEnter(const OperatorPortReferenceConnection& edge) {
         const auto id = edge.toOperatorPortReference.operatorId;
-        const auto& chain = chains.get().at(id);
+        const auto& chain = segments.get().at(id);
         const auto inputIndex = edge.toOperatorPortReference.portId;
 
         flow::IConsumer* entryOpr = chain.nodes.front().asConsumer;
@@ -105,7 +82,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             return it->second;
         }
 
-        const auto& chain = chains.get().at(operatorId);
+        const auto& chain = segments.get().at(operatorId);
 
         segment::SegmentDataConsumers rest;
 
@@ -137,10 +114,6 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             rest = wrapped;
         }
 
-        if (chain.nodes.front().isBreaker) {
-            spawnBlockingRoot(operatorId, "0", chain.nodes.front().asProducer, rest);
-        }
-
         afterEntryCache.emplace(operatorId, rest);
         return rest;
     }
@@ -160,11 +133,6 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             rest = buildExit(operatorId);
         } else {
             rest = {buildContinue(operatorId, chain, index + 1)};
-        }
-
-        if (node.isBreaker) {
-            spawnBlockingRoot(operatorId, std::to_string(index), node.asProducer, rest);
-            return noopConsumer;
         }
 
         flow::IConsumer* consumerNode = node.asConsumer;

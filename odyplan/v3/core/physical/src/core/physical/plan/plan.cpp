@@ -13,23 +13,23 @@ namespace sierra::odyplan::v3::core::physical::plan {
         mOperators.push_back(std::move(opr));
     }
 
-    void Plan::addChain(OperatorId logicalOperatorId, segment::Segment chain) {
-        if (chain.nodes.empty()) {
+    void Plan::addSegment(OperatorId logicalOperatorId, segment::Segment segment) {
+        if (segment.nodes.empty()) {
             throw std::invalid_argument("Plan::addChain: chain must not be empty!");
         }
 
-        const auto& front = chain.nodes.front();
+        const auto& front = segment.nodes.front();
         if (front.asProducer == nullptr && front.asConsumer == nullptr) {
             throw std::invalid_argument(
                 "Plan::addChain: first node in chain must have at least one valid entry point");
         }
         mOrder.push_back(logicalOperatorId);
-        mChains.emplace(logicalOperatorId, std::move(chain));
+        mSegments.emplace(logicalOperatorId, std::move(segment));
     }
 
-    void Plan::addOutgoingEdge(OperatorId logicalOperatorId,
-                               std::vector<OperatorPortReferenceConnection> edges) {
-        mOutgoingEdges.emplace(logicalOperatorId, std::move(edges));
+    void Plan::addOutgoingConnection(OperatorId logicalOperatorId,
+                               std::vector<OperatorPortReferenceConnection> connections) {
+        mOutgoingConnections.emplace(logicalOperatorId, std::move(connections));
     }
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
@@ -39,12 +39,10 @@ namespace sierra::odyplan::v3::core::physical::plan {
         }
 
         std::vector<llvm::Function*> functions;
-        std::vector<llvm::Function*> ioFunctionsRestart;
-        std::vector<llvm::Function*> computeFunctionsRestart;
 
         std::unordered_map<OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<OperatorId, std::set<std::size_t>> incomingInputIndices;
-        for (const auto& [fromOperatorId, edgeLists] : mOutgoingEdges) {
+        for (const auto& [fromOperatorId, edgeLists] : mOutgoingConnections) {
             for (const auto& edge : edgeLists) {
                 ++inDegreeCache[edge.toOperatorPortReference.operatorId];
                 incomingInputIndices[edge.toOperatorPortReference.operatorId].insert(
@@ -55,19 +53,17 @@ namespace sierra::odyplan::v3::core::physical::plan {
         segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&,
                                                              const data::DataPackage&) {};
 
-        detail::PlanConstruction detailBuilder(mChains,
-                                       mOutgoingEdges,
+        detail::PlanConstruction detailBuilder(mSegments,
+                                       mOutgoingConnections,
                                        inDegreeCache,
                                        noopConsumer,
                                        &module,
                                        &ctx,
                                        &functions,
                                        mCodegenTypeRegistry,
-                                       &ioFunctionsRestart,
-                                       &computeFunctionsRestart,
                                        &stateRegistry);
 
-        for (const auto& [id, chain] : mChains) {
+        for (const auto& [id, chain] : mSegments) {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
                 auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
                 auto* fn = llvm::Function::Create(fnType,
@@ -92,7 +88,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
         segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mCodegenTypeRegistry);
 
         for (const auto id : mOrder) {
-            const auto& chain = mChains.at(id);
+            const auto& chain = mSegments.at(id);
             flow::IConsumer* entryOpr = chain.nodes.front().asConsumer;
             if (entryOpr == nullptr) {
                 continue;
@@ -112,12 +108,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         stateRegistry.finish();
 
-        std::vector<llvm::Function*> ioRoots = functions;
-        for (auto* fn : ioFunctionsRestart) {
-            ioRoots.push_back(fn);
-        }
-
-        codegenMain(module, ctx, ioRoots, computeFunctionsRestart, endFn);
+        codegenMain(module, ctx, functions, endFn);
     }
 
     Plan::OperatorId Plan::getSize() const {
@@ -126,8 +117,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
     void Plan::codegenMain(llvm::Module& module,
                            llvm::LLVMContext& ctx,
-                           const std::vector<llvm::Function*>& ioRoots,
-                           const std::vector<llvm::Function*>& computeRoots,
+                           const std::vector<llvm::Function*>& functions,
                            llvm::Function* endPhase) {
         auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* mainFn = llvm::Function::Create(
@@ -144,31 +134,16 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                                     llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         auto ioJoinFn = module.getOrInsertFunction(
             "rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
-        auto computeSpawnFn = module.getOrInsertFunction(
-            "rtComputeTaskSpawn", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        auto computeJoinFn = module.getOrInsertFunction(
-            "rtComputeTaskJoin",
-            llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
 
         std::vector<llvm::Value*> ioHandles;
-        std::vector<llvm::Value*> computeHandles;
 
-        ioHandles.reserve(ioRoots.size());
-        for (auto* root : ioRoots) {
+        ioHandles.reserve(functions.size());
+        for (auto* root : functions) {
             ioHandles.push_back(builder.CreateCall(ioSpawnFn, {root}));
-        }
-
-        computeHandles.reserve(computeRoots.size());
-        for (auto* root : computeRoots) {
-            computeHandles.push_back(builder.CreateCall(computeSpawnFn, {root}));
         }
 
         for (auto* handle : ioHandles) {
             builder.CreateCall(ioJoinFn, {handle});
-        }
-
-        for (auto* handle : computeHandles) {
-            builder.CreateCall(computeJoinFn, {handle});
         }
 
         if (endPhase != nullptr) {

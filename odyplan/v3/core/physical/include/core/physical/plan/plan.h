@@ -26,10 +26,10 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         void addOperator(std::unique_ptr<IOperator> opr);
 
-        void addChain(OperatorId logicalOperatorId, segment::Segment chain);
+        void addSegment(OperatorId logicalOperatorId, segment::Segment segment);
 
-        void addOutgoingEdge(OperatorId logicalOperatorId,
-                             std::vector<OperatorPortReferenceConnection> edges);
+        void addOutgoingConnection(OperatorId logicalOperatorId,
+                             std::vector<OperatorPortReferenceConnection> connections);
 
         void codegen(llvm::Module& module, llvm::LLVMContext& ctx) const;
 
@@ -37,15 +37,14 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
     private:
         std::vector<std::unique_ptr<IOperator>> mOperators;
-        std::unordered_map<OperatorId, segment::Segment> mChains;
-        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingEdges;
+        std::unordered_map<OperatorId, segment::Segment> mSegments;
+        std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>> mOutgoingConnections;
         std::vector<OperatorId> mOrder;
         const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 
         static void codegenMain(llvm::Module& module,
                                 llvm::LLVMContext& ctx,
-                                const std::vector<llvm::Function*>& ioRoots,
-                                const std::vector<llvm::Function*>& computeRoots,
+                                const std::vector<llvm::Function*>& functions,
                                 llvm::Function* endPhase);
     };
 }  // namespace sierra::odyplan::v3::core::physical::plan

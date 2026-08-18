@@ -24,7 +24,6 @@ namespace sierra::odyplan::v3::core::physical::storage {
         llvm::LLVMContext* mCtx;
         const types::CodegenTypeRegistry* mCodegenTypeRegistry;
 
-        std::unordered_map<ValueTypeId, llvm::AllocaInst*> mSlots;
         std::unordered_map<std::string, llvm::AllocaInst*> mNamedSlots;
 
         [[nodiscard]] llvm::AllocaInst* createAlloca(llvm::Type* llvmType, const std::string& name) const;
