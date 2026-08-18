@@ -116,7 +116,6 @@ int main() {
                 ot.operators.push_back(
                     std::make_unique<sierra::odyplan::v3::basic::operators::source::read::physical::
                         ReadOperator>(outputPorts.front(),
-                                      concrete.getOperatorTypeId(),
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
                                       concrete.getOutputPorts().at(0)));
@@ -138,7 +137,6 @@ int main() {
                 ot.operators.push_back(
                     std::make_unique<sierra::odyplan::v3::basic::operators::sink::write::physical::
                         WriteOperator>(inputPorts.front(),
-                                       concrete.getOperatorTypeId(),
                                        concrete.getIOConfig(),
                                        concrete.getIOFormat(),
                                        concrete.getInputPorts().at(0)));
@@ -286,6 +284,11 @@ int main() {
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(
                         &sierra::odyplan::v3::core::runtime::rtComputeSegmentDestroyIfStarted),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtComputeSegmentDrain")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(
+                        &sierra::odyplan::v3::core::runtime::rtComputeSegmentDrain),
                     llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtTypeRegistryRetain")] = llvm::orc::ExecutorSymbolDef(

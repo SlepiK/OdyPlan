@@ -108,7 +108,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         stateRegistry.finish();
 
-        codegenMain(module, ctx, functions, endFn);
+        codegenMain(module, ctx, functions, detailBuilder.getComputeSegmentSlots(), endFn);
     }
 
     Plan::OperatorId Plan::getSize() const {
@@ -118,8 +118,13 @@ namespace sierra::odyplan::v3::core::physical::plan {
     void Plan::codegenMain(llvm::Module& module,
                            llvm::LLVMContext& ctx,
                            const std::vector<llvm::Function*>& functions,
+                           const std::vector<llvm::GlobalVariable*>& computeSegmentSlots,
                            llvm::Function* endPhase) {
-        auto* functionType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* voidTy = llvm::Type::getVoidTy(ctx);
+
+        auto* functionType = llvm::FunctionType::get(voidTy, {}, false);
         auto* mainFn = llvm::Function::Create(
             functionType, llvm::Function::ExternalLinkage, "ody_main", &module);
 
@@ -127,13 +132,11 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         llvm::IRBuilder builder(basicBlock);
 
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn",
                                                     llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         auto ioJoinFn = module.getOrInsertFunction(
-            "rtIOTaskJoin", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+            "rtIOTaskJoin", llvm::FunctionType::get(voidTy, {i64Ty}, false));
 
         std::vector<llvm::Value*> ioHandles;
 
@@ -146,12 +149,22 @@ namespace sierra::odyplan::v3::core::physical::plan {
             builder.CreateCall(ioJoinFn, {handle});
         }
 
+        if (!computeSegmentSlots.empty()) {
+            const auto drainFn = module.getOrInsertFunction(
+                "rtComputeSegmentDrain", llvm::FunctionType::get(voidTy, {ptrTy}, false));
+
+            for (auto* slot : computeSegmentSlots) {
+                llvm::Value* loaded = builder.CreateLoad(ptrTy, slot);
+                builder.CreateCall(drainFn, {loaded});
+            }
+        }
+
         if (endPhase != nullptr) {
             builder.CreateCall(endPhase);
         }
 
         const auto endFn = module.getOrInsertFunction(
-            "rtEnd", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false));
+            "rtEnd", llvm::FunctionType::get(voidTy, {}, false));
         builder.CreateCall(endFn, {});
 
         builder.CreateRetVoid();

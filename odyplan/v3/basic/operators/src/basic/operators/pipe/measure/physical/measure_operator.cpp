@@ -1,5 +1,7 @@
 #include <basic/operators/pipe/measure/physical/measure_operator.h>
 
+#include "basic/operators/pipe/measure/runtime/details/measure_state.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
     MeasureOperator::MeasureOperator(core::physical::port::Port inputPort,
                                      core::physical::port::Port outputPort,
@@ -18,7 +20,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);
-        auto tickFn = module->getOrInsertFunction("rtMeasureTick",
+
+        const auto tickFn = module->getOrInsertFunction("rtMeasureTick",
                                                   llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(tickFn, {state});
 
@@ -58,7 +61,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
             std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
                                       llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
 
-        mStateHandle = stateRegistry.createHandle("measure_" + std::to_string(getId()),
+        mStateHandle = stateRegistry.createHandle("measure_" + std::to_string(getPId()),
                                                   "rtCreateMeasure",
                                                   {labelGlobal},
                                                   {ptrTy},

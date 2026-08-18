@@ -160,6 +160,8 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         const auto handle = stateRegistry->createHandle(key, "rtComputeSegmentNullInit", {}, {}, "rtComputeSegmentDestroyIfStarted");
 
+        mComputeSegmentSlots.push_back(handle.var);
+
         computeQueueCache.emplace(key, handle);
         return handle;
     }
@@ -186,6 +188,8 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         const auto queueState = stateRegistry->createHandle(
             "queue_" + uniqueKey, "rtComputeSegmentNullInit", {}, {},
             "rtComputeSegmentDestroyIfStarted");
+
+        mComputeSegmentSlots.push_back(queueState.var);
 
         auto *continuationFn = llvm::Function::Create(
             llvm::FunctionType::get(voidTy, {ptrTy}, false),
@@ -274,5 +278,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 llvm::FunctionType::get(voidTyLocal, {ptrTyLocal, ptrTyLocal}, false));
             sCtx.builder.CreateCall(enqueueFn, {segmentHandle, snapshotPtrLocal});
         };
+    }
+
+
+    const std::vector<llvm::GlobalVariable*>& PlanConstruction::getComputeSegmentSlots() const {
+        return mComputeSegmentSlots;
     }
 }  // namespace sierra::odyplan::v3::core::physical::plan::detail

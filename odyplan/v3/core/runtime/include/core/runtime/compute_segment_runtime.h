@@ -14,6 +14,8 @@ namespace sierra::odyplan::v3::core::runtime {
     void rtComputeSegmentEnqueue(void *segmentHandle, void *payload);
 
     void rtComputeSegmentDestroyIfStarted(void *segmentHandle);
+
+    void rtComputeSegmentDrain(void *segmentHandle);
     }
 }
 

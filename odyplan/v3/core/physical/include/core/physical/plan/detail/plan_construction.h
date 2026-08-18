@@ -57,6 +57,8 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                           const port::Port& portSchema,
                           const segment::SegmentDataConsumer& inner);
 
+        const std::vector<llvm::GlobalVariable*>& getComputeSegmentSlots() const;
+
     private:
         std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segments;
         std::reference_wrapper<
@@ -69,6 +71,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         std::vector<llvm::Function*>* functions;
         const types::CodegenTypeRegistry* codegenTypeRegistry;
         state::StateRegistry* stateRegistry;
+        std::vector<llvm::GlobalVariable*> mComputeSegmentSlots;
 
         std::unordered_map<std::string, state::StateHandle> computeQueueCache;
 

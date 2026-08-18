@@ -55,9 +55,7 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto destroyFn = mModule->getOrInsertFunction(
             destroyFnName, llvm::FunctionType::get(voidTy, {ptrTy}, false));
 
-        llvm::Value* loaded = mShutdownBuilder->CreateLoad(ptrTy, globalVar);
-
-        mShutdownBuilder->CreateCall(destroyFn, {loaded});
+        mPendingDestroys.push_back({destroyFn, globalVar});
 
         return StateHandle{globalVar};
     }
@@ -68,6 +66,14 @@ namespace sierra::odyplan::v3::core::physical::state {
 
     void StateRegistry::finish() {
         mInitBuilder->CreateRetVoid();
+
+        auto* ptrTy = llvm::PointerType::getUnqual(*mContext);
+
+        for (auto it = mPendingDestroys.rbegin(); it != mPendingDestroys.rend(); ++it) {
+            llvm::Value* loaded = mShutdownBuilder->CreateLoad(ptrTy, it->statePtr);
+            mShutdownBuilder->CreateCall(it->destroyFn, {loaded});
+        }
+
         mShutdownBuilder->CreateRetVoid();
     }
 }  // namespace sierra::odyplan::v3::core::physical::state

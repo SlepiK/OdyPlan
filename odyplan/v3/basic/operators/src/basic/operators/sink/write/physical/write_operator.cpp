@@ -4,12 +4,10 @@
 
 namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     WriteOperator::WriteOperator(const core::physical::port::Port& inputPort,
-                                 const core::shared::identifiers::OperatorId lOpId,
                                  nlohmann::json ioConfig,
                                  const io::IOFormatType ioFormat,
                                  core::logical::port::Port dataSchema)
         : TypedSinkOperator(inputPort),
-          mLogicalOperatorId(lOpId),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
           mIOConfig(std::move(ioConfig)) {
@@ -63,7 +61,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
                                                true,
                                                llvm::GlobalValue::ExternalLinkage,
                                                strConstant,
-                                               "write_path" + std::to_string(mLogicalOperatorId));
+                                               "write_path" + std::to_string(getPId()));
 
         llvm::Value* pathPtr = llvm::ConstantExpr::getInBoundsGetElementPtr(
             gPath->getValueType(),
@@ -73,7 +71,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
         // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mState = stateRegistry.createHandle(
-            "write_sink_" + std::to_string(mLogicalOperatorId),
+            "write_sink_" + std::to_string(getPId()),
             "rtIOSinkCreate",
             {llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mIOFormat)), pathPtr},
             {i8Ty, ptrTy},
