@@ -46,9 +46,20 @@ namespace sierra::odyplan::v3::core::runtime {
             }
             auto* segment = static_cast<task::ComputeSegment*>(segmentHandle);
             segment->queue.close();
-            segment->worker.join();
+            if (segment->worker.joinable()) {
+                segment->worker.join();
+            }
             // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
             delete segment;
+        }
+
+        void rtComputeSegmentDrain(void *segmentHandle) {
+            if (segmentHandle == nullptr) {
+                return;
+            }
+            auto* segment = static_cast<task::ComputeSegment*>(segmentHandle);
+            segment->queue.close();
+            segment->worker.join();
         }
     }
 }

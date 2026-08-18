@@ -6,7 +6,7 @@
 #include <mutex>
 #include <string>
 
-namespace sierra::odyplan::v2::core::runtime::measure::details {
+namespace sierra::odyplan::v3::core::runtime::measure::details {
     struct MeasureState {
         std::string label;
         std::atomic_uint64_t counter{0};

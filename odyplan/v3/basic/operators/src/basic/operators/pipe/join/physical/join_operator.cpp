@@ -176,15 +176,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(context);
 
         auto* leftSideTypesGlobal = buildTypeIds(
-            module, context, mLeftSchema, "join_left_side_types_" + std::to_string(getId()));
+            module, context, mLeftSchema, "join_left_side_types_" + std::to_string(getPId()));
         auto* rightSideTypesGlobal = buildTypeIds(
-            module, context, mRightSchema, "join_right_side_types_" + std::to_string(getId()));
+            module, context, mRightSchema, "join_right_side_types_" + std::to_string(getPId()));
 
         const auto equiKey = details::tryGetEquiKey(mPredicate, mLeftSchema, mRightSchema);
         const bool hasEquiKey = equiKey.has_value();
 
         mState = stateRegistry.createHandle(
-            "join_" + std::to_string(getId()),
+            "join_" + std::to_string(getPId()),
             "rtJoinCreate",
             {leftSideTypesGlobal,
              llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),

@@ -10,10 +10,10 @@
 
 namespace sierra::odyplan::v3::basic::io::detail {
     template<typename JsonType>
-    inline void writeToJson(JsonType target,
-        const char* key,
-        const core::shared::types::ValueTypeId typeId,
-        const void* rawData)
+    void writeToJson(JsonType& target,
+                     const char* key,
+                     const core::shared::types::ValueTypeId typeId,
+                     const void* rawData)
     {
         using T = core::shared::types::BuiltinValueType;
 
