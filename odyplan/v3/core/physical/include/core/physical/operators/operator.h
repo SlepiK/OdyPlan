@@ -27,8 +27,6 @@ namespace sierra::odyplan::v3::core::physical::operators {
 
         [[nodiscard]] virtual bool hasOutputPorts() const = 0;
 
-        [[nodiscard]] virtual bool isSegmentBreaker() const;
-
         [[nodiscard]] const port::Ports& getInputPorts() const;
 
         [[nodiscard]] const port::Ports& getOutputPorts() const;

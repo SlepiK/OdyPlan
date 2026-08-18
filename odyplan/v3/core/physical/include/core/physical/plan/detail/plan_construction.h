@@ -22,53 +22,27 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         using IOperator = operators::IOperator;
 
         PlanConstruction(
-        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> chainsIn,
+        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segmentsIn,
         std::reference_wrapper<const std::unordered_map<
-            OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingEdgesIn,
+            OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingConnectionsIn,
         std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegreeIn,
         segment::SegmentDataConsumer noopConsumerIn,
         llvm::Module* moduleIn,
         llvm::LLVMContext* ctxIn,
         std::vector<llvm::Function*>* functionsIn,
         const types::CodegenTypeRegistry* codegenTypeRegistryIn,
-        std::vector<llvm::Function*>* ioRestartRootsIn,
-        std::vector<llvm::Function*>* computeRestartRootsIn,
         state::StateRegistry* stateRegistryIn)
-        : chains(chainsIn),
-          outgoingEdges(outgoingEdgesIn),
+        : segments(segmentsIn),
+          outgoingConnections(outgoingConnectionsIn),
           inDegree(inDegreeIn),
           noopConsumer(std::move(noopConsumerIn)),
           module(moduleIn),
           ctx(ctxIn),
           functions(functionsIn),
           codegenTypeRegistry(codegenTypeRegistryIn),
-          ioRestartRoots(ioRestartRootsIn),
-          computeRestartRoots(computeRestartRootsIn),
           stateRegistry(stateRegistryIn) {}
 
-        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> chains;
-        std::reference_wrapper<
-            const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>>
-            outgoingEdges;
-        std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegree;
-        segment::SegmentDataConsumer noopConsumer;
-        llvm::Module* module;
-        llvm::LLVMContext* ctx;
-        std::vector<llvm::Function*>* functions;
-        const types::CodegenTypeRegistry* codegenTypeRegistry;
-
-        std::vector<llvm::Function*>* ioRestartRoots;
-        std::vector<llvm::Function*>* computeRestartRoots;
-        state::StateRegistry* stateRegistry;
-
-        std::unordered_map<std::string, state::StateHandle> computeQueueCache;
-
         segment::SegmentDataConsumers buildExit(OperatorId operatorId);
-
-        void spawnBlockingRoot(OperatorId operatorId,
-                               const std::string& suffix,
-                               flow::IProducer* producer,
-                               const segment::SegmentDataConsumers& next) const;
 
         segment::SegmentDataConsumer buildEnter(const OperatorPortReferenceConnection& edge);
 
@@ -84,6 +58,20 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                           const segment::SegmentDataConsumer& inner);
 
     private:
+        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segments;
+        std::reference_wrapper<
+            const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>>
+            outgoingConnections;
+        std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegree;
+        segment::SegmentDataConsumer noopConsumer;
+        llvm::Module* module;
+        llvm::LLVMContext* ctx;
+        std::vector<llvm::Function*>* functions;
+        const types::CodegenTypeRegistry* codegenTypeRegistry;
+        state::StateRegistry* stateRegistry;
+
+        std::unordered_map<std::string, state::StateHandle> computeQueueCache;
+
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> exitCache;
         std::unordered_map<OperatorId, segment::SegmentDataConsumers> afterEntryCache;
 

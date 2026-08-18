@@ -38,7 +38,7 @@ namespace sierra::odyplan::v3::core::builder {
                 opr->setId(lOprId);
             }
 
-            const auto inEdgeCount = lPlan.getInEdgesFromOperator(lOprId).size();
+            const auto inEdgeCount = lPlan.getInConnectionsFromOperator(lOprId).size();
             if (inEdgeCount > 1 && oprs.size() > 1) {
                 throw std::logic_error(
                     "PlanBuilder::build: a logical operator with multiple input can currently only "
@@ -66,22 +66,11 @@ namespace sierra::odyplan::v3::core::builder {
                         break;
                     }
                     case physical::operators::OperatorRole::PIPE: {
-                        if (oprs.at(i)->isSegmentBreaker()) {
-                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                            auto* blockingPipe =
-                                static_cast<physical::operators::pipe::TypedBlockingPipeOperator*>(
-                                    oprs.at(i).get());
-                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                            node.asConsumer = blockingPipe;
-                            node.asProducer = blockingPipe;
-                            node.isBreaker = true;
-                        } else {
-                            // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                            node.asConsumer =
-                                static_cast<physical::operators::pipe::TypedPipeOperator*>(
-                                    oprs.at(i).get());
-                            // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                        }
+                        // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
+                        node.asConsumer =
+                            static_cast<physical::operators::pipe::TypedPipeOperator*>(
+                            oprs.at(i).get());
+                        // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
                         break;
                     }
                     case physical::operators::OperatorRole::SINK: {
@@ -101,19 +90,19 @@ namespace sierra::odyplan::v3::core::builder {
                 chain.nodes.push_back(node);
             }
 
-            pPlan.addChain(lOprId, chain);
+            pPlan.addSegment(lOprId, chain);
 
             std::vector<shared::operators::OperatorPortReferenceConnection> outEdges;
-            for (const auto& edge : lPlan.getOutEdgesFromOperator(lOprId)) {
+            for (const auto& edge : lPlan.getOutConnectionsFromOperator(lOprId)) {
                 outEdges.push_back(shared::operators::OperatorPortReferenceConnection{
                     .fromOperatorPortReference = edge.fromOperatorPortReference,
                     .toOperatorPortReference = edge.toOperatorPortReference});
             }
 
-            pPlan.addOutgoingEdge(lOprId, std::move(outEdges));
+            pPlan.addOutgoingConnection(lOprId, std::move(outEdges));
 
             for (auto& opr : oprs) {
-                auto pid = pPlan.getSize();
+                opr->setPId(pPlan.getSize());
                 pPlan.addOperator(std::move(opr));
             }
         }

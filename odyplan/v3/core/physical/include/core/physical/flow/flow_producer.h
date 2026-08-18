@@ -15,8 +15,6 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IProducer& operator=(IProducer&&) = delete;
         virtual void produce(segment::SegmentContext& segmentCtx,
                              const segment::SegmentDataConsumers& consumers) = 0;
-
-        [[nodiscard]] virtual bool isComputeBound() const;
     };
 }  // namespace sierra::odyplan::v3::core::physical::flow
 
