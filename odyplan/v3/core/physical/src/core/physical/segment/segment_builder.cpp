@@ -8,7 +8,7 @@ namespace sierra::odyplan::v3::core::physical::segment {
 
         auto* fn = llvm::Function::Create(
             llvm::FunctionType::get(voidTy, {ptrTy}, false),
-            llvm::Function::InternalLinkage, name, &module);
+            llvm::Function::PrivateLinkage, name, &module);
         fn->getArg(0)->setName("arg");
 
         auto* entryBB = llvm::BasicBlock::Create(ctx, "entry", fn);

@@ -51,7 +51,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
             module,
             llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
             true,
-            llvm::GlobalValue::InternalLinkage,
+            llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantDataArray::getString(context, mLabel, true));
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)

@@ -118,7 +118,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         auto* gPath = new llvm::GlobalVariable(module,
                                                strConstant->getType(),
                                                true,
-                                               llvm::GlobalValue::ExternalLinkage,
+                                               llvm::GlobalValue::PrivateLinkage,
                                                strConstant,
                                                "read_path" + std::to_string(getPId()));
 
