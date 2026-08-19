@@ -237,7 +237,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* arrTy = llvm::ArrayType::get(i8Ty, values.size());
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         return new llvm::GlobalVariable(module, arrTy, true,
-                                        llvm::GlobalValue::InternalLinkage,
+                                        llvm::GlobalValue::PrivateLinkage,
                                         llvm::ConstantArray::get(arrTy, values),name);
     }
 

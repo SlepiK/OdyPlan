@@ -193,7 +193,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         auto *continuationFn = llvm::Function::Create(
             llvm::FunctionType::get(voidTy, {ptrTy}, false),
-            llvm::Function::InternalLinkage, "ody_continuation_" + uniqueKey, module);
+            llvm::Function::PrivateLinkage, "ody_continuation_" + uniqueKey, module);
         continuationFn->getArg(0)->setName("snapshot");
 
         auto *entryBB = llvm::BasicBlock::Create(*ctx, "continuationEntry", continuationFn);
