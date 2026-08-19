@@ -14,7 +14,7 @@ namespace sierra::odyplan::v3::core::physical::state {
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
 
         mRuntimeTypeRegistryGlobal = new llvm::GlobalVariable(
-            *module, ptrTy, false, llvm::GlobalValue::InternalLinkage,
+            *module, ptrTy, false, llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantPointerNull::get(ptrTy), "ody_runtime_type_registry");
         mInitBuilder->CreateStore(mInitFn->getArg(0), mRuntimeTypeRegistryGlobal);
 

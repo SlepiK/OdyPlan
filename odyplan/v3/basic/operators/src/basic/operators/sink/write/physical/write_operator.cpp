@@ -59,7 +59,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
         auto* gPath = new llvm::GlobalVariable(module,
                                                strConstant->getType(),
                                                true,
-                                               llvm::GlobalValue::ExternalLinkage,
+                                               llvm::GlobalValue::PrivateLinkage,
                                                strConstant,
                                                "write_path" + std::to_string(getPId()));
 

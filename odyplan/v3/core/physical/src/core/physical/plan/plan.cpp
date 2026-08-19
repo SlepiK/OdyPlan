@@ -67,7 +67,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
             if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
                 auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
                 auto* fn = llvm::Function::Create(fnType,
-                                                  llvm::Function::ExternalLinkage,
+                                                  llvm::Function::PrivateLinkage,
                                                   "ody_rsource_" + std::to_string(id),
                                                   &module);
                 auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
@@ -82,7 +82,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
         auto* endFnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
         auto* endFn = llvm::Function::Create(
-            endFnType, llvm::Function::ExternalLinkage, "ody_end_phase", &module);
+            endFnType, llvm::Function::PrivateLinkage, "ody_end_phase", &module);
         auto* endEntryBB = llvm::BasicBlock::Create(ctx, "basicEntry", endFn);
 
         segment::SegmentContext segmentContext(endFn, endEntryBB, ctx, *mCodegenTypeRegistry);
