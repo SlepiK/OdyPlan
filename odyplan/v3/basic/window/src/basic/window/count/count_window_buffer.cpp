@@ -88,6 +88,13 @@ namespace sierra::odyplan::v3::basic::window::count {
             mTimestamps.pop_front();
             ++mBaseIndex;
         }
+
+        if (mBaseIndex > 0) {
+            const auto shift = mBaseIndex;
+            mBaseIndex = 0;
+            mNextWindowStart -= shift;
+            mTotalPushed -= shift;
+        }
     }
 
     CountWindowBuffer::Timestamp CountWindowBuffer::getWindowStart(std::size_t windowIndex) const {
