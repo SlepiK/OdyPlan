@@ -137,7 +137,18 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
                     llvm::Type::getVoidTy(ctx), {llvm::PointerType::getUnqual(ctx)}, false);
                 llvm::FunctionCallee const fn =
                     module->getOrInsertFunction("rtOdyPrintString", fnType);
-                llvm::Value* strPtr = builder.CreateExtractValue(value, 0);
+                llvm::Value* strPtr = nullptr;
+                const llvm::Type* valueType = value->getType();
+                if (valueType->isPointerTy()) {
+                    strPtr = value;
+                } else if (valueType->isStructTy()) {
+                    const auto* structType = llvm::cast<llvm::StructType>(valueType);
+                    if (structType->getNumElements() > 0) {
+                        strPtr = builder.CreateExtractValue(value, 0);
+                    }
+                } else if (valueType->isArrayTy()) {
+                    strPtr = builder.CreateExtractValue(value, 0);
+                }
                 builder.CreateCall(fn, {strPtr});
                 break;
             }
