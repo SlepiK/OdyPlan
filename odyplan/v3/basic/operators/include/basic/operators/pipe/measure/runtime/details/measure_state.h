@@ -14,7 +14,10 @@ namespace sierra::odyplan::v3::core::runtime::measure::details {
         std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
         std::chrono::milliseconds accuPureMs{0};
         std::chrono::steady_clock::duration accuPureMsCarry{std::chrono::steady_clock::duration::zero()};
+        std::chrono::milliseconds lastPrintAccuPureMs{0};
+        std::chrono::steady_clock::duration lastPrintAccuPureMsCarry{std::chrono::steady_clock::duration::zero()};
         std::atomic_flag printLock = ATOMIC_FLAG_INIT;
+        std::atomic_flag accLock = ATOMIC_FLAG_INIT;
         std::once_flag finalReportFlag;
 
     };

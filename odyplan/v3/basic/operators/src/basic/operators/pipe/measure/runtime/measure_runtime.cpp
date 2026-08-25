@@ -21,6 +21,27 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
                 measureState);
         const auto n = state->counter.fetch_add(1, std::memory_order_relaxed) + 1;
 
+        std::chrono::milliseconds snapshotMs{};
+        std::chrono::steady_clock::duration snapshotCarry{};
+
+        {
+            while (state->accLock.test_and_set(std::memory_order_acquire)) {
+            }
+
+            const auto now = std::chrono::steady_clock::now();
+            const auto elapsed = now - state->last;
+            state->accuPureMsCarry += elapsed;
+            const auto wholeMs = std::chrono::duration_cast<std::chrono::milliseconds>(state->accuPureMsCarry);
+            state->accuPureMs += wholeMs;
+            state->accuPureMsCarry -= wholeMs;
+            state->last = now;
+
+            snapshotMs = state->accuPureMs;
+            snapshotCarry = state->accuPureMsCarry;
+
+            state->accLock.clear(std::memory_order_release);
+        }
+
         if (n % MEASUREMENT_AFTER_LINES_REPORT != 0) {
             return;
         }
@@ -29,28 +50,29 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
             return;
         }
 
-        const auto now = std::chrono::steady_clock::now();
-        const auto elapsed = now - state->last;
+        const double currentPureElapsedMs = static_cast<double>(snapshotMs.count()) +
+            std::chrono::duration<double, std::milli>(snapshotCarry).count();
 
-        state->accuPureMsCarry += elapsed;
+        const double currentLastPrintElapsedMs =
+            static_cast<double>(state->lastPrintAccuPureMs.count()) +
+            std::chrono::duration<double, std::milli>(state->lastPrintAccuPureMsCarry).count();
 
-        const auto fullMs = std::chrono::duration_cast<std::chrono::milliseconds>(state->accuPureMsCarry);
-        state->accuPureMs += fullMs;
-        state->accuPureMsCarry -= fullMs;
-
-        const auto elapsedMs = std::chrono::duration<double, std::milli>(elapsed).count();
+        const double printWindowMs = currentPureElapsedMs - currentLastPrintElapsedMs;
 
         std::println(stdout,
-                         "[{}] {} lines, {:.3f} lines/ms, {:.3f} ms",
+                         "[{}] {} lines, {:.3f} lines/ms (window: {:.3f} ms), {:.3f} lines/ms (total: {:.3f} ms)",
                          state->label,
                          static_cast<unsigned long long>(n),
-                         elapsedMs > 0.0
-                             ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / elapsedMs)
-                             : 0.0,
-                             elapsedMs);
+                         printWindowMs > 0.0
+                            ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / printWindowMs)
+                            : 0.0,
+                         printWindowMs,
+                         currentPureElapsedMs > 0.0 ? (static_cast<double>(n) / currentPureElapsedMs) : 0.0,
+                             currentPureElapsedMs);
         std::fflush(stdout);
 
-        state->last = std::chrono::steady_clock::now();
+        state->lastPrintAccuPureMs = snapshotMs;
+        state->lastPrintAccuPureMsCarry = snapshotCarry;
 
         state->printLock.clear(std::memory_order_release);
     }
@@ -61,7 +83,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
                 measureState);
         std::call_once(state->finalReportFlag, [state]() {
             const auto total = state->counter.load(std::memory_order_relaxed);
+
+            while (state->accLock.test_and_set(std::memory_order_acquire)) {
+            }
+
             const auto purePrintElapsedMs = static_cast<double>(state->accuPureMs.count()) + std::chrono::duration<double, std::milli>(state->accuPureMsCarry).count();
+
+            state->accLock.clear(std::memory_order_release);
 
             while (state->printLock.test_and_set(std::memory_order_acquire)) {
             }
