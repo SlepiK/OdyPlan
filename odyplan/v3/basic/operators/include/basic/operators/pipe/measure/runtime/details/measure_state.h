@@ -11,8 +11,12 @@ namespace sierra::odyplan::v3::core::runtime::measure::details {
         std::string label;
         std::atomic_uint64_t counter{0};
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::mutex printMutex;
+        std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
+        std::chrono::milliseconds accuPureMs{0};
+        std::chrono::steady_clock::duration accuPureMsCarry{std::chrono::steady_clock::duration::zero()};
+        std::atomic_flag printLock = ATOMIC_FLAG_INIT;
+        std::once_flag finalReportFlag;
+
     };
 }  // namespace sierra::odyplan::v2::core::runtime::measure::details
 

@@ -21,38 +21,60 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
                 measureState);
         const auto n = state->counter.fetch_add(1, std::memory_order_relaxed) + 1;
 
-        if (n % MEASUREMENT_AFTER_LINES_REPORT == 0) {
-            const auto now = std::chrono::steady_clock::now();
-            const std::scoped_lock lock(state->printMutex);
-            const auto elapsed = std::chrono::duration<double>(now - state->start).count();
-            std::println(stdout,
-                         "[{}] {} lines, {:.2f} lines/sec (win)",
+        if (n % MEASUREMENT_AFTER_LINES_REPORT != 0) {
+            return;
+        }
+
+        if (state->printLock.test_and_set(std::memory_order_acquire)) {
+            return;
+        }
+
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed = now - state->last;
+
+        state->accuPureMsCarry += elapsed;
+
+        const auto fullMs = std::chrono::duration_cast<std::chrono::milliseconds>(state->accuPureMsCarry);
+        state->accuPureMs += fullMs;
+        state->accuPureMsCarry -= fullMs;
+
+        const auto elapsedMs = std::chrono::duration<double, std::milli>(elapsed).count();
+
+        std::println(stdout,
+                         "[{}] {} lines, {:.3f} lines/ms, {:.3f} ms",
                          state->label,
                          static_cast<unsigned long long>(n),
-                         elapsed > 0.0
-                             ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / elapsed)
-                             : 0.0);
-            std::fflush(stdout);
-            state->start = now;
-        }
+                         elapsedMs > 0.0
+                             ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / elapsedMs)
+                             : 0.0,
+                             elapsedMs);
+        std::fflush(stdout);
+
+        state->last = std::chrono::steady_clock::now();
+
+        state->printLock.clear(std::memory_order_release);
     }
 
     void rtMeasureFinalReport(void* measureState) {
         auto* state =
             static_cast<sierra::odyplan::v3::core::runtime::measure::details::MeasureState*>(
                 measureState);
-        const auto total = state->counter.load(std::memory_order_relaxed);
-        const auto elapsed =
-            std::chrono::duration<double>(std::chrono::steady_clock::now() - state->start).count();
+        std::call_once(state->finalReportFlag, [state]() {
+            const auto total = state->counter.load(std::memory_order_relaxed);
+            const auto purePrintElapsedMs = static_cast<double>(state->accuPureMs.count()) + std::chrono::duration<double, std::milli>(state->accuPureMsCarry).count();
 
-        const std::scoped_lock lock(state->printMutex);
-        std::println(stdout,
-                     "[{}] Total: {} lines in {:.3f} sec ({:.2f} lines/sec)",
-                     state->label,
-                     static_cast<unsigned long long>(total),
-                     elapsed,
-                     elapsed > 0.0 ? (static_cast<double>(total) / elapsed) : 0.0);
-        std::fflush(stdout);
+            while (state->printLock.test_and_set(std::memory_order_acquire)) {
+            }
+
+            std::println(stdout,
+                         "[{}] Total: {} lines in {:.3f} ms ({:.3f} lines/ms)",
+                         state->label,
+                         static_cast<unsigned long long>(total),
+                         purePrintElapsedMs,
+                         purePrintElapsedMs > 0.0 ? (static_cast<double>(total) / purePrintElapsedMs) : 0.0);
+            std::fflush(stdout);
+            state->printLock.clear(std::memory_order_release);
+        });
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime
