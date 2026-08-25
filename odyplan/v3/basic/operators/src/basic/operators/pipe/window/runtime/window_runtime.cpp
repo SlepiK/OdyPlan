@@ -30,13 +30,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         delete buffer;
     }
 
-    void rtDestroyTimeWindowBuffer(void* state) {
-        auto* buffer = static_cast<basic::window::IWindowBuffer*>(state);
-        buffer->close();
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        delete buffer;
-    }
-
     void rtWindowBeginRow(void* state) {
         static_cast<basic::window::IWindowBuffer*>(state)->begin();
     }

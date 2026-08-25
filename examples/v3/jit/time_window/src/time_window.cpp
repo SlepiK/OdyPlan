@@ -245,10 +245,6 @@ int main() {
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::
                         window::runtime::rtDestroyCountWindowBuffer),
                     llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtDestroyTimeWindowBuffer")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtDestroyTimeWindowBuffer),
-            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtWindowBeginRow),
