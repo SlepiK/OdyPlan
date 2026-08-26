@@ -47,7 +47,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::size_t>& sourceKeyFieldIndex, const Timestamp timestamp,
+        const std::vector<std::size_t>& sourceKeyFieldIndices, const Timestamp timestamp,
         const std::chrono::milliseconds sourceWindowSize) {
         mCandidates.clear();
 
@@ -55,7 +55,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             // HASH
             const auto newAbsIndex = sourceSide.getLastAbsoluteIndex();
             std::vector<const std::byte*> qFieldPtrs;
-            for (const auto fieldIndex : sourceKeyFieldIndex) {
+            for (const auto fieldIndex : sourceKeyFieldIndices) {
                 qFieldPtrs.push_back(sourceSide.getFieldPtr(newAbsIndex, fieldIndex));
             }
             for (const auto candidate : otherSide.hashLookup(qFieldPtrs)) {
