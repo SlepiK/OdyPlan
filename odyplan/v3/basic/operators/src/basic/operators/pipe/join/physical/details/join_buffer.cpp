@@ -46,14 +46,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mRightSide.push(index, data);
     }
 
-    void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide, const std::size_t sourceKeyFieldIndex, const Timestamp timestamp, const std::chrono::milliseconds sourceWindowSize) {
+    void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
+        const std::vector<std::size_t>& sourceKeyFieldIndex, const Timestamp timestamp,
+        const std::chrono::milliseconds sourceWindowSize) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
             // HASH
             const auto newAbsIndex = sourceSide.getLastAbsoluteIndex();
-            const auto* key = sourceSide.getFieldPtr(newAbsIndex, sourceKeyFieldIndex);
-            for (const auto candidate : otherSide.hashLookup(key)) {
+            std::vector<const std::byte*> qFieldPtrs;
+            for (const auto fieldIndex : sourceKeyFieldIndex) {
+                qFieldPtrs.push_back(sourceSide.getFieldPtr(newAbsIndex, fieldIndex));
+            }
+            for (const auto candidate : otherSide.hashLookup(qFieldPtrs)) {
                 if (otherSide.isOver(timestamp, sourceWindowSize, candidate)) {
                     mCandidates.push_back(candidate);
                 }
@@ -75,16 +80,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mLeftSide.end(timestamp);
         mCandidateOnRight = true;
 
-        const auto keyIdx = mLeftSide.getKeyFieldIndex();
-        matchAgainst(mLeftSide, mRightSide, keyIdx.value_or(0), timestamp, mLeftSide.getWindowSize());
+        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), timestamp, mLeftSide.getWindowSize());
     }
 
     void JoinBuffer::endRight(const Timestamp timestamp) {
         mRightSide.end(timestamp);
         mCandidateOnRight = false;
 
-        const auto keyIdx = mRightSide.getKeyFieldIndex();
-        matchAgainst(mRightSide, mLeftSide, keyIdx.value_or(0), timestamp, mRightSide.getWindowSize());
+        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), timestamp, mRightSide.getWindowSize());
     }
 
     void JoinBuffer::evict(const Timestamp timestamp, const bool callFromLeft) {
@@ -176,11 +179,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         delete snapshot;
     }
 
-    void JoinBuffer::enableEqui(const std::size_t leftFieldIndex,
-                                const std::size_t rightFieldIndex,
-                                core::shared::types::ValueTypeId keyTypeId) {
-        mLeftSide.enableKeyIdx(leftFieldIndex, keyTypeId);
-        mRightSide.enableKeyIdx(rightFieldIndex, keyTypeId);
+    void JoinBuffer::enableEqui(const std::vector<std::size_t>& leftFieldIndices,
+                        const std::vector<std::size_t>& rightFieldIndices,
+                        const std::vector<core::shared::types::ValueTypeId>& keyTypeIds) {
+        mLeftSide.enableKeyIdx(leftFieldIndices, keyTypeIds);
+        mRightSide.enableKeyIdx(rightFieldIndices, keyTypeIds);
     }
 
     [[nodiscard]] const std::byte* JoinBuffer::JoinSnapshot::ownFieldPtr(const std::size_t fieldIdx) const {

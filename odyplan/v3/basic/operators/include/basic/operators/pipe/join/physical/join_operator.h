@@ -34,7 +34,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
         const basic::expression::IExpression* mPredicate;
-        const std::optional<details::EquiKeyInfo> mEquiKey;
+        const std::optional<details::EquiKeyList> mEquiKeys;
 
         core::physical::state::StateHandle mState;
 
@@ -44,6 +44,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                   llvm::LLVMContext& ctx,
                                                   const core::logical::port::Port& schema,
                                                   const std::string& name);
+
+        static llvm::GlobalVariable* buildEquiFieldIndices(llvm::Module& module,
+                                                    llvm::LLVMContext& ctx,
+                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    bool useLeftIndex,
+                                                    const std::string& name);
+
+        static llvm::GlobalVariable* buildEquiTypeIds(llvm::Module& module, llvm::LLVMContext& ctx,
+                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    const std::string& name);
 
         void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
                                 llvm::Value* state,
