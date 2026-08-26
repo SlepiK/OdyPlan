@@ -19,7 +19,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::vector<EquiKeyInfo> keys;
     };
 
-    inline bool pureAntEqui(const expression::IExpression* expr, std::vector<const expression::IExpression*>& pured) {
+    inline bool pureAndEqui(const expression::IExpression* expr, std::vector<const expression::IExpression*>& pured) {
         if (expr == nullptr) {
             return false;
         }
@@ -35,7 +35,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 return false;
             }
 
-            return pureAntEqui(&logicalExp.getLeftPart(), pured) && pureAntEqui(rightExp, pured);
+            return pureAndEqui(&logicalExp.getLeftPart(), pured) && pureAndEqui(rightExp, pured);
         }
 
         pured.push_back(expr);
@@ -110,7 +110,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
 
         std::vector<const expression::IExpression*> parts;
-        if (!pureAntEqui(predicate, parts)) {
+        if (!pureAndEqui(predicate, parts)) {
             return std::nullopt;
         }
 
