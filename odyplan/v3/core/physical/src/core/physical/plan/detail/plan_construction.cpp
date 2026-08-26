@@ -1,5 +1,7 @@
 #include <core/physical/plan/detail/plan_construction.h>
 
+#include "core/physical/segment/segment_builder.h"
+
 namespace sierra::odyplan::v3::core::physical::plan::detail {
     segment::SegmentDataConsumers PlanConstruction::buildExit(const OperatorId operatorId) {
         if (const auto it = exitCache.find(operatorId); it != exitCache.end()) {
@@ -173,6 +175,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         auto *i64Ty = llvm::Type::getInt64Ty(*ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(*ctx);
         auto *voidTy = llvm::Type::getVoidTy(*ctx);
+
         std::vector<llvm::Type *> memberTypes;
         memberTypes.reserve(portSchema.size() + 1);
         memberTypes.push_back(i64Ty); // timestamp
@@ -191,55 +194,49 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         mComputeSegmentSlots.push_back(queueState.var);
 
-        auto *continuationFn = llvm::Function::Create(
-            llvm::FunctionType::get(voidTy, {ptrTy}, false),
-            llvm::Function::PrivateLinkage, "ody_continuation_" + uniqueKey, module);
-        continuationFn->getArg(0)->setName("snapshot");
-
-        auto *entryBB = llvm::BasicBlock::Create(*ctx, "continuationEntry", continuationFn);
-        segment::SegmentContext computeCtx(continuationFn, entryBB, *ctx, *codegenTypeRegistry);
-
-        llvm::Value *snapshotPtr = continuationFn->getArg(0);
         auto *runtimeRegistryGlobal = stateRegistry->getRuntimeTypeRegistryGlobal();
-        llvm::Value *runtimeRegistryPtr = computeCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
 
         const auto retainFn = module->getOrInsertFunction(
             "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, ptrTy}, false));
         const auto releaseFn = module->getOrInsertFunction(
             "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
-
-        data::DataPackage reconstructed;
-        reconstructed.timestamp = computeCtx.builder.CreateLoad(
-            i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 0));
-
-        reconstructed.fields.reserve(portSchema.size());
-        for (std::size_t i = 0; i < portSchema.size(); ++i) {
-            llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 1);
-            reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 1], slot));
-        }
-
-        inner(computeCtx, reconstructed);
-
-        for (std::size_t i = 0; i < portSchema.size(); ++i) {
-            if (!memberTypes[i + 1]->isPointerTy()) {
-                continue;
-            }
-            llvm::Value *typeIdConst = llvm::ConstantInt::get(i64Ty, portSchema.at(i).valueTypeId);
-            computeCtx.builder.CreateCall(
-                releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
-        }
-
         const auto freeFn = module->getOrInsertFunction(
             "rtFanInFree", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
-        computeCtx.builder.CreateRetVoid();
+
+        auto *continuationFn = segment::SegmentBuilder::createContinuation(
+            *module, *ctx, *codegenTypeRegistry, "ody_continuation_" + uniqueKey,
+            [&](segment::SegmentContext &computeCtx, llvm::Value *snapshotPtr) {
+                llvm::Value *runtimeRegistryPtr = computeCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
+
+                data::DataPackage reconstructed;
+                reconstructed.timestamp = computeCtx.builder.CreateLoad(
+                    i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 0));
+
+                reconstructed.fields.reserve(portSchema.size());
+                for (std::size_t i = 0; i < portSchema.size(); ++i) {
+                    llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 1);
+                    reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 1], slot));
+                }
+
+                inner(computeCtx, reconstructed);
+
+                for (std::size_t i = 0; i < portSchema.size(); ++i) {
+                    if (!memberTypes[i + 1]->isPointerTy()) {
+                        continue;
+                    }
+                    llvm::Value *typeIdConst = llvm::ConstantInt::get(i64Ty, portSchema.at(i).valueTypeId);
+                    computeCtx.builder.CreateCall(
+                        releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
+                }
+
+                computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
+            });
 
         return [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
                     queueState, continuationFn, runtimeRegistryGlobal, retainFn]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
             auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
             auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
-            auto *voidTyLocal = llvm::Type::getVoidTy(*ctx);
 
             const auto allocFn = module->getOrInsertFunction(
                 "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {i64TyLocal}, false));
@@ -267,16 +264,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 sCtx.builder.CreateStore(fieldVal, fieldSlot);
             }
 
-            const auto getOrCreateQueueFn = module->getOrInsertFunction(
-                "rtComputeSegmentGetOrCreate",
-                llvm::FunctionType::get(ptrTyLocal, {ptrTyLocal, ptrTyLocal}, false));
-            llvm::Value *segmentHandle = sCtx.builder.CreateCall(
-                getOrCreateQueueFn, {queueState.var, continuationFn});
-
-            const auto enqueueFn = module->getOrInsertFunction(
-                "rtComputeSegmentEnqueue",
-                llvm::FunctionType::get(voidTyLocal, {ptrTyLocal, ptrTyLocal}, false));
-            sCtx.builder.CreateCall(enqueueFn, {segmentHandle, snapshotPtrLocal});
+            segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, continuationFn, snapshotPtrLocal);
         };
     }
 
