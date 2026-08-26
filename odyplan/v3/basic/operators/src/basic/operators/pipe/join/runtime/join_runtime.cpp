@@ -11,9 +11,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        const std::uint64_t leftWindowSize,
                        const std::uint64_t rightWindowSize,
                        const std::uint8_t hasEquiKey,
-                       const std::uint64_t* leftKeyFieldIndex,
-                       const std::uint64_t* rightKeyFieldIndex,
-                       const core::shared::types::ValueTypeId* keyTypeId,
+                       const std::uint64_t* leftKeyFieldIndices,
+                       const std::uint64_t* rightKeyFieldIndices,
+                       const core::shared::types::ValueTypeId* keyTypeIds,
                        const std::uint64_t equiKeyCnt) {
         const auto* runtimeTypeRegistry =
             static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRawPtr);
@@ -49,9 +49,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             typeIds.reserve(equiKeyCnt);
 
             for (std::uint64_t i = 0; i < equiKeyCnt; ++i) {
-                leftIndices.push_back(static_cast<std::size_t>(leftKeyFieldIndex[i]));
-                rightIndices.push_back(static_cast<std::size_t>(rightKeyFieldIndex[i]));
-                typeIds.push_back(keyTypeId[i]);
+                leftIndices.push_back(static_cast<std::size_t>(leftKeyFieldIndices[i]));
+                rightIndices.push_back(static_cast<std::size_t>(rightKeyFieldIndices[i]));
+                typeIds.push_back(keyTypeIds[i]);
             }
 
             buffer->enableEqui(leftIndices, rightIndices, typeIds);

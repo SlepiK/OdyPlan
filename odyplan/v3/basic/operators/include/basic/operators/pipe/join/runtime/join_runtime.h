@@ -16,9 +16,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        std::uint64_t leftWindowSize,
                        std::uint64_t rightWindowSize,
                        std::uint8_t hasEquiKey,
-                       const std::uint64_t* leftKeyFieldIndex,
-                       const std::uint64_t* rightKeyFieldIndex,
-                       const core::shared::types::ValueTypeId* keyTypeId,
+                       const std::uint64_t* leftKeyFieldIndices,
+                       const std::uint64_t* rightKeyFieldIndices,
+                       const core::shared::types::ValueTypeId* keyTypeIds,
                        std::uint64_t equiKeyCnt);
 
     void rtJoinDestroy(void* state);
