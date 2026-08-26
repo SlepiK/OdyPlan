@@ -15,13 +15,36 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         core::shared::types::ValueTypeId typeId;
     };
 
+    struct EquiKeyList {
+        std::vector<EquiKeyInfo> keys;
+    };
+
+    inline bool pureAntEqui(const expression::IExpression* expr, std::vector<const expression::IExpression*>& pured) {
+        if (expr == nullptr) {
+            return false;
+        }
+
+        if (expr->getExpressionType() == expression::ExpressionType::LOGICAL) {
+            const auto& logicalExp = static_cast<const expression::LogicalExpression&>(*expr);
+            if (logicalExp.isUnary() || logicalExp.getOpr() != expression::LogicalExpression::LogicalOp::AND) {
+                return false;
+            }
+
+            const auto* rightExp = logicalExp.getRightPart();
+            if (rightExp == nullptr) {
+                return false;
+            }
+
+            return pureAntEqui(&logicalExp.getLeftPart(), pured) && pureAntEqui(rightExp, pured);
+        }
+
+        pured.push_back(expr);
+        return true;
+    }
+
     inline std::optional<EquiKeyInfo> tryGetEquiKey(const basic::expression::IExpression* predicate,
                                                     const core::logical::port::Port& leftSchema,
                                                     const core::logical::port::Port& rightSchema) {
-        if (predicate == nullptr) {
-            return std::nullopt;
-        }
-
         if (predicate->getExpressionType() != basic::expression::ExpressionType::COMPARE) {
             return std::nullopt;
         }
@@ -77,6 +100,34 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
 
         return EquiKeyInfo(leftFieldIndex, rightFieldIndex, leftTypeId);
+    }
+
+    inline std::optional<EquiKeyList> tryGetEquiKeyList(const basic::expression::IExpression* predicate,
+                                                    const core::logical::port::Port& leftSchema,
+                                                    const core::logical::port::Port& rightSchema) {
+        if (predicate == nullptr) {
+            return std::nullopt;
+        }
+
+        std::vector<const expression::IExpression*> parts;
+        if (!pureAntEqui(predicate, parts)) {
+            return std::nullopt;
+        }
+
+        EquiKeyList list;
+        list.keys.reserve(parts.size());
+
+        for (const auto* part: parts) {
+            auto keyInfo = tryGetEquiKey(part, leftSchema, rightSchema);
+
+            if (!keyInfo.has_value()) {
+                return std::nullopt;
+            }
+
+            list.keys.push_back(*keyInfo);
+        }
+
+        return list;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 

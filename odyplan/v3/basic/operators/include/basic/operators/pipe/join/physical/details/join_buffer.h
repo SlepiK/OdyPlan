@@ -70,9 +70,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
-        void enableEqui(std::size_t leftFieldIndex,
-                        std::size_t rightFieldIndex,
-                        core::shared::types::ValueTypeId keyTypeId);
+        void enableEqui(const std::vector<std::size_t>& leftFieldIndices,
+                        const std::vector<std::size_t>& rightFieldIndices,
+                        const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
     private:
         JoinSide mLeftSide;
@@ -86,7 +86,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void evict(Timestamp timestamp, bool callFromLeft);
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, std::size_t sourceKeyFieldIndex, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndex, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,

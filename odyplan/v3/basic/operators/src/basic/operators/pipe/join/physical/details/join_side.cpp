@@ -19,11 +19,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     void JoinSide::evict(const Timestamp otherMark) {
         while (!mBufferedRows.empty() &&
                (mBufferedRows.front().timestamp + mWindowSize) <= otherMark) {
-            if (mKeyFieldIndex) {
-                const auto* keyPtr =
-                    mBufferedRows.front().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
-                const auto hashValue = mHashFunction(keyPtr);
-                auto [v, g] = mKeyIndex.equal_range(hashValue);
+            if (!mKeyFields.empty()) {
+                const auto* keyPtr = mBufferedRows.front().values.data();
+                const auto key = computeRowKeyV(keyPtr);
+                auto [v, g] = mKeyIndex.equal_range(key);
                 for (auto iter = v; iter != g; ++iter) {
                     if (iter->second == mBasisIndex) {
                         mKeyIndex.erase(iter);
@@ -42,10 +41,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         mBufferedRows.push_back(RowBuffer{.values = mLayout.pop(), .timestamp = timestamp});
 
-        if (mKeyFieldIndex) {
+        if (!mKeyFields.empty()) {
             const auto* keyPtr =
-                mBufferedRows.back().values.data() + mLayout.offsetOf(*mKeyFieldIndex);
-            mKeyIndex.emplace(mHashFunction(keyPtr), absoluteIndex);
+                mBufferedRows.back().values.data();
+            mKeyIndex.emplace(computeRowKeyV(keyPtr), absoluteIndex);
         }
 
         mLastAbsoluteIndex = absoluteIndex;
@@ -93,34 +92,74 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mBufferedRows.at(rowIndex - mBasisIndex).timestamp;
     }
 
-    void JoinSide::enableKeyIdx(const std::size_t fieldIndex,
-                                core::shared::types::ValueTypeId keyTypeId) {
-        mKeyFieldIndex = fieldIndex;
-        mHashFunction = mRuntimeTypeRegistry->getHashFnPtr(keyTypeId);
-        mEqualFunction = mRuntimeTypeRegistry->getEqualFnPtr(keyTypeId);
+    void JoinSide::enableKeyIdx(const std::vector<std::size_t>& fieldIndices,
+        const std::vector<core::shared::types::ValueTypeId>& keyTypeIds) {
+        mKeyFields.clear();
+        mKeyFields.reserve(fieldIndices.size());
+
+        for (std::size_t i = 0; i < fieldIndices.size(); ++i) {
+            mKeyFields.push_back(KeyFieldDetails{
+                .fieldIndex=fieldIndices.at(i),
+                .mHashFunction=mRuntimeTypeRegistry->getHashFnPtr(keyTypeIds.at(i)),
+                .mEqualFunction=mRuntimeTypeRegistry->getEqualFnPtr(keyTypeIds.at(i))
+            });
+        }
     }
 
-    std::optional<std::size_t> JoinSide::getKeyFieldIndex() const {
-        return mKeyFieldIndex;
+    std::vector<std::size_t> JoinSide::getKeyFieldIndices() const {
+        std::vector<std::size_t> result;
+        result.reserve(mKeyFields.size());
+        for (const auto& field : mKeyFields) {
+            result.push_back(field.fieldIndex);
+        }
+        return result;
     }
 
     bool JoinSide::hasKeyIndex() const {
-        return mKeyFieldIndex.has_value();
+        return !mKeyFields.empty();
     }
 
     std::uint64_t JoinSide::getLastAbsoluteIndex() const {
         return mLastAbsoluteIndex;
     }
 
-    std::vector<std::uint64_t> JoinSide::hashLookup(const std::byte* query) {
+    std::vector<std::uint64_t> JoinSide::computeRowKeyV(const std::byte* row) const {
         std::vector<std::uint64_t> result;
-        const auto hashValue = mHashFunction(query);
-        const auto [z, h] = mKeyIndex.equal_range(hashValue);
+        result.reserve(mKeyFields.size());
+
+        for (const auto& field : mKeyFields) {
+            const auto* fieldPtr = row + mLayout.offsetOf(field.fieldIndex);
+            result.push_back(field.mHashFunction(fieldPtr));
+        }
+
+        return result;
+    }
+
+    std::vector<std::uint64_t> JoinSide::hashLookup(const std::vector<const std::byte*>& query) {
+        std::vector<std::uint64_t> result;
+
+        std::vector<std::uint64_t> qKey;
+        qKey.reserve(mKeyFields.size());
+        for (std::size_t i = 0; i < mKeyFields.size(); ++i) {
+            qKey.push_back(mKeyFields.at(i).mHashFunction(query.at(i)));
+        }
+
+        const auto [z, h] = mKeyIndex.equal_range(qKey);
+
         for (auto iter = z; iter != h; ++iter) {
             const auto candidateIndex = iter->second;
-            // NOLINTNEXTLINE(bugprone-unchecked-optional-access,-warnings-as-errors)
-            const auto* candidate = getFieldPtr(candidateIndex, *mKeyFieldIndex);
-            if (mEqualFunction(candidate, query)) {
+            const auto* candidateRowPtr = getRowPtr(candidateIndex);
+
+            bool allMatch = true;
+            for (std::size_t i = 0; i < mKeyFields.size(); ++i) {
+                const auto* candidateFieldPtr = candidateRowPtr + mLayout.offsetOf(mKeyFields.at(i).fieldIndex);
+                if (!mKeyFields.at(i).mEqualFunction(candidateFieldPtr,query.at(i))) {
+                    allMatch = false;
+                    break;
+                }
+            }
+
+            if (allMatch) {
                 result.push_back(candidateIndex);
             }
         }

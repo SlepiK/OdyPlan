@@ -14,7 +14,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),
           mPredicate(predicate),
-          mEquiKey(details::tryGetEquiKey(mPredicate, mLeftSchema, mRightSchema))
+          mEquiKeys(details::tryGetEquiKeyList(mPredicate, mLeftSchema, mRightSchema))
           {
     }
 
@@ -149,7 +149,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* isNewer = segmentCtx.builder.CreateICmpSGT(ownTimestamp, otherTimestamp);
         combined.timestamp = segmentCtx.builder.CreateSelect(isNewer, ownTimestamp, otherTimestamp);
 
-        const auto isEqui = mEquiKey.has_value();
+        const auto isEqui = mEquiKeys.has_value();
 
         if (mPredicate != nullptr && !isEqui) {
             llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
@@ -185,7 +185,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* rightSideTypesGlobal = buildTypeIds(
             module, context, mRightSchema, "join_right_side_types_" + std::to_string(getPId()));
 
-        const auto isEqui = mEquiKey.has_value();
+        const auto isEqui = mEquiKeys.has_value();
+        const auto& equiKeys = isEqui ? mEquiKeys->keys : std::vector<details::EquiKeyInfo>{};
+
+        auto* leftEquiIndices = buildEquiFieldIndices(module, context, equiKeys,
+            true, "join_left_equi_indices_" +std::to_string(getPId()));
+        auto* rightEquiIndices = buildEquiFieldIndices(module, context, equiKeys,
+            false, "join_right_equi_indices_" +std::to_string(getPId()));
+        auto* equiTypeIds = buildEquiTypeIds(module, context, equiKeys, "join_equi_typeids_" + std::to_string(getPId()));
 
         mState = stateRegistry.createHandle(
             "join_" + std::to_string(getPId()),
@@ -197,10 +204,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
              llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
              llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
              llvm::ConstantInt::get(i8Ty, isEqui ? 1 : 0),
-             llvm::ConstantInt::get(i64Ty, isEqui ? mEquiKey->leftFieldIndex : 0),
-             llvm::ConstantInt::get(i64Ty, isEqui ? mEquiKey->rightFieldIndex : 0),
-             llvm::ConstantInt::get(i8Ty, isEqui ? mEquiKey->typeId : 0)},
-            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, i64Ty, i64Ty, i8Ty},
+             leftEquiIndices,
+             rightEquiIndices,
+             equiTypeIds,
+             llvm::ConstantInt::get(i64Ty, equiKeys.size())},
+            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i8Ty},
             "rtJoinDestroy");
     }
 
@@ -243,6 +251,42 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         return new llvm::GlobalVariable(module, arrTy, true,
                                         llvm::GlobalValue::PrivateLinkage,
                                         llvm::ConstantArray::get(arrTy, values),name);
+    }
+
+    llvm::GlobalVariable* JoinOperator::buildEquiFieldIndices(llvm::Module& module,
+                                                    llvm::LLVMContext& ctx,
+                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    bool useLeftIndex,
+                                                    const std::string& name) {
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        std::vector<llvm::Constant*> values;
+        values.reserve(keys.size());
+        for (const auto& key : keys) {
+            values.push_back(llvm::ConstantInt::get(i64Ty, useLeftIndex ? key.leftFieldIndex : key.rightFieldIndex));
+        }
+
+        auto* arrTy = llvm::ArrayType::get(i64Ty, values.size());
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+        return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::PrivateLinkage,
+            llvm::ConstantArray::get(arrTy, values), name);
+    }
+
+    llvm::GlobalVariable* JoinOperator::buildEquiTypeIds(llvm::Module& module, llvm::LLVMContext& ctx,
+                                                const std::vector<details::EquiKeyInfo>& keys,
+                                                const std::string& name) {
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
+        std::vector<llvm::Constant*> values;
+        values.reserve(keys.size());
+        for (const auto& key : keys) {
+            values.push_back(llvm::ConstantInt::get(i8Ty, key.typeId));
+        }
+
+        auto* arrTy = llvm::ArrayType::get(i8Ty, values.size());
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+        return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::PrivateLinkage,
+            llvm::ConstantArray::get(arrTy, values), name);
     }
 
     void JoinOperator::codegenSide(core::physical::segment::SegmentContext& segmentCtx,
