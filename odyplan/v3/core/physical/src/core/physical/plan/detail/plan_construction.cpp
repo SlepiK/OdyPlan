@@ -34,7 +34,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 result.resize(portIndex + 1);
             }
 
-            if (edgesForPort.size() == 1) {
+            if (edgesForPort.size() == 1 && chain.exitSchemas.size() == 1) {
                 result.at(portIndex) = buildEnter(edgesForPort.front());
             } else {
                 segment::SegmentDataConsumers branches;
