@@ -34,6 +34,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
         const basic::expression::IExpression* mPredicate;
+        const std::optional<details::EquiKeyInfo> mEquiKey;
 
         core::physical::state::StateHandle mState;
 

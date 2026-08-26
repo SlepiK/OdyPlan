@@ -13,7 +13,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
           mConfig(config),
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),
-          mPredicate(predicate) {}
+          mPredicate(predicate),
+          mEquiKey(details::tryGetEquiKey(mPredicate, mLeftSchema, mRightSchema))
+          {
+    }
 
     void JoinOperator::consume(core::physical::segment::SegmentContext& segmentCtx,
                                core::shared::identifiers::PortId inputPort,
@@ -146,7 +149,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* isNewer = segmentCtx.builder.CreateICmpSGT(ownTimestamp, otherTimestamp);
         combined.timestamp = segmentCtx.builder.CreateSelect(isNewer, ownTimestamp, otherTimestamp);
 
-        if (mPredicate != nullptr) {
+        const auto isEqui = mEquiKey.has_value();
+
+        if (mPredicate != nullptr && !isEqui) {
             llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
             auto* passBB = llvm::BasicBlock::Create(ctx, "compute_predicate_pass", fn);
             auto* mergeBB = llvm::BasicBlock::Create(ctx, "compute_predicate_merge", fn);
@@ -180,8 +185,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* rightSideTypesGlobal = buildTypeIds(
             module, context, mRightSchema, "join_right_side_types_" + std::to_string(getPId()));
 
-        const auto equiKey = details::tryGetEquiKey(mPredicate, mLeftSchema, mRightSchema);
-        const bool hasEquiKey = equiKey.has_value();
+        const auto isEqui = mEquiKey.has_value();
 
         mState = stateRegistry.createHandle(
             "join_" + std::to_string(getPId()),
@@ -192,10 +196,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
              llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
              llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
              llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
-             llvm::ConstantInt::get(i8Ty, hasEquiKey ? 1 : 0),
-             llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->leftFieldIndex : 0),
-             llvm::ConstantInt::get(i64Ty, hasEquiKey ? equiKey->rightFieldIndex : 0),
-             llvm::ConstantInt::get(i8Ty, hasEquiKey ? equiKey->typeId : 0)},
+             llvm::ConstantInt::get(i8Ty, isEqui ? 1 : 0),
+             llvm::ConstantInt::get(i64Ty, isEqui ? mEquiKey->leftFieldIndex : 0),
+             llvm::ConstantInt::get(i64Ty, isEqui ? mEquiKey->rightFieldIndex : 0),
+             llvm::ConstantInt::get(i8Ty, isEqui ? mEquiKey->typeId : 0)},
             {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, i64Ty, i64Ty, i8Ty},
             "rtJoinDestroy");
     }
