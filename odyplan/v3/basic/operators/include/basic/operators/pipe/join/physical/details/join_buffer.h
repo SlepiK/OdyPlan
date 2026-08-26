@@ -86,7 +86,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void evict(Timestamp timestamp, bool callFromLeft);
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndex, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
