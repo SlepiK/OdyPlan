@@ -26,7 +26,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         std::reference_wrapper<const std::unordered_map<
             OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingConnectionsIn,
         std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegreeIn,
-        segment::SegmentDataConsumer noopConsumerIn,
+        segment::SegmentConsumerHandle noopConsumerIn,
         llvm::Module* moduleIn,
         llvm::LLVMContext* ctxIn,
         std::vector<llvm::Function*>* functionsIn,
@@ -44,18 +44,18 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         segment::SegmentDataConsumers buildExit(OperatorId operatorId);
 
-        segment::SegmentDataConsumer buildEnter(const OperatorPortReferenceConnection& edge);
+        segment::SegmentConsumerHandle buildEnter(const OperatorPortReferenceConnection& edge);
 
         segment::SegmentDataConsumers afterEntry(OperatorId operatorId);
 
-        segment::SegmentDataConsumer
+        segment::SegmentConsumerHandle
         buildContinue(OperatorId operatorId, const segment::Segment& chain, std::size_t index);
 
-        segment::SegmentDataConsumer
+        segment::SegmentConsumerHandle
         compileAsFunction(OperatorId operatorId,
                           shared::identifiers::PortId portId,
                           const port::Port& portSchema,
-                          const segment::SegmentDataConsumer& inner);
+                          const segment::SegmentConsumerHandle& inner);
 
         const std::vector<llvm::GlobalVariable*>& getComputeSegmentSlots() const;
 
@@ -65,7 +65,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             const std::unordered_map<OperatorId, std::vector<OperatorPortReferenceConnection>>>
             outgoingConnections;
         std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegree;
-        segment::SegmentDataConsumer noopConsumer;
+        segment::SegmentConsumerHandle noopConsumer;
         llvm::Module* module;
         llvm::LLVMContext* ctx;
         std::vector<llvm::Function*>* functions;
@@ -80,8 +80,8 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         state::StateHandle getOrCreateComputeQueueState(OperatorId operatorId, shared::identifiers::PortId portId);
 
-        segment::SegmentDataConsumer wrapAsComputeContinuation(const std::string& uniqueKey, const port::Port& portSchema,
-            const segment::SegmentDataConsumer& inner);
+        segment::SegmentConsumerHandle wrapAsComputeContinuation(const std::string& uniqueKey, const port::Port& portSchema,
+            const segment::SegmentConsumerHandle& inner);
 
     };
 }  // namespace sierra::odyplan::v3::core::physical::plan::detail

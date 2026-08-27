@@ -50,8 +50,11 @@ namespace sierra::odyplan::v3::core::physical::plan {
             }
         }
 
-        segment::SegmentDataConsumer const noopConsumer = [](segment::SegmentContext&,
-                                                             const data::DataPackage&) {};
+        segment::SegmentConsumerHandle const noopConsumer{
+            [](segment::SegmentContext&, const data::DataPackage&) {},
+            [](segment::SegmentContext&, const data::PunctuationPackage) {}
+
+        };
 
         detail::PlanConstruction detailBuilder(mSegments,
                                        mOutgoingConnections,

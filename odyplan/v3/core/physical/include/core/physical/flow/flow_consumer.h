@@ -22,6 +22,15 @@ namespace sierra::odyplan::v3::core::physical::flow {
         virtual void end(segment::SegmentContext& segmentCtx,
                          shared::identifiers::PortId inputPort,
                          const segment::SegmentDataConsumers& consumers) {}
+
+        virtual void consumePunctuation(segment::SegmentContext& segmentCtx,
+            shared::identifiers::PortId inputPort,
+            const data::PunctuationPackage& punctuation,
+            const segment::SegmentDataConsumers& consumers) {
+            for (const auto& consumer : consumers) {
+                consumer.consumePunctuation(segmentCtx, punctuation);
+            }
+        }
     };
 }  // namespace sierra::odyplan::v3::core::physical::flow
 

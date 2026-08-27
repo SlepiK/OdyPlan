@@ -24,7 +24,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
         segmentCtx.builder.CreateCondBr(cnd, passBB, mergeBB);
 
         segmentCtx.builder.SetInsertPoint(passBB);
-        consumers.front()(segmentCtx, tuple);
+        consumers.front().consume(segmentCtx, tuple);
         segmentCtx.builder.CreateBr(mergeBB);
 
         segmentCtx.builder.SetInsertPoint(mergeBB);

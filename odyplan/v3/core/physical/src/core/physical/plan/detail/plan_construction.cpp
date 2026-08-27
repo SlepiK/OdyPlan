@@ -48,12 +48,23 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     branches.push_back(wrapAsComputeContinuation(
                         key, chain.exitSchemas.at(portIndex), buildEnter(edge)));
                 }
-                result.at(portIndex) = [branches](segment::SegmentContext& sCtx,
+                result.at(portIndex) = segment::SegmentConsumerHandle{
+                    [branches](segment::SegmentContext& sCtx,
                                               const data::DataPackage& tuple) {
-                    for (const auto& branch : branches) {
-                        branch(sCtx, tuple);
+                        for (const auto& branch : branches) {
+                            branch.consume(sCtx, tuple);
+                        }
+                    },
+                    [branches](segment::SegmentContext& sCtx,
+                                              const data::PunctuationPackage& punctuation) {
+                        for (const auto& branch : branches) {
+                            branch.consumePunctuation(sCtx, punctuation);
+                        }
                     }
                 };
+
+
+
             }
         }
 
@@ -61,7 +72,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         return result;
     }
 
-    segment::SegmentDataConsumer
+    segment::SegmentConsumerHandle
     PlanConstruction::buildEnter(const OperatorPortReferenceConnection& edge) {
         const auto id = edge.toOperatorPortReference.operatorId;
         const auto& chain = segments.get().at(id);
@@ -73,9 +84,16 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         }
 
         segment::SegmentDataConsumers const tail = afterEntry(id);
-        return [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+
+        return segment::SegmentConsumerHandle{
+            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
                                             const data::DataPackage& tuple) {
-            entryOpr->consume(sCtx, inputIndex, tuple, tail);
+                entryOpr->consume(sCtx, inputIndex, tuple, tail);
+            },
+            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+                                            const data::PunctuationPackage& punctuation) {
+                entryOpr->consumePunctuation(sCtx, inputIndex, punctuation, tail);
+            }
         };
     }
 
@@ -120,7 +138,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         return rest;
     }
 
-    segment::SegmentDataConsumer PlanConstruction::buildContinue(const OperatorId operatorId,
+    segment::SegmentConsumerHandle PlanConstruction::buildContinue(const OperatorId operatorId,
                                                                  const segment::Segment& chain,
                                                                  const std::size_t index) {
         if (index >= chain.nodes.size()) {
@@ -138,16 +156,22 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         }
 
         flow::IConsumer* consumerNode = node.asConsumer;
-        return [consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
-            consumerNode->consume(sCtx, 0, tuple, rest);
+
+        return segment::SegmentConsumerHandle{
+            [consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
+                consumerNode->consume(sCtx, 0, tuple, rest);
+            },
+            [consumerNode, rest](segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
+                consumerNode->consumePunctuation(sCtx, 0, punctuation, rest);
+            }
         };
     }
 
-    segment::SegmentDataConsumer
+    segment::SegmentConsumerHandle
     PlanConstruction::compileAsFunction(const OperatorId operatorId,
                                         const shared::identifiers::PortId portId,
                                         const port::Port &portSchema,
-                                        const segment::SegmentDataConsumer &inner) {
+                                        const segment::SegmentConsumerHandle &inner) {
         return wrapAsComputeContinuation(
             "fanin_" + std::to_string(operatorId) + "_" + std::to_string(portId),
             portSchema, inner);
@@ -168,9 +192,9 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         return handle;
     }
 
-    segment::SegmentDataConsumer PlanConstruction::wrapAsComputeContinuation(const std::string &uniqueKey,
+    segment::SegmentConsumerHandle PlanConstruction::wrapAsComputeContinuation(const std::string &uniqueKey,
                                                                              const port::Port &portSchema,
-                                                                             const segment::SegmentDataConsumer &
+                                                                             const segment::SegmentConsumerHandle &
                                                                              inner) {
         auto *i64Ty = llvm::Type::getInt64Ty(*ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(*ctx);
@@ -188,6 +212,9 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         const auto &dataLayout = module->getDataLayout();
         const std::uint64_t structByteSize = dataLayout.getTypeAllocSize(snapshotStructTy);
 
+        auto* punctStructTy = llvm::StructType::create(*ctx, {i64Ty}, "ody_punct_" + uniqueKey);
+        const std::uint64_t punctByteSize = dataLayout.getTypeAllocSize(punctStructTy);
+
         const auto queueState = stateRegistry->createHandle(
             "queue_" + uniqueKey, "rtComputeSegmentNullInit", {}, {},
             "rtComputeSegmentDestroyIfStarted");
@@ -202,8 +229,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
         const auto freeFn = module->getOrInsertFunction(
             "rtFanInFree", llvm::FunctionType::get(voidTy, {ptrTy}, false));
+        const auto allocFnDecl = module->getOrInsertFunction(
+            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {i64Ty}, false));
 
-        auto *continuationFn = segment::SegmentBuilder::createContinuation(
+        auto *dataContinuationFn = segment::SegmentBuilder::createContinuation(
             *module, *ctx, *codegenTypeRegistry, "ody_continuation_" + uniqueKey,
             [&](segment::SegmentContext &computeCtx, llvm::Value *snapshotPtr) {
                 llvm::Value *runtimeRegistryPtr = computeCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
@@ -218,7 +247,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 1], slot));
                 }
 
-                inner(computeCtx, reconstructed);
+                inner.consume(computeCtx, reconstructed);
 
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     if (!memberTypes[i + 1]->isPointerTy()) {
@@ -232,39 +261,66 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
             });
 
-        return [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
-                    queueState, continuationFn, runtimeRegistryGlobal, retainFn]
-        (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
-            auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
-            auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
+        auto* punctuationContinuationFn = segment::SegmentBuilder::createContinuation(
+            *module, *ctx, *codegenTypeRegistry, "ody_punct_continuation_" + uniqueKey,
+            [&](segment::SegmentContext& computeCtx, llvm::Value* punctPtr) {
+                data::PunctuationPackage reconstructed;
+                reconstructed.watermark = computeCtx.builder.CreateLoad(
+                    i64Ty, computeCtx.builder.CreateStructGEP(punctStructTy, punctPtr, 0));
 
-            const auto allocFn = module->getOrInsertFunction(
-                "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {i64TyLocal}, false));
-            llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
-                allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
+                inner.consumePunctuation(computeCtx, reconstructed);
 
-            sCtx.builder.CreateStore(
-                tuple.timestamp,
-                sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 0));
-
-            llvm::Value *runtimeRegistryPtrLocal =
-                    sCtx.builder.CreateLoad(ptrTyLocal, runtimeRegistryGlobal);
-
-            for (std::size_t i = 0; i < portSchema.size(); ++i) {
-                llvm::Value *fieldVal = tuple.fields.at(i);
-                llvm::Value *fieldSlot =
-                        sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 1);
-
-                if (memberTypes[i + 1]->isPointerTy()) {
-                    llvm::Value *typeIdConst =
-                            llvm::ConstantInt::get(i64TyLocal, portSchema.at(i).valueTypeId);
-                    fieldVal = sCtx.builder.CreateCall(
-                        retainFn, {runtimeRegistryPtrLocal, typeIdConst, fieldVal});
-                }
-                sCtx.builder.CreateStore(fieldVal, fieldSlot);
+                computeCtx.builder.CreateCall(freeFn, {punctPtr});
             }
+        );
 
-            segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, continuationFn, snapshotPtrLocal);
+        return segment::SegmentConsumerHandle{
+            [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
+                    queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn]
+        (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
+                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
+                auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
+
+                const auto allocFn = module->getOrInsertFunction(
+                    "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {i64TyLocal}, false));
+                llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
+                    allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
+
+                sCtx.builder.CreateStore(
+                    tuple.timestamp,
+                    sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 0));
+
+                llvm::Value *runtimeRegistryPtrLocal =
+                        sCtx.builder.CreateLoad(ptrTyLocal, runtimeRegistryGlobal);
+
+                for (std::size_t i = 0; i < portSchema.size(); ++i) {
+                    llvm::Value *fieldVal = tuple.fields.at(i);
+                    llvm::Value *fieldSlot =
+                            sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 1);
+
+                    if (memberTypes[i + 1]->isPointerTy()) {
+                        llvm::Value *typeIdConst =
+                                llvm::ConstantInt::get(i64TyLocal, portSchema.at(i).valueTypeId);
+                        fieldVal = sCtx.builder.CreateCall(
+                            retainFn, {runtimeRegistryPtrLocal, typeIdConst, fieldVal});
+                    }
+                    sCtx.builder.CreateStore(fieldVal, fieldSlot);
+                }
+
+                segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, dataContinuationFn, snapshotPtrLocal);
+            },
+            [this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl]
+            (segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
+                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
+
+                llvm::Value* punctPtrLocal = sCtx.builder.CreateCall(
+                    allocFnDecl, {llvm::ConstantInt::get(i64TyLocal, punctByteSize)});
+
+                sCtx.builder.CreateStore(
+                    punctuation.watermark, sCtx.builder.CreateStructGEP(punctStructTy, punctPtrLocal, 0));
+
+                segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, punctuationContinuationFn, punctPtrLocal);
+            }
         };
     }
 

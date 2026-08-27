@@ -24,7 +24,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
             projected.pushBack(tuple.at(index));
         }
 
-        consumers.front()(segmentCtx, projected);
+        consumers.front().consume(segmentCtx, projected);
     }
 
     void ProjectOperator::end(core::physical::segment::SegmentContext& segmentCtx,

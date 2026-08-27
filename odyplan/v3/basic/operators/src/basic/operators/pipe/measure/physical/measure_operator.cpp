@@ -25,7 +25,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
                                                   llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(tickFn, {state});
 
-        consumers.at(0)(segmentCtx, tuple);
+        consumers.at(0).consume(segmentCtx, tuple);
     }
 
     void MeasureOperator::end(core::physical::segment::SegmentContext& segmentCtx,
