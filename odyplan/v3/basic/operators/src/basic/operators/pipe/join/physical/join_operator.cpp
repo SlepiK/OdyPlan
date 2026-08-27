@@ -158,12 +158,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             segmentCtx.builder.CreateCondBr(predicateResult, passBB, mergeBB);
 
             segmentCtx.builder.SetInsertPoint(passBB);
-            consumers.front()(segmentCtx, combined);
+            consumers.front().consume(segmentCtx, combined);
             segmentCtx.builder.CreateBr(mergeBB);
 
             segmentCtx.builder.SetInsertPoint(mergeBB);
         } else {
-            consumers.front()(segmentCtx, combined);
+            consumers.front().consume(segmentCtx, combined);
         }
 
         llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(i64Ty, 1));

@@ -98,7 +98,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
             }
         }
 
-        consumers.front()(segmentCtx, tuple);
+        consumers.front().consume(segmentCtx, tuple);
         segmentCtx.builder.CreateBr(loopBB);
 
         segmentCtx.builder.SetInsertPoint(exitBB);

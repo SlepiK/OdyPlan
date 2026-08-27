@@ -8,6 +8,11 @@ namespace sierra::odyplan::v3::core::runtime::task {
         BoundedQueue queue;
         std::thread worker;
     };
+
+    struct Envelope {
+        void (*fn)(void*);
+        void* payload;
+    };
 }
 
 #endif //SIERRA_ODYPLAN_V3_CORE_RUNTIME_TASK_COMPUTE_SEGMENT_HPP

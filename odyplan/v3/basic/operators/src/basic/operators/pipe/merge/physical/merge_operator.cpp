@@ -10,6 +10,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::physical {
                                 core::shared::identifiers::PortId /*inputPort*/,
                                 const core::physical::data::DataPackage& tuple,
                                 const core::physical::segment::SegmentDataConsumers& consumers) {
-        consumers.front()(segmentCtx, tuple);
+        consumers.front().consume(segmentCtx, tuple);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::physical

@@ -39,7 +39,6 @@ namespace sierra::odyplan::v3::core::physical::data {
 
     struct PunctuationPackage {
         llvm::Value* watermark = nullptr;
-        llvm::Value* source = nullptr;
     };
 }  // namespace sierra::odyplan::v3::core::physical::data
 

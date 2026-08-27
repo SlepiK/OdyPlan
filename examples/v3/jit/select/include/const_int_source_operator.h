@@ -71,7 +71,7 @@ namespace sierra::odyplan::v3::example::select {
                     "rtTimeNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
-                consumers.front()(segmentCtx, tuple);
+                consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);

@@ -26,16 +26,28 @@ namespace sierra::odyplan::v3::core::physical::segment {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
 
         const auto getOrCreateFn = module->getOrInsertFunction(
             "rtComputeSegmentGetOrCreate",
-            llvm::FunctionType::get(ptrTy, {ptrTy, ptrTy}, false));
+            llvm::FunctionType::get(ptrTy, {ptrTy}, false));
         llvm::Value* segmentHandle = segmentCtx.builder.CreateCall(
-            getOrCreateFn, {queueSlot, processFn});
+            getOrCreateFn, {queueSlot});
+
+        auto* envelopeStructTy = llvm::StructType::create(ctx, {ptrTy, ptrTy});
+        const auto& dataLayout = module->getDataLayout();
+        const std::uint64_t envelopeByteSize = dataLayout.getTypeAllocSize(envelopeStructTy);
+
+        const auto allocFn = module->getOrInsertFunction(
+            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {i64Ty}, false));
+        llvm::Value* envelopePtr = segmentCtx.builder.CreateCall(allocFn, {llvm::ConstantInt::get(i64Ty, envelopeByteSize)});
+
+        segmentCtx.builder.CreateStore(processFn, segmentCtx.builder.CreateStructGEP(envelopeStructTy, envelopePtr, 0));
+        segmentCtx.builder.CreateStore(payload, segmentCtx.builder.CreateStructGEP(envelopeStructTy, envelopePtr, 1));
 
         const auto enqueueFn = module->getOrInsertFunction(
             "rtComputeSegmentEnqueue",
             llvm::FunctionType::get(voidTy, {ptrTy, ptrTy}, false));
-        segmentCtx.builder.CreateCall(enqueueFn, {segmentHandle, payload});
+        segmentCtx.builder.CreateCall(enqueueFn, {segmentHandle, envelopePtr});
     }
 }

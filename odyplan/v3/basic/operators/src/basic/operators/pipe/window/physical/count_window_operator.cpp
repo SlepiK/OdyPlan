@@ -87,7 +87,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
     llvm::Function*
     CountWindowOperator::getOrCreateDrainFn(const core::physical::segment::SegmentContext& segmentCtx,
-                       const core::physical::segment::SegmentDataConsumer& consumer) {
+                       const core::physical::segment::SegmentConsumerHandle& consumer) {
         if (mDrainFn != nullptr) {
             return mDrainFn;
         }
@@ -123,7 +123,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
     void CountWindowOperator::drainWindows(core::physical::segment::SegmentContext& segmentCtx,
                       llvm::Value* state,
-                      const core::physical::segment::SegmentDataConsumer& consumer) const {
+                      const core::physical::segment::SegmentConsumerHandle& consumer) const {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
@@ -203,7 +203,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                                      getOutputPorts().at(0).at(i).valueTypeId));
         }
 
-        consumer(segmentCtx, emit);
+        consumer.consume(segmentCtx, emit);
 
         segmentCtx.builder.CreateStore(
             segmentCtx.builder.CreateAdd(wRowIndex, llvm::ConstantInt::get(i64Ty, 1)),

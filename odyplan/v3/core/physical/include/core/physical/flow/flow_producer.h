@@ -15,6 +15,9 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IProducer& operator=(IProducer&&) = delete;
         virtual void produce(segment::SegmentContext& segmentCtx,
                              const segment::SegmentDataConsumers& consumers) = 0;
+
+        virtual void produceHeartbeat(segment::SegmentContext& segmentCtx,
+            const segment::SegmentDataConsumers& consumers) {}
     };
 }  // namespace sierra::odyplan::v3::core::physical::flow
 

@@ -27,7 +27,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
             //.hasKnownEnd = llvm::ConstantInt::getTrue(segmentCtx.builder.getContext())
         };
 
-        consumers.front()(segmentCtx, annotated);
+        consumers.front().consume(segmentCtx, annotated);
     }
 
     void TimeWindowOperator::codegenUnrolled(core::physical::segment::SegmentContext& segmentCtx,
