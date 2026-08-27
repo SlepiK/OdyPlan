@@ -21,10 +21,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         const core::physical::segment::SegmentDataConsumers& consumers) {
         core::physical::data::DataPackage annotated = tuple;
 
-        annotated.windowMetadata = core::physical::data::WindowMetadata{
+        annotated.windowTag = core::physical::data::WindowTag{
             .windowStart = windowStart,
             .windowEnd   = windowEnd,
-            .hasKnownEnd = llvm::ConstantInt::getTrue(segmentCtx.builder.getContext())
+            //.hasKnownEnd = llvm::ConstantInt::getTrue(segmentCtx.builder.getContext())
         };
 
         consumers.front()(segmentCtx, annotated);

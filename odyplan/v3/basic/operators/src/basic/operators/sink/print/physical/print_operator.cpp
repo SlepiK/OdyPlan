@@ -30,10 +30,10 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
             }
         }
 
-        if (tuple.hasWindowMetadata()) {
+        if (tuple.hasWindowTag()) {
             codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
-            const auto [windowStart, windowEnd, hasWindowEnd] = tuple.windowMetadata.value();
-            codegenPrintWindowMetadata(segmentCtx.builder, module, windowStart, windowEnd, hasWindowEnd);
+            const auto [windowStart, windowEnd] = tuple.windowTag.value();
+            codegenPrintWindowMetadata(segmentCtx.builder, module, windowStart, windowEnd);
         }
 
         codegenPrint(segmentCtx.builder, module, "rtOdyPrintNewline");
@@ -61,13 +61,13 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
         builder.CreateCall(fn, {value});
     }
 
-    void PrintOperator::codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end, llvm::Value* hasEnd) {
+    void PrintOperator::codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end) {
         llvm::LLVMContext& ctx = builder.getContext();
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* i1Ty = llvm::Type::getInt1Ty(ctx);
         auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty, i64Ty, i1Ty}, false);
         llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintWindowMetadata", fnType);
-        builder.CreateCall(fn, {start, end, hasEnd});
+        builder.CreateCall(fn, {start, end, builder.getInt1(end != nullptr)});
     }
 
     void PrintOperator::codegenPrintField(llvm::IRBuilder<>& builder,
