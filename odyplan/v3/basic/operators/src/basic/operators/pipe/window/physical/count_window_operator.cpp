@@ -188,10 +188,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         emit.timestamp = codegenGetTimestamp(segmentCtx, state, wIndex, wRowIndex);
 
-        emit.windowMetadata = core::physical::data::WindowMetadata {
+        emit.windowTag = core::physical::data::WindowTag {
             .windowStart = wStart,
-            .windowEnd = wEnd,
-            .hasKnownEnd = hasEnd
+            .windowEnd = wEnd
         };
 
         emit.reserve(getOutputPorts().at(0).size());

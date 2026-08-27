@@ -29,7 +29,7 @@ namespace sierra::odyplan::v3::core::physical::data {
         fields.reserve(size);
     }
 
-    bool DataPackage::hasWindowMetadata() const noexcept {
-        return windowMetadata.has_value();
+    bool DataPackage::hasWindowTag() const noexcept {
+        return windowTag.has_value();
     }
 }  // namespace sierra::odyplan::v3::core::physical::data
