@@ -36,6 +36,9 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         nlohmann::json mIOConfig;
         bool mUseProgramClock;
 
+        std::chrono::milliseconds mAllowedLateness;
+        llvm::GlobalVariable* mWatermarkState = nullptr;
+
         [[nodiscard]] llvm::Value*
         loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 

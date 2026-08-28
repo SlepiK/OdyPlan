@@ -23,6 +23,7 @@
 #include <core/runtime/memory/fan_in_memory.h>
 #include <core/runtime/compute_segment_runtime.h>
 #include <iostream>
+#include <llvm/IR/Verifier.h>
 
 namespace {
     void optimizeLlvmModule(llvm::Module &module, const llvm::OptimizationLevel level) {
@@ -195,6 +196,12 @@ int main() {
 
         auto module = std::make_unique<llvm::Module>("example_merge", *ctx);
         physicalPlan.codegen(*module, *ctx);
+
+        std::string errorInfo;
+        llvm::raw_string_ostream errorStream(errorInfo);
+        if (llvm::verifyModule(*module, &errorStream)) {
+            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
+        }
 
         std::cout << "\n\n";
         std::cout << "\n\n--- Raw IR ---\n";

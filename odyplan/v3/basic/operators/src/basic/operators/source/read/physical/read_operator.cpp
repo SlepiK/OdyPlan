@@ -99,15 +99,44 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         }
 
         consumers.front().consume(segmentCtx, tuple);
-        segmentCtx.builder.CreateBr(loopBB);
 
+        llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mAllowedLateness.count());
+        llvm::Value* candidateWatermark = segmentCtx.builder.CreateSub(tuple.timestamp, allowedLatenessConst);
+
+        llvm::Value* lastWatermark = segmentCtx.builder.CreateLoad(idTy, mWatermarkState);
+        llvm::Value* sAdvance = segmentCtx.builder.CreateICmpSGT(candidateWatermark, lastWatermark);
+
+        auto* advanceBB = llvm::BasicBlock::Create(ctx, "watermark_advance", fn);
+        auto* afterWatermarkBB = llvm::BasicBlock::Create(ctx, "watermark_after", fn);
+        segmentCtx.builder.CreateCondBr(sAdvance, advanceBB, afterWatermarkBB);
+
+        segmentCtx.builder.SetInsertPoint(advanceBB);
+        segmentCtx.builder.CreateStore(candidateWatermark, mWatermarkState);
+
+        const core::physical::data::PunctuationPackage punctuation{
+            .watermark = candidateWatermark
+        };
+
+        consumers.front().consumePunctuation(segmentCtx, punctuation);
+
+        segmentCtx.builder.CreateBr(afterWatermarkBB);
+        segmentCtx.builder.SetInsertPoint(afterWatermarkBB);
+
+        segmentCtx.builder.CreateBr(loopBB);
         segmentCtx.builder.SetInsertPoint(exitBB);
+
+        llvm::Value* finalWatermark = llvm::ConstantInt::get(idTy, std::numeric_limits<std::int64_t>::max());
+        const core::physical::data::PunctuationPackage finalPunctuation{
+            .watermark = finalWatermark
+        };
+        consumers.front().consumePunctuation(segmentCtx, finalPunctuation);
     }
 
     void ReadOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                     llvm::Module& module,
                                     llvm::LLVMContext& context) {
         auto* i8Ty = llvm::Type::getInt8Ty(context);
+        auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
 
         const std::string path = mIOConfig.at("path").get<std::string>();
@@ -125,16 +154,21 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         llvm::Value* pathPtr = llvm::ConstantExpr::getInBoundsGetElementPtr(
             gPath->getValueType(),
             gPath,
-            std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
-                                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
-        // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
+            std::vector<llvm::Value*>{llvm::ConstantInt::get(i64Ty, 0),
+                                      llvm::ConstantInt::get(i64Ty, 0)});
 
+        // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         mState = stateRegistry.createHandle(
             "read_source_" + std::to_string(getPId()),
             "rtIOSourceCreate",
             {llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mIOFormat)), pathPtr},
             {i8Ty, ptrTy},
             "rtIOSourceDestroy");
+
+        mWatermarkState = new llvm::GlobalVariable(module,
+            i64Ty, false, llvm::GlobalValue::PrivateLinkage,
+            llvm::ConstantInt::get(i64Ty, std::numeric_limits<std::int64_t>::min()),
+            "read_watermark_" + std::to_string(getPId()));
     }
 
     [[nodiscard]] llvm::Value*
