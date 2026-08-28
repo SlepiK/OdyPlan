@@ -6,6 +6,8 @@
 #include <core/physical/segment/segment_data_consumer.h>
 #include <core/shared/identifiers/port_id.h>
 
+#include <algorithm>
+
 namespace sierra::odyplan::v3::core::physical::flow {
     class IConsumer {
     public:
@@ -31,6 +33,27 @@ namespace sierra::odyplan::v3::core::physical::flow {
                 consumer.consumePunctuation(segmentCtx, punctuation);
             }
         }
+
+        virtual void configureInputPorts(std::vector<shared::identifiers::PortId> connectedPorts) {
+            std::ranges::sort(connectedPorts);
+            connectedPorts.erase(std::ranges::unique(connectedPorts).begin(), connectedPorts.end());
+            mConnectedPorts = std::move(connectedPorts);
+        }
+
+    protected:
+        [[nodiscard]] std::int64_t compactInputIndex(shared::identifiers::PortId portId) const {
+            const auto it = std::ranges::find(mConnectedPorts, portId);
+            if (it == mConnectedPorts.end()) {
+                throw std::logic_error("IConsumer::compactInputIndex: unconfigured PortId used (" + std::to_string(portId) + ")");
+            }
+            return static_cast<std::int64_t>(std::distance(mConnectedPorts.begin(), it));
+        }
+
+        [[nodiscard]] std::size_t sizeOfConnectedPorts() const noexcept {
+            return mConnectedPorts.size();
+        }
+    private:
+        std::vector<shared::identifiers::PortId> mConnectedPorts;
     };
 }  // namespace sierra::odyplan::v3::core::physical::flow
 

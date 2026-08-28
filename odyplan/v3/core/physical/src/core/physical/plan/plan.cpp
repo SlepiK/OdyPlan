@@ -34,11 +34,6 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
     void Plan::codegen(llvm::Module& module, llvm::LLVMContext& ctx) const {
         state::StateRegistry stateRegistry(&module, &ctx);
-        for (const auto& opr : mOperators) {
-            opr->declareState(stateRegistry, module, ctx);
-        }
-
-        std::vector<llvm::Function*> functions;
 
         std::unordered_map<OperatorId, std::size_t> inDegreeCache;
         std::unordered_map<OperatorId, std::set<std::size_t>> incomingInputIndices;
@@ -50,10 +45,34 @@ namespace sierra::odyplan::v3::core::physical::plan {
             }
         }
 
-        segment::SegmentConsumerHandle const noopConsumer{
-            [](segment::SegmentContext&, const data::DataPackage&) {},
-            [](segment::SegmentContext&, const data::PunctuationPackage) {}
+        for (const auto& [id, segment] : mSegments) {
+            flow::IConsumer* entryOpr = segment.nodes.front().asConsumer;
+            if (entryOpr == nullptr) {
+                continue;
+            }
 
+            const auto indexIter = incomingInputIndices.find(id);
+            std::vector<shared::identifiers::PortId> connectedPorts;
+            if (indexIter != incomingInputIndices.end()) {
+                connectedPorts.assign(indexIter->second.begin(), indexIter->second.end());
+            }
+
+            if (connectedPorts.empty()) {
+                throw std::logic_error("Plan::addOutgoingConnections: no incoming connections found for one operator!");
+            }
+
+            entryOpr->configureInputPorts(std::move(connectedPorts));
+        }
+
+        for (const auto& opr : mOperators) {
+            opr->declareState(stateRegistry, module, ctx);
+        }
+
+        std::vector<llvm::Function*> functions;
+
+        const segment::SegmentConsumerHandle noopConsumer{
+            .consume=[](segment::SegmentContext&, const data::DataPackage&) {},
+            .consumePunctuation=[](segment::SegmentContext&, const data::PunctuationPackage&) {}
         };
 
         detail::PlanConstruction detailBuilder(mSegments,
