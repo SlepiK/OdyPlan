@@ -4,6 +4,7 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/IR/Verifier.h>
 
 #include <basic/operators/sink/print/logical/print_operator.h>
 #include <basic/operators/sink/print/physical/print_operator.h>
@@ -161,6 +162,12 @@ int main() {
 
         auto module = std::make_unique<llvm::Module>("example_read_ndjson", *ctx);
         physicalPlan.codegen(*module, *ctx);
+
+        std::string errorInfo;
+        llvm::raw_string_ostream errorStream(errorInfo);
+        if (llvm::verifyModule(*module, &errorStream)) {
+            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
+        }
 
         std::cout << "\n\n";
         std::cout << "\n\n--- Raw IR ---\n";
