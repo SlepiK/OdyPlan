@@ -197,6 +197,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                                                                              const segment::SegmentConsumerHandle &
                                                                              inner) {
         auto *i64Ty = llvm::Type::getInt64Ty(*ctx);
+        auto *i1Ty = llvm::Type::getInt1Ty(*ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(*ctx);
         auto *voidTy = llvm::Type::getVoidTy(*ctx);
 
@@ -212,7 +213,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         const auto &dataLayout = module->getDataLayout();
         const std::uint64_t structByteSize = dataLayout.getTypeAllocSize(snapshotStructTy);
 
-        auto* punctStructTy = llvm::StructType::create(*ctx, {i64Ty}, "ody_punct_" + uniqueKey);
+        auto* punctStructTy = llvm::StructType::create(*ctx, {i64Ty, i1Ty}, "ody_punct_" + uniqueKey);
         const std::uint64_t punctByteSize = dataLayout.getTypeAllocSize(punctStructTy);
 
         const auto queueState = stateRegistry->createHandle(
@@ -261,12 +262,14 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
             });
 
-        auto* punctuationContinuationFn = segment::SegmentBuilder::createContinuation(
+        auto *punctuationContinuationFn = segment::SegmentBuilder::createContinuation(
             *module, *ctx, *codegenTypeRegistry, "ody_punct_continuation_" + uniqueKey,
-            [&](segment::SegmentContext& computeCtx, llvm::Value* punctPtr) {
+            [&](segment::SegmentContext &computeCtx, llvm::Value *punctPtr) {
                 data::PunctuationPackage reconstructed;
                 reconstructed.watermark = computeCtx.builder.CreateLoad(
                     i64Ty, computeCtx.builder.CreateStructGEP(punctStructTy, punctPtr, 0));
+                reconstructed.isFinal = computeCtx.builder.CreateLoad(
+                    i1Ty, computeCtx.builder.CreateStructGEP(punctStructTy, punctPtr, 1));
 
                 inner.consumePunctuation(computeCtx, reconstructed);
 
@@ -310,16 +313,20 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, dataContinuationFn, snapshotPtrLocal);
             },
             [this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl]
-            (segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
+    (segment::SegmentContext &sCtx, const data::PunctuationPackage &punctuation) {
                 auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
 
-                llvm::Value* punctPtrLocal = sCtx.builder.CreateCall(
+                llvm::Value *punctPtrLocal = sCtx.builder.CreateCall(
                     allocFnDecl, {llvm::ConstantInt::get(i64TyLocal, punctByteSize)});
 
                 sCtx.builder.CreateStore(
                     punctuation.watermark, sCtx.builder.CreateStructGEP(punctStructTy, punctPtrLocal, 0));
 
-                segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, punctuationContinuationFn, punctPtrLocal);
+                sCtx.builder.CreateStore(
+                    punctuation.isFinal,sCtx.builder.CreateStructGEP(punctStructTy, punctPtrLocal, 1));
+
+                segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, punctuationContinuationFn,
+                                                                 punctPtrLocal);
             }
         };
     }
