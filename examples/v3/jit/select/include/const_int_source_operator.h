@@ -76,6 +76,12 @@ namespace sierra::odyplan::v3::example::select {
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);
 #endif
+
+                const core::physical::data::PunctuationPackage finalPunctuation{
+                    .watermark = llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), 0),
+                    .isFinal = llvm::ConstantInt::getTrue(ctx)
+                };
+                consumers.front().consumePunctuation(segmentCtx, finalPunctuation);
             }
         };
     }  // namespace physical
