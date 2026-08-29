@@ -90,11 +90,17 @@ namespace sierra::odyplan::v3::example::aot::project {
                     "rtTimeNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
                 tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
-                consumers.front()(segmentCtx, tuple);
+                consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE
                 builder.CreateBr(loopBB);
                 builder.SetInsertPoint(exitBB);
 #endif
+
+                const core::physical::data::PunctuationPackage finalPunctuation{
+                    .watermark = llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), 0),
+                    .isFinal = llvm::ConstantInt::getTrue(ctx)
+                };
+                consumers.front().consumePunctuation(segmentCtx, finalPunctuation);
             }
         };
     }  // namespace physical
