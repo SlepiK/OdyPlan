@@ -101,7 +101,10 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         consumers.front().consume(segmentCtx, tuple);
 
         llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mAllowedLateness.count());
-        llvm::Value* candidateWatermark = segmentCtx.builder.CreateSub(tuple.timestamp, allowedLatenessConst);
+        llvm::Function *usubSatFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::usub_sat, {idTy});
+        llvm::Value *candidateWatermark = segmentCtx.builder.CreateCall(usubSatFn, {
+                                                                            tuple.timestamp, allowedLatenessConst
+                                                                        });
 
         llvm::Value* lastWatermark = segmentCtx.builder.CreateLoad(idTy, mWatermarkState);
         llvm::Value* sAdvance = segmentCtx.builder.CreateICmpSGT(candidateWatermark, lastWatermark);
@@ -114,7 +117,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         segmentCtx.builder.CreateStore(candidateWatermark, mWatermarkState);
 
         const core::physical::data::PunctuationPackage punctuation{
-            .watermark = candidateWatermark
+            .watermark = candidateWatermark,
+            .isFinal = llvm::ConstantInt::getFalse(ctx)
         };
 
         consumers.front().consumePunctuation(segmentCtx, punctuation);
@@ -127,7 +131,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
         llvm::Value* finalWatermark = llvm::ConstantInt::get(idTy, std::numeric_limits<std::int64_t>::max());
         const core::physical::data::PunctuationPackage finalPunctuation{
-            .watermark = finalWatermark
+            .watermark = finalWatermark,
+            .isFinal = llvm::ConstantInt::getTrue(ctx)
         };
         consumers.front().consumePunctuation(segmentCtx, finalPunctuation);
     }

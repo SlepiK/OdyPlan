@@ -291,21 +291,14 @@ int main() {
                 runtime::rtMeasureFinalReport),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtCreateMergeLock")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtCreateMergeLock),
+        symbolMap[jit->mangleAndIntern("rtMergeUpdateWatermark")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeUpdateWatermark),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtDestroyMergeLock")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtDestroyMergeLock),
+        symbolMap[jit->mangleAndIntern("rtMergeWatermarkDestroy")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeWatermarkDestroy),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtMergeLock")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeLock),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtMergeUnlock")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeUnlock),
+        symbolMap[jit->mangleAndIntern("rtMergeWatermarkCreate")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::merge::runtime::rtMergeWatermarkCreate),
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtComputeSegmentNullInit")] = llvm::orc::ExecutorSymbolDef(
