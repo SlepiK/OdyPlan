@@ -21,6 +21,8 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     void rtOdyPrintWindowMetadata(std::uint64_t start, std::uint64_t end, bool hasEnd);
 
     void rtOdyPrintNewline();
+
+    void rtOdyPrintPunctuation(std::uint64_t watermark, bool isFinal);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime
 
