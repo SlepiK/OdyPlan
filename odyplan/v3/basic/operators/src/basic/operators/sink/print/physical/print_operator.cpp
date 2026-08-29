@@ -156,4 +156,19 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
                 throw std::logic_error("PrintOperator: non-printable type reached");
         }
     }
+
+    void PrintOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
+                                core::shared::identifiers::PortId inputPort,
+                                const core::physical::data::PunctuationPackage &punctuation,
+                                const core::physical::segment::SegmentDataConsumers &consumers) {
+        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        const auto printFn = module->getOrInsertFunction("rtOdyPrintPunctuation",
+                                                         llvm::FunctionType::get(llvm::Type::getVoidTy(ctx),
+                                                             {llvm::Type::getInt64Ty(ctx), llvm::Type::getInt1Ty(ctx)},
+                                                             false));
+
+        segmentCtx.builder.CreateCall(printFn, {punctuation.watermark, punctuation.isFinal});
+    }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::physical

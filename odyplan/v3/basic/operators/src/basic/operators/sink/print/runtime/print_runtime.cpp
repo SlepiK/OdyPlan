@@ -48,5 +48,18 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         std::osyncstream(std::cout) << threadPrintBuffer;
         threadPrintBuffer.clear();
     }
+
+
+    void rtOdyPrintPunctuation(const std::uint64_t watermark, const bool isFinal) {
+        threadPrintBuffer += "[PUNCTUATION ";
+        if (isFinal) {
+            threadPrintBuffer += "FINAL]";
+        } else {
+            threadPrintBuffer += "watermark=";
+            threadPrintBuffer += std::to_string(watermark);
+            threadPrintBuffer += ']';
+        }
+        rtOdyPrintNewline();
+    }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime

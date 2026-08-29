@@ -21,6 +21,11 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
                  core::shared::identifiers::PortId inputPort,
                  const core::physical::segment::SegmentDataConsumers& consumers) override;
 
+        void consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
+                                core::shared::identifiers::PortId inputPort,
+                                const core::physical::data::PunctuationPackage &punctuation,
+                                const core::physical::segment::SegmentDataConsumers &consumers) override;
+
     private:
         PortFieldIndexV mPortFieldIndices;
 
