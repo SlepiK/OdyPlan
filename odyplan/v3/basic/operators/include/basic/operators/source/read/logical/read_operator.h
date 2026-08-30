@@ -15,7 +15,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
         ReadOperator(core::logical::port::Port outputPort,
                      io::IOFormatType ioFormat,
                      nlohmann::json ioConfig,
-                     std::chrono::milliseconds delay = std::chrono::milliseconds(0));
+                     std::chrono::milliseconds delay = std::chrono::milliseconds(0),
+                     std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
@@ -25,10 +26,13 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
 
         [[nodiscard]] std::chrono::milliseconds getDelay() const;
 
+        [[nodiscard]] std::chrono::milliseconds getAllowedLateness() const;
+
     private:
         io::IOFormatType mIOFormat;
         nlohmann::json mIOConfig;
         std::chrono::milliseconds mDelay;
+        std::chrono::milliseconds mAllowedLateness;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical
 

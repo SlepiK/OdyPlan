@@ -9,21 +9,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime {
     namespace details {
         struct MergeWatermarkState {
             std::atomic_flag lock = ATOMIC_FLAG_INIT;
-            std::vector<std::uint64_t> perInputWatermark;
+            std::vector<std::int64_t> perInputWatermark;
             std::vector<bool> hasReported;
             std::vector<bool> perInputFinal;
-            std::uint64_t lastEmittedWatermark = 0;
+            std::int64_t lastEmittedWatermark = std::numeric_limits<std::int64_t>::min();;
             bool finalEmitted = false;
         };
     }
 
     extern "C" {
-    void *rtMergeWatermarkCreate(void* runtimeTypeRegistry, std::uint64_t numInputs);
+    void *rtMergeWatermarkCreate(void* runtimeTypeRegistry, std::int64_t numInputs);
 
     void rtMergeWatermarkDestroy(void *state);
 
-    std::uint8_t rtMergeUpdateWatermark(void *state, std::uint64_t inputIndex, std::uint64_t incomingWatermark,
-                                        std::uint8_t incomingIsFinal, std::uint64_t *outWatermark,
+    std::uint8_t rtMergeUpdateWatermark(void *state, std::int64_t inputIndex, std::int64_t incomingWatermark,
+                                        std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
                                         std::uint8_t *outIsFinal);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime

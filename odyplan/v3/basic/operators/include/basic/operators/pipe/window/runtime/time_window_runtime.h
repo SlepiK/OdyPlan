@@ -8,25 +8,30 @@
 #include <vector>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
-    namespace details {
-        struct TimeWindowBucket {
-            std::uint64_t windowStart{0};
-            std::vector<void*> rowPtrs;
-        };
-
-        struct TimeWindowState {
-            std::atomic_flag lock = ATOMIC_FLAG_INIT;
-            std::map<std::uint64_t, TimeWindowBucket> currentOpenWindows;
-        };
-    }
     extern "C" {
-        void* rtTimeWindowCreate(void* runtimeTypeRegistry);
+        void* rtCreateTimeWindowBuffer(void* runtimeTypeRegistry, const core::shared::types::ValueTypeId* typeIds, std::uint64_t fieldCount);
 
-        void rtTimeWindowDestroy(void* state);
+        void rtDestroyTimeWindowBuffer(void* state);
 
-        void rtTimeWindowInsert(void* state, std::uint64_t windowStart, std::uint64_t calculatedWindowEnd, void* rowPtr);
+        void rtTimeWindowBeginRow(void* state);
 
-        void rtTimeWindowDrain(void* state, std::uint64_t threshold, std::uint8_t isFinal, void(*continuationFn)(void*));
+        void rtTimeWindowPush(void* state, std::uint64_t fieldIndex, const void* rawData);
+
+        void rtTimeWindowEndRow(void* state, std::int64_t eventTs, std::int64_t windowStart, std::int64_t calculatedWindowEnd);
+
+        void rtTimeWindowDrain(void* state, std::int64_t threshold, std::uint8_t isFinal);
+
+        std::uint64_t rtTimeWindowGetDrainedRowCount(void* state);
+
+        const void* rtTimeWindowGetDrainedData(void* state, std::uint64_t rowIndex, std::uint64_t fieldIndex);
+
+        std::int64_t rtTimeWindowGetDrainedWindowStart(void* state, std::uint64_t rowIndex);
+
+        std::int64_t rtTimeWindowGetDrainedWindowEnd(void* state, std::uint64_t rowIndex);
+
+        std::int64_t rtTimeWindowGetDrainedTimestamp(void* state, std::uint64_t rowIndex);
+
+        std::uint8_t rtTimeWindowGetDrainedIsLastInWindow(void* state, std::uint64_t rowIndex);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
 

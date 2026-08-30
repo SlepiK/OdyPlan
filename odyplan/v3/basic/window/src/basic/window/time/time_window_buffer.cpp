@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::window::time {
         mRowLayout.push(index, rawData);
     }
 
-    void TimeWindowBuffer::end(const std::uint64_t eventTs, const std::uint64_t windowStart, const std::uint64_t calculatedWindowEnd) {
+    void TimeWindowBuffer::end(const std::int64_t eventTs, const std::int64_t windowStart, const std::int64_t calculatedWindowEnd) {
         auto row = mRowLayout.pop();
         auto& windowBucket = mOpenWindows[calculatedWindowEnd];
         windowBucket.windowStart = windowStart;
@@ -28,21 +28,25 @@ namespace sierra::odyplan::v3::basic::window::time {
         windowBucket.timestamps.push_back(eventTs);
     }
 
-    void TimeWindowBuffer::drain(const std::uint64_t threshold, const bool isFinal) {
+    void TimeWindowBuffer::drain(const std::int64_t threshold, const bool isFinal) {
         for (auto& drainedRow : mDrainedRows) {
             mRowLayout.releaseRow(drainedRow.data);
         }
         mDrainedRows.clear();
+
         //threshold = watermark (punctuation) - allowedLateness
         const auto endIter = isFinal ? mOpenWindows.end() : mOpenWindows.upper_bound(threshold);
 
         for (auto iter = mOpenWindows.begin(); iter != endIter;) {
             auto& windowBucket = iter->second;
             while (!windowBucket.rows.empty()) {
+                //is last entry in the bucket?
+                const bool isLast = (windowBucket.rows.size() == 1);
                 mDrainedRows.push_back(DrainedRow{
                     .windowStartTs = windowBucket.windowStart,
                     .windowEndTs = iter->first,
                     .ts = windowBucket.timestamps.front(),
+                    .isLast = isLast,
                     .data = std::move(windowBucket.rows.front()),
                 });
                 windowBucket.rows.pop_front();
@@ -75,15 +79,19 @@ namespace sierra::odyplan::v3::basic::window::time {
         return mDrainedRows.at(rowIndex).data.data() + mRowLayout.offsetOf(fieldIndex);
     }
 
-    std::uint64_t TimeWindowBuffer::getDrainedWindowStart(const std::size_t rowIndex) const {
+    std::int64_t TimeWindowBuffer::getDrainedWindowStart(const std::size_t rowIndex) const {
         return mDrainedRows.at(rowIndex).windowStartTs;
     }
 
-    std::uint64_t TimeWindowBuffer::getDrainedWindowEnd(const std::size_t rowIndex) const {
+    std::int64_t TimeWindowBuffer::getDrainedWindowEnd(const std::size_t rowIndex) const {
         return mDrainedRows.at(rowIndex).windowEndTs;
     }
 
-    std::uint64_t TimeWindowBuffer::getDrainedTimestamp(const std::size_t rowIndex) const {
+    std::int64_t TimeWindowBuffer::getDrainedTimestamp(const std::size_t rowIndex) const {
         return mDrainedRows.at(rowIndex).ts;
+    }
+
+    bool TimeWindowBuffer::getDrainedIsLastInWindow(const std::size_t rowIndex) const {
+        return mDrainedRows.at(rowIndex).isLast;
     }
 }

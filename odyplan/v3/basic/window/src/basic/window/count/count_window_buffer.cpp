@@ -30,9 +30,9 @@ namespace sierra::odyplan::v3::basic::window::count {
         evict();
         mWindows.clear();
 
-        while (mNextWindowStart + mConfig.size + 1 <= mTotalPushed) {
-            mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = mConfig.size});
-            mNextWindowStart += mConfig.slide;
+        while (mNextWindowStart + mConfig.slide + 1 <= mTotalPushed) {
+            mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = mConfig.slide});
+            mNextWindowStart += mConfig.advance;
         }
     }
 
@@ -42,9 +42,9 @@ namespace sierra::odyplan::v3::basic::window::count {
 
         while (mNextWindowStart < mTotalPushed) {
             const std::uint64_t remaining = mTotalPushed - mNextWindowStart;
-            const std::uint64_t count = std::min<std::uint64_t>(mConfig.size, remaining);
+            const std::uint64_t count = std::min<std::uint64_t>(mConfig.slide, remaining);
             mWindows.push_back(WindowRange{.start = mNextWindowStart, .count = count});
-            mNextWindowStart += mConfig.slide;
+            mNextWindowStart += mConfig.advance;
         }
     }
 

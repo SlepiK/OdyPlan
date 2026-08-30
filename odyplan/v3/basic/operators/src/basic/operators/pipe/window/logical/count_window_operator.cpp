@@ -4,7 +4,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     CountWindowOperator::CountWindowOperator(
         const basic::window::count::CountWindowConfig& windowConfig)
         : mWindowConfig(windowConfig) {
-        checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide);
+        checkBaseConfig(mWindowConfig.type, mWindowConfig.slide, mWindowConfig.advance);
     }
 
     core::shared::types::OperatorTypeId CountWindowOperator::getOperatorTypeId() const {

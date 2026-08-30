@@ -25,9 +25,9 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         virtual void push(std::size_t index, const void* rawData) = 0;
 
-        virtual void end(std::uint64_t eventTs, std::uint64_t windowStart, std::uint64_t calculatedWindowEnd) = 0;
+        virtual void end(std::int64_t eventTs, std::int64_t windowStart, std::int64_t calculatedWindowEnd) = 0;
 
-        virtual void drain(std::uint64_t threshold, bool isFinal) = 0;
+        virtual void drain(std::int64_t threshold, bool isFinal) = 0;
 
         virtual void close() = 0;
 
@@ -35,11 +35,13 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         [[nodiscard]] virtual const std::byte* getDrainedData(std::size_t rowIndex, std::size_t fieldIndex) const = 0;
 
-        [[nodiscard]] virtual std::uint64_t getDrainedWindowStart(std::size_t rowIndex) const = 0;
+        [[nodiscard]] virtual std::int64_t getDrainedWindowStart(std::size_t rowIndex) const = 0;
 
-        [[nodiscard]] virtual std::uint64_t getDrainedWindowEnd(std::size_t rowIndex) const = 0;
+        [[nodiscard]] virtual std::int64_t getDrainedWindowEnd(std::size_t rowIndex) const = 0;
 
-        [[nodiscard]] virtual std::uint64_t getDrainedTimestamp(std::size_t rowIndex) const = 0;
+        [[nodiscard]] virtual std::int64_t getDrainedTimestamp(std::size_t rowIndex) const = 0;
+
+        [[nodiscard]] virtual bool getDrainedIsLastInWindow(std::size_t rowIndex) const = 0;
     };
 
     class TimeWindowBuffer : public ITimeWindowBuffer {
@@ -57,9 +59,9 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         void push(std::size_t index, const void* rawData) override;
 
-        void end(std::uint64_t eventTs, std::uint64_t windowStart, std::uint64_t calculatedWindowEnd) override;
+        void end(std::int64_t eventTs, std::int64_t windowStart, std::int64_t calculatedWindowEnd) override;
 
-        void drain(std::uint64_t threshold, bool isFinal) override;
+        void drain(std::int64_t threshold, bool isFinal) override;
 
         void close() override;
 
@@ -67,28 +69,31 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         [[nodiscard]] const std::byte* getDrainedData(std::size_t rowIndex, std::size_t fieldIndex) const override;
 
-        [[nodiscard]] std::uint64_t getDrainedWindowStart(std::size_t rowIndex) const override;
+        [[nodiscard]] std::int64_t getDrainedWindowStart(std::size_t rowIndex) const override;
 
-        [[nodiscard]] std::uint64_t getDrainedWindowEnd(std::size_t rowIndex) const override;
+        [[nodiscard]] std::int64_t getDrainedWindowEnd(std::size_t rowIndex) const override;
 
-        [[nodiscard]] std::uint64_t getDrainedTimestamp(std::size_t rowIndex) const override;
+        [[nodiscard]] std::int64_t getDrainedTimestamp(std::size_t rowIndex) const override;
+
+        [[nodiscard]] bool getDrainedIsLastInWindow(std::size_t rowIndex) const override;
 
     private:
         struct WindowBucket {
-            std::uint64_t windowStart{0};
+            std::int64_t windowStart{0};
             std::deque<std::vector<std::byte>> rows;
-            std::deque<std::uint64_t> timestamps;
+            std::deque<std::int64_t> timestamps;
         };
 
         struct DrainedRow {
-            std::uint64_t windowStartTs{0};
-            std::uint64_t windowEndTs{0};
-            std::uint64_t ts{0};
+            std::int64_t windowStartTs{0};
+            std::int64_t windowEndTs{0};
+            std::int64_t ts{0};
+            bool isLast{false};
             std::vector<std::byte> data;
         };
 
         WindowRowLayout mRowLayout;
-        std::map<std::uint64_t, WindowBucket> mOpenWindows;
+        std::map<std::int64_t, WindowBucket> mOpenWindows;
         std::vector<DrainedRow> mDrainedRows;
         bool mClosed = false;
     };

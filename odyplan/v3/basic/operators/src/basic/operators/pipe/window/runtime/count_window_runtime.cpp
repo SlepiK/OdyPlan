@@ -1,4 +1,4 @@
-#include <basic/operators/pipe/window/runtime/window_runtime.h>
+#include <basic/operators/pipe/window/runtime/count_window_runtime.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
@@ -11,7 +11,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
             static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const basic::window::count::CountWindowConfig config{
-            .size = static_cast<std::uint64_t>(size), .slide = static_cast<std::uint64_t>(slide)};
+            .slide = static_cast<std::uint64_t>(size), .advance = static_cast<std::uint64_t>(slide)};
 
         core::logical::port::Port schema;
         for (std::uint64_t i = 0; i < fieldCount; ++i) {
@@ -30,47 +30,47 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         delete buffer;
     }
 
-    void rtWindowBeginRow(void* state) {
+    void rtCountWindowBeginRow(void* state) {
         static_cast<basic::window::IWindowBuffer*>(state)->begin();
     }
 
-    void rtWindowPush(void* state, const std::uint64_t fieldIndex, const void* rawData) {
+    void rtCountWindowPush(void* state, const std::uint64_t fieldIndex, const void* rawData) {
         static_cast<basic::window::IWindowBuffer*>(state)->push(fieldIndex, rawData);
     }
 
-    void rtWindowEndRow(void* state, const std::int64_t timestamp) {
+    void rtCountWindowEndRow(void* state, const std::int64_t timestamp) {
         static_cast<basic::window::IWindowBuffer*>(state)->end(
             std::chrono::sys_time(std::chrono::milliseconds(timestamp)));
     }
 
-    void rtWindowCompute(void* state) {
+    void rtCountWindowCompute(void* state) {
         static_cast<basic::window::IWindowBuffer*>(state)->compute();
     }
 
-    void rtWindowFlush(void* state) {
+    void rtCountWindowFlush(void* state) {
         static_cast<basic::window::IWindowBuffer*>(state)->flush();
     }
 
-    std::uint64_t rtWindowGetStart(void* state, const std::uint64_t windowIndex) {
+    std::uint64_t rtCountWindowGetStart(void* state, const std::uint64_t windowIndex) {
         return static_cast<basic::window::IWindowBuffer*>(state)->getWindowStart(static_cast<std::size_t>(windowIndex)).time_since_epoch().count();
     }
 
-    std::uint64_t rtWindowGetEnd(void* state, const std::uint64_t windowIndex, bool* outHasEnd) {
+    std::uint64_t rtCountWindowGetEnd(void* state, const std::uint64_t windowIndex, bool* outHasEnd) {
         auto* buffer = static_cast<basic::window::IWindowBuffer*>(state);
         const auto end = buffer->getWindowEnd(static_cast<std::size_t>(windowIndex));
         *outHasEnd = end.has_value();
         return end.has_value() ? end->time_since_epoch().count() : 0;
     }
 
-    std::uint64_t rtWindowGetCount(void* state) {
+    std::uint64_t rtCountWindowGetCount(void* state) {
         return static_cast<basic::window::IWindowBuffer*>(state)->getWindowCount();
     }
 
-    std::uint64_t rtWindowGetRowCountInWindow(void* state, const std::uint64_t windowIndex) {
+    std::uint64_t rtCountWindowGetRowCountInWindow(void* state, const std::uint64_t windowIndex) {
         return static_cast<basic::window::IWindowBuffer*>(state)->getRowCountInWindow(windowIndex);
     }
 
-    const void* rtWindowGetData(void* state,
+    const void* rtCountWindowGetData(void* state,
                                 const uint64_t windowIndex,
                                 const uint64_t rowIndex,
                                 const uint64_t fieldIndex) {
@@ -78,14 +78,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
             windowIndex, rowIndex, fieldIndex);
     }
 
-    std::int64_t rtWindowGetTimestamp(void* state,
+    std::int64_t rtCountWindowGetTimestamp(void* state,
                                       const std::uint64_t windowIndex,
                                       const std::uint64_t rowIndex) {
         const auto timestamp =
             static_cast<basic::window::IWindowBuffer*>(state)->getTimestamp(windowIndex, rowIndex);
         return timestamp.time_since_epoch().count();
     }
-
-
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime

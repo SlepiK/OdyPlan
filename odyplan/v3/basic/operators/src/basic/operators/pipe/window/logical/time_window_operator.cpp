@@ -16,17 +16,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     }
 
     void TimeWindowOperator::validateInput() {
+        if (mWindowConfig.size.count() <= 0) {
+            throw std::invalid_argument("TimeWindowOperator::validateInput: size must be positive");
+        }
+        if (mWindowConfig.slide.count() <= 0) {
+            throw std::invalid_argument("TimeWindowOperator::validateInput: slide must be positive");
+        }
+        if (mWindowConfig.slide > mWindowConfig.size) {
+            throw std::invalid_argument("TimeWindowOperator::validateInput: slide must not exceed size");
+        }
         if (mWindowConfig.allowedLateness.count() < 0) {
-            throw std::invalid_argument("allowedLateness must be non-negative");
-        }
-
-        if (mWindowConfig.timestampIndex >= getInputPorts().at(0).size()) {
-            throw std::invalid_argument("timestamp index out of range");
-        }
-
-        if (getInputPorts().at(0).at(mWindowConfig.timestampIndex).valueTypeId !=
-            std::to_underlying(core::shared::types::BuiltinValueType::INT64)) {
-            throw std::invalid_argument("timestamp must be int64");
+            throw std::invalid_argument("TimeWindowOperator::validateInput: allowedLateness must be non-negative");
         }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::logical
