@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace sierra::odyplan::v3::basic::window {
-    struct WindowRange {
+    struct CountWindowRange {
         std::uint64_t start;
         std::uint64_t count;
     };

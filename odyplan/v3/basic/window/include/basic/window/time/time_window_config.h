@@ -9,6 +9,7 @@ namespace sierra::odyplan::v3::basic::window::time {
         WindowType type;
         std::chrono::milliseconds size;
         std::chrono::milliseconds slide;
+        std::chrono::milliseconds advance;
         std::chrono::milliseconds allowedLateness{0};
     };
 }  // namespace sierra::odyplan::v3::basic::window::time

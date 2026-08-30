@@ -79,15 +79,15 @@ int main() {
                 sourceOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
                 nlohmann::json{{"path", "read.json"}},
-                std::chrono::milliseconds(5)));
+                std::chrono::milliseconds(0)));
 
         auto pipeId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
                 sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
                     .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
-                    .size = std::chrono::milliseconds(16),
-                    .slide = std::chrono::milliseconds(16)
+                    .size = std::chrono::milliseconds(10),
+                    .slide = std::chrono::milliseconds(5)
                 }));
 
         auto sinkId = logicalPlan.addOperator(
@@ -278,6 +278,9 @@ int main() {
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtTimeWindowGetDrainedIsLastInWindow")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtTimeWindowGetDrainedIsLastInWindow),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtTimeWindowGetDrainedIsFlushedClosed")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtTimeWindowGetDrainedIsFlushedClosed),
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtIOSourceCreate")] = llvm::orc::ExecutorSymbolDef(

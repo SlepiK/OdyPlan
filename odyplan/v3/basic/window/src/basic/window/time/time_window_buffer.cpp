@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::basic::window::time {
     void TimeWindowBuffer::end(const std::int64_t eventTs, const std::int64_t windowStart, const std::int64_t calculatedWindowEnd) {
         auto row = mRowLayout.pop();
         auto& windowBucket = mOpenWindows[calculatedWindowEnd];
-        windowBucket.windowStart = windowStart;
+        windowBucket.rowStarts.push_back(windowStart);
         windowBucket.rows.push_back(std::move(row));
         windowBucket.timestamps.push_back(eventTs);
     }
@@ -43,14 +43,16 @@ namespace sierra::odyplan::v3::basic::window::time {
                 //is last entry in the bucket?
                 const bool isLast = (windowBucket.rows.size() == 1);
                 mDrainedRows.push_back(DrainedRow{
-                    .windowStartTs = windowBucket.windowStart,
+                    .windowStartTs = windowBucket.rowStarts.front(),
                     .windowEndTs = iter->first,
                     .ts = windowBucket.timestamps.front(),
                     .isLast = isLast,
+                    .isClosedByFlush = isFinal,
                     .data = std::move(windowBucket.rows.front()),
                 });
                 windowBucket.rows.pop_front();
                 windowBucket.timestamps.pop_front();
+                windowBucket.rowStarts.pop_front();
             }
             iter = mOpenWindows.erase(iter);
         }
@@ -93,5 +95,9 @@ namespace sierra::odyplan::v3::basic::window::time {
 
     bool TimeWindowBuffer::getDrainedIsLastInWindow(const std::size_t rowIndex) const {
         return mDrainedRows.at(rowIndex).isLast;
+    }
+
+    bool TimeWindowBuffer::getDrainedIsClosedByFlush(const std::size_t rowIndex) const {
+        return mDrainedRows.at(rowIndex).isClosedByFlush;
     }
 }

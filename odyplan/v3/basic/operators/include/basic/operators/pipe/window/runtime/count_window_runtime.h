@@ -2,7 +2,6 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_WINDOW_RUNTIME_HPP
 #include <algorithm>
 #include <basic/window/count/count_window_buffer.h>
-#include <basic/window/window_buffer.h>
 #include <memory>
 #include <vector>
 
@@ -10,8 +9,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
     void*
     rtCreateCountWindowBuffer(const void* typeRegistryRaw,
+                              std::uint8_t windowType,
                               std::int64_t size,
                               std::int64_t slide,
+                              std::int64_t advance,
                               const sierra::odyplan::v3::core::shared::types::ValueTypeId* typeIds,
                               std::uint64_t fieldCount);
 
@@ -29,9 +30,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtCountWindowFlush(void* state);
 
-    std::uint64_t rtCountWindowGetStart(void* state, std::uint64_t windowIndex);
+    std::int64_t rtCountWindowGetStart(void* state, std::uint64_t windowIndex);
 
-    std::uint64_t rtCountWindowGetEnd(void* state, std::uint64_t windowIndex, bool* outHasEnd);
+    std::int64_t rtCountWindowGetStartRow(void* state, std::uint64_t windowIndex, std::uint64_t rowIndex);
+
+    std::int64_t rtCountWindowGetEnd(void* state, std::uint64_t windowIndex, bool* outHasEnd);
 
     std::uint64_t rtCountWindowGetCount(void* state);
 
@@ -42,6 +45,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     std::int64_t
     rtCountWindowGetTimestamp(void* state, std::uint64_t windowIndex, std::uint64_t rowIndex);
+
+    bool rtCountWindowIsClosedByFlush(void* state, std::uint64_t windowIndex);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
 

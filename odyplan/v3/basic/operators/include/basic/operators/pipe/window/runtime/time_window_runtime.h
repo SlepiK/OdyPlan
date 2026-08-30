@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <map>
 #include <basic/window/count/count_window_buffer.h>
-#include <basic/window/window_buffer.h>
 #include <memory>
 #include <vector>
 
@@ -32,6 +31,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         std::int64_t rtTimeWindowGetDrainedTimestamp(void* state, std::uint64_t rowIndex);
 
         std::uint8_t rtTimeWindowGetDrainedIsLastInWindow(void* state, std::uint64_t rowIndex);
+
+        std::uint8_t rtTimeWindowGetDrainedIsFlushedClosed(void* state, std::uint64_t rowIndex);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
 

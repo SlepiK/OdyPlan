@@ -31,7 +31,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ']';
     }
 
-    void rtOdyPrintWindowMetadata(const std::int64_t start, const std::int64_t end, const bool hasEnd, const bool isClosed) {
+    void rtOdyPrintWindowMetadata(const std::int64_t start, const std::int64_t end, const bool hasEnd, const bool isClosed, const bool isClosedByFlush) {
         threadPrintBuffer += '[';
         threadPrintBuffer += std::to_string(start);
         threadPrintBuffer += '|';
@@ -45,6 +45,12 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
             threadPrintBuffer += "iC";
         } else {
             threadPrintBuffer += "nC";
+        }
+        threadPrintBuffer += '|';
+        if (isClosedByFlush) {
+            threadPrintBuffer += "iCF";
+        } else {
+            threadPrintBuffer += "nCF";
         }
         threadPrintBuffer += ']';
     }

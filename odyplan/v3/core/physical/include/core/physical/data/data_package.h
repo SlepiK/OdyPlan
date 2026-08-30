@@ -15,6 +15,7 @@ namespace sierra::odyplan::v3::core::physical::data {
         llvm::Value* hasEnd;
         //isClosed means the DataPackage tagged with this tag is the final DataPackage in a window.
         llvm::Value* isClosed;
+        llvm::Value* isClosedByFlush;
     };
 
     struct DataPackage {

@@ -2,8 +2,6 @@
 #define SIERRA_ODYPLAN_V2_COMMON_WINDOW_TIME_WINDOW_BUFFER_H
 
 #include <basic/window/count/count_window_config.h>
-#include <basic/window/window_buffer.h>
-#include <basic/window/window_range.h>
 #include <basic/window/window_row_layout.h>
 #include <deque>
 #include <map>
@@ -42,6 +40,8 @@ namespace sierra::odyplan::v3::basic::window::time {
         [[nodiscard]] virtual std::int64_t getDrainedTimestamp(std::size_t rowIndex) const = 0;
 
         [[nodiscard]] virtual bool getDrainedIsLastInWindow(std::size_t rowIndex) const = 0;
+
+        [[nodiscard]] virtual bool getDrainedIsClosedByFlush(std::size_t rowIndex) const = 0;
     };
 
     class TimeWindowBuffer : public ITimeWindowBuffer {
@@ -77,9 +77,11 @@ namespace sierra::odyplan::v3::basic::window::time {
 
         [[nodiscard]] bool getDrainedIsLastInWindow(std::size_t rowIndex) const override;
 
+        [[nodiscard]] bool getDrainedIsClosedByFlush(std::size_t rowIndex) const override;
+
     private:
         struct WindowBucket {
-            std::int64_t windowStart{0};
+            std::deque<std::int64_t> rowStarts;
             std::deque<std::vector<std::byte>> rows;
             std::deque<std::int64_t> timestamps;
         };
@@ -89,6 +91,7 @@ namespace sierra::odyplan::v3::basic::window::time {
             std::int64_t windowEndTs{0};
             std::int64_t ts{0};
             bool isLast{false};
+            bool isClosedByFlush{false};
             std::vector<std::byte> data;
         };
 

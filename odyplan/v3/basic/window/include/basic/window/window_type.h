@@ -5,8 +5,8 @@
 
 namespace sierra::odyplan::v3::basic::window {
     enum class WindowType : std::uint8_t {
-        TUMBLING,
         SLIDING,
+        ADVANCE
     };
 }
 

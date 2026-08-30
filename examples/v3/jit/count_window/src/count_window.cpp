@@ -85,9 +85,9 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
                 sierra::odyplan::v3::basic::window::count::CountWindowConfig{
-                    .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
-                    .slide = 2,
-                    .advance = 1
+                    .type = sierra::odyplan::v3::basic::window::WindowType::ADVANCE,
+                    .size = 2,
+                    .advance = 2
                 }));
 
         auto sinkId = logicalPlan.addOperator(
@@ -297,6 +297,14 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtCountWindowGetTimestamp")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
                 runtime::rtCountWindowGetTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowGetStartRow")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
+                runtime::rtCountWindowGetStartRow),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowIsClosedByFlush")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
+                runtime::rtCountWindowIsClosedByFlush),
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtComputeSegmentNullInit")] = llvm::orc::ExecutorSymbolDef(

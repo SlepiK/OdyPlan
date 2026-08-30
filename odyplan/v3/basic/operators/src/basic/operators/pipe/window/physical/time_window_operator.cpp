@@ -182,6 +182,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Value *eventTs = segmentCtx.builder.CreateCall(
             smaxFn, {tuple.timestamp, llvm::ConstantInt::get(i64Ty, 0)});
 
+        if (mConfig.type == basic::window::WindowType::ADVANCE) {
+            codegenAdvance(segmentCtx, state, tuple, eventTs);
+            return;
+        }
+
         const std::int64_t sizeMs = mConfig.size.count();
         const std::int64_t slideMs = mConfig.slide.count();
         const std::int64_t calculatedWindowsPerTuple = (sizeMs + slideMs - 1) / slideMs;
@@ -271,13 +276,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                                                        llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
         const auto getIsLast = module->getOrInsertFunction("rtTimeWindowGetDrainedIsLastInWindow",
                                                            llvm::FunctionType::get(i8Ty, {ptrTy, i64Ty}, false));
-
+        const auto getIsClosedByFlush = module->getOrInsertFunction("rtTimeWindowGetDrainedIsFlushedClosed",
+                                                                    llvm::FunctionType::get(
+                                                                        i8Ty, {ptrTy, i64Ty}, false));
 
         llvm::Value *windowStart = drainCtx.builder.CreateCall(getWindowStart, {state, iValue});
         llvm::Value *windowEnd = drainCtx.builder.CreateCall(getWindowEnd, {state, iValue});
         llvm::Value *timestamp = drainCtx.builder.CreateCall(getTs, {state, iValue});
         llvm::Value* isLast = drainCtx.builder.CreateCall(getIsLast, {state, iValue});
         llvm::Value* isLastInWindow = drainCtx.builder.CreateICmpNE(isLast, llvm::ConstantInt::get(i8Ty, 0));
+        llvm::Value* isClosedByFlush = drainCtx.builder.CreateCall(getIsClosedByFlush, {state, iValue});
+        llvm::Value* windowIsClosedByFlush = drainCtx.builder.CreateICmpNE(isClosedByFlush, llvm::ConstantInt::get(i8Ty, 0));
+
 
         core::physical::data::DataPackage dTuple;
         dTuple.timestamp = timestamp;
@@ -287,7 +297,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
             //time_window knows its >calculated< end
             .hasEnd = llvm::ConstantInt::getTrue(ctx),
             //window should be marked as closed, if this is the last drained entry/element (punctuation and allowed lateness should help guarding this a little...)
-            .isClosed = isLastInWindow
+            .isClosed = isLastInWindow,
+            .isClosedByFlush = windowIsClosedByFlush
         };
         dTuple.reserve(mDataSchema.size());
 
@@ -334,5 +345,24 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         for (const auto& consumer : consumers) {
             consumer.consumePunctuation(segmentCtx, punctuation);
         }
+    }
+
+    void TimeWindowOperator::codegenAdvance(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *state,
+                                            const core::physical::data::DataPackage &tuple,
+                                            llvm::Value *eventTs) const {
+        llvm::LLVMContext &ctx = segmentCtx.builder.getContext();
+
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+
+        llvm::Value *advanceValue = llvm::ConstantInt::get(i64Ty, mConfig.advance.count());
+
+        llvm::Value *k = segmentCtx.builder.CreateSDiv(eventTs, advanceValue);
+        llvm::Value *rem = segmentCtx.builder.CreateSRem(eventTs, advanceValue);
+        llvm::Value *isExact = segmentCtx.builder.CreateICmpEQ(rem, llvm::ConstantInt::get(i64Ty, 0));
+        llvm::Value *kCeil = segmentCtx.builder.CreateSelect(
+            isExact, k, segmentCtx.builder.CreateAdd(k, llvm::ConstantInt::get(i64Ty, 1)));
+        llvm::Value *windowEnd = segmentCtx.builder.CreateMul(kCeil, advanceValue);
+
+        codegenEndRow(segmentCtx, state, tuple, eventTs, eventTs, windowEnd);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical

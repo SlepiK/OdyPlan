@@ -13,6 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     void CountWindowOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                            llvm::Module& module,
                                            llvm::LLVMContext& context) {
+        auto* i8Ty = llvm::Type::getInt8Ty(context);
         auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
 
@@ -21,11 +22,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         mState = stateRegistry.createHandle("count_window_" + std::to_string(getPId()),
                                             "rtCreateCountWindowBuffer",
-                                            {llvm::ConstantInt::get(i64Ty, mConfig.slide),
+                                            {
+                                             llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mConfig.type)),
+                                             llvm::ConstantInt::get(i64Ty, mConfig.size),
+                                             llvm::ConstantInt::get(i64Ty, mConfig.slide),
                                              llvm::ConstantInt::get(i64Ty, mConfig.advance),
                                              typesGlobal,
                                              llvm::ConstantInt::get(i64Ty, mDataSchema.size())},
-                                            {i64Ty, i64Ty, ptrTy, i64Ty},
+                                            {i8Ty, i64Ty, i64Ty, i64Ty, ptrTy, i64Ty},
                                             "rtDestroyCountWindowBuffer");
     }
 
@@ -152,9 +156,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         segmentCtx.builder.SetInsertPoint(wBodyBB);
 
-        const auto windowGetStartFn = module->getOrInsertFunction(
+
+        llvm::Value* wStart = nullptr;
+        if (mConfig.type == basic::window::WindowType::SLIDING) {
+            const auto windowGetStartFn = module->getOrInsertFunction(
            "rtCountWindowGetStart", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        llvm::Value* wStart = segmentCtx.builder.CreateCall(windowGetStartFn, {state, wIndex});
+            wStart = segmentCtx.builder.CreateCall(windowGetStartFn, {state, wIndex});
+        }
 
         llvm::Value* hasEndSlot = segmentCtx.storage.getNamed("hasEnd." +std::to_string(getPId()), llvm::Type::getInt1Ty(ctx));
 
@@ -168,6 +176,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         llvm::Value* wHasEnd = segmentCtx.builder.CreateLoad(
             llvm::Type::getInt1Ty(ctx), hasEndSlot);
+
+        const auto windowIsClosedByFlush = module->getOrInsertFunction(
+           "rtCountWindowIsClosedByFlush", llvm::FunctionType::get(llvm::Type::getInt1Ty(ctx), {ptrTy, i64Ty}, false));
+        llvm::Value* wIsClosedByFlush = segmentCtx.builder.CreateCall(windowIsClosedByFlush, {state, wIndex});
 
         auto *windowRowIndex = segmentCtx.storage.getNamed("windowRowIndex." +std::to_string(getPId()), i64Ty);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowRowIndex);
@@ -184,6 +196,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         segmentCtx.builder.SetInsertPoint(wRowBodyBB);
 
+        if (mConfig.type == basic::window::WindowType::ADVANCE) {
+            const auto windowGetStartRowFn = module->getOrInsertFunction("rtCountWindowGetStartRow", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty, i64Ty}, false));
+            wStart = segmentCtx.builder.CreateCall(windowGetStartRowFn, {state, wIndex, wRowIndex});
+        }
+
         core::physical::data::DataPackage emit;
 
         emit.timestamp = codegenGetTimestamp(segmentCtx, state, wIndex, wRowIndex);
@@ -195,7 +212,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
             .windowStart = wStart,
             .windowEnd = wEnd,
             .hasEnd = wHasEnd,
-            .isClosed = wIsLastInWindow
+            .isClosed = wIsLastInWindow,
+            .isClosedByFlush = wIsClosedByFlush
         };
 
         emit.reserve(getOutputPorts().at(0).size());

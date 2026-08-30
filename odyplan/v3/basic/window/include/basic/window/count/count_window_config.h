@@ -6,6 +6,7 @@
 namespace sierra::odyplan::v3::basic::window::count {
     struct CountWindowConfig {
         WindowType type;
+        std::uint64_t size;
         std::uint64_t slide;
         std::uint64_t advance;
     };

@@ -64,5 +64,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     std::uint8_t rtTimeWindowGetDrainedIsLastInWindow(void* state, const std::uint64_t rowIndex) {
         return static_cast<basic::window::time::ITimeWindowBuffer*>(state)->getDrainedIsLastInWindow(rowIndex) ? 1 : 0;
     }
+
+    std::uint8_t rtTimeWindowGetDrainedIsFlushedClosed(void* state, const std::uint64_t rowIndex) {
+        return static_cast<basic::window::time::ITimeWindowBuffer*>(state)->getDrainedIsClosedByFlush(rowIndex) ? 1 : 0;
+    }
     }
 }

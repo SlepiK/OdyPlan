@@ -63,6 +63,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         void codegenPreIter(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *state,
                                   const core::physical::data::DataPackage &tuple, llvm::Value *eventTs,
                                   std::uint64_t calculatedWindowCandidatesPerTuple) const;
+
+        void codegenAdvance(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *state,
+                            const core::physical::data::DataPackage &tuple, llvm::Value *eventTs) const;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical
 
