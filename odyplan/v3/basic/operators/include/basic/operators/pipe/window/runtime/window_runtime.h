@@ -42,6 +42,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     std::int64_t
     rtWindowGetTimestamp(void* state, std::uint64_t windowIndex, std::uint64_t rowIndex);
+
+
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
 

@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWBUFFER_H
-#define SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWBUFFER_H
+#ifndef SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H
+#define SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H
 
 #include <basic/window/count/count_window_config.h>
 #include <basic/window/window_buffer.h>
@@ -68,4 +68,4 @@ namespace sierra::odyplan::v3::basic::window::count {
     };
 }  // namespace sierra::odyplan::v3::basic::window::count
 
-#endif  // SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWBUFFER_H
+#endif  // SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H

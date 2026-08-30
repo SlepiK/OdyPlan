@@ -85,5 +85,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
             static_cast<basic::window::IWindowBuffer*>(state)->getTimestamp(windowIndex, rowIndex);
         return timestamp.time_since_epoch().count();
     }
+
+
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
