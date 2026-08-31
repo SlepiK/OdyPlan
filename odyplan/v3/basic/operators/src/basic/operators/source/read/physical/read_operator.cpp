@@ -7,12 +7,14 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                core::logical::port::Port dataSchema,
                                const bool useProgramClock,
                                const std::optional<std::size_t> timestampFieldIndex,
-                               const std::chrono::milliseconds rowDelay)
+                               const std::chrono::milliseconds rowDelay,
+                               const std::chrono::milliseconds allowedLateness)
         : TypedSourceOperator(std::move(outputPort)),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
           mTimestampFieldIndex(timestampFieldIndex),
           mRowDelay(rowDelay),
+          mAllowedLateness(allowedLateness),
           mIOConfig(std::move(ioConfig)),
           mUseProgramClock(useProgramClock) {
         if (mDataSchema.empty()) {
@@ -101,10 +103,9 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         consumers.front().consume(segmentCtx, tuple);
 
         llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mAllowedLateness.count());
-        llvm::Function *usubSatFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::usub_sat, {idTy});
-        llvm::Value *candidateWatermark = segmentCtx.builder.CreateCall(usubSatFn, {
-                                                                            tuple.timestamp, allowedLatenessConst
-                                                                        });
+        llvm::Function* smaxFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::smax, {idTy});
+        llvm::Value* guardedTs = segmentCtx.builder.CreateCall(smaxFn, {tuple.timestamp, llvm::ConstantInt::get(idTy, 0)});
+        llvm::Value *candidateWatermark = segmentCtx.builder.CreateSub(guardedTs, allowedLatenessConst);
 
         llvm::Value* lastWatermark = segmentCtx.builder.CreateLoad(idTy, mWatermarkState);
         llvm::Value* sAdvance = segmentCtx.builder.CreateICmpSGT(candidateWatermark, lastWatermark);

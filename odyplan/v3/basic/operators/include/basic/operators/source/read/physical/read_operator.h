@@ -18,7 +18,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                      core::logical::port::Port dataSchema,
                      bool useProgramClock = false,
                      std::optional<std::size_t> timestampFieldIndex = std::nullopt,
-                     std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0));
+                     std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0),
+                     std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
 
         void produce(core::physical::segment::SegmentContext& segmentCtx,
                      const core::physical::segment::SegmentDataConsumers& consumers) override;

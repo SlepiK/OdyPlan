@@ -16,13 +16,13 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
 
     void rtOdyPrintSeperator();
 
-    void rtOdyPrintTimeStamp(std::uint64_t value);
+    void rtOdyPrintTimeStamp(std::int64_t value);
 
-    void rtOdyPrintWindowMetadata(std::uint64_t start, std::uint64_t end, bool hasEnd);
+    void rtOdyPrintWindowMetadata(std::int64_t start, std::int64_t end, bool hasEnd, bool isClosed, bool isClosedByFlush);
 
     void rtOdyPrintNewline();
 
-    void rtOdyPrintPunctuation(std::uint64_t watermark, bool isFinal);
+    void rtOdyPrintPunctuation(std::int64_t watermark, bool isFinal);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime
 

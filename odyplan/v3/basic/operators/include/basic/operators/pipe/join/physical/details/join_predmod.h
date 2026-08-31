@@ -7,6 +7,7 @@
 #include <core/shared/types/value_type_id.h>
 #include <cstddef>
 #include <optional>
+#include <basic/expression/logical_expression.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     struct EquiKeyInfo {
