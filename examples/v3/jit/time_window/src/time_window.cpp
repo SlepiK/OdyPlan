@@ -79,7 +79,7 @@ int main() {
                 sourceOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
                 nlohmann::json{{"path", "read.json"}},
-                std::chrono::milliseconds(0)));
+                std::chrono::milliseconds(5)));
 
         auto pipeId = logicalPlan.addOperator(
             std::make_unique<
@@ -87,7 +87,7 @@ int main() {
                 sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
                     .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
                     .size = std::chrono::milliseconds(10),
-                    .slide = std::chrono::milliseconds(5)
+                    .slide = std::chrono::milliseconds(10)
                 }));
 
         auto sinkId = logicalPlan.addOperator(
