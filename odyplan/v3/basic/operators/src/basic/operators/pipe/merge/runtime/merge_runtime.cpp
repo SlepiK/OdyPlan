@@ -2,12 +2,13 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime {
     extern "C" {
-    void *rtMergeWatermarkCreate(void* /*runtimeTypeRegistry*/, std::uint64_t numInputs) {
+    void *rtMergeWatermarkCreate(void* /*runtimeTypeRegistry*/, const std::int64_t numInputs) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* state = new details::MergeWatermarkState();
-        state->perInputWatermark.assign(static_cast<std::size_t>(numInputs), 0);
-        state->hasReported.assign(static_cast<std::size_t>(numInputs), false);
-        state->perInputFinal.assign(static_cast<std::size_t>(numInputs), false);
+        const auto cNumInputs = static_cast<std::size_t>(numInputs);
+        state->perInputWatermark.assign(cNumInputs, 0);
+        state->hasReported.assign(cNumInputs, false);
+        state->perInputFinal.assign(cNumInputs, false);
         return state;
     }
 
@@ -16,8 +17,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime {
         delete static_cast<details::MergeWatermarkState*>(state);
     }
 
-    std::uint8_t rtMergeUpdateWatermark(void *state, std::uint64_t inputIndex, std::uint64_t incomingWatermark,
-                                            std::uint8_t incomingIsFinal, std::uint64_t *outWatermark,
+    std::uint8_t rtMergeUpdateWatermark(void *state, const std::int64_t inputIndex, std::int64_t incomingWatermark,
+                                            const std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
                                             std::uint8_t *outIsFinal) {
         auto* wState = static_cast<details::MergeWatermarkState*>(state);
 
@@ -39,7 +40,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime {
             wState->perInputFinal[index] = true;
         }
 
-        std::uint64_t effMin = std::numeric_limits<std::uint64_t>::max();
+        std::int64_t effMin = std::numeric_limits<std::int64_t>::max();
         bool allFinal = true;
 
         for (std::size_t i = 0; i < wState->perInputWatermark.size(); ++i) {

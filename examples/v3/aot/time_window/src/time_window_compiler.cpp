@@ -94,8 +94,7 @@ int main(int argc, char** argv) {
         sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
             .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
             .size = std::chrono::milliseconds(1000),
-            .slide = std::chrono::milliseconds(1000),
-            .timestampIndex = 0}
+            .slide = std::chrono::milliseconds(1000)}
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
@@ -148,7 +147,7 @@ int main(int argc, char** argv) {
             const auto& config = concrete.getWindowConfig();
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config));
+            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config, concrete.getInputPorts().front()));
             return ot;
         }
     );

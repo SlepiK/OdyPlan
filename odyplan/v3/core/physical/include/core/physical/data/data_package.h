@@ -9,8 +9,13 @@
 namespace sierra::odyplan::v3::core::physical::data {
     struct WindowTag {
         //start = inclusive, end = exclusive
-        llvm::Value* windowStart = nullptr;
-        llvm::Value* windowEnd = nullptr;
+        llvm::Value* windowStart;
+        llvm::Value* windowEnd;
+        //hasEnd means windowEnd is a valid value. It means not that it is a finished/closed window!
+        llvm::Value* hasEnd;
+        //isClosed means the DataPackage tagged with this tag is the final DataPackage in a window.
+        llvm::Value* isClosed;
+        llvm::Value* isClosedByFlush;
     };
 
     struct DataPackage {

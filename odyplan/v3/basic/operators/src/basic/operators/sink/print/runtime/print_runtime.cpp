@@ -26,12 +26,12 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ' ';
     }
 
-    void rtOdyPrintTimeStamp(const std::uint64_t value) {
+    void rtOdyPrintTimeStamp(const std::int64_t value) {
         threadPrintBuffer += std::to_string(value);
         threadPrintBuffer += ']';
     }
 
-    void rtOdyPrintWindowMetadata(const std::uint64_t start, const std::uint64_t end, const bool hasEnd) {
+    void rtOdyPrintWindowMetadata(const std::int64_t start, const std::int64_t end, const bool hasEnd, const bool isClosed, const bool isClosedByFlush) {
         threadPrintBuffer += '[';
         threadPrintBuffer += std::to_string(start);
         threadPrintBuffer += '|';
@@ -39,6 +39,18 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
             threadPrintBuffer += std::to_string(end);
         } else {
             threadPrintBuffer += '-';
+        }
+        threadPrintBuffer += '|';
+        if (isClosed) {
+            threadPrintBuffer += "iC";
+        } else {
+            threadPrintBuffer += "nC";
+        }
+        threadPrintBuffer += '|';
+        if (isClosedByFlush) {
+            threadPrintBuffer += "iCF";
+        } else {
+            threadPrintBuffer += "nCF";
         }
         threadPrintBuffer += ']';
     }
@@ -50,7 +62,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     }
 
 
-    void rtOdyPrintPunctuation(const std::uint64_t watermark, const bool isFinal) {
+    void rtOdyPrintPunctuation(const std::int64_t watermark, const bool isFinal) {
         threadPrintBuffer += "[PUNCTUATION ";
         if (isFinal) {
             threadPrintBuffer += "FINAL]";

@@ -17,10 +17,12 @@ namespace sierra::odyplan::v3::core::physical::flow {
         IConsumer& operator=(IConsumer const&) = delete;
         IConsumer(IConsumer&&) = delete;
         IConsumer& operator=(IConsumer&&) = delete;
+
         virtual void consume(segment::SegmentContext& segmentCtx,
                              shared::identifiers::PortId inputPort,
                              const data::DataPackage& data,
                              const segment::SegmentDataConsumers& consumers) = 0;
+
         virtual void end(segment::SegmentContext& segmentCtx,
                          shared::identifiers::PortId inputPort,
                          const segment::SegmentDataConsumers& consumers) {}

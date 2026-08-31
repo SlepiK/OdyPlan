@@ -11,19 +11,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
         template <typename T>
         static void checkBaseConfig(const basic::window::WindowType windowType,
                                     const T windowSize,
-                                    const T windowSlide) {
-            if (windowSize == T{0}) {
-                throw std::invalid_argument("window size cant be 0");
+                                    const T windowSlide,
+                                    const T windowAdvance) {
+            if (windowSize <= T{}) {
+                throw std::invalid_argument("window size must be positive");
             }
 
-            if (windowType == basic::window::WindowType::TUMBLING && windowSlide != windowSize) {
-                throw std::invalid_argument("window size and slide must be equal for TUMBLING");
+            if (windowType == basic::window::WindowType::SLIDING && windowSlide <= T{}) {
+                throw std::invalid_argument("slide must be positive");
             }
 
-            if (windowType == basic::window::WindowType::SLIDING &&
-                (windowSlide == T{0} || windowSlide > windowSize)) {
-                throw std::invalid_argument("sliding requires 0 < slide <= size");
-            }
+            if (windowType == basic::window::WindowType::ADVANCE && windowAdvance <= T{}) {
+                throw std::invalid_argument("advance must be positive");
+                }
         }
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::logical
