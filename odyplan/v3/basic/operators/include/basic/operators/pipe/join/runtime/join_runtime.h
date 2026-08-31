@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEndRight(void* state, std::int64_t timestamp);
 
-    void* rtJoinSnapshotForComputeAndUnlock(void* state, std::uint64_t timestamp, bool callFromLeft);
+    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft);
 
     const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::uint64_t fieldIndex);
 
@@ -51,9 +51,20 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     std::uint64_t rtJoinSnapshotGetCount(void* snapshot);
 
-    void rtJoinSnapshotRelease(void* snapshot);
+    void rtJoinSnapshotRelease(void *snapshot);
 
-    bool rtJoinSnapshotGetWasLeft(void* snapshot);
+    bool rtJoinSnapshotGetWasLeft(void *snapshot);
+
+    void *rtJoinWatermarkCreate(void *typeRegistryRawPtr);
+
+    void rtJoinWatermarkDestroy(void *state);
+
+    std::uint8_t rtJoinUpdateWatermark(void *state, std::uint8_t isLeft, std::int64_t inWatermark,
+                                       std::uint8_t inIsFinal, std::int64_t allowedLateness,
+                                       std::int64_t *outEvictLeftTh, std::int64_t *outEvictRightTh,
+                                       std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal);
+
+    void rtJoinEvict(void* state, std::int64_t timestamp, std::uint8_t callFromLeft);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

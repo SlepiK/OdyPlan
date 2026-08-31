@@ -66,13 +66,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         void endRight(Timestamp timestamp);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForComputeAndUnlock(Timestamp evictTimestamp, bool callFromLeft);
+        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft);
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
         void enableEqui(const std::vector<std::size_t>& leftFieldIndices,
                         const std::vector<std::size_t>& rightFieldIndices,
                         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
+
+        void evict(Timestamp timestamp, bool callFromLeft);
 
     private:
         JoinSide mLeftSide;
@@ -83,8 +85,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::vector<std::size_t> mCandidates;
         bool mCandidateOnRight = false;
         bool mAllReleased = false;
-
-        void evict(Timestamp timestamp, bool callFromLeft);
 
         void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
 

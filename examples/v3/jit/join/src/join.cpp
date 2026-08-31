@@ -92,7 +92,7 @@ int main() {
                 sourceRightOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
                 nlohmann::json{{"path", "right.ndjson"}},
-                std::chrono::milliseconds(2)
+                std::chrono::milliseconds(5)
             ));
 
         static auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
@@ -103,7 +103,7 @@ int main() {
 
         auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
             .leftWindowSize = std::chrono::milliseconds(10),
-            .rightWindowSize = std::chrono::milliseconds(10)
+            .rightWindowSize = std::chrono::milliseconds(20)
         };
 
         auto joinId = logicalPlan.addOperator(
@@ -329,6 +329,27 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotRelease")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotRelease),
+            llvm::JITSymbolFlags::Exported);
+
+        symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinUnlock),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinEvict")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinEvict),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinWatermarkCreate")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinWatermarkCreate),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinWatermarkDestroy")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinWatermarkDestroy),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinUpdateWatermark")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinUpdateWatermark),
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtIOTaskSpawn")] = llvm::orc::ExecutorSymbolDef(
