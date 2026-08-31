@@ -55,80 +55,67 @@ int main() {
 
         auto sourceLeftOutput = sierra::odyplan::v3::core::logical::port::Port{
             sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
-                .fieldName = "id"
+                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
+                .typeJsonName = "int", .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
-                .fieldName = "l_id"
+                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
+                .typeJsonName = "int", .fieldName = "l_id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string",
-                .fieldName = "first_name"
+                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
+                .typeJsonName = "string", .fieldName = "first_name"
             }
         };
 
         auto sourceLeftId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
+            std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
                 sourceLeftOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
                 nlohmann::json{{"path", "left.ndjson"}},
-                std::chrono::milliseconds(5)));
+                std::chrono::milliseconds(5)
+            ));
 
         auto sourceRightOutput = sierra::odyplan::v3::core::logical::port::Port{
             sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
-                .fieldName = "id"
+                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
+                .typeJsonName = "int", .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string",
-                .fieldName = "last_name"
+                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
+                .typeJsonName = "string", .fieldName = "last_name"
             }
         };
 
         auto sourceRightId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
+            std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
                 sourceRightOutput,
                 std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
                 nlohmann::json{{"path", "right.ndjson"}},
-                std::chrono::milliseconds(2)));
+                std::chrono::milliseconds(2)
+            ));
 
-        static auto joinPredicate =
-                std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
-                    std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
-                        1),
-                    sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
-                    std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(
-                        3));
+        static auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
+            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(1),
+            sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
+            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(3)
+        );
 
-        auto joinConfig =
-                sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
-                    .leftWindowSize = std::chrono::milliseconds(10),
-                    .rightWindowSize = std::chrono::milliseconds(10)
-                };
+        auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
+            .leftWindowSize = std::chrono::milliseconds(10),
+            .rightWindowSize = std::chrono::milliseconds(10)
+        };
 
         auto joinId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(
-                joinConfig, joinPredicate.get()));
+            std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(
+                joinConfig,
+                joinPredicate.get()
+            ));
 
         auto sinkId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                PortFieldIndexV{0, 2, 4}));
+            std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
+                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0, 2, 4}
+            ));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
@@ -188,30 +175,23 @@ int main() {
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator &op,
-               const sierra::odyplan::v3::core::physical::port::Ports &inputPorts,
-               const sierra::odyplan::v3::core::physical::port::Ports &outputPorts)
-        -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto &concrete = static_cast<const sierra::odyplan::v3::basic::operators::
-                    pipe::join::logical::JoinOperator &>(op);
-                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
+            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+                const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
+                const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+                // NOLINTNEXTLINE
+                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator&>(op);
 
                 const sierra::odyplan::v3::core::logical::port::Ports schemas{
                     concrete.getInputPorts().at(0), concrete.getInputPorts().at(1)
                 };
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-                ot.operators.push_back(
-                    std::make_unique<
-                        sierra::odyplan::v3::basic::operators::pipe::join::physical::JoinOperator>(
-                        inputPorts.front(),
-                        outputPorts.front(),
-                        concrete.getConfig(),
-                        schemas,
-                        concrete.getPredicate()));
+                ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::physical::JoinOperator>(
+                    inputPorts.front(), outputPorts.front(), concrete.getConfig(), schemas, concrete.getPredicate()
+                ));
                 return ot;
-            });
+            }
+        );
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::TYPE_ID,
@@ -241,11 +221,6 @@ int main() {
         auto module = std::make_unique<llvm::Module>("example_join", *ctx);
         physicalPlan.codegen(*module, *ctx);
 
-        std::string errorInfo;
-        llvm::raw_string_ostream errorStream(errorInfo);
-        if (llvm::verifyModule(*module, &errorStream)) {
-            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
-        }
 
         std::cout << "\n\n";
         std::cout << "\n\n--- Raw IR ---\n";
@@ -253,6 +228,12 @@ int main() {
         module->print(ros, nullptr);
         ros.flush();
         std::cout << "\n\n";
+
+        std::string errorInfo;
+        llvm::raw_string_ostream errorStream(errorInfo);
+        if (llvm::verifyModule(*module, &errorStream)) {
+            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
+        }
 
         std::cout << "LLVM-IR: OK\n";
         std::cout << "Running via LLVM-JIT...\n";

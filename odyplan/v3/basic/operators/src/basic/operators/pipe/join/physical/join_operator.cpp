@@ -208,7 +208,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
              rightEquiIndices,
              equiTypeIds,
              llvm::ConstantInt::get(i64Ty, equiKeys.size())},
-            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i8Ty},
+            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i64Ty},
             "rtJoinDestroy");
     }
 
