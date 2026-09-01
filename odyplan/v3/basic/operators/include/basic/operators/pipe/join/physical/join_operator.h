@@ -29,6 +29,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                           llvm::Module& module,
                           llvm::LLVMContext& context) override;
 
+        void consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
+                                core::shared::identifiers::PortId inputPort,
+                                const core::physical::data::PunctuationPackage &punctuation,
+                                const core::physical::segment::SegmentDataConsumers &consumers) override;
+
     private:
         logical::details::JoinConfig mConfig;
         core::logical::port::Port mLeftSchema;
@@ -37,6 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const std::optional<details::EquiKeyList> mEquiKeys;
 
         core::physical::state::StateHandle mState;
+        core::physical::state::StateHandle mWatermarkState;
 
         llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 
