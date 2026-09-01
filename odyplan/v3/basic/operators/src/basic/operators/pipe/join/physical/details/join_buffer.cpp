@@ -130,7 +130,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForComputeAndUnlock(const Timestamp evictTimestamp, const bool callFromLeft) {
+    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForComputeAndUnlock(const bool callFromLeft) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* snapshot = new JoinSnapshot();
         snapshot->wasLeft = callFromLeft;
@@ -158,8 +158,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);
         }
-
-        evict(evictTimestamp, callFromLeft);
 
         unlock();
 

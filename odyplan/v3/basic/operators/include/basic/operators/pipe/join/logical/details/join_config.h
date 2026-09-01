@@ -7,6 +7,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical::details {
     struct JoinConfig {
         std::chrono::milliseconds leftWindowSize;
         std::chrono::milliseconds rightWindowSize;
+        std::chrono::milliseconds allowedLateness{0};
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical::details
 

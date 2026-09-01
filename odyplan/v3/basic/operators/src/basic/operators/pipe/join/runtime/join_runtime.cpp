@@ -1,6 +1,21 @@
+#include <atomic>
 #include <basic/operators/pipe/join/runtime/join_runtime.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
+    namespace details {
+        struct JoinWatermarkState {
+            std::atomic_flag lock = ATOMIC_FLAG_INIT;
+            std::int64_t leftWatermark{0};
+            std::int64_t rightWatermark{0};
+            bool leftReported{false};
+            bool rightReported{false};
+            bool leftFinal{false};
+            bool rightFinal{false};
+            bool finalEmitted = false;
+            std::int64_t lastEmittedWatermark{0};
+        };
+    }
+
     extern "C" {
     // NOLINTNEXTLINE(readability-function-size)
     void* rtJoinCreate(const void* typeRegistryRawPtr,
@@ -102,10 +117,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             physical::details::Timestamp(std::chrono::milliseconds(timestamp)));
     }
 
-    void *rtJoinSnapshotForComputeAndUnlock(void *state, const std::uint64_t timestamp, const bool callFromLeft) {
+    void *rtJoinSnapshotForComputeAndUnlock(void *state, const uint8_t callFromLeft) {
         auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
-        return buffer->snapshotForComputeAndUnlock(
-            physical::details::Timestamp(std::chrono::milliseconds(timestamp)),callFromLeft);
+        return buffer->snapshotForComputeAndUnlock(callFromLeft != 0);
     }
 
     const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::uint64_t fieldIndex) {
@@ -137,9 +151,87 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         physical::details::JoinBuffer::releaseSnapshot(static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot));
     }
 
-    bool rtJoinSnapshotGetWasLeft(void* snapshot) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->wasLeft;
+    bool rtJoinSnapshotGetWasLeft(void *snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->wasLeft;
     }
 
+    void *rtJoinWatermarkCreate(void * /*typeRegistryRawPtr*/) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        return new details::JoinWatermarkState();
+    }
+
+    void rtJoinWatermarkDestroy(void *state) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        delete static_cast<details::JoinWatermarkState *>(state);
+    }
+
+    // NOLINTNEXTLINE(readability-function-size)
+    std::uint8_t rtJoinUpdateWatermark(void *state, const std::uint8_t isLeft, const std::int64_t inWatermark,
+                                       const std::uint8_t inIsFinal, const std::int64_t allowedLateness,
+                                       std::int64_t *outEvictLeftTh, std::int64_t *outEvictRightTh,
+                                       std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal) {
+        auto *watermarkState = static_cast<details::JoinWatermarkState *>(state);
+
+        while (watermarkState->lock.test_and_set(std::memory_order_acquire)) {
+        }
+
+        if (isLeft != 0) {
+            watermarkState->leftWatermark = watermarkState->leftReported
+                                                ? std::max(watermarkState->leftWatermark, inWatermark)
+                                                : inWatermark;
+            watermarkState->leftReported = true;
+            if (inIsFinal != 0) {
+                watermarkState->leftFinal = true;
+            }
+        } else {
+            watermarkState->rightWatermark = watermarkState->rightReported
+                                                 ? std::max(watermarkState->rightWatermark, inWatermark)
+                                                 : inWatermark;
+            watermarkState->rightReported = true;
+            if (inIsFinal != 0) {
+                watermarkState->rightFinal = true;
+            }
+        }
+
+        const bool done = watermarkState->leftFinal && watermarkState->rightFinal;
+        std::uint8_t shouldEmit = 0;
+
+        if (done) {
+            *outEvictLeftTh = std::numeric_limits<std::int64_t>::max();
+            *outEvictRightTh = std::numeric_limits<std::int64_t>::min();
+
+            if (!watermarkState->finalEmitted) {
+                watermarkState->finalEmitted = true;
+                *outGlobalWatermark = std::numeric_limits<std::int64_t>::max();
+                *outIsFinal = 1;
+                shouldEmit = 1;
+            }
+        } else {
+            *outEvictLeftTh = watermarkState->rightReported
+                                  ? watermarkState->rightWatermark - allowedLateness
+                                  : std::numeric_limits<std::int64_t>::min();
+            *outEvictRightTh = watermarkState->leftReported
+                                   ? watermarkState->leftWatermark - allowedLateness
+                                   : std::numeric_limits<std::int64_t>::min();
+
+            if (watermarkState->leftReported && watermarkState->rightReported) {
+                const auto minWatermark = std::min(watermarkState->leftWatermark, watermarkState->rightWatermark);
+                if (minWatermark > watermarkState->lastEmittedWatermark) {
+                    watermarkState->lastEmittedWatermark = minWatermark;
+                    *outGlobalWatermark = minWatermark;
+                    *outIsFinal = 0;
+                    shouldEmit = 1;
+                }
+            }
+        }
+
+        watermarkState->lock.clear(std::memory_order_release);
+        return shouldEmit;
+    }
+
+    void rtJoinEvict(void* state, const std::int64_t timestamp, const std::uint8_t callFromLeft) {
+        auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
+        buffer->evict(physical::details::Timestamp(std::chrono::milliseconds(timestamp)),callFromLeft);
+    }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime

@@ -36,7 +36,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             "rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(lockFn, {state});
 
-        const bool onLeft = (inputPort == 0);
+        const bool onLeft = (compactInputIndex(inputPort) == 0);
 
         if (onLeft) {
             // left
@@ -59,9 +59,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
 
         const auto snapshotFn = module->getOrInsertFunction("rtJoinSnapshotForComputeAndUnlock",
-            llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i1Ty}, false));
+            llvm::FunctionType::get(ptrTy, {ptrTy, i1Ty}, false));
 
-        llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state, tuple.timestamp, llvm::ConstantInt::get(i1Ty, onLeft ? 1 : 0)});
+        llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state, llvm::ConstantInt::get(i1Ty, onLeft ? 1 : 0)});
 
         emitMatchFromSnapshot(segmentCtx, snapshot, onLeft, consumers);
 
@@ -208,8 +208,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
              rightEquiIndices,
              equiTypeIds,
              llvm::ConstantInt::get(i64Ty, equiKeys.size())},
-            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i8Ty},
+            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i64Ty},
             "rtJoinDestroy");
+
+        mWatermarkState = stateRegistry.createHandle(
+            "join_watermark_" + std::to_string(getPId()),
+            "rtJoinWatermarkCreate", {}, {},
+            "rtJoinWatermarkDestroy");
     }
 
     llvm::Value*
@@ -228,12 +233,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* voidTy = llvm::Type::getVoidTy(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
 
         const auto evictFn = module->getOrInsertFunction(
-            "rtJoinEvict", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i1Ty}, false));
+            "rtJoinEvict", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i8Ty}, false));
         segmentCtx.builder.CreateCall(
-            evictFn, {state, timestamp, llvm::ConstantInt::get(i1Ty, callFromLeft ? 1 : 0)});
+            evictFn, {state, timestamp, llvm::ConstantInt::get(i8Ty, callFromLeft ? 1 : 0)});
     }
 
     llvm::GlobalVariable* JoinOperator::buildTypeIds(llvm::Module& module,
@@ -454,5 +459,71 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     "IntervalJoinOperator::compare: Invalid compare expression type");
         }
         // NOLINTEND(clang-analyzer-security.ArrayBound)
+    }
+
+
+    void JoinOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
+                            core::shared::identifiers::PortId inputPort,
+                            const core::physical::data::PunctuationPackage &punctuation,
+                            const core::physical::segment::SegmentDataConsumers &consumers) {
+        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* voidTy = llvm::Type::getVoidTy(ctx);
+
+        const bool onLeft = (compactInputIndex(inputPort) == 0);
+
+        llvm::Value* watermarkState = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
+        llvm::Value* joinState = loadStatePtr(segmentCtx);
+
+        llvm::Value* isLeft = llvm::ConstantInt::get(i8Ty, onLeft ? 1 : 0);
+        llvm::Value* isFinal = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
+        llvm::Value* allowedLateness = llvm::ConstantInt::get(i64Ty, mConfig.allowedLateness.count());
+
+        llvm::Value* outEvictLeft = segmentCtx.storage.getNamed("evict_left_threshold",i64Ty);
+        llvm::Value* outEvictRight = segmentCtx.storage.getNamed("evict_right_threshold",i64Ty);
+        llvm::Value* outCurrentWatermark = segmentCtx.storage.getNamed("current_watermark",i64Ty);
+        llvm::Value* outIsFinal = segmentCtx.storage.getNamed("out_is_final",i64Ty);
+
+        const auto updateWatermarkFn = module->getOrInsertFunction("rtJoinUpdateWatermark", llvm::FunctionType::get(i8Ty, {ptrTy, i8Ty, i64Ty, i8Ty, i64Ty, ptrTy, ptrTy, ptrTy, ptrTy}, false));
+        llvm::Value* shouldEmit = segmentCtx.builder.CreateCall(updateWatermarkFn, {watermarkState, isLeft, punctuation.watermark, isFinal, allowedLateness, outEvictLeft, outEvictRight, outCurrentWatermark, outIsFinal});
+
+        llvm::Value* evictLeftTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictLeft);
+        llvm::Value* evictRightTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictRight);
+
+        const auto lockFn = module->getOrInsertFunction("rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
+        const auto unlockFn = module->getOrInsertFunction("rtJoinUnlock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
+
+        segmentCtx.builder.CreateCall(lockFn, joinState);
+        codegenEvict(segmentCtx, joinState, evictLeftTh, false);
+        codegenEvict(segmentCtx, joinState, evictRightTh, true);
+        segmentCtx.builder.CreateCall(unlockFn, joinState);
+
+        llvm::Value* condition = segmentCtx.builder.CreateICmpNE(shouldEmit, llvm::ConstantInt::get(i8Ty, 0));
+
+        auto* fn = segmentCtx.builder.GetInsertBlock()->getParent();
+        auto* emitBB = llvm::BasicBlock::Create(ctx, "join_forward_by_watermark", fn);
+        auto* mergeBB = llvm::BasicBlock::Create(ctx, "join_merge_watermark", fn);
+        segmentCtx.builder.CreateCondBr(condition, emitBB, mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(emitBB);
+
+        llvm::Value* currentWatermark = segmentCtx.builder.CreateLoad(i64Ty, outCurrentWatermark);
+        llvm::Value* isFinalOut = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
+        llvm::Value* currentIsFinal = segmentCtx.builder.CreateICmpNE(isFinalOut, llvm::ConstantInt::get(i8Ty, 0));
+
+        core::physical::data::PunctuationPackage forwardedPunctuation {
+            .watermark = currentWatermark,
+            .isFinal = currentIsFinal
+        };
+
+        consumers.front().consumePunctuation(segmentCtx, forwardedPunctuation);
+
+        segmentCtx.builder.CreateBr(mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(mergeBB);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
