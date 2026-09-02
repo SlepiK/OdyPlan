@@ -27,6 +27,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                                 const core::physical::data::PunctuationPackage &punctuation,
                                 const core::physical::segment::SegmentDataConsumers &consumers) override;
 
+        void end(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId inputPort,
+                 const core::physical::segment::SegmentDataConsumers &consumers) override;
+
     private:
         basic::window::time::TimeWindowConfig mConfig;
         core::logical::port::Port mDataSchema;
