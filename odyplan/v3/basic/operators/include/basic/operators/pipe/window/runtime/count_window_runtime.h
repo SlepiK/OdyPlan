@@ -18,8 +18,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtDestroyCountWindowBuffer(void* state);
 
-    void rtDestroyTimeWindowBuffer(void* state);
-
     void rtCountWindowBeginRow(void* state);
 
     void rtCountWindowPush(void* state, std::uint64_t fieldIndex, const void* rawData);
