@@ -198,7 +198,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         if (done) {
             *outEvictLeftTh = std::numeric_limits<std::int64_t>::max();
-            *outEvictRightTh = std::numeric_limits<std::int64_t>::min();
+            *outEvictRightTh = std::numeric_limits<std::int64_t>::max();
 
             if (!watermarkState->finalEmitted) {
                 watermarkState->finalEmitted = true;
