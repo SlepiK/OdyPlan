@@ -218,6 +218,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         return segmentCtx.builder.CreateLoad(fieldTy, rawPtr);
     }
 
+    void TimeWindowOperator::end(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId inputPort,
+             const core::physical::segment::SegmentDataConsumers &consumers) {
+        llvm::LLVMContext &ctx = segmentCtx.builder.getContext();
+        llvm::Module *module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(ctx);
+
+        llvm::Value *state = loadStatePtr(segmentCtx);
+
+        llvm::Value* maxWatermark = llvm::ConstantInt::get(i64Ty, std::numeric_limits<std::int64_t>::max());
+        llvm::Value* isFinal = llvm::ConstantInt::get(i8Ty, 1);
+
+        drainWindows(segmentCtx, state, maxWatermark, isFinal, consumers.front());
+    }
+
     llvm::Function *TimeWindowOperator::getOrCreateDrainFn(core::physical::segment::SegmentContext &segmentCtx,
                                                            const core::physical::segment::SegmentConsumerHandle &
                                                            consumer) {
