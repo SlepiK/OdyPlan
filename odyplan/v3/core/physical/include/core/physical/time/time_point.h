@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT__HPP
-#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT__HPP
+#ifndef SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT_HPP
+#define SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT_HPP
 #include <cstdint>
 
 #include <llvm/IR/IRBuilder.h>
@@ -23,6 +23,9 @@ namespace sierra::odyplan::v3::core::physical::time {
         static TimePoint constant(llvm::IRBuilder<>& builder, llvm::Module& module, std::int64_t point, bool track = false, bool threadSafe = true);
         static TimePoint zero(llvm::IRBuilder<>& builder, llvm::Module& module, bool track = false, bool threadSafe = true);
 
+        //hlp
+        static TimePoint select(llvm::IRBuilder<>& builder, llvm::Value* condition, const TimePoint& ifTrue, const TimePoint& ifFalse);
+
         //compare
         [[nodiscard]] llvm::Value* before(llvm::IRBuilder<>& builder, const TimePoint& tpOther) const;
         [[nodiscard]] llvm::Value* beforeOrEquals(llvm::IRBuilder<>& builder, const TimePoint& tpOther) const;
@@ -42,4 +45,4 @@ namespace sierra::odyplan::v3::core::physical::time {
     };
 }
 
-#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT__HPP
+#endif //SIERRA_ODYPLAN_V3_CORE_PHYSICAL_TIME_TIME_POINT_HPP

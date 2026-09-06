@@ -83,6 +83,18 @@ namespace sierra::odyplan::v3::core::physical::time {
         return constant(builder, module, 0, track, threadSafe);
     }
 
+    TimePoint TimePoint::select(llvm::IRBuilder<>& builder, llvm::Value* condition, const TimePoint& ifTrue, const TimePoint& ifFalse) {
+        assert((ifTrue.tiBreaker == nullptr) && (ifFalse.tiBreaker == nullptr) && "both points needs to track or none");
+
+        llvm::Value* tb = (ifTrue.tiBreaker != nullptr) ? builder.CreateSelect(condition, ifTrue.tiBreaker, ifFalse.tiBreaker) : nullptr;
+
+        return TimePoint{
+            .point = builder.CreateSelect(condition, ifTrue.point, ifFalse.point),
+            .isInfinity = builder.CreateSelect(condition, ifTrue.isInfinity, ifFalse.isInfinity),
+            .tiBreaker = tb
+        };
+    }
+
     llvm::Value *TimePoint::before(llvm::IRBuilder<> &builder, const TimePoint &tpOther) const {
         //signedLeft < signedRight
         llvm::Value *cmpSignLft = builder.CreateICmpSLT(point, tpOther.point);
