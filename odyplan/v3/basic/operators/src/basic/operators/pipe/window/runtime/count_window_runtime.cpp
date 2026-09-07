@@ -36,70 +36,48 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         delete buffer;
     }
 
-    void rtCountWindowBeginRow(void* state) {
+    void rtCountWindowBeginRow(void *state) {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->begin();
     }
 
-    void rtCountWindowPush(void* state, const std::uint64_t fieldIndex, const void* rawData) {
+    void rtCountWindowPush(void *state, const std::uint64_t fieldIndex, const void *rawData) {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->push(fieldIndex, rawData);
     }
 
-    void rtCountWindowEndRow(void* state, const std::int64_t timestamp) {
-        static_cast<basic::window::count::ICountWindowBuffer*>(state)->end(
-            std::chrono::sys_time(std::chrono::milliseconds(timestamp)));
+    void rtCountWindowEndRow(void *state, const std::int64_t startTs, const std::int64_t endTs) {
+        static_cast<basic::window::count::ICountWindowBuffer*>(state)->end(startTs, endTs);
     }
 
-    void rtCountWindowCompute(void* state) {
-        static_cast<basic::window::count::ICountWindowBuffer*>(state)->compute();
+    bool rtCountWindowReady(void *state) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->ready();
     }
 
-    void rtCountWindowFlush(void* state) {
+    std::uint64_t rtCountWindowRowCount(void *state) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getRowCount();
+    }
+
+    const void *rtCountWindowGetData(void *state, const std::uint64_t rowIndex, const std::uint64_t fieldIndex) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getData(rowIndex, fieldIndex);
+    }
+
+    std::int64_t rtCountWindowRowStart(void *state, const std::uint64_t rowIndex) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getRowStart(rowIndex);
+    }
+
+    std::int64_t rtCountWindowStart(void *state) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getWindowStart();
+    }
+
+    std::int64_t rtCountWindowEnd(void *state) {
+        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getWindowEnd();
+    }
+
+    void rtCountWindowAdvance(void *state) {
+        static_cast<basic::window::count::ICountWindowBuffer*>(state)->advanceWindow();
+    }
+
+    void rtCountWindowFlush(void *state) {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->flush();
-    }
-
-    std::int64_t rtCountWindowGetStart(void* state, const std::uint64_t windowIndex) {
-        return static_cast<basic::window::count::ICountWindowBuffer *>(state)->getWindowStart(
-            static_cast<std::size_t>(windowIndex)).time_since_epoch().count();
-    }
-
-    std::int64_t rtCountWindowGetStartRow(void *state, const std::uint64_t windowIndex, const std::uint64_t rowIndex) {
-        return static_cast<basic::window::count::ICountWindowBuffer *>(state)->getWindowStartRow(
-            static_cast<std::size_t>(windowIndex), static_cast<std::size_t>(rowIndex)).time_since_epoch().count();
-    }
-
-    std::int64_t rtCountWindowGetEnd(void* state, const std::uint64_t windowIndex, bool* outHasEnd) {
-        auto* buffer = static_cast<basic::window::count::ICountWindowBuffer*>(state);
-        const auto end = buffer->getWindowEnd(static_cast<std::size_t>(windowIndex));
-        *outHasEnd = end.has_value();
-        return end.has_value() ? end->time_since_epoch().count() : 0;
-    }
-
-    std::uint64_t rtCountWindowGetCount(void* state) {
-        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getWindowCount();
-    }
-
-    std::uint64_t rtCountWindowGetRowCountInWindow(void* state, const std::uint64_t windowIndex) {
-        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getRowCountInWindow(windowIndex);
-    }
-
-    const void* rtCountWindowGetData(void* state,
-                                const uint64_t windowIndex,
-                                const uint64_t rowIndex,
-                                const uint64_t fieldIndex) {
-        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getData(
-            windowIndex, rowIndex, fieldIndex);
-    }
-
-    std::int64_t rtCountWindowGetTimestamp(void* state,
-                                      const std::uint64_t windowIndex,
-                                      const std::uint64_t rowIndex) {
-        const auto timestamp =
-            static_cast<basic::window::count::ICountWindowBuffer*>(state)->getTimestamp(windowIndex, rowIndex);
-        return timestamp.time_since_epoch().count();
-    }
-
-    bool rtCountWindowIsClosedByFlush(void* state, const std::uint64_t windowIndex) {
-        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->isFlushedClosed(windowIndex);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime

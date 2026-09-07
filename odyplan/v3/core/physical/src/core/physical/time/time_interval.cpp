@@ -1,186 +1,215 @@
 #include <core/physical/time/time_interval.h>
 
 namespace sierra::odyplan::v3::core::physical::time {
-    llvm::Value* TimeInterval::isPoint(llvm::IRBuilder<>& builder) const {
-        return start.equals(builder, end);
+    TimeInterval::TimeInterval(const TimePoint start, const TimePoint end)
+        : mStart(start), mEnd(end) {
     }
 
-    llvm::Value* TimeInterval::isEmpty(llvm::IRBuilder<>& builder) const {
-        return start.equals(builder, end);
+    TimeInterval::TimeInterval(llvm::IRBuilder<>&  /*builder*/, const TimePoint tpStart, const TimePoint tpEnd)
+        : TimeInterval(tpStart, tpEnd) {
     }
 
-    llvm::Value* TimeInterval::isZeroLength(llvm::IRBuilder<>& builder) const {
-        return start.equals(builder, end);
+    TimeInterval::TimeInterval(llvm::IRBuilder<>& builder, TimePoint tpStart)
+        : TimeInterval(builder, tpStart, TimePoint::infinity(builder)) {
     }
 
-    llvm::Value* TimeInterval::includes(llvm::IRBuilder<>& builder, const TimePoint& tpOther) const {
-        llvm::Value* bfrEnd = tpOther.before(builder, end);
-        llvm::Value* afrOrEqStart = tpOther.afterOrEquals(builder, start);
+    TimeInterval::TimeInterval(llvm::IRBuilder<>& builder)
+        : TimeInterval(builder, TimePoint::infinity(builder), TimePoint::infinity(builder)) {
+    }
+
+    TimeInterval TimeInterval::forever(llvm::IRBuilder<>& builder) {
+        return TimeInterval{builder, TimePoint::zero(builder), TimePoint::infinity(builder)};
+    }
+
+    const TimePoint &TimeInterval::getStart() const {
+        return mStart;
+    }
+
+    const TimePoint &TimeInterval::getEnd() const {
+        return mEnd;
+    }
+
+    void TimeInterval::setStart(llvm::IRBuilder<>&  /*builder*/, const TimePoint tpStart){
+        mStart = tpStart;
+    }
+
+    void TimeInterval::setEnd(llvm::IRBuilder<>&  /*builder*/, const TimePoint tpEnd) {
+        mEnd = tpEnd;
+    }
+
+    void TimeInterval::setStartAndEnd(llvm::IRBuilder<> & /*builder*/, const TimePoint tpStart, const TimePoint tpEnd) {
+        mStart = tpStart;
+        mEnd = tpEnd;
+    }
+
+    void TimeInterval::update(llvm::IRBuilder<> &builder, const TimePoint tpStart, const TimePoint tpEnd) {
+        setStartAndEnd(builder, tpStart, tpEnd);
+    }
+
+    llvm::Value *TimeInterval::isEndInfinite(llvm::IRBuilder<> &builder) const {
+        return mEnd.isInfinite(builder);
+    }
+
+    llvm::Value *TimeInterval::isZeroLength(llvm::IRBuilder<> &builder) const {
+        return mStart.equals(builder, mEnd);
+    }
+
+    llvm::Value *TimeInterval::isPoint(llvm::IRBuilder<> &builder) const {
+        return mStart.equals(builder, mEnd);
+    }
+
+    llvm::Value *TimeInterval::isEmpty(llvm::IRBuilder<> &builder) const {
+        return mStart.equals(builder, mEnd);
+    }
+
+    llvm::Value *TimeInterval::includes(llvm::IRBuilder<> &builder, const TimePoint &tpPtn) const {
+        llvm::Value* bfrEnd = tpPtn.before(builder, mEnd);
+        llvm::Value* afrOrEqStart = tpPtn.afterOrEquals(builder, mStart);
         return builder.CreateAnd(bfrEnd, afrOrEqStart);
     }
 
-    llvm::Value* TimeInterval::startsBefore(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        return tiLft.start.before(builder, tiRht.start);
+    TimeInterval TimeInterval::select(llvm::IRBuilder<> &builder, llvm::Value *condition, const TimeInterval &ifTrue, const TimeInterval &ifFalse) {
+        return TimeInterval{
+            TimePoint::select(builder, condition, ifTrue.mStart, ifFalse.mStart),
+            TimePoint::select(builder, condition, ifTrue.mEnd, ifFalse.mEnd)
+        };
     }
 
-    llvm::Value* TimeInterval::startsBeforeOrEqual(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        return tiLft.start.beforeOrEquals(builder, tiRht.start);
+    llvm::Value *TimeInterval::startBefore(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        return tiLft.mStart.before(builder, tiRht.mStart);
     }
 
-    llvm::Value* TimeInterval::totallyBefore(llvm::IRBuilder<>& builder, const TimeInterval& tiTiV, const TimePoint& tpPtn) {
-        return tiTiV.end.beforeOrEquals(builder, tpPtn);
+    llvm::Value *TimeInterval::startsBeforeOrEqual(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        return tiLft.mStart.beforeOrEquals(builder, tiRht.mStart);
     }
 
-    llvm::Value* TimeInterval::totallyBefore(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        return totallyBefore(builder, tiLft, tiRht.start);
+    llvm::Value *TimeInterval::totallyBefore(llvm::IRBuilder<> &builder, const TimeInterval &tiTiv, const TimePoint &tpPtn) {
+        return tiTiv.mEnd.beforeOrEquals(builder, tpPtn);
     }
 
-    llvm::Value* TimeInterval::totallyAfter(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
+    llvm::Value *TimeInterval::totallyBefore(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        return totallyBefore(builder, tiLft, tiRht.mStart);
+    }
+
+    llvm::Value *TimeInterval::totallyAfter(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
         return totallyBefore(builder, tiRht, tiLft);
     }
 
-    llvm::Value* TimeInterval::overlaps(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
+    llvm::Value *TimeInterval::overlaps(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
         llvm::Value* eth = builder.CreateOr(totallyBefore(builder, tiLft, tiRht), totallyAfter(builder, tiLft, tiRht));
         return builder.CreateNot(eth);
     }
 
-    llvm::Value* TimeInterval::overlaps(llvm::IRBuilder<>& builder, const TimeInterval& tiOther) const {
+    llvm::Value *TimeInterval::overlaps(llvm::IRBuilder<> &builder, const TimeInterval &tiOther) const {
         return overlaps(builder, *this, tiOther);
     }
 
-    llvm::Value* TimeInterval::inside(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        llvm::Value* chkStart = tiRht.start.beforeOrEquals(builder, tiLft.start);
-        llvm::Value* chkEnd = tiLft.end.beforeOrEquals(builder, tiRht.end);
-        return builder.CreateAnd(chkStart, chkEnd);
+    llvm::Value *TimeInterval::inside(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        llvm::Value* startOk = tiRht.mStart.beforeOrEquals(builder, tiLft.mStart);
+        llvm::Value* endOk = tiLft.mEnd.beforeOrEquals(builder, tiRht.mEnd);
+        return builder.CreateAnd(startOk, endOk);
     }
 
-    llvm::Value* TimeInterval::inside(llvm::IRBuilder<>& builder, const TimeInterval& tiTiV, const TimePoint& tpPtn) {
-        llvm::Value* chkStart = tiTiV.start.beforeOrEquals(builder, tpPtn);
-        llvm::Value* chkEnd = tiTiV.end.after(builder, tpPtn);
-        return builder.CreateAnd(chkStart, chkEnd);
+    llvm::Value *TimeInterval::inside(llvm::IRBuilder<> &builder, const TimeInterval &tiTiv, const TimePoint &tpPtn) {
+        llvm::Value* startOk = tiTiv.mStart.beforeOrEquals(builder, tpPtn);
+        llvm::Value* endOk = tiTiv.mEnd.after(builder, tpPtn);
+        return builder.CreateAnd(startOk, endOk);
     }
 
-    llvm::Value* TimeInterval::areAdjacent(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        llvm::Value* lftEndEqRhtStart = tiLft.end.equals(builder, tiRht.start);
-        llvm::Value* rhtEndEqLftStart = tiRht.end.equals(builder, tiLft.start);
-        return builder.CreateOr(lftEndEqRhtStart, rhtEndEqLftStart);
+    llvm::Value *TimeInterval::areAdjacent(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        llvm::Value* lft = tiLft.mEnd.equals(builder, tiRht.mStart);
+        llvm::Value* rht = tiRht.mEnd.equals(builder, tiLft.mStart);
+        return builder.CreateOr(lft, rht);
     }
 
-    llvm::Value* TimeInterval::equals(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        llvm::Value* startEq = tiLft.start.equals(builder, tiRht.start);
-        llvm::Value* endEq = tiLft.end.equals(builder, tiRht.end);
-        return builder.CreateAnd(startEq, endEq);
+    llvm::Value *TimeInterval::equals(llvm::IRBuilder<> &builder, const TimeInterval &tiOther) const {
+        llvm::Value* sEq = mStart.equals(builder, tiOther.mStart);
+        llvm::Value* eEq = mEnd.equals(builder, tiOther.mEnd);
+        return builder.CreateAnd(sEq, eEq);
     }
 
-    TimeInterval::MaybeTimeInterval TimeInterval::intersection(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        const TimePoint start = TimePoint::max(builder, tiLft.start, tiRht.start);
-        const TimePoint end = TimePoint::max(builder, tiLft.end, tiRht.end);
+    llvm::Value *TimeInterval::compareTo(llvm::IRBuilder<> &builder, const TimeInterval &tiOther) const {
+        llvm::Value* sCmp = mStart.compareTo(builder, tiOther.mStart);
+        llvm::Value* eCmp = mEnd.compareTo(builder, tiOther.mEnd);
+        llvm::Value* sIsZero = builder.CreateICmpEQ(sCmp, builder.getInt32(0));
+        return builder.CreateSelect(sIsZero, eCmp, sCmp);
+    }
 
-        llvm::Value* overlapsLftRht = overlaps(builder, tiLft, tiRht);
-        llvm::Value* notEmpty = start.before(builder, end);
-        llvm::Value* valid = builder.CreateAnd(overlapsLftRht, notEmpty);
+    llvm::Value *TimeInterval::hashCode(llvm::IRBuilder<> &builder) const {
+        llvm::Value* res = builder.getInt32(1);
+        llvm::Value* eHash = mEnd.hash(builder);
+        res = builder.CreateAdd(builder.CreateMul(builder.getInt32(31), res), eHash);
+        llvm::Value* sHash = mStart.hash(builder);
+        res = builder.CreateAdd(builder.CreateMul(builder.getInt32(31), res), sHash);
+        return res;
+    }
 
+    TimeInterval::MaybeTimeInterval TimeInterval::intersection(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        const TimePoint newStart = TimePoint::max(builder, tiLft.mStart, tiRht.mStart);
+        const TimePoint newEnd = TimePoint::min(builder, tiLft.mEnd, tiRht.mEnd);
+        llvm::Value* val = builder.CreateAnd(overlaps(builder, tiLft, tiRht), newStart.before(builder, newEnd));
+        return MaybeTimeInterval {
+            .interval=TimeInterval{
+                newStart,
+                newEnd
+            },
+            .valid=val
+        };
+    }
+
+    TimeInterval::MaybeTimeInterval TimeInterval::unionOf(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        const TimePoint newStart = TimePoint::min(builder, tiLft.mStart, tiRht.mStart);
+        const TimePoint newEnd = TimePoint::max(builder, tiLft.mEnd, tiRht.mEnd);
         return MaybeTimeInterval{
-            .interval = TimeInterval {
-                .start = start,
-                .end = end
+            .interval=TimeInterval{
+                newStart,
+                newEnd
             },
-            .valid = valid
+            .valid=overlaps(builder, tiLft, tiRht)
         };
     }
 
-    TimeInterval::MaybeTimeInterval TimeInterval::unionOf(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        const TimePoint start = TimePoint::min(builder, tiLft.start, tiRht.start);
-        const TimePoint end = TimePoint::max(builder, tiLft.end, tiRht.end);
-
-        llvm::Value* val = overlaps(builder, tiLft, tiRht);
-
-        return MaybeTimeInterval{
-            .interval = TimeInterval {
-                .start = start,
-                .end = end
-            },
-            .valid = val
-        };
-    }
-
-    TimeInterval::DifferenceResult TimeInterval::difference(llvm::IRBuilder<>& builder, const TimeInterval& tiLft, const TimeInterval& tiRht) {
-        llvm::Value* insideLftRht = inside(builder, tiLft, tiRht);
-        llvm::Value* overlapsLftRht = overlaps(builder, tiLft, tiRht);
-
-        llvm::Value* aConOverlap = tiLft.start.before(builder, tiRht.start);
-        llvm::Value* aValNotInside = builder.CreateSelect(overlapsLftRht, aConOverlap, builder.getInt1(true));
-        llvm::Value* aVal = builder.CreateSelect(insideLftRht, builder.getInt1(false), aValNotInside);
-
-        const TimePoint tp = TimePoint::select(builder, overlapsLftRht, tiRht.start, tiLft.end);
-        const TimeInterval aInterval{
-            .start = tiLft.start,
-            .end = tp
-        };
-
-        llvm::Value* bConOverlap = tiLft.end.after(builder, tiRht.end);
-        llvm::Value* bValNotInside = builder.CreateSelect(overlapsLftRht, bConOverlap, builder.getInt1(false));
-        llvm::Value* bVal = builder.CreateSelect(insideLftRht, builder.getInt1(false), bValNotInside);
-
-        const TimeInterval bInterval{
-            .start = tiRht.end,
-            .end = tiLft.end
-        };
-
-        return DifferenceResult {
-            .lft = MaybeTimeInterval{
-                .interval = aInterval,
-                .valid = aVal
-            },
-            .rht = MaybeTimeInterval{
-                .interval = bInterval,
-                .valid = bVal
-            }
-        };
-    }
-
-    TimeInterval::MinusResult TimeInterval::minus(llvm::IRBuilder<>& builder, const TimeInterval& tiBase, const TimeInterval& tiSub) {
-        llvm::Value* eq = equals(builder, tiBase, tiSub);
+    TimeInterval::DifferenceResult TimeInterval::difference(llvm::IRBuilder<> &builder, const TimeInterval &tiBase, const TimeInterval &tiSub) {
+        llvm::Value* eq = tiBase.equals(builder, tiSub);
         llvm::Value* notOverlap = builder.CreateNot(overlaps(builder, tiBase, tiSub));
-        llvm::Value* insideBase = inside(builder, tiBase, tiSub);
-        llvm::Value* earlyExit = builder.CreateOr(builder.CreateOr(eq, notOverlap), insideBase);
+        llvm::Value* insideM = inside(builder, tiBase, tiSub);
+        llvm::Value* earlyExit = builder.CreateOr(builder.CreateOr(eq, notOverlap), insideM);
         llvm::Value* notEarlyExit = builder.CreateNot(earlyExit);
 
-        llvm::Value* startEq = tiBase.start.equals(builder, tiSub.start);
-        llvm::Value* startBfrStart = tiBase.start.before(builder, tiSub.start);
+        llvm::Value* startEq = tiBase.mStart.equals(builder, tiSub.mStart);
+        llvm::Value* startBfrStart = tiBase.mStart.before(builder, tiSub.mStart);
+        llvm::Value* endSBfrEnd = tiSub.mEnd.before(builder, tiBase.mEnd);
+        llvm::Value* endBfrEnd = tiBase.mEnd.equals(builder, tiSub.mEnd);
 
-        llvm::Value* endBfrEnd = tiSub.end.before(builder, tiBase.end);
-        llvm::Value* endBfrSubEnd = tiBase.end.before(builder, tiSub.end);
+        const TimePoint cAStart = TimePoint::select(builder, endSBfrEnd, tiSub.mEnd, tiBase.mEnd);
+        const TimePoint cAEnd = TimePoint::select(builder, endSBfrEnd, tiBase.mEnd, tiSub.mEnd);
 
-        const TimePoint cStart = TimePoint::select(builder, endBfrEnd, tiSub.end, tiBase.end);
-        const TimePoint cEnd = TimePoint::select(builder, endBfrEnd, tiBase.end, tiSub.end);
+        const TimePoint s0Start = TimePoint::select(builder, startEq, cAStart, TimePoint::select(builder, startBfrStart, tiBase.mStart, tiSub.mStart));
+        const TimePoint s0End = TimePoint::select(builder, startEq, cAEnd, TimePoint::select(builder, startBfrStart, tiSub.mStart, tiBase.mStart));
 
-        const TimePoint sAStart = TimePoint::select(builder, startEq, cStart, TimePoint::select(builder, startBfrStart, tiBase.start, tiSub.start));
-        const TimePoint sAEnd = TimePoint::select(builder, startEq, cEnd, TimePoint::select(builder, startBfrStart, tiSub.start, tiBase.start));
+        llvm::Value* s0Val = notEarlyExit;
 
-        llvm::Value* sAVal = notEarlyExit;
+        llvm::Value* s1ValNotA = builder.CreateSelect(startBfrStart, endSBfrEnd, endBfrEnd);
+        llvm::Value* s1ValRaw = builder.CreateSelect(startEq, builder.getInt1(false), s1ValNotA);
+        llvm::Value* s1Val = builder.CreateAnd(s1ValRaw, notOverlap);
 
-        llvm::Value* sBValNotA = builder.CreateSelect(startBfrStart, endBfrEnd, endBfrSubEnd);
-        llvm::Value* sBValRaw = builder.CreateSelect(startEq, builder.getInt1(false), sBValNotA);
-        llvm::Value* sBVal = builder.CreateAnd(sBValRaw, notEarlyExit);
+        const TimePoint s1Start = TimePoint::select(builder, startBfrStart, tiSub.mEnd, tiBase.mEnd);
+        const TimePoint s1End = TimePoint::select(builder, startBfrStart, tiBase.mEnd, tiSub.mEnd);
 
-        const TimePoint sBStart = TimePoint::select(builder, startBfrStart, tiSub.end, tiBase.end);
-        const TimePoint sBEnd = TimePoint::select(builder, startBfrStart, tiBase.end, tiSub.end);
-
-        return MinusResult{
-            .fst = MaybeTimeInterval{
-                .interval = TimeInterval{
-                    .start = sAStart,
-                    .end = sAEnd
+        return DifferenceResult{
+          .first=MaybeTimeInterval{
+              .interval=TimeInterval{
+                  s0Start,
+                  s0End
+              },
+              .valid=s0Val
+          },
+            .second=MaybeTimeInterval{
+                .interval=TimeInterval{
+                    s1Start,
+                    s1End
                 },
-                .valid = sAVal
-            },
-            .sec = MaybeTimeInterval{
-                .interval = TimeInterval{
-                    .start = sBStart,
-                    .end = sBEnd
-                },
-                .valid = sBVal
+                .valid=s1Val
             }
         };
     }

@@ -100,6 +100,20 @@ namespace sierra::odyplan::v3::core::physical::types {
                  [](llvm::LLVMContext& ctx) { return llvm::PointerType::getUnqual(ctx); },
              .constantFactory = [](llvm::IRBuilder<>& b,
                                    const std::string& v) { return b.CreateGlobalString(v); }});
+
+
+        registry.registerType(
+            std::to_underlying(T::TIMESTAMP),
+            {.typeName = "timestamp",
+             .parseFunctionName = "rtParseInt64",
+             .printFunctionName = "rtOdyPrintInt",
+             .llvmTypeFactory = [](llvm::LLVMContext& ctx) { return llvm::Type::getInt64Ty(ctx); },
+             .constantFactory =
+                 [](const llvm::IRBuilder<>& b, const std::string& v) {
+                     return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()),
+                                                   std::stoi(v));
+                 }});
+
         return registry;
     }
 }  // namespace sierra::odyplan::v3::core::physical::types

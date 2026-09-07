@@ -87,7 +87,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const auto getOwnFn = module->getOrInsertFunction(
             "rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
 
-        core::physical::data::DataPackage ownTuple;
+        core::physical::data::DataPackage ownTuple(segmentCtx.builder);
         ownTuple.reserve(ownSchema.size());
         for (std::size_t i = 0; i < ownSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
@@ -123,7 +123,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const auto getCandFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidatePtr",
             llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
 
-        core::physical::data::DataPackage otherTuple;
+        core::physical::data::DataPackage otherTuple(segmentCtx.builder);
         otherTuple.reserve(otherSchema.size());
         for (std::size_t i = 0; i < otherSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
@@ -137,7 +137,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
         llvm::Value* otherTimestamp = segmentCtx.builder.CreateCall(getCandTsFn, {snapshot, index});
 
-        core::physical::data::DataPackage combined;
+        llvm::Value* isNewerTs = segmentCtx.builder.CreateICmpSGT(ownTimestamp, otherTimestamp);
+        llvm::Value* selectedTs = segmentCtx.builder.CreateSelect(isNewerTs, ownTimestamp, otherTimestamp);
+
+        core::physical::data::DataPackage combined(core::physical::time::TimeInterval(segmentCtx.builder, core::physical::time::TimePoint(segmentCtx.builder, selectedTs)));
         if (onLeft) {
             combined.fields.insert(combined.end(), ownTuple.begin(), ownTuple.end());
             combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
@@ -145,9 +148,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             combined.fields.insert(combined.end(), otherTuple.begin(), otherTuple.end());
             combined.fields.insert(combined.end(), ownTuple.begin(), ownTuple.end());
         }
-
-        llvm::Value* isNewer = segmentCtx.builder.CreateICmpSGT(ownTimestamp, otherTimestamp);
-        combined.timestamp = segmentCtx.builder.CreateSelect(isNewer, ownTimestamp, otherTimestamp);
 
         const auto isEqui = mEquiKeys.has_value();
 
@@ -322,7 +322,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         const auto endFn = module->getOrInsertFunction(
             endFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty}, false));
-        segmentCtx.builder.CreateCall(endFn, {state, tuple.timestamp});
+        segmentCtx.builder.CreateCall(endFn, {state, tuple.timeInterval.getStart().getPoint()});
     }
 
     llvm::Value*

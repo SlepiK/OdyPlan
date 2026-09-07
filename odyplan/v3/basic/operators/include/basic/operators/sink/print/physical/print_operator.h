@@ -33,7 +33,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
         codegenPrint(llvm::IRBuilder<>& builder, llvm::Module* module, const char* name);
 
         static void
-        codegenPrintTimestamp(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* value);
+        codegenPrintTimeInterval(llvm::IRBuilder<>& builder, llvm::Module* module, const core::physical::time::TimeInterval& ti);
 
         static void
         codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end, llvm::Value* hasEnd, llvm::Value* isClosed, llvm::Value* isClosedByFlush);

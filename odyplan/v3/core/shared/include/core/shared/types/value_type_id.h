@@ -14,7 +14,8 @@ namespace sierra::odyplan::v3::core::shared::types {
         INT64 = 4,
         FLOAT = 10,
         DOUBLE = 11,
-        STRING = 20
+        STRING = 20,
+        TIMESTAMP = 66
     };
 
     inline bool isBuiltinValueTypePrintable(const BuiltinValueType type) {

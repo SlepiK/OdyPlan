@@ -33,6 +33,9 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
         nlohmann::json mIOConfig;
         std::chrono::milliseconds mDelay;
         std::chrono::milliseconds mAllowedLateness;
+
+    protected:
+        void validate() const override;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical
 

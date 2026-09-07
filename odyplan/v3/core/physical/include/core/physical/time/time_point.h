@@ -9,19 +9,23 @@
  * Based on Odysseus PointInTime Class
  */
 namespace sierra::odyplan::v3::core::physical::time {
-    struct TimePoint {
-        //i64
-        llvm::Value* point = nullptr;
-        //i1
-        llvm::Value* isInfinity = nullptr;
-        //i64
-        llvm::Value* tiBreaker = nullptr;
+    constexpr std::int64_t INFINITY_SENTINEL = -std::numeric_limits<std::int64_t>::max();
+
+    class TimePoint {
+    public:
+        TimePoint(llvm::IRBuilder<>& builder, llvm::Value* point);
+        TimePoint(llvm::Value* point, llvm::Value* tiBreaker);
+        TimePoint(llvm::IRBuilder<>& builder, const TimePoint& tpOther);
 
         //create
-        static TimePoint infinity(llvm::IRBuilder<>& builder, llvm::Module& module, bool track = false, bool threadSafe = true);
-        static TimePoint fromValue(llvm::IRBuilder<>& builder, llvm::Module& module, llvm::Value* rtPoint, bool track = false, bool threadSafe = true);
-        static TimePoint constant(llvm::IRBuilder<>& builder, llvm::Module& module, std::int64_t point, bool track = false, bool threadSafe = true);
-        static TimePoint zero(llvm::IRBuilder<>& builder, llvm::Module& module, bool track = false, bool threadSafe = true);
+        static TimePoint infinity(llvm::IRBuilder<>& builder);
+        static TimePoint zero(llvm::IRBuilder<>& builder);
+        static TimePoint one(llvm::IRBuilder<>& builder);
+
+        static TimePoint systemTime(llvm::IRBuilder<>& builder);
+        static TimePoint executionTime(llvm::IRBuilder<>& builder);
+
+        [[nodiscard]] llvm::Value* hash(llvm::IRBuilder<>& builder) const;
 
         //hlp
         static TimePoint select(llvm::IRBuilder<>& builder, llvm::Value* condition, const TimePoint& ifTrue, const TimePoint& ifFalse);
@@ -40,8 +44,19 @@ namespace sierra::odyplan::v3::core::physical::time {
         static TimePoint max(llvm::IRBuilder<>& builder, const TimePoint& tpA, const TimePoint& tpB);
 
         //add/sub
-        [[nodiscard]] TimePoint add(llvm::IRBuilder<>& builder, llvm::Module& module, llvm::Value* rtDelta, bool threadSafe = true) const;
-        [[nodiscard]] TimePoint sub(llvm::IRBuilder<>& builder, llvm::Module& module, llvm::Value* rtDelta, bool threadSafe = true) const;
+        [[nodiscard]] TimePoint add(llvm::IRBuilder<>& builder, llvm::Value* rtDelta) const;
+        [[nodiscard]] TimePoint sub(llvm::IRBuilder<>& builder, llvm::Value* rtDelta) const;
+
+        //getter
+        [[nodiscard]] llvm::Value* getPoint() const;
+        [[nodiscard]] llvm::Value* getTiBreaker() const;
+        [[nodiscard]] llvm::Value* isInfinite(llvm::IRBuilder<>& builder) const;
+
+    private:
+        //i64
+        llvm::Value* mPoint = nullptr;
+        //i64
+        llvm::Value* mTiBreaker = nullptr;
     };
 }
 

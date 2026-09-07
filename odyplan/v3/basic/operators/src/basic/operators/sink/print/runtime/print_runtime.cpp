@@ -1,5 +1,7 @@
 #include <basic/operators/sink/print/runtime/print_runtime.h>
 
+#include "core/physical/time/time_point.h"
+
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     namespace {
         thread_local std::string threadPrintBuffer;
@@ -26,31 +28,13 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ' ';
     }
 
-    void rtOdyPrintTimeStamp(const std::int64_t value) {
-        threadPrintBuffer += std::to_string(value);
-        threadPrintBuffer += ']';
-    }
-
-    void rtOdyPrintWindowMetadata(const std::int64_t start, const std::int64_t end, const bool hasEnd, const bool isClosed, const bool isClosedByFlush) {
-        threadPrintBuffer += '[';
-        threadPrintBuffer += std::to_string(start);
+    void rtOdyPrintTimeInterval(const std::int64_t startTs, const std::int64_t endTs, const bool endInfinity) {
+        threadPrintBuffer += std::to_string(startTs);
         threadPrintBuffer += '|';
-        if (hasEnd) {
-            threadPrintBuffer += std::to_string(end);
+        if (endInfinity) {
+            threadPrintBuffer += "inf";
         } else {
-            threadPrintBuffer += '-';
-        }
-        threadPrintBuffer += '|';
-        if (isClosed) {
-            threadPrintBuffer += "iC";
-        } else {
-            threadPrintBuffer += "nC";
-        }
-        threadPrintBuffer += '|';
-        if (isClosedByFlush) {
-            threadPrintBuffer += "iCF";
-        } else {
-            threadPrintBuffer += "nCF";
+            threadPrintBuffer += std::to_string(endTs);
         }
         threadPrintBuffer += ']';
     }

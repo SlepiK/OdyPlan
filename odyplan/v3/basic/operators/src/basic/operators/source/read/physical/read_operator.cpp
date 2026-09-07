@@ -25,7 +25,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         }
         if (mTimestampFieldIndex.has_value() &&
             mDataSchema.at(*mTimestampFieldIndex).valueTypeId !=
-                std::to_underlying(core::shared::types::BuiltinValueType::INT64)) {
+                std::to_underlying(core::shared::types::BuiltinValueType::TIMESTAMP)) {
             throw std::invalid_argument("ReadOperator: timestamp field wrong type");
         }
     }
@@ -76,35 +76,34 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         const auto getFieldFn = module->getOrInsertFunction(
             "rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {ptrTy, ptrTy}, false));
 
-        core::physical::data::DataPackage tuple;
-        tuple.reserve(mDataSchema.size());
+        std::vector<llvm::Value*> rawValues;
+        rawValues.reserve(mDataSchema.size());
 
         for (const auto& dataField : mDataSchema) {
             llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(
                 dataField.fieldName, "field_" + dataField.fieldName, 0, module);
             llvm::Value* strValue = segmentCtx.builder.CreateCall(getFieldFn, {state, fieldName});
-            tuple.pushBack(codegenField(segmentCtx, strValue, dataField.valueTypeId));
+            rawValues.push_back(codegenField(segmentCtx, strValue, dataField.valueTypeId));
         }
 
-        if (mTimestampFieldIndex.has_value()) {
-            tuple.timestamp = tuple.at(*mTimestampFieldIndex);
-        } else {
-            if (mUseProgramClock) {
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtProgramTimeNow", llvm::FunctionType::get(idTy, {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
-            } else {
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtTimeNow", llvm::FunctionType::get(idTy, {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+        core::physical::time::TimePoint tp = [&]() {
+            if (mTimestampFieldIndex.has_value()) {
+                return core::physical::time::TimePoint(segmentCtx.builder, rawValues.at(*mTimestampFieldIndex));
             }
-        }
+            if (mUseProgramClock) {
+                return core::physical::time::TimePoint::executionTime(segmentCtx.builder);
+            }
+            return core::physical::time::TimePoint::systemTime(segmentCtx.builder);
+        }();
+
+        core::physical::data::DataPackage tuple(core::physical::time::TimeInterval(segmentCtx.builder, tp));
+        tuple.fields = std::move(rawValues);
 
         consumers.front().consume(segmentCtx, tuple);
 
         llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mAllowedLateness.count());
         llvm::Function* smaxFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::smax, {idTy});
-        llvm::Value* guardedTs = segmentCtx.builder.CreateCall(smaxFn, {tuple.timestamp, llvm::ConstantInt::get(idTy, 0)});
+        llvm::Value* guardedTs = segmentCtx.builder.CreateCall(smaxFn, {tuple.timeInterval.getStart().getPoint(), llvm::ConstantInt::get(idTy, 0)});
         llvm::Value *candidateWatermark = segmentCtx.builder.CreateSub(guardedTs, allowedLatenessConst);
 
         llvm::Value* lastWatermark = segmentCtx.builder.CreateLoad(idTy, mWatermarkState);

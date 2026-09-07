@@ -57,13 +57,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         }
 
         const auto endWindowFn = module->getOrInsertFunction(
-            "rtCountWindowEndRow", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty}, false));
+            "rtCountWindowEndRow", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i64Ty}, false));
 
-        segmentCtx.builder.CreateCall(endWindowFn, {state, tuple.timestamp});
-
-        const auto computeWindowFn = module->getOrInsertFunction(
-            "rtCountWindowCompute", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        segmentCtx.builder.CreateCall(computeWindowFn, {state});
+        segmentCtx.builder.CreateCall(endWindowFn, {state, tuple.timeInterval.getStart().getPoint(), tuple.timeInterval.getEnd().getPoint()});
 
         llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
         segmentCtx.builder.CreateCall(drainFn, {state});
@@ -174,117 +170,77 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* voidTy = llvm::Type::getVoidTy(ctx);
 
-        const auto windowCountFn = module->getOrInsertFunction(
-            "rtCountWindowGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        llvm::Value* wCount = segmentCtx.builder.CreateCall(windowCountFn, {state});
+        const auto readyFn = module->getOrInsertFunction("rtCountWindowReady", llvm::FunctionType::get(i1Ty, {ptrTy}, false));
+        const auto rowCountFn = module->getOrInsertFunction("rtCountWindowRowCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto startFn = module->getOrInsertFunction("rtCountWindowStart", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto endFn = module->getOrInsertFunction("rtCountWindowEnd", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto rowStartFn = module->getOrInsertFunction("rtCountWindowRowStart", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        const auto advanceFn = module->getOrInsertFunction("rtCountWindowAdvance", llvm::FunctionType::get(voidTy, {ptrTy}, false));
 
-        auto* windowIndex = segmentCtx.storage.getNamed("windowIndex." +std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowIndex);
+        auto* headerBB = llvm::BasicBlock::Create(ctx, "windowHeader", fn);
+        auto* bodyBB = llvm::BasicBlock::Create(ctx, "windowBody", fn);
+        auto* exitBB = llvm::BasicBlock::Create(ctx, "windowExit", fn);
 
-        auto* wHeaderBB = llvm::BasicBlock::Create(ctx, "windowHeader", fn);
-        auto* wBodyBB = llvm::BasicBlock::Create(ctx, "windowBody", fn);
-        auto* wExitBB = llvm::BasicBlock::Create(ctx, "windowExit", fn);
+        segmentCtx.builder.CreateBr(headerBB);
+        segmentCtx.builder.SetInsertPoint(headerBB);
+        llvm::Value* isReady = segmentCtx.builder.CreateCall(readyFn, {state});
+        segmentCtx.builder.CreateCondBr(isReady, bodyBB, exitBB);
 
-        segmentCtx.builder.CreateBr(wHeaderBB);
-        segmentCtx.builder.SetInsertPoint(wHeaderBB);
+        segmentCtx.builder.SetInsertPoint(bodyBB);
+        llvm::Value* rowCount = segmentCtx.builder.CreateCall(rowCountFn, {state});
+        llvm::Value* endTs = segmentCtx.builder.CreateCall(endFn, {state});
+        llvm::Value* startTs = segmentCtx.builder.CreateCall(startFn, {state});
 
-        llvm::Value* wIndex = segmentCtx.builder.CreateLoad(i64Ty, windowIndex);
-        llvm::Value* wCond = segmentCtx.builder.CreateICmpSLT(wIndex, wCount);
+        const core::physical::time::TimePoint sharedStartTP(segmentCtx.builder, startTs);
+        const core::physical::time::TimePoint sharedEndTP(segmentCtx.builder, endTs);
 
-        segmentCtx.builder.CreateCondBr(wCond, wBodyBB, wExitBB);
+        auto* rowIndexSlot = segmentCtx.storage.getNamed("countWindowRowIndex." + std::to_string(getPId()), i64Ty);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), rowIndexSlot);
 
-        segmentCtx.builder.SetInsertPoint(wBodyBB);
+        auto* rowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
+        auto* rowBodyBB = llvm::BasicBlock::Create(ctx, "windowRowBody", fn);
+        auto* rowExitBB = llvm::BasicBlock::Create(ctx, "windowRowExit", fn);
 
+        segmentCtx.builder.CreateBr(rowHeaderBB);
+        segmentCtx.builder.SetInsertPoint(rowHeaderBB);
+        llvm::Value* rowIndex = segmentCtx.builder.CreateLoad(i64Ty, rowIndexSlot);
+        segmentCtx.builder.CreateCondBr(segmentCtx.builder.CreateICmpSLT(rowIndex, rowCount), rowBodyBB, rowExitBB);
 
-        llvm::Value* wStart = nullptr;
-        if (mConfig.type == basic::window::WindowType::SLIDING) {
-            const auto windowGetStartFn = module->getOrInsertFunction(
-           "rtCountWindowGetStart", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-            wStart = segmentCtx.builder.CreateCall(windowGetStartFn, {state, wIndex});
-        }
+        segmentCtx.builder.SetInsertPoint(rowBodyBB);
 
-        llvm::Value* hasEndSlot = segmentCtx.storage.getNamed("hasEnd." +std::to_string(getPId()), llvm::Type::getInt1Ty(ctx));
-
-        const auto windowGetEndFn = module->getOrInsertFunction(
-           "rtCountWindowGetEnd", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty, ptrTy}, false));
-        llvm::Value* wEnd = segmentCtx.builder.CreateCall(windowGetEndFn, {state, wIndex, hasEndSlot});
-
-        const auto windowRowCountFn = module->getOrInsertFunction(
-            "rtCountWindowGetRowCountInWindow", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        llvm::Value *wRowCount = segmentCtx.builder.CreateCall(windowRowCountFn, {state, wIndex});
-
-        llvm::Value* wHasEnd = segmentCtx.builder.CreateLoad(
-            llvm::Type::getInt1Ty(ctx), hasEndSlot);
-
-        const auto windowIsClosedByFlush = module->getOrInsertFunction(
-           "rtCountWindowIsClosedByFlush", llvm::FunctionType::get(llvm::Type::getInt1Ty(ctx), {ptrTy, i64Ty}, false));
-        llvm::Value* wIsClosedByFlush = segmentCtx.builder.CreateCall(windowIsClosedByFlush, {state, wIndex});
-
-        auto *windowRowIndex = segmentCtx.storage.getNamed("windowRowIndex." +std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), windowRowIndex);
-
-        auto *wRowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
-        auto *wRowBodyBB = llvm::BasicBlock::Create(ctx, "windowRowBody", fn);
-        auto *wRowExitBB = llvm::BasicBlock::Create(ctx, "windowRowExit", fn);
-
-        segmentCtx.builder.CreateBr(wRowHeaderBB);
-        segmentCtx.builder.SetInsertPoint(wRowHeaderBB);
-        llvm::Value *wRowIndex = segmentCtx.builder.CreateLoad(i64Ty, windowRowIndex);
-        segmentCtx.builder.CreateCondBr(
-            segmentCtx.builder.CreateICmpSLT(wRowIndex, wRowCount), wRowBodyBB, wRowExitBB);
-
-        segmentCtx.builder.SetInsertPoint(wRowBodyBB);
-
+        core::physical::time::TimePoint rowStartTP = sharedStartTP;
         if (mConfig.type == basic::window::WindowType::ADVANCE) {
-            const auto windowGetStartRowFn = module->getOrInsertFunction("rtCountWindowGetStartRow", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty, i64Ty}, false));
-            wStart = segmentCtx.builder.CreateCall(windowGetStartRowFn, {state, wIndex, wRowIndex});
+            llvm::Value* rs = segmentCtx.builder.CreateCall(rowStartFn, {state, rowIndex});
+            rowStartTP = core::physical::time::TimePoint(segmentCtx.builder, rs);
         }
 
-        core::physical::data::DataPackage emit;
-
-        emit.timestamp = codegenGetTimestamp(segmentCtx, state, wIndex, wRowIndex);
-
-        llvm::Value *nextRowIndex = segmentCtx.builder.CreateAdd(wRowIndex, llvm::ConstantInt::get(i64Ty, 1));
-        llvm::Value *wIsLastInWindow = segmentCtx.builder.CreateICmpEQ(nextRowIndex, wRowCount, "is_last_in_window");
-
-        emit.windowTag = core::physical::data::WindowTag{
-            .windowStart = wStart,
-            .windowEnd = wEnd,
-            .hasEnd = wHasEnd,
-            .isClosed = wIsLastInWindow,
-            .isClosedByFlush = wIsClosedByFlush
-        };
-
+        core::physical::data::DataPackage emit(core::physical::time::TimeInterval(segmentCtx.builder, rowStartTP, sharedEndTP));
         emit.reserve(getOutputPorts().at(0).size());
         for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
-            emit.pushBack(codegenGet(segmentCtx,
-                                     state,
-                                     wIndex,
-                                     wRowIndex,
+            emit.pushBack(codegenGet(segmentCtx, state, rowIndex,
                                      llvm::ConstantInt::get(i64Ty, i),
                                      getOutputPorts().at(0).at(i).valueTypeId));
         }
 
         consumer.consume(segmentCtx, emit);
 
-        segmentCtx.builder.CreateStore(nextRowIndex, windowRowIndex);
-        segmentCtx.builder.CreateBr(wRowHeaderBB);
+        llvm::Value* nextRow = segmentCtx.builder.CreateAdd(rowIndex, llvm::ConstantInt::get(i64Ty, 1));
+        segmentCtx.builder.CreateStore(nextRow, rowIndexSlot);
+        segmentCtx.builder.CreateBr(rowHeaderBB);
 
-        segmentCtx.builder.SetInsertPoint(wRowExitBB);
+        segmentCtx.builder.SetInsertPoint(rowExitBB);
+        segmentCtx.builder.CreateCall(advanceFn, {state});
+        segmentCtx.builder.CreateBr(headerBB);
 
-        llvm::Value* wNext = segmentCtx.builder.CreateAdd(wIndex, llvm::ConstantInt::get(i64Ty, 1));
-        segmentCtx.builder.CreateStore(wNext, windowIndex);
-
-        segmentCtx.builder.CreateBr(wHeaderBB);
-
-        segmentCtx.builder.SetInsertPoint(wExitBB);
+        segmentCtx.builder.SetInsertPoint(exitBB);
     }
 
     llvm::Value* CountWindowOperator::codegenGet(core::physical::segment::SegmentContext& segmentCtx,
                                                 llvm::Value* state,
-                                                llvm::Value* windowIndex,
                                                 llvm::Value* rowIndex,
                                                 llvm::Value* dataIndex,
                                                 const core::shared::types::ValueTypeId typeId) {
@@ -295,27 +251,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         const auto fn = module->getOrInsertFunction(
-            "rtCountWindowGetData", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty, i64Ty}, false));
+            "rtCountWindowGetData", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
         llvm::Value* ret =
-            segmentCtx.builder.CreateCall(fn, {state, windowIndex, rowIndex, dataIndex});
+            segmentCtx.builder.CreateCall(fn, {state, rowIndex, dataIndex});
 
         llvm::Type* dataTy = segmentCtx.codegenTypeRegistry.resolveType(typeId, ctx);
         return segmentCtx.builder.CreateLoad(dataTy, ret);
-    }
-
-    llvm::Value* CountWindowOperator::codegenGetTimestamp(core::physical::segment::SegmentContext& segmentContext,
-                                           llvm::Value* state,
-                                           llvm::Value* windowIndex,
-                                           llvm::Value* rowIndex) {
-        llvm::LLVMContext& ctx = segmentContext.builder.getContext();
-        llvm::Module* module = segmentContext.builder.GetInsertBlock()->getModule();
-
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-
-        const auto fn = module->getOrInsertFunction(
-            "rtCountWindowGetTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty, i64Ty}, false));
-        return segmentContext.builder.CreateCall(fn, {state, windowIndex, rowIndex});
     }
 
     llvm::Value* CountWindowOperator::loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const {

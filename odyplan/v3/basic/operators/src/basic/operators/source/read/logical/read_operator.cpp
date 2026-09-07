@@ -31,4 +31,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
     std::chrono::milliseconds ReadOperator::getAllowedLateness() const {
         return mAllowedLateness;
     }
+
+    void ReadOperator::validate() const {
+    }
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical

@@ -14,7 +14,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
             throw std::out_of_range("PrintOperator: given field indices dont match incoming tuple");
         }
 
-        codegenPrintTimestamp(segmentCtx.builder, module, tuple.timestamp);
+        codegenPrintTimeInterval(segmentCtx.builder, module, tuple.timeInterval);
 
         codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
 
@@ -28,12 +28,6 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
             if (i + 1 < mPortFieldIndices.size()) {
                 codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
             }
-        }
-
-        if (tuple.hasWindowTag()) {
-            codegenPrint(segmentCtx.builder, module, "rtOdyPrintSeperator");
-            const auto window = tuple.windowTag.value();
-            codegenPrintWindowMetadata(segmentCtx.builder, module, window.windowStart, window.windowEnd, window.hasEnd, window.isClosed, window.isClosedByFlush);
         }
 
         codegenPrint(segmentCtx.builder, module, "rtOdyPrintNewline");
@@ -51,14 +45,15 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
         builder.CreateCall(module->getOrInsertFunction(name, fnType), {});
     }
 
-    void PrintOperator::codegenPrintTimestamp(llvm::IRBuilder<>& builder,
+    void PrintOperator::codegenPrintTimeInterval(llvm::IRBuilder<>& builder,
                                               llvm::Module* module,
-                                              llvm::Value* value) {
+                                              const core::physical::time::TimeInterval& ti) {
         llvm::LLVMContext& ctx = builder.getContext();
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false);
-        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintTimeStamp", fnType);
-        builder.CreateCall(fn, {value});
+        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+        auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty, i64Ty, i1Ty}, false);
+        llvm::FunctionCallee const fn = module->getOrInsertFunction("rtOdyPrintTimeInterval", fnType);
+        builder.CreateCall(fn, {ti.getStart().getPoint(), ti.getEnd().getPoint(), ti.getEnd().isInfinite(builder)});
     }
 
     void PrintOperator::codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end, llvm::Value* hasEnd, llvm::Value* isClosed, llvm::Value* isClosedByFlush) {

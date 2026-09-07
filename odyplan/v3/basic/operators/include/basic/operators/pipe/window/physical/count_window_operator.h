@@ -60,16 +60,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         static llvm::Value* codegenGet(core::physical::segment::SegmentContext& segmentCtx,
                                        llvm::Value* state,
-                                       llvm::Value* windowIndex,
                                        llvm::Value* rowIndex,
                                        llvm::Value* dataIndex,
                                        core::shared::types::ValueTypeId typeId);
-
-        static llvm::Value*
-        codegenGetTimestamp(core::physical::segment::SegmentContext& segmentContext,
-                            llvm::Value* state,
-                            llvm::Value* windowIndex,
-                            llvm::Value* rowIndex);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical
 
