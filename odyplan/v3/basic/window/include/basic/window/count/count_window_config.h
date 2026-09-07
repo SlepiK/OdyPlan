@@ -1,13 +1,13 @@
 #ifndef SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWCONFIG_H
 #define SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOWCONFIG_H
 
-#include <basic/window/time/time_window_config.h>
+#include <cstdint>
 
 namespace sierra::odyplan::v3::basic::window::count {
     struct CountWindowConfig {
-        std::uint64_t size;
-        std::uint64_t slide;
-        std::uint64_t advance;
+        std::uint64_t size = 1;
+        std::uint64_t slide = 1;
+        std::uint64_t advance = 1;
     };
 }  // namespace sierra::odyplan::v3::basic::window::count
 

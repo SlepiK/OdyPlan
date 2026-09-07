@@ -4,13 +4,30 @@
 #include "spdlog/fmt/bundled/format.h"
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
+    namespace {
+        basic::window::TimeWindowType resolveTimeWindowType(const basic::window::time::TimeWindowConfig& config ) {
+            if (!config.slide.has_value() && !config.advance.has_value()) {
+                return basic::window::TimeWindowType::SLIDING;
+            }
+            if (!config.slide.has_value()) {
+                return basic::window::TimeWindowType::ADVANCE;
+            }
+            return basic::window::TimeWindowType::PERIODIC;
+        }
+    }
+
     TimeWindowOperator::TimeWindowOperator(core::physical::port::Port inputPort,
                                            core::physical::port::Port outputPort,
                                            const basic::window::time::TimeWindowConfig& config,
                                            core::logical::port::Port schema)
     : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                         core::physical::port::Ports{std::move(outputPort)}),
-          mConfig(config), mDataSchema(std::move(schema)) {}
+          mConfig(config), mDataSchema(std::move(schema)), mWindowType(resolveTimeWindowType(config)) {
+        if (mWindowType == basic::window::TimeWindowType::PERIODIC) {
+            throw std::logic_error("TimeWindowOperator: not implemented window_type periodic used");
+        }
+
+    }
 
     void TimeWindowOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
                                      core::shared::identifiers::PortId inputPort,
@@ -53,8 +70,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         llvm::Value* sizeValue = llvm::ConstantInt::get(i64Ty, mConfig.size);
 
-        if (mConfig.type == basic::window::WindowType::ADVANCE) {
-            llvm::Value* advanceValue = llvm::ConstantInt::get(i64Ty, mConfig.advance);
+        if (mWindowType == basic::window::TimeWindowType::ADVANCE) {
+            llvm::Value* advanceValue = llvm::ConstantInt::get(i64Ty, *mConfig.advance);
             llvm::Value* floor = segmentCtx.builder.CreateSDiv(eventTs, advanceValue);
             llvm::Value* alignedStart = segmentCtx.builder.CreateMul(floor, advanceValue);
             return segmentCtx.builder.CreateAdd(alignedStart, sizeValue);

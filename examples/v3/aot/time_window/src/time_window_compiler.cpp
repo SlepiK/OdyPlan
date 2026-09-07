@@ -92,9 +92,8 @@ int main(int argc, char** argv) {
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
         sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
-            .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
             .size = std::chrono::milliseconds(1000).count(),
-            .slide = std::chrono::milliseconds(1000).count()}
+            .advance = std::chrono::milliseconds(1000).count()}
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(

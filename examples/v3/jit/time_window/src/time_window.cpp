@@ -84,7 +84,6 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
                 sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
-                    .type = sierra::odyplan::v3::basic::window::WindowType::SLIDING,
                     .size = std::chrono::milliseconds(10).count(),
                     .slide = std::chrono::milliseconds(1).count()
                 }));

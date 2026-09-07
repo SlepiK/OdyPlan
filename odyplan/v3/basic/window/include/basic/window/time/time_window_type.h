@@ -4,9 +4,10 @@
 #include <cstdint>
 
 namespace sierra::odyplan::v3::basic::window {
-    enum class WindowType : std::uint8_t {
+    enum class TimeWindowType : std::uint8_t {
         SLIDING,
-        ADVANCE
+        ADVANCE,
+        PERIODIC
     };
 }
 

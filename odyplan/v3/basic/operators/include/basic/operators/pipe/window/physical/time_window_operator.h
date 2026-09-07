@@ -4,6 +4,7 @@
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
 #include <basic/window/time/time_window_config.h>
 #include <core/logical/port/port.h>
+#include <basic/window/time/time_window_type.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     class TimeWindowOperator final : public core::physical::operators::pipe::TypedPipeOperator {
@@ -29,6 +30,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         core::shared::identifiers::OperatorId mLogicalOperatorId = 0;
         core::physical::state::StateHandle mState;
         llvm::Function *mDrainFn = nullptr;
+        basic::window::TimeWindowType mWindowType;
 
         llvm::Value* computeWindowEnd(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* eventTs) const;
     };
