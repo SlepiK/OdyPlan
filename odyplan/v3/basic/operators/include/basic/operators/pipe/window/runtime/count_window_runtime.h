@@ -9,7 +9,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
     void*
     rtCreateCountWindowBuffer(const void* typeRegistryRaw,
-                              std::uint8_t windowType,
                               std::int64_t size,
                               std::int64_t slide,
                               std::int64_t advance,
@@ -31,8 +30,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     const void* rtCountWindowGetData(void* state, std::uint64_t rowIndex, std::uint64_t fieldIndex);
 
     std::int64_t rtCountWindowRowStart(void* state, std::uint64_t rowIndex);
-
-    std::int64_t rtCountWindowStart(void* state);
 
     std::int64_t rtCountWindowEnd(void* state);
 

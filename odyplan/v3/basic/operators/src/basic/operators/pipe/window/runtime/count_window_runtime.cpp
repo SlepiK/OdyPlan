@@ -3,7 +3,6 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
     void* rtCreateCountWindowBuffer(const void* typeRegistryRaw,
-                                    const std::uint8_t windowType,
                                     const std::int64_t size,
                                     const std::int64_t slide,
                                     const std::int64_t advance,
@@ -13,7 +12,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
             static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const basic::window::count::CountWindowConfig config{
-            .type = static_cast<basic::window::WindowType>(windowType),
             .size = static_cast<std::uint64_t>(size),
             .slide = static_cast<std::uint64_t>(slide),
             .advance = static_cast<std::uint64_t>(advance)
@@ -62,10 +60,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     std::int64_t rtCountWindowRowStart(void *state, const std::uint64_t rowIndex) {
         return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getRowStart(rowIndex);
-    }
-
-    std::int64_t rtCountWindowStart(void *state) {
-        return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getWindowStart();
     }
 
     std::int64_t rtCountWindowEnd(void *state) {

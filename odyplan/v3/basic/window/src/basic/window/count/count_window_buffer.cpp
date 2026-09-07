@@ -51,10 +51,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         return mRowBuffer[rowIndex].startTs;
     }
 
-    ICountWindowBuffer::Timestamp CountWindowBuffer::getWindowStart() const {
-        return mRowBuffer.front().startTs;
-    }
-
     ICountWindowBuffer::Timestamp CountWindowBuffer::getWindowEnd() const {
         return mReadyEnd;
     }

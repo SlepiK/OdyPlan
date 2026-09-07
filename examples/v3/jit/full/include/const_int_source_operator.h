@@ -62,14 +62,10 @@ namespace sierra::odyplan::v3::example::full {
                 llvm::Value* value = llvm::ConstantInt::get(
                     llvm::Type::getInt32Ty(segmentCtx.builder.getContext()), 5);
 
-                core::physical::data::DataPackage tuple;
+                core::physical::data::DataPackage tuple(core::physical::time::TimeInterval(segmentCtx.builder, core::physical::time::TimePoint::systemTime(segmentCtx.builder)));
                 tuple.reserve(getOutputPorts().size());
 
                 tuple.pushBack(value);
-
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtTimeNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
                 consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE

@@ -8,7 +8,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                     core::physical::port::Ports{std::move(outputPort)}),
           mConfig(config),
-          mDataSchema(std::move(schema)) {}
+          mDataSchema(std::move(schema)) {
+        assert(mConfig.advance > 0 && "Advance 0 not supported");
+        assert(mConfig.size >= mConfig.advance && "Size < Advance not implemented!");
+    }
 
     void CountWindowOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                            llvm::Module& module,
@@ -23,13 +26,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         mState = stateRegistry.createHandle("count_window_" + std::to_string(getPId()),
                                             "rtCreateCountWindowBuffer",
                                             {
-                                             llvm::ConstantInt::get(i8Ty, static_cast<std::uint8_t>(mConfig.type)),
                                              llvm::ConstantInt::get(i64Ty, mConfig.size),
                                              llvm::ConstantInt::get(i64Ty, mConfig.slide),
                                              llvm::ConstantInt::get(i64Ty, mConfig.advance),
                                              typesGlobal,
                                              llvm::ConstantInt::get(i64Ty, mDataSchema.size())},
-                                            {i8Ty, i64Ty, i64Ty, i64Ty, ptrTy, i64Ty},
+                                            {i64Ty, i64Ty, i64Ty, ptrTy, i64Ty},
                                             "rtDestroyCountWindowBuffer");
     }
 
@@ -176,7 +178,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         const auto readyFn = module->getOrInsertFunction("rtCountWindowReady", llvm::FunctionType::get(i1Ty, {ptrTy}, false));
         const auto rowCountFn = module->getOrInsertFunction("rtCountWindowRowCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        const auto startFn = module->getOrInsertFunction("rtCountWindowStart", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         const auto endFn = module->getOrInsertFunction("rtCountWindowEnd", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         const auto rowStartFn = module->getOrInsertFunction("rtCountWindowRowStart", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
         const auto advanceFn = module->getOrInsertFunction("rtCountWindowAdvance", llvm::FunctionType::get(voidTy, {ptrTy}, false));
@@ -193,9 +194,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         segmentCtx.builder.SetInsertPoint(bodyBB);
         llvm::Value* rowCount = segmentCtx.builder.CreateCall(rowCountFn, {state});
         llvm::Value* endTs = segmentCtx.builder.CreateCall(endFn, {state});
-        llvm::Value* startTs = segmentCtx.builder.CreateCall(startFn, {state});
 
-        const core::physical::time::TimePoint sharedStartTP(segmentCtx.builder, startTs);
         const core::physical::time::TimePoint sharedEndTP(segmentCtx.builder, endTs);
 
         auto* rowIndexSlot = segmentCtx.storage.getNamed("countWindowRowIndex." + std::to_string(getPId()), i64Ty);
@@ -212,11 +211,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         segmentCtx.builder.SetInsertPoint(rowBodyBB);
 
-        core::physical::time::TimePoint rowStartTP = sharedStartTP;
-        if (mConfig.type == basic::window::WindowType::ADVANCE) {
-            llvm::Value* rs = segmentCtx.builder.CreateCall(rowStartFn, {state, rowIndex});
-            rowStartTP = core::physical::time::TimePoint(segmentCtx.builder, rs);
-        }
+        llvm::Value* rs = segmentCtx.builder.CreateCall(rowStartFn, {state, rowIndex});
+        const core::physical::time::TimePoint rowStartTP = core::physical::time::TimePoint(segmentCtx.builder, rs);
+
 
         core::physical::data::DataPackage emit(core::physical::time::TimeInterval(segmentCtx.builder, rowStartTP, sharedEndTP));
         emit.reserve(getOutputPorts().at(0).size());

@@ -85,7 +85,6 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
                 sierra::odyplan::v3::basic::window::count::CountWindowConfig{
-                    .type = sierra::odyplan::v3::basic::window::WindowType::ADVANCE,
                     .size = 2,
                     .slide = 1,
                     .advance = 1
@@ -283,10 +282,6 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtCountWindowRowStart")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowRowStart),
-                llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowStart")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowStart),
                 llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtCountWindowEnd")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(

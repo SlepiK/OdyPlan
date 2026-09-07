@@ -30,7 +30,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         [[nodiscard]] virtual std::uint64_t getRowCount() const = 0;
         [[nodiscard]] virtual const std::byte* getData(std::uint64_t rowIndex, std::uint64_t fieldIndex) const = 0;
         [[nodiscard]] virtual Timestamp getRowStart(std::uint64_t rowIndex) const = 0;
-        [[nodiscard]] virtual Timestamp getWindowStart() const = 0;
         [[nodiscard]] virtual Timestamp getWindowEnd() const = 0;
 
         virtual void advanceWindow() = 0;
@@ -63,7 +62,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         [[nodiscard]] std::uint64_t getRowCount() const override;
         [[nodiscard]] const std::byte* getData(std::uint64_t rowIndex, std::uint64_t fieldIndex) const override;
         [[nodiscard]] Timestamp getRowStart(std::uint64_t rowIndex) const override;
-        [[nodiscard]] Timestamp getWindowStart() const override;
         [[nodiscard]] Timestamp getWindowEnd() const override;
 
         void advanceWindow() override;

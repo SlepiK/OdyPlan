@@ -432,14 +432,10 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
+        symbolMap[jit->mangleAndIntern("rtOdyPrintTimeInterval")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
+                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeInterval),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),
-                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintPunctuation")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintPunctuation),
