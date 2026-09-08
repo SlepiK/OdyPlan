@@ -201,14 +201,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
              llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),
              rightSideTypesGlobal,
              llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
-             llvm::ConstantInt::get(i64Ty, mConfig.leftWindowSize.count()),
-             llvm::ConstantInt::get(i64Ty, mConfig.rightWindowSize.count()),
              llvm::ConstantInt::get(i8Ty, isEqui ? 1 : 0),
              leftEquiIndices,
              rightEquiIndices,
              equiTypeIds,
              llvm::ConstantInt::get(i64Ty, equiKeys.size())},
-            {ptrTy, i64Ty, ptrTy, i64Ty, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i64Ty},
+            {ptrTy, i64Ty, ptrTy, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i64Ty},
             "rtJoinDestroy");
 
         mWatermarkState = stateRegistry.createHandle(
@@ -321,8 +319,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
 
         const auto endFn = module->getOrInsertFunction(
-            endFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty}, false));
-        segmentCtx.builder.CreateCall(endFn, {state, tuple.timeInterval.getStart().getPoint()});
+            endFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i64Ty}, false));
+        segmentCtx.builder.CreateCall(endFn, {state, tuple.timeInterval.getStart().getPoint(), tuple.timeInterval.getEnd().getPoint()});
     }
 
     llvm::Value*

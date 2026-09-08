@@ -5,11 +5,9 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
                            core::logical::port::Port rightSchema,
-                           const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
-                           const std::chrono::milliseconds leftWindowSize,
-                           const std::chrono::milliseconds rightWindowSize)
-        : mLeftSide(std::move(leftSchema), runtimeTypeRegistry, leftWindowSize),
-            mRightSide(std::move(rightSchema), runtimeTypeRegistry, rightWindowSize),
+                           const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry)
+        : mLeftSide(std::move(leftSchema), runtimeTypeRegistry),
+            mRightSide(std::move(rightSchema), runtimeTypeRegistry),
           mRuntimeTypeRegistry(runtimeTypeRegistry) {}
 
     JoinBuffer::~JoinBuffer() {
@@ -47,8 +45,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::size_t>& sourceKeyFieldIndices, const Timestamp timestamp,
-        const std::chrono::milliseconds sourceWindowSize) {
+        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const Timestamp sourceStartTs, const Timestamp sourceEndTs) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
@@ -59,7 +56,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 qFieldPtrs.push_back(sourceSide.getFieldPtr(newAbsIndex, fieldIndex));
             }
             for (const auto candidate : otherSide.hashLookup(qFieldPtrs)) {
-                if (otherSide.isOver(timestamp, sourceWindowSize, candidate)) {
+                if (otherSide.overlaps(sourceStartTs, sourceEndTs, candidate)) {
                     mCandidates.push_back(candidate);
                 }
             }
@@ -68,7 +65,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             const auto size = otherSide.getSize();
             const auto base = otherSide.getBaseIndex();
             for (std::size_t i = base; i < base + size; ++i) {
-                if (otherSide.isOver(timestamp, sourceWindowSize, i)) {
+                if (otherSide.overlaps(sourceStartTs, sourceEndTs, i)) {
                     mCandidates.push_back(i);
                 }
             }
@@ -76,25 +73,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     }
 
-    void JoinBuffer::endLeft(const Timestamp timestamp) {
-        mLeftSide.end(timestamp);
-        mCandidateOnRight = true;
-
-        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), timestamp, mLeftSide.getWindowSize());
+    void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs) {
+        mLeftSide.end(startTs, endTs);
+        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs);
     }
 
-    void JoinBuffer::endRight(const Timestamp timestamp) {
-        mRightSide.end(timestamp);
-        mCandidateOnRight = false;
-
-        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), timestamp, mRightSide.getWindowSize());
+    void JoinBuffer::endRight(const Timestamp startTs, const Timestamp endTs) {
+        mRightSide.end(startTs, endTs);
+        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs);
     }
 
-    void JoinBuffer::evict(const Timestamp timestamp, const bool callFromLeft) {
+    void JoinBuffer::evict(const Timestamp threshold, const bool callFromLeft) {
         if (callFromLeft) {
-            mRightSide.evict(timestamp);
+            mRightSide.evict(threshold);
         } else {
-            mLeftSide.evict(timestamp);
+            mLeftSide.evict(threshold);
         }
     }
 
@@ -136,12 +129,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         snapshot->wasLeft = callFromLeft;
         snapshot->runtimeTypeRegistry = mRuntimeTypeRegistry;
 
-        auto& side = callFromLeft ? mLeftSide : mRightSide;
+        const auto& side = callFromLeft ? mLeftSide : mRightSide;
         auto& otherSide = callFromLeft ? mRightSide : mLeftSide;
 
         const auto index = side.getLastAbsoluteIndex();
         snapshot->data.resize(side.getRowByteSize());
-        snapshot->timestamp = side.getTimestamp(index);
+        snapshot->startTs = side.getStartTimestamp(index);
+        snapshot->endTs = side.getEndTimestamp(index);
 
         copyRowIntoSnapshot(side, index, snapshot->data, 0, snapshot->fieldOffsets, snapshot->fieldTypeIds,
                             snapshot->retainPointers);
@@ -149,11 +143,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         snapshot->candidateRowByteSize = otherSide.getRowByteSize();
         snapshot->candidateCount = mCandidates.size();
         snapshot->candidateData.resize(mCandidates.size() * snapshot->candidateRowByteSize);
-        snapshot->candidateTimestamps.resize(mCandidates.size());
+        snapshot->candidateStarts.resize(mCandidates.size());
+        snapshot->candidateEnds.resize(mCandidates.size());
 
         for (std::size_t i = 0; i < mCandidates.size(); ++i) {
             const auto rowIndex = mCandidates[i];
-            snapshot->candidateTimestamps[i] = otherSide.getTimestamp(rowIndex);
+            snapshot->candidateStarts[i] = otherSide.getStartTimestamp(rowIndex);
+            snapshot->candidateEnds[i] = otherSide.getEndTimestamp(rowIndex);
 
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);
