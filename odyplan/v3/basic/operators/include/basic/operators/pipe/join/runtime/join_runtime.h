@@ -37,7 +37,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEndRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
 
-    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft);
+    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft, uint8_t extract);
 
     const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::uint64_t fieldIndex);
 
@@ -75,6 +75,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                                        std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal);
 
     void rtJoinEvict(void* state, std::int64_t threshold, std::uint8_t callFromLeft, std::uint8_t isFinal);
+
+    void rtJoinMatchLeft(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
+
+    void rtJoinMatchRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

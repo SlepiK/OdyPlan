@@ -3,6 +3,26 @@
 #include <core/physical/segment/segment_builder.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
+    namespace {
+        bool _shouldExtract(const logical::details::JoinCard card, const bool onLeft) {
+            switch (card) {
+                case logical::details::JoinCard::ONE_ONE: return true;
+                case logical::details::JoinCard::MANY_ONE: return !onLeft;
+                case logical::details::JoinCard::ONE_MANY: return onLeft;
+                default: return false;
+            }
+        }
+
+        bool _shouldInsert(const logical::details::JoinCard card, const bool onLeft, const bool hit) {
+            switch (card) {
+                case logical::details::JoinCard::ONE_ONE: return !hit;
+                case logical::details::JoinCard::ONE_MANY: return onLeft || !hit;
+                case logical::details::JoinCard::MANY_ONE: return !onLeft || !hit;
+                default: return true;
+            }
+        }
+    }
+
     JoinOperator::JoinOperator(core::physical::port::Port inputPort,
                                core::physical::port::Port outputPort,
                                const logical::details::JoinConfig config,
@@ -19,52 +39,104 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     }
 
     void JoinOperator::consume(core::physical::segment::SegmentContext& segmentCtx,
-                               core::shared::identifiers::PortId inputPort,
+                               const core::shared::identifiers::PortId inputPort,
                                const core::physical::data::DataPackage& tuple,
                                const core::physical::segment::SegmentDataConsumers& consumers) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+        llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
         auto* voidTy = llvm::Type::getVoidTy(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* i1Ty = llvm::Type::getInt1Ty(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);
 
+        const bool onLeft = (compactInputIndex(inputPort) == 0);
+        const auto& schema = onLeft ? mLeftSchema : mRightSchema;
+
+        //Lock
         const auto lockFn = module->getOrInsertFunction(
             "rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(lockFn, {state});
 
-        const bool onLeft = (compactInputIndex(inputPort) == 0);
+        //Begin and Push
+        const auto beginFn = module->getOrInsertFunction(
+                    onLeft ? "rtJoinBeginLeft" : "rtJoinBeginRight",
+                    llvm::FunctionType::get(voidTy, {ptrTy}, false));
+        segmentCtx.builder.CreateCall(beginFn, {state});
 
-        if (onLeft) {
-            // left
-            codegenSide(segmentCtx,
-                        state,
-                        tuple,
-                        mLeftSchema,
-                        "rtJoinBeginLeft",
-                        "rtJoinPushLeft",
-                        "rtJoinEndLeft");
-        } else {
-            // right
-            codegenSide(segmentCtx,
-                        state,
-                        tuple,
-                        mRightSchema,
-                        "rtJoinBeginRight",
-                        "rtJoinPushRight",
-                        "rtJoinEndRight");
+        const auto pushFn = module->getOrInsertFunction(
+            onLeft ? "rtJoinPushLeft" : "rtJoinPushRight",
+            llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
+        for (std::size_t i = 0; i < schema.size(); ++i) {
+            auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
+            segmentCtx.builder.CreateStore(tuple.at(i), slot);
+            segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
         }
 
+        //Match
+        const auto matchFn = module->getOrInsertFunction(
+            onLeft ? "rtJoinMatchLeft" : "rtJoinMatchRight",
+            llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i64Ty, i64Ty, i64Ty}, false));
+        segmentCtx.builder.CreateCall(matchFn, {state,
+            tuple.timeInterval.getStart().getPoint(),
+            tuple.timeInterval.getEnd().getPoint(),
+            tuple.timeInterval.getStart().getTiBreaker(),
+            tuple.timeInterval.getEnd().getTiBreaker()});
+
+        //Snapshot and Unlock
+        const bool extract = _shouldExtract(mConfig.card, onLeft);
         const auto snapshotFn = module->getOrInsertFunction("rtJoinSnapshotForComputeAndUnlock",
-            llvm::FunctionType::get(ptrTy, {ptrTy, i1Ty}, false));
+            llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty, i8Ty}, false));
+        llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state,
+            llvm::ConstantInt::get(i8Ty, onLeft ? 1 : 0),
+            llvm::ConstantInt::get(i8Ty, extract ? 1 : 0)});
 
-        llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state, llvm::ConstantInt::get(i1Ty, onLeft ? 1 : 0)});
+        //If_Insert
+        const auto countFn = module->getOrInsertFunction("rtJoinSnapshotGetCount",
+            llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
+        llvm::Value* hit = segmentCtx.builder.CreateICmpSGT(count, llvm::ConstantInt::get(i64Ty, 0));
 
+        const bool insertAlways = _shouldInsert(mConfig.card, onLeft, true);
+        const bool insertNever = _shouldInsert(mConfig.card, onLeft, false);
+
+        auto* insertBB = llvm::BasicBlock::Create(ctx, "join_insert", fn);
+        auto* mergeBB = llvm::BasicBlock::Create(ctx, "join_merge", fn);
+
+        if (insertAlways && insertNever) {
+            //many_many, one_many-left, many_one-right
+            segmentCtx.builder.CreateBr(insertBB);
+        } else {
+            //one_one, one_many-right, many_one-left
+            segmentCtx.builder.CreateCondBr(hit, mergeBB, insertBB);
+        }
+
+        segmentCtx.builder.SetInsertPoint(insertBB);
+
+        //End
+        const auto endFn = module->getOrInsertFunction(
+            onLeft ? "rtJoinEndLeft" : "rtJoinEndRight",
+            llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i64Ty, i64Ty, i64Ty}, false));
+        segmentCtx.builder.CreateCall(endFn,
+            {
+                state,
+                tuple.timeInterval.getStart().getPoint(),
+                tuple.timeInterval.getEnd().getPoint(),
+                tuple.timeInterval.getStart().getTiBreaker(),
+                tuple.timeInterval.getEnd().getTiBreaker()
+            });
+        segmentCtx.builder.CreateBr(mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(mergeBB);
+
+        //Emit
         emitMatchFromSnapshot(segmentCtx, snapshot, onLeft, consumers);
 
+        //Release snapshot
         const auto releaseFn = module->getOrInsertFunction(
             "rtJoinSnapshotRelease", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(releaseFn, {snapshot});
@@ -82,6 +154,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const auto countFn = module->getOrInsertFunction(
             "rtJoinSnapshotGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
+
+        const auto debugPrintFn = module->getOrInsertFunction(
+            "rtOdyPrintInt", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
+        segmentCtx.builder.CreateCall(debugPrintFn, {count});
 
         const auto& ownSchema = onLeft ? mLeftSchema : mRightSchema;
         const auto getOwnFn = module->getOrInsertFunction(
@@ -321,44 +397,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantArray::get(arrTy, values), name);
-    }
-
-    void JoinOperator::codegenSide(core::physical::segment::SegmentContext& segmentCtx,
-                                   llvm::Value* state,
-                                   const core::physical::data::DataPackage& tuple,
-                                   const core::logical::port::Port& schema,
-                                   const char* beginFnName,
-                                   const char* pushFnName,
-                                   const char* endFnName) {
-        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
-        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
-
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-
-        const auto beginFn = module->getOrInsertFunction(
-            beginFnName, llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        segmentCtx.builder.CreateCall(beginFn, {state});
-
-        const auto pushFn = module->getOrInsertFunction(
-            pushFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
-        for (std::size_t i = 0; i < schema.size(); ++i) {
-            auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
-            segmentCtx.builder.CreateStore(tuple.at(i), slot);
-            segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
-        }
-
-        const auto endFn = module->getOrInsertFunction(
-            endFnName, llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i64Ty, i64Ty, i64Ty}, false));
-        segmentCtx.builder.CreateCall(endFn,
-            {
-                state,
-                tuple.timeInterval.getStart().getPoint(),
-                tuple.timeInterval.getEnd().getPoint(),
-                tuple.timeInterval.getStart().getTiBreaker(),
-                tuple.timeInterval.getEnd().getTiBreaker()
-            });
     }
 
     llvm::Value*

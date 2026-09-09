@@ -32,13 +32,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
-        while (!mBufferedRows.empty() &&
-               mBufferedRows.front().endTs <= threshold) {
-            if (!isFinal && !_before(mBufferedRows.front().endTs, threshold)) {
+        while (!mBufferedRows.empty()) {
+            const auto& front = mBufferedRows.front();
+            if (!isFinal && !_before(front.endTs, threshold)) {
                 break;
             }
             if (!mKeyFields.empty()) {
-                const auto* keyPtr = mBufferedRows.front().values.data();
+                const auto* keyPtr = front.values.data();
                 const auto key = computeRowKeyV(keyPtr);
                 auto [v, g] = mKeyIndex.equal_range(key);
                 for (auto iter = v; iter != g; ++iter) {
@@ -48,7 +48,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                     }
                 }
             }
-            mLayout.releaseRow(mBufferedRows.front().values);
+            mLayout.releaseRow(front.values);
             mBufferedRows.pop_front();
             ++mBasisIndex;
         }
@@ -212,4 +212,69 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.offsetOf(index);
     }
 
+    void JoinSide::setPending(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        mPendingStartTs = startTs;
+        mPendingStartTb = startTb;
+        mPendingEndTs = endTs;
+        mPendingEndTb = endTb;
+    }
+
+    void JoinSide::removeV(const std::vector<std::size_t>& absIndices) {
+        if (absIndices.empty()) {
+            return;
+        }
+
+        std::vector<std::size_t> sorted = absIndices;
+        std::ranges::sort(sorted, std::greater<>());
+
+        for (const auto absIndex : sorted) {
+            const std::size_t locIndex = absIndex - mBasisIndex;
+            if (locIndex >= mBufferedRows.size()) {
+                continue;
+            }
+
+            if (!mKeyFields.empty()) {
+                const auto* keyPtr = mBufferedRows.at(locIndex).values.data();
+                const auto key = computeRowKeyV(keyPtr);
+                auto [vi, g] = mKeyIndex.equal_range(key);
+                for (auto iter = vi; iter != g; ++iter) {
+                    if (iter->second == absIndex) {
+                        mKeyIndex.erase(iter);
+                        break;
+                    }
+                }
+            }
+
+            mLayout.releaseRow(mBufferedRows[locIndex].values);
+            mBufferedRows.erase(mBufferedRows.begin() + static_cast<std::ptrdiff_t>(locIndex));
+        }
+    }
+
+    const std::byte* JoinSide::getLayoutFieldPtr(std::uint64_t fieldIndex) const {
+        return mLayout.getCurrentRowPtr() + mLayout.offsetOf(fieldIndex);
+    }
+
+    std::uint64_t JoinSide::getCurrentLayoutRowSize() const {
+        return mLayout.getCurrentRowSize();
+    }
+
+    const std::byte* JoinSide::getLayoutRowPtr() const {
+        return mLayout.getCurrentRowPtr();
+    }
+
+    Timestamp JoinSide::getLayoutStartTs() const {
+        return mPendingStartTs;
+    }
+
+    Timestamp JoinSide::getLayoutEndTs() const {
+        return mPendingEndTs;
+    }
+
+    std::int64_t JoinSide::getLayoutStartTb() const {
+        return mPendingStartTb;
+    }
+
+    std::int64_t JoinSide::getLayoutEndTb() const {
+        return mPendingEndTb;
+    }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

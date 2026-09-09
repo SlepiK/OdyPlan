@@ -28,6 +28,10 @@ namespace sierra::odyplan::v3::basic::window {
 
         [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
 
+        [[nodiscard]] const std::byte* getCurrentRowPtr() const;
+
+        [[nodiscard]] std::size_t getCurrentRowSize() const;
+
     private:
         core::logical::port::Port mDataSchema;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;

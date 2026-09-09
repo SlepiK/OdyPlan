@@ -44,16 +44,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mRightSide.push(index, data);
     }
 
+    void JoinBuffer::matchLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        mLeftSide.setPending(startTs, endTs, startTb, endTb);
+        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs, false);
+    }
+
+    void JoinBuffer::matchRight(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        mRightSide.setPending(startTs, endTs, startTb, endTb);
+        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs, false);
+    }
+
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const Timestamp sourceStartTs, const Timestamp sourceEndTs) {
+        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const Timestamp sourceStartTs, const Timestamp sourceEndTs, const bool extract) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
             // HASH
-            const auto newAbsIndex = sourceSide.getLastAbsoluteIndex();
             std::vector<const std::byte*> qFieldPtrs;
             for (const auto fieldIndex : sourceKeyFieldIndices) {
-                qFieldPtrs.push_back(sourceSide.getFieldPtr(newAbsIndex, fieldIndex));
+                qFieldPtrs.push_back(sourceSide.getLayoutFieldPtr(fieldIndex));
             }
             for (const auto candidate : otherSide.hashLookup(qFieldPtrs)) {
                 if (otherSide.overlaps(sourceStartTs, sourceEndTs, candidate)) {
@@ -71,16 +80,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             }
         }
 
+        if (extract && !mCandidates.empty()) {
+            otherSide.removeV(mCandidates);
+        }
     }
 
     void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mLeftSide.end(startTs, endTs, startTb, endTb);
-        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs);
     }
 
     void JoinBuffer::endRight(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mRightSide.end(startTs, endTs, startTb, endTb);
-        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs);
     }
 
     void JoinBuffer::evict(const Timestamp threshold, const bool callFromLeft, const bool isFinal) {
@@ -123,7 +133,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForComputeAndUnlock(const bool callFromLeft) {
+    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForComputeAndUnlock(const bool callFromLeft, const bool extract) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* snapshot = new JoinSnapshot();
         snapshot->wasLeft = callFromLeft;
@@ -132,15 +142,34 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         const auto& side = callFromLeft ? mLeftSide : mRightSide;
         auto& otherSide = callFromLeft ? mRightSide : mLeftSide;
 
-        const auto index = side.getLastAbsoluteIndex();
-        snapshot->data.resize(side.getRowByteSize());
-        snapshot->startTs = side.getStartTimestamp(index);
-        snapshot->endTs = side.getEndTimestamp(index);
-        snapshot->startTb = side.getStartTibreaker(index);
-        snapshot->endTb = side.getEndTibreaker(index);
+        const std::byte* rowPtr = side.getLayoutRowPtr();
+        const std::size_t rowSize = side.getCurrentLayoutRowSize();
+        snapshot->data.resize(rowSize);
+        std::memcpy(snapshot->data.data(), rowPtr, rowSize);
 
-        copyRowIntoSnapshot(side, index, snapshot->data, 0, snapshot->fieldOffsets, snapshot->fieldTypeIds,
-                            snapshot->retainPointers);
+        snapshot->startTs = side.getLayoutStartTs();
+        snapshot->endTs = side.getLayoutEndTs();
+        snapshot->startTb = side.getLayoutStartTb();
+        snapshot->endTb = side.getLayoutEndTb();
+
+        const std::size_t fieldCount = side.getFieldCount();
+        snapshot->fieldOffsets.resize(fieldCount);
+        snapshot->fieldTypeIds.resize(fieldCount);
+
+        for (std::size_t p = 0; p < fieldCount; ++p) {
+            snapshot->fieldOffsets[p] = side.getFieldOffset(p);
+            snapshot->fieldTypeIds[p] = side.getFieldTypeId(p);
+
+            if (!mRuntimeTypeRegistry->isPointerType(snapshot->fieldTypeIds[p])) {
+                continue;
+            }
+
+            void* oriPtr = nullptr;
+            std::memcpy(&oriPtr, &snapshot->data[snapshot->fieldOffsets[p]], sizeof(void*));
+            void* retainedPtr = mRuntimeTypeRegistry->retain(snapshot->fieldTypeIds[p], oriPtr);
+            std::memcpy(&snapshot->data[snapshot->fieldOffsets[p]], &retainedPtr, sizeof(void*));
+            snapshot->retainPointers.push_back({.typeId = snapshot->fieldTypeIds[p], .ptr = retainedPtr});
+        }
 
         snapshot->candidateRowByteSize = otherSide.getRowByteSize();
         snapshot->candidateCount = mCandidates.size();
@@ -159,6 +188,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);
+        }
+
+        if (extract && !mCandidates.empty()) {
+            otherSide.removeV(mCandidates);
         }
 
         unlock();

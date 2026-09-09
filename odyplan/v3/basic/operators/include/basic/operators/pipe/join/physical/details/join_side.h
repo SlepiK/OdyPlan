@@ -60,6 +60,24 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::uint64_t getFieldOffset(std::uint64_t index) const;
 
+        void removeV(const std::vector<std::size_t>& absIndices);
+
+        [[nodiscard]] const std::byte* getLayoutFieldPtr(std::uint64_t fieldIndex) const;
+
+        [[nodiscard]] const std::byte* getLayoutRowPtr() const;
+
+        [[nodiscard]] std::uint64_t getCurrentLayoutRowSize() const;
+
+        [[nodiscard]] Timestamp getLayoutStartTs() const;
+
+        [[nodiscard]] Timestamp getLayoutEndTs() const;
+
+        [[nodiscard]] std::int64_t getLayoutStartTb() const;
+
+        [[nodiscard]] std::int64_t getLayoutEndTb() const;
+
+        void setPending(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
@@ -75,7 +93,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction;
         };
 
-        basic::window::WindowRowLayout mLayout;
+        Timestamp mPendingStartTs;
+        Timestamp mPendingEndTs;
+        std::int64_t mPendingStartTb;
+        std::int64_t mPendingEndTb;
+
+        window::WindowRowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;
         // Hash-Behavior for == predicate only
 

@@ -61,14 +61,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                     const std::vector<details::EquiKeyInfo>& keys,
                                                     const std::string& name);
 
-        void codegenSide(core::physical::segment::SegmentContext& segmentCtx,
-                                llvm::Value* state,
-                                const core::physical::data::DataPackage& tuple,
-                                const core::logical::port::Port& schema,
-                                const char* beginFnName,
-                                const char* pushFnName,
-                                const char* endFnName);
-
         void emitMatchFromSnapshot(core::physical::segment::SegmentContext& segmentCtx,
                 llvm::Value* snapshot, bool onLeft,
                 const core::physical::segment::SegmentDataConsumers& consumers);

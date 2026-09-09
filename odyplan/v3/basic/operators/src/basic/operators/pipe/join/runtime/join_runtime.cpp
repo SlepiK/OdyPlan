@@ -109,9 +109,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<physical::details::JoinBuffer*>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
-    void *rtJoinSnapshotForComputeAndUnlock(void *state, const uint8_t callFromLeft) {
-        auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
-        return buffer->snapshotForComputeAndUnlock(callFromLeft != 0);
+    void *rtJoinSnapshotForComputeAndUnlock(void *state, const uint8_t callFromLeft, const uint8_t extract) {
+        return static_cast<physical::details::JoinBuffer*>(state)->snapshotForComputeAndUnlock(callFromLeft != 0, extract != 0);
     }
 
     const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::uint64_t fieldIndex) {
@@ -244,6 +243,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEvict(void* state, const std::int64_t threshold, const std::uint8_t callFromLeft, const std::uint8_t isFinal) {
         static_cast<physical::details::JoinBuffer*>(state)->evict(threshold, callFromLeft != 0, isFinal != 0);
+    }
+
+    void rtJoinMatchLeft(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer*>(state)->matchLeft(startTs, endTs, startTb, endTb);
+    }
+
+    void rtJoinMatchRight(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer*>(state)->matchRight(startTs, endTs, startTb, endTb);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime

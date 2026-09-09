@@ -102,7 +102,8 @@ int main() {
         );
 
         auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
-            .allowedLateness = std::chrono::milliseconds(1).count()
+            .allowedLateness = std::chrono::milliseconds(1).count(),
+            .card = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinCard::ONE_MANY
         };
 
         auto joinId = logicalPlan.addOperator(
@@ -166,7 +167,7 @@ int main() {
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
                                       concrete.getOutputPorts().at(0),
-                                      true,
+                                      false,
                                       std::nullopt,
                                       concrete.getDelay()));
                 return ot;
@@ -352,6 +353,14 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnStartTimestamp")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnStartTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMatchRight")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinMatchRight),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMatchLeft")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinMatchLeft),
                 llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(

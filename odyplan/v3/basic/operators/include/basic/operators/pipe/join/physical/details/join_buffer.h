@@ -69,8 +69,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void endRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
+        void matchLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+
+        void matchRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft);
+        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft, bool extract);
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        JoinSnapshot* snapshotForCompute(bool extract);
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
@@ -89,7 +96,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::vector<std::size_t> mCandidates;
         bool mAllReleased = false;
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, Timestamp sourceStartTs, Timestamp sourceEndTs);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, Timestamp sourceStartTs, Timestamp sourceEndTs, bool extract);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
