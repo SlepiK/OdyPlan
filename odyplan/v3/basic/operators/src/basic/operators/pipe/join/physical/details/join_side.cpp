@@ -1,6 +1,22 @@
 #include <basic/operators/pipe/join/physical/details/join_side.h>
 
+#include "core/physical/time/time_point.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+    namespace {
+        inline bool _before(const std::int64_t lft, const std::int64_t rht) {
+            if (lft == core::physical::time::INFINITY_SENTINEL) {
+                return false;
+            }
+
+            if (rht == core::physical::time::INFINITY_SENTINEL) {
+                return true;
+            }
+
+            return lft < rht;
+        }
+    }
+
     JoinSide::JoinSide(core::logical::port::Port schema,
                        const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry)
         : mLayout(std::move(schema), *runtimeTypeRegistry),
@@ -15,9 +31,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mLayout.push(index, data);
     }
 
-    void JoinSide::evict(const Timestamp threshold) {
+    void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
         while (!mBufferedRows.empty() &&
                mBufferedRows.front().endTs <= threshold) {
+            if (!isFinal && !_before(mBufferedRows.front().endTs, threshold)) {
+                break;
+            }
             if (!mKeyFields.empty()) {
                 const auto* keyPtr = mBufferedRows.front().values.data();
                 const auto key = computeRowKeyV(keyPtr);
@@ -35,10 +54,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinSide::end(const Timestamp startTs, const Timestamp endTs) {
+    std::int64_t JoinSide::getStartTibreaker(const std::uint64_t rowIndex) const {
+        return mBufferedRows.at(rowIndex - mBasisIndex).startTb;
+    }
+
+    std::int64_t JoinSide::getEndTibreaker(const std::uint64_t rowIndex) const {
+        return mBufferedRows.at(rowIndex - mBasisIndex).endTb;
+    }
+
+    void JoinSide::end(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         const auto absoluteIndex = mBasisIndex + mBufferedRows.size();
 
-        mBufferedRows.push_back(RowBuffer{.values = mLayout.pop(), .startTs = startTs, .endTs = endTs});
+        mBufferedRows.push_back(
+            RowBuffer{
+                .values = mLayout.pop(),
+                .startTs = startTs,
+                .endTs = endTs,
+                .startTb = startTb,
+                .endTb = endTb
+            });
 
         if (!mKeyFields.empty()) {
             const auto* keyPtr =
@@ -50,8 +84,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     void JoinSide::release() {
-        for (auto& [values, timestampMs] : mBufferedRows) {
-            mLayout.releaseRow(values);
+        for (auto& row : mBufferedRows) {
+            mLayout.releaseRow(row.values);
         }
         mBufferedRows.clear();
         mKeyIndex.clear();
@@ -69,7 +103,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     bool JoinSide::overlaps(const Timestamp otherStartTs, const Timestamp otherEndTs, const std::uint64_t rowIndex) const {
         const auto& row = mBufferedRows.at(rowIndex - mBasisIndex);
-        return row.startTs < otherEndTs && otherStartTs < row.endTs;
+        return _before(row.startTs, otherEndTs) && _before(otherStartTs, row.endTs);
     }
 
     Timestamp JoinSide::getStartTimestamp(const std::uint64_t rowIndex) const {

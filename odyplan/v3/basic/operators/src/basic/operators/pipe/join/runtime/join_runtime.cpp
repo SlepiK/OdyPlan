@@ -101,12 +101,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<physical::details::JoinBuffer*>(state)->pushRight(index, data);
     }
 
-    void rtJoinEndLeft(void* state, const std::int64_t startTs, const std::int64_t endTs) {
-        static_cast<physical::details::JoinBuffer*>(state)->endLeft(startTs, endTs);
+    void rtJoinEndLeft(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer*>(state)->endLeft(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinEndRight(void* state, const std::int64_t startTs, const std::int64_t endTs) {
-        static_cast<physical::details::JoinBuffer*>(state)->endRight(startTs, endTs);
+    void rtJoinEndRight(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer*>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
     void *rtJoinSnapshotForComputeAndUnlock(void *state, const uint8_t callFromLeft) {
@@ -134,6 +134,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     std::int64_t rtJoinSnapshotGetOwnStartTimestamp(void *snapshot) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->startTs;
+    }
+
+    std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void* snapshot, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateStartsTb.at(index);
+    }
+
+    std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void* snapshot, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateEndsTb.at(index);
+    }
+
+    std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void* snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->startTb;
+    }
+
+    std::int64_t rtJoinSnapshotGetOwnEndTibreaker(void* snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->endTb;
     }
 
     std::int64_t rtJoinSnapshotGetOwnEndTimestamp(void *snapshot) {
@@ -226,8 +242,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return shouldEmit;
     }
 
-    void rtJoinEvict(void* state, const std::int64_t threshold, const std::uint8_t callFromLeft) {
-        static_cast<physical::details::JoinBuffer*>(state)->evict(threshold, callFromLeft != 0);
+    void rtJoinEvict(void* state, const std::int64_t threshold, const std::uint8_t callFromLeft, const std::uint8_t isFinal) {
+        static_cast<physical::details::JoinBuffer*>(state)->evict(threshold, callFromLeft != 0, isFinal != 0);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime

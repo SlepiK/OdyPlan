@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <basic/operators/pipe/join/logical/join_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {

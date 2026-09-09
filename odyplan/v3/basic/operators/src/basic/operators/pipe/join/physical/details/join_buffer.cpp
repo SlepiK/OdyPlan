@@ -73,21 +73,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     }
 
-    void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs) {
-        mLeftSide.end(startTs, endTs);
+    void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        mLeftSide.end(startTs, endTs, startTb, endTb);
         matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs);
     }
 
-    void JoinBuffer::endRight(const Timestamp startTs, const Timestamp endTs) {
-        mRightSide.end(startTs, endTs);
+    void JoinBuffer::endRight(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+        mRightSide.end(startTs, endTs, startTb, endTb);
         matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs);
     }
 
-    void JoinBuffer::evict(const Timestamp threshold, const bool callFromLeft) {
+    void JoinBuffer::evict(const Timestamp threshold, const bool callFromLeft, const bool isFinal) {
         if (callFromLeft) {
-            mRightSide.evict(threshold);
+            mRightSide.evict(threshold, isFinal);
         } else {
-            mLeftSide.evict(threshold);
+            mLeftSide.evict(threshold, isFinal);
         }
     }
 
@@ -136,6 +136,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         snapshot->data.resize(side.getRowByteSize());
         snapshot->startTs = side.getStartTimestamp(index);
         snapshot->endTs = side.getEndTimestamp(index);
+        snapshot->startTb = side.getStartTibreaker(index);
+        snapshot->endTb = side.getEndTibreaker(index);
 
         copyRowIntoSnapshot(side, index, snapshot->data, 0, snapshot->fieldOffsets, snapshot->fieldTypeIds,
                             snapshot->retainPointers);
@@ -145,11 +147,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         snapshot->candidateData.resize(mCandidates.size() * snapshot->candidateRowByteSize);
         snapshot->candidateStarts.resize(mCandidates.size());
         snapshot->candidateEnds.resize(mCandidates.size());
+        snapshot->candidateStartsTb.resize(mCandidates.size());
+        snapshot->candidateEndsTb.resize(mCandidates.size());
 
         for (std::size_t i = 0; i < mCandidates.size(); ++i) {
             const auto rowIndex = mCandidates[i];
             snapshot->candidateStarts[i] = otherSide.getStartTimestamp(rowIndex);
             snapshot->candidateEnds[i] = otherSide.getEndTimestamp(rowIndex);
+            snapshot->candidateStartsTb[i] = otherSide.getStartTibreaker(rowIndex);
+            snapshot->candidateEndsTb[i] = otherSide.getEndTibreaker(rowIndex);
 
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);

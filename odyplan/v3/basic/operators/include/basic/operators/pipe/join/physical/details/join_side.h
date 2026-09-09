@@ -17,9 +17,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void push(std::uint64_t index, const void* data);
 
-        void evict(Timestamp threshold);
+        void evict(Timestamp threshold, bool isFinal);
 
-        void end(Timestamp startTs, Timestamp endTs);
+        void end(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         void release();
 
@@ -33,6 +33,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         [[nodiscard]] Timestamp getStartTimestamp(std::uint64_t rowIndex) const;
 
         [[nodiscard]] Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
+
+        [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t rowIndex) const;
+
+        [[nodiscard]] std::int64_t getEndTibreaker(std::uint64_t rowIndex) const;
 
         void enableKeyIdx(const std::vector<std::uint64_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
@@ -61,6 +65,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<std::byte> values;
             Timestamp startTs;
             Timestamp endTs;
+            std::int64_t startTb;
+            std::int64_t endTb;
         };
 
         struct KeyFieldDetails {

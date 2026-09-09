@@ -80,7 +80,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx,
                                  llvm::Value* state,
                                  llvm::Value* timestamp,
-                                 bool callFromLeft);
+                                 bool callFromLeft,
+                                 llvm::Value* isFinal);
 
         static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder,
                                            llvm::Value* left,

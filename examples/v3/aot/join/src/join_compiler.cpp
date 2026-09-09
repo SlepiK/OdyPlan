@@ -105,8 +105,7 @@ int main(int argc, char** argv) {
     );
 
     auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig {
-        .leftWindowSize = std::chrono::milliseconds(10),
-        .rightWindowSize = std::chrono::milliseconds(10)
+        .allowedLateness = std::chrono::milliseconds(11).count()
     };
 
     auto joinId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(

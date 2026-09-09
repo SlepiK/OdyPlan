@@ -19,10 +19,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
             Timestamp startTs;
             Timestamp endTs;
+            std::int64_t startTb;
+            std::int64_t endTb;
 
             std::vector<std::byte> candidateData;
             std::vector<Timestamp> candidateStarts;
             std::vector<Timestamp> candidateEnds;
+            std::vector<std::int64_t> candidateStartsTb;
+            std::vector<std::int64_t> candidateEndsTb;
             std::vector<std::uint64_t> candidateFieldOffsets;
             std::vector<core::shared::types::ValueTypeId> candidateFieldTypeIds;
             std::size_t candidateRowByteSize = 0;
@@ -61,9 +65,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void pushRight(std::size_t index, const void* data);
 
-        void endLeft(Timestamp startTs, Timestamp endTs);
+        void endLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
-        void endRight(Timestamp startTs, Timestamp endTs);
+        void endRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft);
@@ -74,7 +78,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                         const std::vector<std::size_t>& rightFieldIndices,
                         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
-        void evict(Timestamp threshold, bool callFromLeft);
+        void evict(Timestamp threshold, bool callFromLeft, bool isFinal);
 
     private:
         JoinSide mLeftSide;

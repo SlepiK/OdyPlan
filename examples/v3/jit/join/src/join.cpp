@@ -102,8 +102,7 @@ int main() {
         );
 
         auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
-            .leftWindowSize = std::chrono::milliseconds(10),
-            .rightWindowSize = std::chrono::milliseconds(20)
+            .allowedLateness = std::chrono::milliseconds(1).count()
         };
 
         auto joinId = logicalPlan.addOperator(
@@ -308,19 +307,10 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnPtr),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnTimestamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
-                runtime::rtJoinSnapshotGetOwnTimestamp),
-            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidatePtr")] =
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
                         runtime::rtJoinSnapshotGetCandidatePtr),
-                    llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateTimestamp")] =
-                llvm::orc::ExecutorSymbolDef(
-                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
-                        runtime::rtJoinSnapshotGetCandidateTimestamp),
                     llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCount")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
@@ -329,7 +319,40 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotRelease")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotRelease),
-            llvm::JITSymbolFlags::Exported);
+                llvm::JITSymbolFlags::Exported);
+
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnEndTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnEndTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnStartTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnStartTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateStartTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateStartTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateEndTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateEndTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnEndTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnEndTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateStartTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateStartTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateEndTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateEndTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnStartTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnStartTimestamp),
+                llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
