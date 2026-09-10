@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
             const std::size_t size = getInputPorts().front().size();
             indices.reserve(size);
 
-            for (std::size_t i = 1; i < size; ++i) {
+            for (std::size_t i = 0; i < size; ++i) {
                 indices.push_back(i);
             }
 

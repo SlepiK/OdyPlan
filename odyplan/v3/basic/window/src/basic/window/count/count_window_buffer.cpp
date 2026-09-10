@@ -32,6 +32,7 @@ namespace sierra::odyplan::v3::basic::window::count {
             mReady = true;
             mReadyRowCount = mConfig.size;
             mReadyEnd = mRowBuffer[mConfig.size].startTs;
+            mReadyEmitCount = mConfig.advance;
         }
     }
 
@@ -55,6 +56,10 @@ namespace sierra::odyplan::v3::basic::window::count {
         return mReadyEnd;
     }
 
+    std::uint64_t CountWindowBuffer::getEmitCount() const {
+        return mReady ? mReadyEmitCount : 0;
+    }
+
     void CountWindowBuffer::advanceWindow() {
         const auto n = std::min<std::uint64_t>(mConfig.advance, mRowBuffer.size());
         for (std::size_t i = 0; i < n; ++i) {
@@ -63,6 +68,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         }
         mReady = false;
         mReadyRowCount = 0;
+        mReadyEmitCount = 0;
     }
 
     void CountWindowBuffer::flush() {
@@ -71,9 +77,10 @@ namespace sierra::odyplan::v3::basic::window::count {
             return;
         }
         mFlushed = true;
-        mReady = true;
+        /*mReady = true;
         mReadyRowCount = mRowBuffer.size();
         mReadyEnd = core::physical::time::INFINITY_SENTINEL;
+        mReadyEmitCount = mRowBuffer.size();*/
     }
 
     void CountWindowBuffer::close() {

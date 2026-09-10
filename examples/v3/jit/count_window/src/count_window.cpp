@@ -54,9 +54,9 @@ int main() {
 
         auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-            nlohmann::json{{"path", "read.ndjson"}},
+            nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
             sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-                //.startTimestampPosition = "timestamp"
+                .startTimestampPosition = "timestamp"
             }
         ));
 
@@ -70,8 +70,8 @@ int main() {
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                PortFieldIndexV{0, 1, 2}));
+                //sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0, 1, 2}
+                ));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
@@ -232,6 +232,10 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtCountWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowBeginRow),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowEmitCount")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowEmitCount),
                 llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtCountWindowPush")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(

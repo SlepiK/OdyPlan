@@ -37,6 +37,8 @@ namespace sierra::odyplan::v3::basic::window::count {
         virtual void flush() = 0;
 
         virtual void close() = 0;
+
+        [[nodiscard]] virtual std::uint64_t getEmitCount() const = 0;
     };
 
     class CountWindowBuffer final : public ICountWindowBuffer {
@@ -69,6 +71,8 @@ namespace sierra::odyplan::v3::basic::window::count {
         void flush() override;
 
         void close() override;
+
+        [[nodiscard]] std::uint64_t getEmitCount() const override;
     private:
         struct Row {
             std::vector<std::byte> data;
@@ -85,6 +89,7 @@ namespace sierra::odyplan::v3::basic::window::count {
 
         bool mReady = false;
         std::uint64_t mReadyRowCount = 0;
+        std::uint64_t mReadyEmitCount = 0;
         std::int64_t mReadyEnd = 0;
         bool mFlushed = false;
     };
