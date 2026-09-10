@@ -27,4 +27,5 @@ add_dependencies(odyplan_example_aot_all
 add_custom_target(odyplan_example_aot_check_all)
 add_dependencies(odyplan_example_aot_check_all
         odyplan_example_aot_count_window_check
+        odyplan_example_aot_time_window_check
 )
