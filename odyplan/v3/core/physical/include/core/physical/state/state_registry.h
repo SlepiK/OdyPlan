@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::core::physical::state {
     private:
         struct PendingDestroy {
             llvm::FunctionCallee destroyFn;
-            llvm::Value* statePtr;
+            llvm::Value* statePtr{};
         };
 
         llvm::Module* mModule;
