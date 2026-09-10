@@ -1,6 +1,9 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_DETAILS_READ_OPERATOR_OPTIONS_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_SOURCE_READ_DETAILS_READ_OPERATOR_OPTIONS_HPP
 
+#include <optional>
+#include <chrono>
+
 namespace sierra::odyplan::v3::basic::operators::source::read::details {
     template <typename FieldRef>
     struct ReadOperatorOptions {
