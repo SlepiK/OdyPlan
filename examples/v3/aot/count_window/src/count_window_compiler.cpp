@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
         std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
             sourceOutput,
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-            nlohmann::json{{"path", "read.ndjson"}},
+            nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
             std::chrono::milliseconds(5)));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(

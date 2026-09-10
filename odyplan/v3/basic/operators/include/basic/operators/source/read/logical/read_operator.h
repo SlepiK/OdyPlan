@@ -18,6 +18,11 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
                      std::chrono::milliseconds delay = std::chrono::milliseconds(0),
                      std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
 
+        ReadOperator(io::IOFormatType ioFormat,
+                     nlohmann::json ioConfig,
+                     std::chrono::milliseconds delay = std::chrono::milliseconds(0),
+                     std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
+
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
         [[nodiscard]] io::IOFormatType getIOFormat() const;

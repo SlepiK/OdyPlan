@@ -49,8 +49,8 @@ target_include_directories(${TARGET_NAME} PRIVATE
 )
 
 configure_file(
-        data/read.ndjson
-        ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
+        data/nexmark.person.10k.ndjson
+        ${CMAKE_CURRENT_BINARY_DIR}/nexmark.person.10k.ndjson
         COPYONLY
 )
 
