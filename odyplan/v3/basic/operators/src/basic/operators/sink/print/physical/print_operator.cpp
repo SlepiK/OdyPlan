@@ -1,8 +1,8 @@
 #include <basic/operators/sink/print/physical/print_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
-    PrintOperator::PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices, core::logical::port::Port lInputPort)
-        : TypedSinkOperator(std::move(inputPort)), mPortFieldIndices(std::move(indices)), mSchema(std::move(lInputPort)) {}
+    PrintOperator::PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices, core::logical::port::Port lInputPort, details::PrintOperatorOptions options)
+        : TypedSinkOperator(std::move(inputPort)), mPortFieldIndices(std::move(indices)), mSchema(std::move(lInputPort)), mOptions(std::move(options)) {}
 
     void
     PrintOperator::consume(core::physical::segment::SegmentContext& segmentCtx,
@@ -80,6 +80,10 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
                                 core::shared::identifiers::PortId inputPort,
                                 const core::physical::data::PunctuationPackage &punctuation,
                                 const core::physical::segment::SegmentDataConsumers &consumers) {
+        if (!mOptions.printPunctuation) {
+            return;
+        }
+        
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 

@@ -65,6 +65,9 @@ int main() {
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
+                sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
+        .printPunctuation = true,
+    },
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
                 PortFieldIndexV{0}));
 
@@ -126,7 +129,7 @@ int main() {
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::
                     sink::print::physical::PrintOperator>(
-                    inputPorts.front(), concrete.getPortFieldIndices(), concrete.getInputPorts().front()));
+                    inputPorts.front(), concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
                 return ot;
             });
 

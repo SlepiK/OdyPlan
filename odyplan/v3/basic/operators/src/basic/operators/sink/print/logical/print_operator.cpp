@@ -2,9 +2,11 @@
 #include <stdexcept>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
-    PrintOperator::PrintOperator(PortFieldIndexV indices) : mPortFieldIndices(std::move(indices)) {}
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options) : mOptions(options) {}
 
-    PrintOperator::PrintOperator(PortFieldNameV names) : mPortFieldNames(std::move(names)) {}
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options, PortFieldIndexV indices) : mPortFieldIndices(std::move(indices)), mOptions(options) {}
+
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options, PortFieldNameV names) : mPortFieldNames(std::move(names)), mOptions(options) {}
 
     core::shared::types::OperatorTypeId PrintOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -12,6 +14,10 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
 
     PrintOperator::PortFieldIndexV PrintOperator::getPortFieldIndices() const {
         return mPortFieldIndices;
+    }
+
+    details::PrintOperatorOptions PrintOperator::getOptions() const {
+        return mOptions;
     }
 
     void PrintOperator::validateInput() {

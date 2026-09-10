@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         : TypedSourceOperator(std::move(outputPort)),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
-          mOptions(std::move(options)),
+          mOptions(options),
           mIOConfig(std::move(ioConfig)) {
         if (mDataSchema.empty()) {
             throw std::invalid_argument("ReadOperator: dataSchema is empty");

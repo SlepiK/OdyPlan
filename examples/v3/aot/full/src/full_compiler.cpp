@@ -77,6 +77,9 @@ int main(int argc, char** argv) {
     auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::example::aot::full::logical::ConstantIntSourceOperator>());
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
+        sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
+            .printPunctuation = true,
+        },
         sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV {0}
     ));
 
@@ -112,7 +115,7 @@ int main(int argc, char** argv) {
             const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(op);
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices(), concrete.getInputPorts().front()));
+            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
             return ot;
         }
     );

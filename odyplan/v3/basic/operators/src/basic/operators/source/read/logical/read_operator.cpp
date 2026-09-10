@@ -1,5 +1,7 @@
 #include <basic/operators/source/read/logical/read_operator.h>
 
+#include <utility>
+
 namespace sierra::odyplan::v3::basic::operators::source::read::logical {
     ReadOperator::ReadOperator(core::logical::port::Port outputPort,
                                const io::IOFormatType ioFormat,

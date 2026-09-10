@@ -5,13 +5,14 @@
 
 #include <core/physical/operators/sink/typed_sink_operator.h>
 #include <core/logical/port/port.h>
+#include <basic/operators/sink/print/details/print_operator_options.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
     class PrintOperator : public core::physical::operators::sink::TypedSinkOperator {
     public:
         using PortFieldIndexV = std::vector<std::size_t>;
 
-        explicit PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices, core::logical::port::Port lInputPort);
+        explicit PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices, core::logical::port::Port lInputPort, details::PrintOperatorOptions options);
 
         void consume(core::physical::segment::SegmentContext& segmentCtx,
                      core::shared::identifiers::PortId /*inputPort*/,
@@ -30,6 +31,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
     private:
         PortFieldIndexV mPortFieldIndices;
         core::logical::port::Port mSchema;
+        details::PrintOperatorOptions mOptions;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::physical
 
