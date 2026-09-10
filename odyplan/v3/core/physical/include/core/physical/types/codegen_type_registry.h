@@ -15,7 +15,6 @@ namespace sierra::odyplan::v3::core::physical::types {
         struct Entry {
             std::string typeName;
             std::string parseFunctionName;
-            std::string printFunctionName;
             LLVMTypeFactory llvmTypeFactory;
             ConstantFactory constantFactory;
         };

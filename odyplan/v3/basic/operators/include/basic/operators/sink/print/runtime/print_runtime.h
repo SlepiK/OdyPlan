@@ -23,15 +23,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     extern "C" {
     void rtPrintDataPackage(const PrintContext* ctx);
 
-    void rtOdyPrintString(const char* data);
-
-    void rtOdyPrintDouble(double value);
-
-    void rtOdyPrintFloat(float value);
-
-    void rtOdyPrintInt(std::int64_t value);
-
-    void rtOdyPrintNewline();
+    void _rtOdyPrintNewline();
 
     void rtOdyPrintPunctuation(std::int64_t watermark, bool isFinal);
     }

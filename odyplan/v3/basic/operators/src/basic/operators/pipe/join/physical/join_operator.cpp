@@ -155,10 +155,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             "rtJoinSnapshotGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
 
-        const auto debugPrintFn = module->getOrInsertFunction(
-            "rtOdyPrintInt", llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {i64Ty}, false));
-        segmentCtx.builder.CreateCall(debugPrintFn, {count});
-
         const auto& ownSchema = onLeft ? mLeftSchema : mRightSchema;
         const auto getOwnFn = module->getOrInsertFunction(
         "rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));

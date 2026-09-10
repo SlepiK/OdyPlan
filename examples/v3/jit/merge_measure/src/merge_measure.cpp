@@ -394,26 +394,6 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseDouble),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
-            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtPrintDataPackage")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtPrintDataPackage),
