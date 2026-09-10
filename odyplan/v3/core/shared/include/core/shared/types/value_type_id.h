@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_VALUE_TYPE_ID_HPP
 
 #include <cstdint>
+#include <stdexcept>
 
 namespace sierra::odyplan::v3::core::shared::types {
     using ValueTypeId = std::uint8_t;
@@ -18,11 +19,58 @@ namespace sierra::odyplan::v3::core::shared::types {
         TIMESTAMP = 66
     };
 
-    inline bool isBuiltinValueTypePrintable(const BuiltinValueType type) {
-        return type == BuiltinValueType::BOOL || type == BuiltinValueType::INT8 ||
-               type == BuiltinValueType::INT16 || type == BuiltinValueType::INT32 ||
-               type == BuiltinValueType::INT64 || type == BuiltinValueType::FLOAT ||
-               type == BuiltinValueType::DOUBLE || type == BuiltinValueType::STRING;
+    constexpr bool isNumeric(const ValueTypeId type) {
+        switch (static_cast<BuiltinValueType>(type)) {
+            case BuiltinValueType::BOOL:
+            case BuiltinValueType::INT8:
+            case BuiltinValueType::INT16:
+            case BuiltinValueType::INT32:
+            case BuiltinValueType::INT64:
+            case BuiltinValueType::FLOAT:
+            case BuiltinValueType::DOUBLE:
+            case BuiltinValueType::TIMESTAMP:
+                return true;
+            default:
+                return false;
+        }
+        throw std::invalid_argument("isNumeric: unknown ValueTypeId/BuiltinValueType");
+    }
+
+    constexpr bool isTimestamp(const ValueTypeId type) {
+        return static_cast<BuiltinValueType>(type) == BuiltinValueType::TIMESTAMP;
+    }
+
+    constexpr bool isIntegral(const ValueTypeId type) {
+        switch (static_cast<BuiltinValueType>(type)) {
+            case BuiltinValueType::BOOL:
+            case BuiltinValueType::INT8:
+            case BuiltinValueType::INT16:
+            case BuiltinValueType::INT32:
+            case BuiltinValueType::INT64:
+            case BuiltinValueType::TIMESTAMP:
+                return true;
+            default:
+                return false;
+        }
+        throw std::invalid_argument("isIntegral: unknown ValueTypeId/BuiltinValueType");
+    }
+
+    constexpr bool isBuiltinValueTypePrintable(const ValueTypeId type) {
+        switch (static_cast<BuiltinValueType>(type)) {
+            case BuiltinValueType::BOOL:
+            case BuiltinValueType::INT8:
+            case BuiltinValueType::INT16:
+            case BuiltinValueType::INT32:
+            case BuiltinValueType::INT64:
+            case BuiltinValueType::FLOAT:
+            case BuiltinValueType::DOUBLE:
+            case BuiltinValueType::STRING:
+            case BuiltinValueType::TIMESTAMP:
+                return true;
+            default:
+                return false;
+        }
+        throw std::invalid_argument("isIntegral: unknown ValueTypeId/BuiltinValueType");
     }
 }  // namespace sierra::odyplan::v3::core::shared::types
 

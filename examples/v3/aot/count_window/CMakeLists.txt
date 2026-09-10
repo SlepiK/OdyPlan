@@ -21,6 +21,14 @@ target_link_libraries(${COMPILER_TARGET_NAME} PRIVATE
 
 odyplan_link_llvm_aot(${COMPILER_TARGET_NAME} PRIVATE)
 
+set(INPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/nexmark.person.10k.ndjson)
+
+configure_file(
+        data/nexmark.person.10k.ndjson
+        ${INPUT_FILE}
+        COPYONLY
+)
+
 # 2. Generate o.-File of Plan
 
 set(GENERATED_PLAN_OBJECT ${CMAKE_CURRENT_BINARY_DIR}/count_window_plan.o)
@@ -29,7 +37,7 @@ add_custom_command(
         OUTPUT ${GENERATED_PLAN_OBJECT}
         COMMAND ${COMPILER_TARGET_NAME} ${GENERATED_PLAN_OBJECT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${COMPILER_TARGET_NAME}
+        DEPENDS ${COMPILER_TARGET_NAME} ${INPUT_FILE}
         COMMENT "Compiling logical count_window-plan to native object file"
 )
 
@@ -46,12 +54,6 @@ add_executable(${TARGET_NAME}
 
 target_include_directories(${TARGET_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
-)
-
-configure_file(
-        data/nexmark.person.10k.ndjson
-        ${CMAKE_CURRENT_BINARY_DIR}/nexmark.person.10k.ndjson
-        COPYONLY
 )
 
 add_dependencies(${TARGET_NAME}

@@ -15,6 +15,19 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
     }
 
     void PrintOperator::validateInput() {
+        if (mPortFieldIndices.empty() && mPortFieldNames.empty()) {
+            PortFieldIndexV indices;
+            const std::size_t size = getInputPorts().front().size();
+            indices.reserve(size);
+
+            for (std::size_t i = 1; i < size; ++i) {
+                indices.push_back(i);
+            }
+
+            mPortFieldIndices = std::move(indices);
+            return;
+        }
+
         if (!mPortFieldNames.empty() && mPortFieldIndices.empty()) {
             PortFieldIndexV indices;
             indices.reserve(mPortFieldNames.size());
@@ -25,9 +38,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
                 auto iter = std::ranges::find_if(
                     inputPort, [&](const core::logical::port::PortDescription& pd) {
                         return pd.fieldName == name &&
-                               core::shared::types::isBuiltinValueTypePrintable(
-                                   static_cast<core::shared::types::BuiltinValueType>(
-                                       pd.valueTypeId));
+                               core::shared::types::isBuiltinValueTypePrintable(pd.valueTypeId);
                     });
 
                 if (iter == inputPort.end()) {

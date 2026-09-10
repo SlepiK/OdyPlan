@@ -13,6 +13,8 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID =
             std::to_underlying(core::shared::types::BuiltinOperatorType::PRINT);
 
+        PrintOperator() = default;
+
         explicit PrintOperator(PortFieldIndexV indices);
 
         explicit PrintOperator(PortFieldNameV names);
