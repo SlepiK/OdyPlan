@@ -75,28 +75,22 @@ int main(int argc, char** argv) {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceLeftOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "l_id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "first_name"}
-    };
 
-    auto sourceLeftId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-        sourceLeftOutput,
-        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON), nlohmann::json{{"path", "left.ndjson"}},
-        std::chrono::milliseconds(5)
-        ));
+    auto sourceLeftId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+        nlohmann::json{{"path", "left.ndjson"}},
+        sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+            //.startTimestampPosition = "timestamp"
+        }
+    ));
 
-    auto sourceRightOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "last_name"}
-    };
-
-    auto sourceRightId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-        sourceRightOutput,
-        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON), nlohmann::json{{"path", "right.ndjson"}},
-        std::chrono::milliseconds(2)
-        ));
+    auto sourceRightId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+        nlohmann::json{{"path", "right.ndjson"}},
+        sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+            //.startTimestampPosition = "timestamp"
+        }
+    ));
 
     static auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
         std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(1),
@@ -150,9 +144,7 @@ int main(int argc, char** argv) {
             concrete.getIOConfig(),
             concrete.getIOFormat(),
             concrete.getOutputPorts().at(0),
-                                                   true,
-                                                   std::nullopt,
-                                                   concrete.getDelay()));
+            concrete.getOptions()));
             return ot;
         }
     );

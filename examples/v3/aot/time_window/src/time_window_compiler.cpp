@@ -75,20 +75,13 @@ int main(int argc, char** argv) {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE), .fieldName = "value"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "name"}
-    };
-
-    auto sourceId = logicalPlan.addOperator(
-        std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-            sourceOutput,
-            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
-            nlohmann::json{{"path", "read.json"}},
-            std::chrono::milliseconds(5)
-        )
-    );
+    auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::JSON),
+        nlohmann::json{{"path", "read.json"}},
+        sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+            //.startTimestampPosition = "timestamp"
+        }
+    ));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
         sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
@@ -130,9 +123,7 @@ int main(int argc, char** argv) {
         concrete.getIOConfig(),
         concrete.getIOFormat(),
         concrete.getOutputPorts().at(0),
-                                             true,
-                                             std::nullopt,
-                                             concrete.getDelay()));
+        concrete.getOptions()));
             return ot;
         }
     );

@@ -70,12 +70,13 @@ int main() {
             }
         };
 
-        auto sourceId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "read.ndjson"}}));
+        auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "read.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                //.startTimestampPosition = "timestamp"
+            }
+        ));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
@@ -116,7 +117,8 @@ int main() {
                         ReadOperator>(outputPorts.front(),
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
-                                      concrete.getOutputPorts().at(0)));
+                                      concrete.getOutputPorts().at(0),
+                                      concrete.getOptions()));
                 return ot;
             });
 
