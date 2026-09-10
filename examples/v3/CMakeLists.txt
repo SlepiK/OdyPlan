@@ -1,3 +1,5 @@
+enable_testing()
+
 add_subdirectory(aot)
 add_subdirectory(jit)
 add_subdirectory(logical_plan)
