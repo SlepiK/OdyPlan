@@ -4,13 +4,14 @@
 #include <llvm/IR/Module.h>
 
 #include <core/physical/operators/sink/typed_sink_operator.h>
+#include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
     class PrintOperator : public core::physical::operators::sink::TypedSinkOperator {
     public:
         using PortFieldIndexV = std::vector<std::size_t>;
 
-        explicit PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices);
+        explicit PrintOperator(core::physical::port::Port inputPort, PortFieldIndexV indices, core::logical::port::Port lInputPort);
 
         void consume(core::physical::segment::SegmentContext& segmentCtx,
                      core::shared::identifiers::PortId /*inputPort*/,
@@ -28,20 +29,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
 
     private:
         PortFieldIndexV mPortFieldIndices;
-
-        static void
-        codegenPrint(llvm::IRBuilder<>& builder, llvm::Module* module, const char* name);
-
-        static void
-        codegenPrintTimeInterval(llvm::IRBuilder<>& builder, llvm::Module* module, const core::physical::time::TimeInterval& ti);
-
-        static void
-        codegenPrintWindowMetadata(llvm::IRBuilder<>& builder, llvm::Module* module, llvm::Value* start, llvm::Value* end, llvm::Value* hasEnd, llvm::Value* isClosed, llvm::Value* isClosedByFlush);
-
-        static void codegenPrintField(llvm::IRBuilder<>& builder,
-                                      llvm::Module* module,
-                                      core::shared::types::ValueTypeId typeId,
-                                      llvm::Value* value);
+        core::logical::port::Port mSchema;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::physical
 

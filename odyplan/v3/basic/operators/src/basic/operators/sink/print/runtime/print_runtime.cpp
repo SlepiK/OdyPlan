@@ -1,6 +1,10 @@
 #include <basic/operators/sink/print/runtime/print_runtime.h>
+#include <nlohmann/json.hpp>
+#include <nlohmann/detail/meta/std_fs.hpp>
 
+#include "basic/io/io_sink_helper.h"
 #include "core/physical/time/time_point.h"
+#include "core/shared/types/value_type_id.h"
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     namespace {
@@ -8,6 +12,34 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     }
 
     extern "C" {
+
+    void rtPrintDataPackage(const PrintContext* ctx) {
+        if (ctx == nullptr || ctx->fields == nullptr) {
+            return;
+        }
+
+        nlohmann::ordered_json json;
+
+        for (std::size_t i = 0; i < ctx->fieldCount; ++i) {
+            const auto& field = ctx->fields[i];
+
+            if (field.name != nullptr && field.value != nullptr) {
+                io::detail::writeToJson(json, field.name, field.typeId, field.value);
+            }
+        }
+
+        threadPrintBuffer += json.dump();
+        threadPrintBuffer += ";";
+        threadPrintBuffer += std::to_string(ctx->startTs);
+        threadPrintBuffer += "|";
+        if (ctx->endTs == core::physical::time::INFINITY_SENTINEL) {
+            threadPrintBuffer += "oo";
+        } else {
+            threadPrintBuffer += std::to_string(ctx->endTs);
+        }
+        rtOdyPrintNewline();
+    }
+
     void rtOdyPrintString(const char* data) {
         threadPrintBuffer += data;
     }
@@ -24,27 +56,11 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += std::to_string(value);
     }
 
-    void rtOdyPrintSeperator() {
-        threadPrintBuffer += ' ';
-    }
-
-    void rtOdyPrintTimeInterval(const std::int64_t startTs, const std::int64_t endTs, const bool endInfinity) {
-        threadPrintBuffer += std::to_string(startTs);
-        threadPrintBuffer += '|';
-        if (endInfinity) {
-            threadPrintBuffer += "inf";
-        } else {
-            threadPrintBuffer += std::to_string(endTs);
-        }
-        threadPrintBuffer += ']';
-    }
-
     void rtOdyPrintNewline() {
         threadPrintBuffer += '\n';
         std::osyncstream(std::cout) << threadPrintBuffer;
         threadPrintBuffer.clear();
     }
-
 
     void rtOdyPrintPunctuation(const std::int64_t watermark, const bool isFinal) {
         threadPrintBuffer += "[PUNCTUATION ";

@@ -43,6 +43,9 @@ namespace sierra::odyplan::v3::basic::io::detail {
             case std::to_underlying(T::STRING):
                 target[key] = static_cast<const char*>(rawData);
                 break;
+            case std::to_underlying(T::TIMESTAMP):
+                target[key] = *static_cast<const std::int64_t*>(rawData);
+                break;
             default:
                 throw std::invalid_argument("SinkWriteHelper: Unknown typeId " +
                                             std::to_string(typeId));
