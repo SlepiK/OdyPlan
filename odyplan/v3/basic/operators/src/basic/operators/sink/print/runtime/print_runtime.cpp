@@ -37,10 +37,10 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         } else {
             threadPrintBuffer += std::to_string(ctx->endTs);
         }
-        _rtOdyPrintNewline();
+        rtOdyPrintNewline();
     }
 
-    void _rtOdyPrintNewline() {
+    void rtOdyPrintNewline() {
         threadPrintBuffer += '\n';
         std::osyncstream(std::cout) << threadPrintBuffer;
         threadPrintBuffer.clear();
@@ -55,7 +55,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
             threadPrintBuffer += std::to_string(watermark);
             threadPrintBuffer += ']';
         }
-        _rtOdyPrintNewline();
+        rtOdyPrintNewline();
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime

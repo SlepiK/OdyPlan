@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <chrono>
+#include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::details {
     template <typename FieldRef>
