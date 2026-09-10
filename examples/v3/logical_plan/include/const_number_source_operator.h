@@ -9,12 +9,11 @@ namespace sierra::odyplan::v3::example::logical_plan {
 
     inline core::logical::port::Port createIntPort() {
         return {
-            core::logical::port::PortDescription{.valueTypeId = TYPE_INT, .typeJsonName = "int"}};
+            core::logical::port::PortDescription{.valueTypeId = TYPE_INT}};
     }
 
     inline core::logical::port::Port createDoublePort() {
-        return {core::logical::port::PortDescription{.valueTypeId = TYPE_DOUBLE,
-                                                     .typeJsonName = "double"}};
+        return {core::logical::port::PortDescription{.valueTypeId = TYPE_DOUBLE}};
     }
 
     class ConstNumberSourceOperator final

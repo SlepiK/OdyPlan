@@ -76,9 +76,9 @@ int main(int argc, char** argv) {
     std::cout << "Building Logical Plan...\n";
 
     auto sourceLeftOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),.typeJsonName="int", .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),.typeJsonName="int", .fieldName = "l_id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),.typeJsonName="string", .fieldName = "first_name"}
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "l_id"},
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "first_name"}
     };
 
     auto sourceLeftId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
@@ -88,8 +88,8 @@ int main(int argc, char** argv) {
         ));
 
     auto sourceRightOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),.typeJsonName="int", .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),.typeJsonName="string", .fieldName = "last_name"}
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "last_name"}
     };
 
     auto sourceRightId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(

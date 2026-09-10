@@ -10,8 +10,7 @@ namespace sierra::odyplan::v3::example::aot::full {
 
     inline core::logical::port::Port createIntPort() {
         return {core::logical::port::PortDescription{
-            .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
-            .typeJsonName = "int"}};
+            .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32)}};
     }
 
     namespace logical {

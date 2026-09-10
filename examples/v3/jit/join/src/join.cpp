@@ -56,15 +56,15 @@ int main() {
         auto sourceLeftOutput = sierra::odyplan::v3::core::logical::port::Port{
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "id"
+                .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "l_id"
+                .fieldName = "l_id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string", .fieldName = "first_name"
+                .fieldName = "first_name"
             }
         };
 
@@ -79,11 +79,11 @@ int main() {
         auto sourceRightOutput = sierra::odyplan::v3::core::logical::port::Port{
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "id"
+                .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string", .fieldName = "last_name"
+                .fieldName = "last_name"
             }
         };
 

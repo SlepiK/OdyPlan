@@ -7,11 +7,9 @@
 namespace sierra::odyplan::v3::core::logical::port {
     struct PortDescription {
         using ValueTypeId = shared::types::ValueTypeId;
-        using PortTypeJsonName = std::string;
         using PortFieldName = std::string;
 
         ValueTypeId valueTypeId;
-        PortTypeJsonName typeJsonName;
         PortFieldName fieldName;
 
         bool operator==(const PortDescription&) const = default;

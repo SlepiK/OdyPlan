@@ -76,9 +76,9 @@ int main(int argc, char** argv) {
     std::cout << "Building Logical Plan...\n";
 
     auto sourceOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),.typeJsonName="int", .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),.typeJsonName="double", .fieldName = "value"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),.typeJsonName="string", .fieldName = "name"}
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE), .fieldName = "value"},
+        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "name"}
     };
 
     auto sourceFirstId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(sourceOutput, std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON), nlohmann::json{{"path", "read.ndjson"}}));

@@ -11,10 +11,10 @@ namespace sierra::odyplan::v3::example::aot::project {
         return {
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
-                .typeJsonName = "int"},
+                },
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string"},
+                },
         };
     }
 

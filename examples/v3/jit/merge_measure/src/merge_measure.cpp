@@ -61,19 +61,16 @@ int main() {
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
                 .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),
-                .typeJsonName = "double",
                 .fieldName = "value"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string",
                 .fieldName = "name"
             }
         };
