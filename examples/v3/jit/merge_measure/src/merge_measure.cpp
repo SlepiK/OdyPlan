@@ -61,36 +61,35 @@ int main() {
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
                 .fieldName = "id"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),
-                .typeJsonName = "double",
                 .fieldName = "value"
             },
             sierra::odyplan::v3::core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(
                     sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string",
                 .fieldName = "name"
             }
         };
 
-        auto sourceFirstId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "read.ndjson"}}));
+        auto sourceFirstId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "read.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                //.startTimestampPosition = "timestamp"
+            }
+        ));
 
-        auto sourceSecondId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "read2.ndjson"}}));
+        auto sourceSecondId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "read2.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                //.startTimestampPosition = "timestamp"
+            }
+        ));
 
         auto mergeId = logicalPlan.addOperator(
             std::make_unique<
@@ -104,6 +103,9 @@ int main() {
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
+                sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
+        .printPunctuation = true,
+    },
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
                 PortFieldIndexV{0, 1, 2}));
 
@@ -164,7 +166,8 @@ int main() {
                         ReadOperator>(outputPorts.front(),
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
-                                      concrete.getOutputPorts().at(0)));
+                                      concrete.getOutputPorts().at(0),
+                                      concrete.getOptions()));
                 return ot;
             });
 
@@ -220,7 +223,7 @@ int main() {
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::
                     sink::print::physical::PrintOperator>(
-                    inputPorts.front(), concrete.getPortFieldIndices()));
+                    inputPorts.front(), concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
                 return ot;
             });
 
@@ -394,38 +397,10 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseDouble),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(
+        symbolMap[jit->mangleAndIntern("rtPrintDataPackage")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),
+                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtPrintDataPackage),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintSeperator),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),
-                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintPunctuation")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintPunctuation),

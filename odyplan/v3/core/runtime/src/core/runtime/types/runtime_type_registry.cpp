@@ -148,6 +148,20 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 free(own);
             });
 
+
+        registry.registerType(
+            std::to_underlying(T::TIMESTAMP),
+            sizeof(std::int64_t),
+            false,
+            [](const std::byte* ptr) -> std::size_t {
+                std::int64_t v{};
+                std::memcpy(&v, ptr, sizeof(v));
+                return std::hash<std::int64_t>{}(v);
+            },
+            [](const std::byte* a, const std::byte* b) -> bool {
+                return std::memcmp(a, b, sizeof(std::int64_t)) == 0;
+            });
+
         return registry;
     }
 }  // namespace sierra::odyplan::v3::core::runtime::types

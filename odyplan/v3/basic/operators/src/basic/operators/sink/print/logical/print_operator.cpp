@@ -2,9 +2,11 @@
 #include <stdexcept>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
-    PrintOperator::PrintOperator(PortFieldIndexV indices) : mPortFieldIndices(std::move(indices)) {}
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options) : mOptions(options) {}
 
-    PrintOperator::PrintOperator(PortFieldNameV names) : mPortFieldNames(std::move(names)) {}
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options, PortFieldIndexV indices) : mPortFieldIndices(std::move(indices)), mOptions(options) {}
+
+    PrintOperator::PrintOperator(const details::PrintOperatorOptions options, PortFieldNameV names) : mPortFieldNames(std::move(names)), mOptions(options) {}
 
     core::shared::types::OperatorTypeId PrintOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -14,7 +16,24 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
         return mPortFieldIndices;
     }
 
+    details::PrintOperatorOptions PrintOperator::getOptions() const {
+        return mOptions;
+    }
+
     void PrintOperator::validateInput() {
+        if (mPortFieldIndices.empty() && mPortFieldNames.empty()) {
+            PortFieldIndexV indices;
+            const std::size_t size = getInputPorts().front().size();
+            indices.reserve(size);
+
+            for (std::size_t i = 0; i < size; ++i) {
+                indices.push_back(i);
+            }
+
+            mPortFieldIndices = std::move(indices);
+            return;
+        }
+
         if (!mPortFieldNames.empty() && mPortFieldIndices.empty()) {
             PortFieldIndexV indices;
             indices.reserve(mPortFieldNames.size());
@@ -25,9 +44,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
                 auto iter = std::ranges::find_if(
                     inputPort, [&](const core::logical::port::PortDescription& pd) {
                         return pd.fieldName == name &&
-                               core::shared::types::isBuiltinValueTypePrintable(
-                                   static_cast<core::shared::types::BuiltinValueType>(
-                                       pd.valueTypeId));
+                               core::shared::types::isBuiltinValueTypePrintable(pd.valueTypeId);
                     });
 
                 if (iter == inputPort.end()) {

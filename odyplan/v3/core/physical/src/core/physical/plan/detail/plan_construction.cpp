@@ -202,8 +202,11 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         auto *voidTy = llvm::Type::getVoidTy(*ctx);
 
         std::vector<llvm::Type *> memberTypes;
-        memberTypes.reserve(portSchema.size() + 1);
-        memberTypes.push_back(i64Ty); // timestamp
+        memberTypes.reserve(portSchema.size() + 4);
+        memberTypes.push_back(i64Ty); // startTs
+        memberTypes.push_back(i64Ty); // startTB
+        memberTypes.push_back(i64Ty); // endTs
+        memberTypes.push_back(i64Ty); // endTB
         for (const auto &descriptor: portSchema) {
             memberTypes.push_back(codegenTypeRegistry->resolveType(descriptor.valueTypeId, *ctx));
         }
@@ -238,20 +241,26 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             [&](segment::SegmentContext &computeCtx, llvm::Value *snapshotPtr) {
                 llvm::Value *runtimeRegistryPtr = computeCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
 
-                data::DataPackage reconstructed;
-                reconstructed.timestamp = computeCtx.builder.CreateLoad(
-                    i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 0));
+                llvm::Value* sTs = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 0));
+                llvm::Value* sTB = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 1));
+                llvm::Value* eTs = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 2));
+                llvm::Value* eTB = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 3));
+
+                const time::TimePoint reconstructedStart(sTs, sTB);
+                const time::TimePoint reconstructedEnd(eTs, eTB);
+
+                data::DataPackage reconstructed(time::TimeInterval(computeCtx.builder, reconstructedStart, reconstructedEnd));
 
                 reconstructed.fields.reserve(portSchema.size());
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
-                    llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 1);
-                    reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 1], slot));
+                    llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 4);
+                    reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 4], slot));
                 }
 
                 inner.consume(computeCtx, reconstructed);
 
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
-                    if (!memberTypes[i + 1]->isPointerTy()) {
+                    if (!memberTypes[i + 4]->isPointerTy()) {
                         continue;
                     }
                     llvm::Value *typeIdConst = llvm::ConstantInt::get(i64Ty, portSchema.at(i).valueTypeId);
@@ -290,8 +299,17 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
 
                 sCtx.builder.CreateStore(
-                    tuple.timestamp,
+                    tuple.timeInterval.getStart().getPoint(),
                     sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 0));
+                sCtx.builder.CreateStore(
+                    tuple.timeInterval.getStart().getTiBreaker(),
+                    sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 1));
+                sCtx.builder.CreateStore(
+                    tuple.timeInterval.getEnd().getPoint(),
+                    sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 2));
+                sCtx.builder.CreateStore(
+                    tuple.timeInterval.getEnd().getTiBreaker(),
+                    sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 3));
 
                 llvm::Value *runtimeRegistryPtrLocal =
                         sCtx.builder.CreateLoad(ptrTyLocal, runtimeRegistryGlobal);
@@ -299,9 +317,9 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     llvm::Value *fieldVal = tuple.fields.at(i);
                     llvm::Value *fieldSlot =
-                            sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 1);
+                            sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 4);
 
-                    if (memberTypes[i + 1]->isPointerTy()) {
+                    if (memberTypes[i + 4]->isPointerTy()) {
                         llvm::Value *typeIdConst =
                                 llvm::ConstantInt::get(i64TyLocal, portSchema.at(i).valueTypeId);
                         fieldVal = sCtx.builder.CreateCall(

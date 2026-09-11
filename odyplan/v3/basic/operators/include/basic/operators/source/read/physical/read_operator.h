@@ -6,8 +6,10 @@
 #include <nlohmann/json.hpp>
 
 #include <basic/io/io_format.h>
+#include <basic/operators/source/read/logical/read_operator.h>
 #include <core/logical/port/port.h>
 #include <core/physical/operators/source/typed_source_operator.h>
+#include <basic/operators/source/read/details/read_operator_options.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     class ReadOperator : public core::physical::operators::source::TypedSourceOperator {
@@ -16,10 +18,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                      nlohmann::json ioConfig,
                      io::IOFormatType ioFormat,
                      core::logical::port::Port dataSchema,
-                     bool useProgramClock = false,
-                     std::optional<std::size_t> timestampFieldIndex = std::nullopt,
-                     std::chrono::milliseconds rowDelay = std::chrono::milliseconds(0),
-                     std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
+                     details::PReadOperatorOptions options);
 
         void produce(core::physical::segment::SegmentContext& segmentCtx,
                      const core::physical::segment::SegmentDataConsumers& consumers) override;
@@ -31,13 +30,10 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     private:
         io::IOFormatType mIOFormat;
         core::logical::port::Port mDataSchema;
-        std::optional<std::size_t> mTimestampFieldIndex;
-        std::chrono::milliseconds mRowDelay;
+        details::PReadOperatorOptions mOptions;
         core::physical::state::StateHandle mState;
         nlohmann::json mIOConfig;
-        bool mUseProgramClock;
 
-        std::chrono::milliseconds mAllowedLateness;
         llvm::GlobalVariable* mWatermarkState = nullptr;
 
         [[nodiscard]] llvm::Value*

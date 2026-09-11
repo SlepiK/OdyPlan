@@ -4,21 +4,24 @@
 #include <iostream>
 #include <syncstream>
 
+#include "core/shared/types/value_type_id.h"
+
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
+    struct PrintField {
+        const void* value;
+        const char* name;
+        core::shared::types::ValueTypeId typeId;
+    };
+
+    struct PrintContext {
+        const PrintField* fields;
+        std::size_t fieldCount;
+        std::int64_t startTs;
+        std::int64_t endTs;
+    };
+
     extern "C" {
-    void rtOdyPrintString(const char* data);
-
-    void rtOdyPrintDouble(double value);
-
-    void rtOdyPrintFloat(float value);
-
-    void rtOdyPrintInt(std::int64_t value);
-
-    void rtOdyPrintSeperator();
-
-    void rtOdyPrintTimeStamp(std::int64_t value);
-
-    void rtOdyPrintWindowMetadata(std::int64_t start, std::int64_t end, bool hasEnd, bool isClosed, bool isClosedByFlush);
+    void rtPrintDataPackage(const PrintContext* ctx);
 
     void rtOdyPrintNewline();
 

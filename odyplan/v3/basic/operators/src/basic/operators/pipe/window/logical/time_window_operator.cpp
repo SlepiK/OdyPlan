@@ -4,7 +4,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     TimeWindowOperator::TimeWindowOperator(
         const basic::window::time::TimeWindowConfig& windowConfig)
         : mWindowConfig(windowConfig) {
-        checkBaseConfig(mWindowConfig.type, mWindowConfig.size, mWindowConfig.slide, mWindowConfig.advance);
     }
 
     core::shared::types::OperatorTypeId TimeWindowOperator::getOperatorTypeId() const {

@@ -116,3 +116,15 @@ jobs:
 
       - name: Build odyplan_example_all
         run: cmake --build build --target odyplan_example_all
+
+      # ---- checks ----
+
+      - name: Build odyplan_example_check_all
+        run: cmake --build build --target odyplan_example_check_all
+
+      # ---- ctest ----
+
+      - name: Run CTest
+        run: |
+          cd build
+          ctest --output-on-failure

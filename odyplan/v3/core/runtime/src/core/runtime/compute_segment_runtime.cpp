@@ -31,7 +31,8 @@ namespace sierra::odyplan::v3::core::runtime {
                     auto* envelope = static_cast<task::Envelope*>(*item);
                     envelope->fn(envelope->payload);
                     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-                    delete envelope;
+                    //delete envelope;
+                    delete[] envelope;
                 }
             });
 

@@ -1,4 +1,10 @@
 #include <basic/operators/sink/print/runtime/print_runtime.h>
+#include <nlohmann/json.hpp>
+#include <nlohmann/detail/meta/std_fs.hpp>
+
+#include "basic/io/io_sink_helper.h"
+#include "core/physical/time/time_point.h"
+#include "core/shared/types/value_type_id.h"
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     namespace {
@@ -6,53 +12,32 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     }
 
     extern "C" {
-    void rtOdyPrintString(const char* data) {
-        threadPrintBuffer += data;
-    }
 
-    void rtOdyPrintDouble(const double value) {
-        threadPrintBuffer += std::to_string(value);
-    }
-
-    void rtOdyPrintFloat(const float value) {
-        threadPrintBuffer += std::to_string(value);
-    }
-
-    void rtOdyPrintInt(const std::int64_t value) {
-        threadPrintBuffer += std::to_string(value);
-    }
-
-    void rtOdyPrintSeperator() {
-        threadPrintBuffer += ' ';
-    }
-
-    void rtOdyPrintTimeStamp(const std::int64_t value) {
-        threadPrintBuffer += std::to_string(value);
-        threadPrintBuffer += ']';
-    }
-
-    void rtOdyPrintWindowMetadata(const std::int64_t start, const std::int64_t end, const bool hasEnd, const bool isClosed, const bool isClosedByFlush) {
-        threadPrintBuffer += '[';
-        threadPrintBuffer += std::to_string(start);
-        threadPrintBuffer += '|';
-        if (hasEnd) {
-            threadPrintBuffer += std::to_string(end);
-        } else {
-            threadPrintBuffer += '-';
+    void rtPrintDataPackage(const PrintContext* ctx) {
+        if (ctx == nullptr || ctx->fields == nullptr) {
+            return;
         }
-        threadPrintBuffer += '|';
-        if (isClosed) {
-            threadPrintBuffer += "iC";
-        } else {
-            threadPrintBuffer += "nC";
+
+        nlohmann::ordered_json json;
+
+        for (std::size_t i = 0; i < ctx->fieldCount; ++i) {
+            const auto& field = ctx->fields[i];
+
+            if (field.name != nullptr && field.value != nullptr) {
+                io::detail::writeToJson(json, field.name, field.typeId, field.value);
+            }
         }
-        threadPrintBuffer += '|';
-        if (isClosedByFlush) {
-            threadPrintBuffer += "iCF";
+
+        threadPrintBuffer += json.dump();
+        threadPrintBuffer += ";";
+        threadPrintBuffer += std::to_string(ctx->startTs);
+        threadPrintBuffer += "|";
+        if (ctx->endTs == core::physical::time::INFINITY_SENTINEL) {
+            threadPrintBuffer += "oo";
         } else {
-            threadPrintBuffer += "nCF";
+            threadPrintBuffer += std::to_string(ctx->endTs);
         }
-        threadPrintBuffer += ']';
+        rtOdyPrintNewline();
     }
 
     void rtOdyPrintNewline() {
@@ -60,7 +45,6 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         std::osyncstream(std::cout) << threadPrintBuffer;
         threadPrintBuffer.clear();
     }
-
 
     void rtOdyPrintPunctuation(const std::int64_t watermark, const bool isFinal) {
         threadPrintBuffer += "[PUNCTUATION ";

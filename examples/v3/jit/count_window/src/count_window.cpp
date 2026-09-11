@@ -52,49 +52,29 @@ int main() {
 
         std::cout << "Building Logical Plan...\n";
 
-        auto sourceOutput = sierra::odyplan::v3::core::logical::port::Port{
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int",
-                .fieldName = "id"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),
-                .typeJsonName = "double",
-                .fieldName = "value"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string",
-                .fieldName = "name"
+        auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                .startTimestampPosition = "timestamp"
             }
-        };
-
-        auto sourceId = logicalPlan.addOperator(
-            std::make_unique<
-                sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "read.ndjson"}},
-                std::chrono::milliseconds(5)));
+        ));
 
         auto pipeId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
                 sierra::odyplan::v3::basic::window::count::CountWindowConfig{
-                    .type = sierra::odyplan::v3::basic::window::WindowType::ADVANCE,
-                    .size = 2,
-                    .advance = 2
+                    .size = 3,
                 }));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                PortFieldIndexV{0, 1, 2}));
+                sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
+        .printPunctuation = false,
+    }
+                //sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0, 1, 2}
+                ));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{
@@ -138,10 +118,7 @@ int main() {
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
                                       concrete.getOutputPorts().at(0),
-                                      true,
-                                      std::nullopt,
-                                      concrete.getDelay(),
-                                      concrete.getAllowedLateness()));
+                                      concrete.getOptions()));
                 return ot;
             });
 
@@ -183,7 +160,7 @@ int main() {
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::
                     sink::print::physical::PrintOperator>(
-                    inputPorts.front(), concrete.getPortFieldIndices()));
+                    inputPorts.front(), concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
                 return ot;
             });
 
@@ -253,59 +230,53 @@ int main() {
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::
                         window::runtime::rtDestroyCountWindowBuffer),
                     llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetStart")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtCountWindowGetStart),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetEnd")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtCountWindowGetEnd),
-            llvm::JITSymbolFlags::Exported);
+
+
         symbolMap[jit->mangleAndIntern("rtCountWindowBeginRow")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowBeginRow),
-            llvm::JITSymbolFlags::Exported);
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowEmitCount")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowEmitCount),
+                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtCountWindowPush")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowPush),
-            llvm::JITSymbolFlags::Exported);
+                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtCountWindowEndRow")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowEndRow),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowCompute")] = llvm::orc::ExecutorSymbolDef(
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowReady")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowCompute),
-            llvm::JITSymbolFlags::Exported);
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowReady),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowRowCount")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowRowCount),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowGetData")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowGetData),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowRowStart")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowRowStart),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowEnd")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowEnd),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowAdvance")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowAdvance),
+                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtCountWindowFlush")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowFlush),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetCount")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowGetCount),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetRowCountInWindow")] =
-                llvm::orc::ExecutorSymbolDef(
-                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::
-                        window::runtime::rtCountWindowGetRowCountInWindow),
-                    llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetData")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowGetData),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetTimestamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtCountWindowGetTimestamp),
-                llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowGetStartRow")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtCountWindowGetStartRow),
-                llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowIsClosedByFlush")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::
-                runtime::rtCountWindowIsClosedByFlush),
-            llvm::JITSymbolFlags::Exported);
+
 
         symbolMap[jit->mangleAndIntern("rtComputeSegmentNullInit")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
@@ -393,37 +364,9 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseDouble),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(
+        symbolMap[jit->mangleAndIntern("rtPrintDataPackage")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintSeperator),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),
+                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtPrintDataPackage),
                 llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintPunctuation")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
