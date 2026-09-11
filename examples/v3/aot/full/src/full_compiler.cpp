@@ -122,13 +122,13 @@ int main(int argc, char** argv) {
 
     builder.registerOperatorTransformation(
         sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator::TYPE_ID,
-        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+        [](sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator&>(op);
+            auto& concrete = static_cast<sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator&>(op);
 
             sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::select::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),concrete.getPredicate()));
+            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::select::physical::SelectOperator>(inputPorts.front(), outputPorts.front(),std::move(concrete.getPredicate())));
             return ot;
         }
     );
