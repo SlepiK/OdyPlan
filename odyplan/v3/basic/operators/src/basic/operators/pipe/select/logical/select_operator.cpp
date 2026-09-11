@@ -1,20 +1,29 @@
 #include <basic/operators/pipe/select/logical/select_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
-    SelectOperator::SelectOperator(std::unique_ptr<basic::expression::IExpression> predicate)
-        : mPredicate(std::move(predicate)) {}
+    SelectOperator::SelectOperator(std::unique_ptr<basic::expression::logical::IExpression> predicate)
+        : mLPredicate(std::move(predicate)) {}
 
     [[nodiscard]] core::shared::types::OperatorTypeId SelectOperator::getOperatorTypeId() const {
         return TYPE_ID;
     }
 
-    [[nodiscard]] const basic::expression::IExpression& SelectOperator::getPredicate() const {
-        return *mPredicate;
+    [[nodiscard]] std::unique_ptr<basic::expression::physical::IExpression> SelectOperator::getPredicate() {
+        if (mPPredicate == nullptr) {
+            return nullptr;
+        }
+
+        return std::move(mPPredicate);
     }
 
     void SelectOperator::validateInput() {
-        if (mPredicate == nullptr) {
+        if (mLPredicate == nullptr) {
             throw std::invalid_argument("SelectOperator: predicate must be non-null");
         }
+
+        const auto inputPort = getInputPorts().front();
+        const core::logical::port::PortDescriptionResolver resolver(inputPort,{inputPort.size()});
+        expression::translate::LogicalToPhysicalTranslator translator(resolver);
+        mPPredicate = translator.translate(*mLPredicate);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::select::logical

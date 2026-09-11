@@ -1,11 +1,11 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_CONSTANT_EXPRESSION_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_CONSTANT_EXPRESSION_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_CONSTANT_EXPRESSION_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_CONSTANT_EXPRESSION_HPP
 
-#include <basic/expression/expression.h>
+#include <basic/expression/logical/expression.h>
 #include <core/shared/types/value_type_id.h>
 #include <string>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::logical {
     class ConstantExpression : public IExpression {
     public:
         explicit ConstantExpression(core::shared::types::ValueTypeId typeId,
@@ -23,4 +23,4 @@ namespace sierra::odyplan::v3::basic::expression {
     };
 }  // namespace sierra::odyplan::v3::basic::expression
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_CONSTANT_EXPRESSION_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_CONSTANT_EXPRESSION_HPP

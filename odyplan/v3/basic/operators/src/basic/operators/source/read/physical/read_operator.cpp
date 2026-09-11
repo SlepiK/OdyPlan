@@ -101,8 +101,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         }();
 
         const core::physical::time::TimeInterval ti = [&]() {
-            if (mOptions.startTimestampPosition.has_value()) {
-                return core::physical::time::TimeInterval(segmentCtx.builder, stp, core::physical::time::TimePoint(segmentCtx.builder, rawValues.at(*mOptions.startTimestampPosition)));
+            if (mOptions.endTimestampPosition.has_value()) {
+                return core::physical::time::TimeInterval(segmentCtx.builder, stp, core::physical::time::TimePoint(segmentCtx.builder, rawValues.at(*mOptions.endTimestampPosition)));
             }
             return core::physical::time::TimeInterval(segmentCtx.builder, stp);
         }();

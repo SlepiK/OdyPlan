@@ -1,16 +1,20 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_BUILTIN_EXPRESSION_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_BUILTIN_EXPRESSION_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_BUILTIN_EXPRESSION_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_BUILTIN_EXPRESSION_HPP
 
-#include <basic/expression/compare_expression.h>
-#include <basic/expression/constant_expression.h>
-#include <basic/expression/expression.h>
-#include <basic/expression/field_reference_expression.h>
-#include <basic/expression/logical_expression.h>
+#include <basic/expression/logical/compare_expression.h>
+#include <basic/expression/logical/constant_expression.h>
+#include <basic/expression/logical/expression.h>
+#include <basic/expression/logical/field_reference_expression.h>
+#include <basic/expression/logical/logical_expression.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::logical {
     // Helpers
-    inline std::unique_ptr<IExpression> field(std::size_t fieldIndex) {
-        return std::make_unique<FieldReferenceExpression>(fieldIndex);
+    inline std::unique_ptr<IExpression> field(const std::string& fieldName) {
+        return std::make_unique<FieldReferenceExpression>(fieldName);
+    }
+
+    inline std::unique_ptr<IExpression> field(std::size_t portIndex, const std::string& fieldName) {
+        return std::make_unique<FieldReferenceExpression>(fieldName, portIndex);
     }
 
     inline std::unique_ptr<IExpression> constant(core::shared::types::ValueTypeId typeId,
@@ -54,57 +58,57 @@ namespace sierra::odyplan::v3::basic::expression {
     inline std::unique_ptr<IExpression> EQ(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::EQ, std::move(rightPart));
+            std::move(leftPart), CompareOp::EQ, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> NE(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::NE, std::move(rightPart));
+            std::move(leftPart), CompareOp::NE, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> LT(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::LT, std::move(rightPart));
+            std::move(leftPart), CompareOp::LT, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> LE(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::LE, std::move(rightPart));
+            std::move(leftPart), CompareOp::LE, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> GT(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::GT, std::move(rightPart));
+            std::move(leftPart), CompareOp::GT, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> GE(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<CompareExpression>(
-            std::move(leftPart), CompareExpression::CompareOp::GE, std::move(rightPart));
+            std::move(leftPart), CompareOp::GE, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> AND(std::unique_ptr<IExpression> leftPart,
                                             std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<LogicalExpression>(
-            std::move(leftPart), LogicalExpression::LogicalOp::AND, std::move(rightPart));
+            std::move(leftPart), LogicalOp::AND, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> OR(std::unique_ptr<IExpression> leftPart,
                                            std::unique_ptr<IExpression> rightPart) {
         return std::make_unique<LogicalExpression>(
-            std::move(leftPart), LogicalExpression::LogicalOp::OR, std::move(rightPart));
+            std::move(leftPart), LogicalOp::OR, std::move(rightPart));
     }
 
     inline std::unique_ptr<IExpression> NOT(std::unique_ptr<IExpression> oprAffected) {
-        return std::make_unique<LogicalExpression>(LogicalExpression::LogicalOp::NOT,
+        return std::make_unique<LogicalExpression>(LogicalOp::NOT,
                                                    std::move(oprAffected));
     }
 
     // NOLINTEND
 }  // namespace sierra::odyplan::v3::basic::expression
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_BUILTIN_EXPRESSION_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_BUILTIN_EXPRESSION_HPP

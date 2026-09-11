@@ -23,7 +23,7 @@
 #include <basic/operators/sink/write/logical/write_operator.h>
 #include <basic/operators/sink/write/physical/write_operator.h>
 
-#include <basic/expression/builtin_expressions.h>
+#include <basic/expression/physical/builtin_expressions.h>
 
 namespace {
     void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {

@@ -23,18 +23,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
     }
 
-    JoinOperator::JoinOperator(core::physical::port::Port inputPort,
+    JoinOperator::JoinOperator(core::physical::port::Ports inputPorts,
                                core::physical::port::Port outputPort,
                                const logical::details::JoinConfig config,
                                core::logical::port::Ports schemas,
-                               const basic::expression::IExpression* predicate)
-        : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
+                               std::unique_ptr<basic::expression::physical::IExpression> predicate)
+        : TypedPipeOperator(std::move(inputPorts),
                             core::physical::port::Ports{std::move(outputPort)}),
           mConfig(config),
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),
-          mPredicate(predicate),
-          mEquiKeys(details::tryGetEquiKeyList(mPredicate, mLeftSchema, mRightSchema))
+          mPredicate(std::move(predicate)),
+          mEquiKeys(details::tryGetEquiKeyList(mPredicate.get(), mLeftSchema, mRightSchema))
           {
     }
 
@@ -255,7 +255,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const auto isEqui = mEquiKeys.has_value();
 
         if (mPredicate != nullptr && !isEqui) {
-            llvm::Value* predicateResult = codegenExpression(segmentCtx, combined, *mPredicate);
+            llvm::Value* predicateResult = expression::physical::codegenExpression(segmentCtx, combined, *mPredicate);
             auto* passBB = llvm::BasicBlock::Create(ctx, "compute_predicate_pass", fn);
             auto* mergeBB = llvm::BasicBlock::Create(ctx, "compute_predicate_merge", fn);
             segmentCtx.builder.CreateCondBr(predicateResult, passBB, mergeBB);
@@ -394,143 +394,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantArray::get(arrTy, values), name);
     }
-
-    llvm::Value*
-    JoinOperator::codegenExpression(core::physical::segment::SegmentContext& segmentCtx,
-                                    const core::physical::data::DataPackage& tuple,
-                                    const basic::expression::IExpression& expression) {
-        switch (expression.getExpressionType()) {
-            case basic::expression::ExpressionType::FIELD_REFERENCE: {
-                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& fieldRef =
-                    static_cast<const basic::expression::FieldReferenceExpression&>(expression);
-                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                if (fieldRef.getFieldIndex() >= tuple.size()) {
-                    throw std::out_of_range("IntervalJoinOperator: Field index out of range");
-                }
-                auto* field = tuple.at(fieldRef.getFieldIndex());
-                if (field == nullptr) {
-                    throw std::out_of_range("IntervalJoinOperator: Field returned nullptr");
-                }
-                return field;
-            }
-            case basic::expression::ExpressionType::CONSTANT: {
-                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& constExp =
-                    static_cast<const basic::expression::ConstantExpression&>(expression);
-                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                return segmentCtx.codegenTypeRegistry.compileConstant(
-                    constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
-            }
-            case basic::expression::ExpressionType::COMPARE: {
-                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& cmpExp =
-                    static_cast<const basic::expression::CompareExpression&>(expression);
-                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-
-                llvm::Value* left = codegenExpression(segmentCtx, tuple, cmpExp.getLeftPart());
-                if (left == nullptr) {
-                    throw std::invalid_argument(
-                        "JoinOperator: failed to codegen left operand of compare expression");
-                }
-
-                llvm::Value* right = codegenExpression(segmentCtx, tuple, cmpExp.getRightPart());
-                if (right == nullptr) {
-                    throw std::invalid_argument(
-                        "JoinOperator: failed to codegen right operand of compare expression");
-                }
-
-                return codegenCompare(segmentCtx.builder, left, right, cmpExp.getOpr());
-            }
-            case basic::expression::ExpressionType::LOGICAL: {
-                // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
-                const auto& logicExp =
-                    static_cast<const basic::expression::LogicalExpression&>(expression);
-                // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                llvm::Value* left = codegenExpression(segmentCtx, tuple, logicExp.getLeftPart());
-
-                if (left == nullptr) {
-                    throw std::invalid_argument(
-                        "JoinOperator: failed to codegen left operand of logical expression");
-                }
-
-                if (logicExp.isUnary()) {
-                    return segmentCtx.builder.CreateNot(left);
-                }
-
-                const auto* rightPart = logicExp.getRightPart();
-                if (rightPart == nullptr) {
-                    throw std::invalid_argument(
-                        "JoinOperator: binary logical expression missing right part");
-                }
-
-                llvm::Value* right = codegenExpression(segmentCtx, tuple, *rightPart);
-
-                if (right == nullptr) {
-                    throw std::invalid_argument(
-                        "JoinOperator: failed to codegen right operand of logical expression");
-                }
-
-                switch (logicExp.getOpr()) {
-                    case basic::expression::LogicalExpression::LogicalOp::AND: {
-                        return segmentCtx.builder.CreateAnd(left, right);
-                    }
-                    case basic::expression::LogicalExpression::LogicalOp::OR: {
-                        return segmentCtx.builder.CreateOr(left, right);
-                    }
-                    default:
-                        throw std::out_of_range(
-                            "IntervalJoinOperator::logic: Type of expression not supported");
-                }
-            }
-            default:
-                throw std::invalid_argument("IntervalJoinOperator: Invalid expression type");
-        }
-    }
-
-    llvm::Value*
-    JoinOperator::codegenCompare(llvm::IRBuilder<>& builder,
-                                 llvm::Value* left,
-                                 llvm::Value* right,
-                                 const basic::expression::CompareExpression::CompareOp opr) {
-        if (left->getType() != right->getType()) {
-            throw std::invalid_argument("JoinOperator: expression operands have mismatched types");
-        }
-        const bool isFloat = left->getType()->isFloatingPointTy();
-
-        // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
-        switch (opr) {
-            case basic::expression::CompareExpression::CompareOp::EQ: {
-                return isFloat ? builder.CreateFCmpOEQ(left, right)
-                               : builder.CreateICmpEQ(left, right);
-            }
-            case basic::expression::CompareExpression::CompareOp::NE: {
-                return isFloat ? builder.CreateFCmpONE(left, right)
-                               : builder.CreateICmpNE(left, right);
-            }
-            case basic::expression::CompareExpression::CompareOp::LT: {
-                return isFloat ? builder.CreateFCmpOLT(left, right)
-                               : builder.CreateICmpSLT(left, right);
-            }
-            case basic::expression::CompareExpression::CompareOp::LE: {
-                return isFloat ? builder.CreateFCmpOLE(left, right)
-                               : builder.CreateICmpSLE(left, right);
-            }
-            case basic::expression::CompareExpression::CompareOp::GT: {
-                return isFloat ? builder.CreateFCmpOGT(left, right)
-                               : builder.CreateICmpSGT(left, right);
-            }
-            case basic::expression::CompareExpression::CompareOp::GE: {
-                return isFloat ? builder.CreateFCmpOGE(left, right)
-                               : builder.CreateICmpSGE(left, right);
-            }
-            default:
-                throw std::out_of_range(
-                    "IntervalJoinOperator::compare: Invalid compare expression type");
-        }
-        // NOLINTEND(clang-analyzer-security.ArrayBound)
-    }
-
 
     void JoinOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
                             core::shared::identifiers::PortId inputPort,

@@ -49,8 +49,8 @@ target_include_directories(${TARGET_NAME} PRIVATE
 )
 
 file(COPY
-        data/left.ndjson
-        data/right.ndjson
+        data/nexmark.bid.10k.ndjson
+        data/nexmark.person.10k.ndjson
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -81,3 +81,39 @@ if(ENABLE_TOOLING)
     register_lint_sources(${SOURCES} ${HEADERS})
     register_tidy_sources(${SOURCES})
 endif()
+
+#3. Check / Verify
+
+set(REFERENCE_ODYSSEUS_OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/data/ody_check_output.txt)
+set(TEST_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/output.txt)
+
+add_custom_target(odyplan_example_aot_join_run
+        COMMAND $<TARGET_FILE:${TARGET_NAME}> > ${TEST_OUTPUT}
+        DEPENDS ${TARGET_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Running join executable"
+)
+
+add_custom_target(odyplan_example_aot_join_check
+        COMMAND ${CMAKE_COMMAND} -E echo "=== Running join test ==="
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+        --ignore-eol
+        ${TEST_OUTPUT}
+        ${REFERENCE_ODYSSEUS_OUTPUT}
+        COMMAND ${CMAKE_COMMAND} -E echo "=== Test PASSED ==="
+        DEPENDS odyplan_example_aot_join_run ${REFERENCE_ODYSSEUS_OUTPUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Comparing join output against reference"
+)
+
+add_test(
+        NAME odyplan_example_aot_join
+        COMMAND ${CMAKE_COMMAND} -E compare_files
+        --ignore-eol
+        ${TEST_OUTPUT}
+        ${REFERENCE_ODYSSEUS_OUTPUT}
+)
+
+set_tests_properties(odyplan_example_aot_join PROPERTIES
+        FIXTURES_REQUIRED "join_output"
+)

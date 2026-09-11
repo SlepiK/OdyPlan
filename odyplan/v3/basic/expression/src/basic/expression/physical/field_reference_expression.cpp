@@ -1,6 +1,6 @@
-#include <basic/expression/field_reference_expression.h>
+#include <basic/expression/physical/field_reference_expression.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::physical {
     FieldReferenceExpression::FieldReferenceExpression(const std::size_t fieldIndex)
         : mFieldIndex(fieldIndex) {}
 

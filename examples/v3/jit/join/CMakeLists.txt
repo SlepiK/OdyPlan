@@ -26,8 +26,8 @@ odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 file(COPY
-        data/left.ndjson
-        data/right.ndjson
+        data/nexmark.person.10k.ndjson
+        data/nexmark.bid.10k.ndjson
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 

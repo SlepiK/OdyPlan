@@ -1,6 +1,6 @@
-#include <basic/expression/constant_expression.h>
+#include <basic/expression/logical/constant_expression.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::logical {
     ConstantExpression::ConstantExpression(const core::shared::types::ValueTypeId typeId,
                                            std::string serializedValue)
         : mTypeId(typeId), mSerializedValue(std::move(serializedValue)) {}

@@ -1,11 +1,8 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_OPERATOR_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_OPERATOR_HPP
 
-#include <basic/expression/compare_expression.h>
-#include <basic/expression/constant_expression.h>
-#include <basic/expression/expression.h>
-#include <basic/expression/field_reference_expression.h>
-#include <basic/expression/logical_expression.h>
+#include <basic/expression/physical/expression.h>
+#include <basic/expression/physical/expression_codegen.h>
 #include <basic/operators/pipe/join/logical/details/join_config.h>
 #include <basic/operators/pipe/join/physical/details/join_predmod.h>
 #include <core/logical/port/port.h>
@@ -14,11 +11,11 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     class JoinOperator : public core::physical::operators::pipe::TypedPipeOperator {
     public:
-        JoinOperator(core::physical::port::Port inputPort,
+        JoinOperator(core::physical::port::Ports inputPorts,
                      core::physical::port::Port outputPort,
                      logical::details::JoinConfig config,
                      core::logical::port::Ports schemas,
-                     const basic::expression::IExpression* predicate);
+                     std::unique_ptr<basic::expression::physical::IExpression> predicate);
 
         void consume(core::physical::segment::SegmentContext& segmentCtx,
                      core::shared::identifiers::PortId inputPort,
@@ -38,7 +35,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         logical::details::JoinConfig mConfig;
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
-        const basic::expression::IExpression* mPredicate;
+        const std::unique_ptr<basic::expression::physical::IExpression> mPredicate;
         const std::optional<details::EquiKeyList> mEquiKeys;
 
         core::physical::state::StateHandle mState;
@@ -65,20 +62,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 llvm::Value* snapshot, bool onLeft,
                 const core::physical::segment::SegmentDataConsumers& consumers);
 
-        llvm::Value* codegenExpression(core::physical::segment::SegmentContext& segmentCtx,
-                                       const core::physical::data::DataPackage& tuple,
-                                       const expression::IExpression& expression);
-
         static void codegenEvict(core::physical::segment::SegmentContext& segmentCtx,
                                  llvm::Value* state,
                                  llvm::Value* timestamp,
                                  bool callFromLeft,
                                  llvm::Value* isFinal);
-
-        static llvm::Value* codegenCompare(llvm::IRBuilder<>& builder,
-                                           llvm::Value* left,
-                                           llvm::Value* right,
-                                           basic::expression::CompareExpression::CompareOp opr);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 

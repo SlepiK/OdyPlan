@@ -1,6 +1,6 @@
-#include <basic/expression/compare_expression.h>
+#include <basic/expression/logical/compare_expression.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::logical {
     CompareExpression::CompareExpression(std::unique_ptr<IExpression> leftPart,
                                          const CompareOp opr,
                                          std::unique_ptr<IExpression> rightPart)
@@ -18,7 +18,7 @@ namespace sierra::odyplan::v3::basic::expression {
         return *mRightPart;
     }
 
-    CompareExpression::CompareOp CompareExpression::getOpr() const {
+    CompareOp CompareExpression::getOpr() const {
         return mOpr;
     }
 }  // namespace sierra::odyplan::v3::basic::expression

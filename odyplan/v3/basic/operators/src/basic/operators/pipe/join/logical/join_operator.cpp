@@ -3,8 +3,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
     JoinOperator::JoinOperator(const details::JoinConfig config,
-                               const basic::expression::IExpression* predicate)
-        : mConfig(config), mPredicate(predicate) {}
+                               std::unique_ptr<basic::expression::logical::IExpression> predicate)
+        : mConfig(config), mLPredicate(std::move(predicate)) {}
 
     core::shared::types::OperatorTypeId JoinOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -14,8 +14,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         return mConfig;
     }
 
-    const basic::expression::IExpression* JoinOperator::getPredicate() const {
-        return mPredicate;
+    std::unique_ptr<basic::expression::physical::IExpression> JoinOperator::getPredicate() {
+        if (mPPredicate == nullptr) {
+            return nullptr;
+        }
+
+        return std::move(mPPredicate);
     }
 
     void JoinOperator::bindInput(const core::shared::identifiers::PortId portId,
@@ -48,6 +52,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         combinedPort.insert(combinedPort.end(), left.begin(), left.end());
         combinedPort.insert(combinedPort.end(), right.begin(), right.end());
         getOutputPortsRef() = {combinedPort};
+
+        const core::logical::port::PortDescriptionResolver resolver(combinedPort,{left.size(), right.size()});
+        expression::translate::LogicalToPhysicalTranslator translator(resolver);
+        mPPredicate = translator.translate(*mLPredicate);
     }
 
     void JoinOperator::validate() const {

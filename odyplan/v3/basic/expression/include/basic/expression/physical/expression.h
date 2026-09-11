@@ -1,9 +1,9 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_EXPRESSION_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_EXPRESSION_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_EXPRESSION_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_EXPRESSION_HPP
 
-#include <basic/expression/expression_type.h>
+#include <basic/expression/physical/expression_type.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::physical {
     class IExpression {
     public:
         IExpression() = default;
@@ -22,4 +22,4 @@ namespace sierra::odyplan::v3::basic::expression {
     };
 }  // namespace sierra::odyplan::v3::basic::expression
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_EXPRESSION_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_EXPRESSION_HPP

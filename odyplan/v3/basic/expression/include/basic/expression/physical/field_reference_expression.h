@@ -1,10 +1,10 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_FIELD_REFERENCE_EXPRESSION_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_FIELD_REFERENCE_EXPRESSION_HPP
 
-#include <basic/expression/expression.h>
+#include <basic/expression/physical/expression.h>
 #include <cstddef>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::physical {
     class FieldReferenceExpression : public IExpression {
     public:
         explicit FieldReferenceExpression(std::size_t fieldIndex);
@@ -18,4 +18,4 @@ namespace sierra::odyplan::v3::basic::expression {
     };
 }  // namespace sierra::odyplan::v3::basic::expression
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_FIELD_REFERENCE_EXPRESSION_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_FIELD_REFERENCE_EXPRESSION_HPP

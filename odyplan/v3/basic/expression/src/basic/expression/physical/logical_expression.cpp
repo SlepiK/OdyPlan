@@ -1,6 +1,6 @@
-#include <basic/expression/logical_expression.h>
+#include <basic/expression/physical/logical_expression.h>
 
-namespace sierra::odyplan::v3::basic::expression {
+namespace sierra::odyplan::v3::basic::expression::physical {
     LogicalExpression::LogicalExpression(std::unique_ptr<IExpression> leftPart,
                                          const LogicalOp opr,
                                          std::unique_ptr<IExpression> rightPart)
@@ -22,7 +22,7 @@ namespace sierra::odyplan::v3::basic::expression {
         return mRightPart.get();
     }
 
-    LogicalExpression::LogicalOp LogicalExpression::getOpr() const {
+    LogicalOp LogicalExpression::getOpr() const {
         return mOpr;
     }
 

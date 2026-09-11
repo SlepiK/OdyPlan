@@ -1,13 +1,13 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
-#include <basic/expression/compare_expression.h>
-#include <basic/expression/expression.h>
-#include <basic/expression/field_reference_expression.h>
+#include <basic/expression/physical/compare_expression.h>
+#include <basic/expression/physical/expression.h>
+#include <basic/expression/physical/field_reference_expression.h>
 #include <core/logical/port/port.h>
 #include <core/shared/types/value_type_id.h>
 #include <cstddef>
 #include <optional>
-#include <basic/expression/logical_expression.h>
+#include <basic/expression/physical/logical_expression.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     struct EquiKeyInfo {
@@ -20,14 +20,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::vector<EquiKeyInfo> keys;
     };
 
-    inline bool pureAndEqui(const expression::IExpression* expr, std::vector<const expression::IExpression*>& pured) {
+    inline bool pureAndEqui(const expression::physical::IExpression* expr, std::vector<const expression::physical::IExpression*>& pured) {
         if (expr == nullptr) {
             return false;
         }
 
-        if (expr->getExpressionType() == expression::ExpressionType::LOGICAL) {
-            const auto& logicalExp = static_cast<const expression::LogicalExpression&>(*expr);
-            if (logicalExp.isUnary() || logicalExp.getOpr() != expression::LogicalExpression::LogicalOp::AND) {
+        if (expr->getExpressionType() == expression::physical::ExpressionType::LOGICAL) {
+            const auto& logicalExp = static_cast<const expression::physical::LogicalExpression&>(*expr);
+            if (logicalExp.isUnary() || logicalExp.getOpr() != expression::LogicalOp::AND) {
                 return false;
             }
 
@@ -43,37 +43,37 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return true;
     }
 
-    inline std::optional<EquiKeyInfo> tryGetEquiKey(const basic::expression::IExpression* predicate,
+    inline std::optional<EquiKeyInfo> tryGetEquiKey(const basic::expression::physical::IExpression* predicate,
                                                     const core::logical::port::Port& leftSchema,
                                                     const core::logical::port::Port& rightSchema) {
-        if (predicate->getExpressionType() != basic::expression::ExpressionType::COMPARE) {
+        if (predicate->getExpressionType() != basic::expression::physical::ExpressionType::COMPARE) {
             return std::nullopt;
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast,-warnings-as-errors)
-        const auto& compare = static_cast<const basic::expression::CompareExpression&>(*predicate);
+        const auto& compare = static_cast<const basic::expression::physical::CompareExpression&>(*predicate);
 
-        if (compare.getOpr() != basic::expression::CompareExpression::CompareOp::EQ) {
+        if (compare.getOpr() != basic::expression::CompareOp::EQ) {
             return std::nullopt;
         }
 
         const auto& left = compare.getLeftPart();
 
-        if (left.getExpressionType() != basic::expression::ExpressionType::FIELD_REFERENCE) {
+        if (left.getExpressionType() != basic::expression::physical::ExpressionType::FIELD_REFERENCE) {
             return std::nullopt;
         }
 
         const auto& right = compare.getRightPart();
 
-        if (right.getExpressionType() != basic::expression::ExpressionType::FIELD_REFERENCE) {
+        if (right.getExpressionType() != basic::expression::physical::ExpressionType::FIELD_REFERENCE) {
             return std::nullopt;
         }
 
         // NOLINTBEGIN(cppcoreguidelines-pro-type-static-cast-downcast)
         const auto leftIndex =
-            static_cast<const basic::expression::FieldReferenceExpression&>(left).getFieldIndex();
+            static_cast<const basic::expression::physical::FieldReferenceExpression&>(left).getFieldIndex();
         const auto rightIndex =
-            static_cast<const basic::expression::FieldReferenceExpression&>(right).getFieldIndex();
+            static_cast<const basic::expression::physical::FieldReferenceExpression&>(right).getFieldIndex();
         // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
 
         const auto leftSize = leftSchema.size();
@@ -103,14 +103,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return EquiKeyInfo(leftFieldIndex, rightFieldIndex, leftTypeId);
     }
 
-    inline std::optional<EquiKeyList> tryGetEquiKeyList(const basic::expression::IExpression* predicate,
+    inline std::optional<EquiKeyList> tryGetEquiKeyList(const basic::expression::physical::IExpression* predicate,
                                                     const core::logical::port::Port& leftSchema,
                                                     const core::logical::port::Port& rightSchema) {
         if (predicate == nullptr) {
             return std::nullopt;
         }
 
-        std::vector<const expression::IExpression*> parts;
+        std::vector<const expression::physical::IExpression*> parts;
         if (!pureAndEqui(predicate, parts)) {
             return std::nullopt;
         }

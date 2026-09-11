@@ -7,7 +7,7 @@
 
 namespace sierra::odyplan::v3::core::builder::transformation {
     using OperatorTransformationFactory =
-        std::function<OperatorTransformation(const logical::operators::IOperator&,
+        std::function<OperatorTransformation(logical::operators::IOperator&,
                                              const physical::port::Ports& input,
                                              const physical::port::Ports& output)>;
 }

@@ -25,6 +25,9 @@
 #include <iostream>
 #include <llvm/IR/Verifier.h>
 
+#include "basic/expression/logical/compare_expression.h"
+#include "basic/expression/logical/field_reference_expression.h"
+
 namespace {
     void optimizeLlvmModule(llvm::Module &module, const llvm::OptimizationLevel level) {
         llvm::LoopAnalysisManager loopAnaMgr;
@@ -55,24 +58,24 @@ int main() {
 
         auto sourceLeftId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-            nlohmann::json{{"path", "left.ndjson"}},
+            nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
             sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-                //.startTimestampPosition = "timestamp"
+                .startTimestampPosition = "timestamp"
             }
         ));
 
         auto sourceRightId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-            nlohmann::json{{"path", "right.ndjson"}},
+            nlohmann::json{{"path", "nexmark.bid.10k.ndjson"}},
             sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-                //.startTimestampPosition = "timestamp"
+                .startTimestampPosition = "timestamp"
             }
         ));
 
-        static auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
-            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(1),
-            sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
-            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(3)
+        auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::logical::CompareExpression>(
+            std::make_unique<sierra::odyplan::v3::basic::expression::logical::FieldReferenceExpression>("id", 0),
+            sierra::odyplan::v3::basic::expression::CompareOp::EQ,
+            std::make_unique<sierra::odyplan::v3::basic::expression::logical::FieldReferenceExpression>("bidder", 1)
         );
 
         auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
@@ -83,15 +86,14 @@ int main() {
         auto joinId = logicalPlan.addOperator(
             std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(
                 joinConfig,
-                joinPredicate.get()
+                std::move(joinPredicate)
             ));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
             sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
-        .printPunctuation = true,
-    },
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0, 2, 4}
+        //.printPunctuation = true,
+    }
             ));
 
         logicalPlan.connect(
@@ -150,11 +152,11 @@ int main() {
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+            [](sierra::odyplan::v3::core::logical::operators::IOperator& op,
                 const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
                 const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
                 // NOLINTNEXTLINE
-                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator&>(op);
+                auto& concrete = static_cast<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator&>(op);
 
                 const sierra::odyplan::v3::core::logical::port::Ports schemas{
                     concrete.getInputPorts().at(0), concrete.getInputPorts().at(1)
@@ -162,7 +164,7 @@ int main() {
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::physical::JoinOperator>(
-                    inputPorts.front(), outputPorts.front(), concrete.getConfig(), schemas, concrete.getPredicate()
+                    inputPorts, outputPorts.front(), concrete.getConfig(), schemas, std::move(concrete.getPredicate())
                 ));
                 return ot;
             }
