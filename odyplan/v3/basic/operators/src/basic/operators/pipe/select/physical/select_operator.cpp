@@ -19,12 +19,23 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
         llvm::Value* cnd = expression::physical::codegenExpression(segmentCtx, tuple, *mPredicate);
 
         auto* passBB = llvm::BasicBlock::Create(ctx, "select_pass", fn);
+        auto* watermarkBB = llvm::BasicBlock::Create(ctx, "select_watermark", fn);
         auto* mergeBB = llvm::BasicBlock::Create(ctx, "select_merge", fn);
 
-        segmentCtx.builder.CreateCondBr(cnd, passBB, mergeBB);
+        segmentCtx.builder.CreateCondBr(cnd, passBB, watermarkBB);
 
         segmentCtx.builder.SetInsertPoint(passBB);
         consumers.front().consume(segmentCtx, tuple);
+        segmentCtx.builder.CreateBr(mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(watermarkBB);
+
+        const core::physical::data::PunctuationPackage watermark {
+            .watermark = tuple.timeInterval.getStart().getPoint(),
+            .isFinal = llvm::ConstantInt::getBool(ctx,false),
+        };
+
+        consumers.front().consumePunctuation(segmentCtx, watermark);
         segmentCtx.builder.CreateBr(mergeBB);
 
         segmentCtx.builder.SetInsertPoint(mergeBB);
