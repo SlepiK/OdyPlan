@@ -4,7 +4,9 @@
 #include <nlohmann/json.hpp>
 
 #include <basic/io/io_format.h>
+#include <basic/io/io_registry.h>
 #include <core/logical/operators/source/typed_source_operator.h>
+#include <basic/operators/source/read/details/read_operator_options.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::logical {
     class ReadOperator : public core::logical::operators::source::TypedSourceOperator {
@@ -15,8 +17,11 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
         ReadOperator(core::logical::port::Port outputPort,
                      io::IOFormatType ioFormat,
                      nlohmann::json ioConfig,
-                     std::chrono::milliseconds delay = std::chrono::milliseconds(0),
-                     std::chrono::milliseconds allowedLateness = std::chrono::milliseconds(0));
+                     details::LReadOperatorOptions options);
+
+        static std::unique_ptr<ReadOperator> fromAutoSchema(io::IOFormatType ioFormat,
+                     nlohmann::json ioConfig,
+                     details::LReadOperatorOptions options);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
@@ -24,15 +29,15 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
 
         [[nodiscard]] const nlohmann::json& getIOConfig() const;
 
-        [[nodiscard]] std::chrono::milliseconds getDelay() const;
-
-        [[nodiscard]] std::chrono::milliseconds getAllowedLateness() const;
+        [[nodiscard]] details::PReadOperatorOptions getOptions() const;
 
     private:
         io::IOFormatType mIOFormat;
         nlohmann::json mIOConfig;
-        std::chrono::milliseconds mDelay;
-        std::chrono::milliseconds mAllowedLateness;
+        details::LReadOperatorOptions mOptions;
+
+    protected:
+        void validate() const override;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical
 

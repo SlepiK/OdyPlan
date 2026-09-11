@@ -13,9 +13,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
                                   core::shared::identifiers::PortId /*inputPort*/,
                                   const core::physical::data::DataPackage& tuple,
                                   const core::physical::segment::SegmentDataConsumers& consumers) {
-        core::physical::data::DataPackage projected;
+        core::physical::data::DataPackage projected(tuple.timeInterval);
         projected.reserve(mMapping.size());
-        projected.timestamp = tuple.timestamp;
 
         for (const auto index : mMapping) {
             if (index >= tuple.size()) {

@@ -28,7 +28,7 @@ namespace sierra::odyplan::v3::core::physical::flow {
                          const segment::SegmentDataConsumers& consumers) {}
 
         virtual void consumePunctuation(segment::SegmentContext& segmentCtx,
-            shared::identifiers::PortId inputPort,
+            shared::identifiers::PortId  /*inputPort*/,
             const data::PunctuationPackage& punctuation,
             const segment::SegmentDataConsumers& consumers) {
             for (const auto& consumer : consumers) {

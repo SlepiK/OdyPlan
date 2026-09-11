@@ -11,10 +11,10 @@ namespace sierra::odyplan::v3::example::project {
         return {
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
-                .typeJsonName = "int"},
+                },
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string"},
+                },
         };
     }
 
@@ -80,15 +80,11 @@ namespace sierra::odyplan::v3::example::project {
                 valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringRaw, {0});
                 valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringLength, {1});
 
-                core::physical::data::DataPackage tuple;
+                core::physical::data::DataPackage tuple(core::physical::time::TimeInterval(segmentCtx.builder, core::physical::time::TimePoint::systemTime(segmentCtx.builder)));
                 tuple.reserve(getOutputPorts().size());
 
                 tuple.pushBack(valueField1);
                 tuple.pushBack(valueField2);
-
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtTimeNow", llvm::FunctionType::get(llvm::Type::getInt64Ty(ctx), {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
 
                 consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE

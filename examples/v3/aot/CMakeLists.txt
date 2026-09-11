@@ -9,6 +9,7 @@ add_subdirectory(select)
 add_subdirectory(time_window)
 add_subdirectory(write_json)
 add_subdirectory(write_ndjson)
+add_subdirectory(join_window)
 
 add_custom_target(odyplan_example_aot_all)
 add_dependencies(odyplan_example_aot_all
@@ -23,4 +24,12 @@ add_dependencies(odyplan_example_aot_all
         odyplan_example_aot_write_json
         odyplan_example_aot_write_ndjson
         odyplan_example_aot_read_ndjson
+        odyplan_example_aot_join_window
+)
+add_custom_target(odyplan_example_aot_check_all)
+add_dependencies(odyplan_example_aot_check_all
+        odyplan_example_aot_count_window_check
+        odyplan_example_aot_time_window_check
+        odyplan_example_aot_join_check
+        odyplan_example_aot_join_window_check
 )

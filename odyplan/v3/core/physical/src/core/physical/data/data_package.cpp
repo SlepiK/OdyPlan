@@ -1,6 +1,14 @@
 #include <core/physical/data/data_package.h>
 
 namespace sierra::odyplan::v3::core::physical::data {
+    DataPackage::DataPackage(llvm::IRBuilder<>& builder)
+        : timeInterval(builder) {
+    }
+
+    DataPackage::DataPackage(const time::TimeInterval &ti)
+        : timeInterval(ti) {
+    }
+
     std::size_t DataPackage::size() const {
         return fields.size();
     }
@@ -27,9 +35,5 @@ namespace sierra::odyplan::v3::core::physical::data {
 
     void DataPackage::reserve(const std::size_t size) {
         fields.reserve(size);
-    }
-
-    bool DataPackage::hasWindowTag() const noexcept {
-        return windowTag.has_value();
     }
 }  // namespace sierra::odyplan::v3::core::physical::data

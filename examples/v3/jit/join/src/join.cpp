@@ -25,6 +25,9 @@
 #include <iostream>
 #include <llvm/IR/Verifier.h>
 
+#include "basic/expression/logical/compare_expression.h"
+#include "basic/expression/logical/field_reference_expression.h"
+
 namespace {
     void optimizeLlvmModule(llvm::Module &module, const llvm::OptimizationLevel level) {
         llvm::LoopAnalysisManager loopAnaMgr;
@@ -53,68 +56,44 @@ int main() {
 
         std::cout << "Building Logical Plan...\n";
 
-        auto sourceLeftOutput = sierra::odyplan::v3::core::logical::port::Port{
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "id"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "l_id"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string", .fieldName = "first_name"
+        auto sourceLeftId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                .startTimestampPosition = "timestamp"
             }
-        };
+        ));
 
-        auto sourceLeftId = logicalPlan.addOperator(
-            std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceLeftOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "left.ndjson"}},
-                std::chrono::milliseconds(5)
-            ));
-
-        auto sourceRightOutput = sierra::odyplan::v3::core::logical::port::Port{
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .typeJsonName = "int", .fieldName = "id"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .typeJsonName = "string", .fieldName = "last_name"
+        auto sourceRightId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+            std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+            nlohmann::json{{"path", "nexmark.bid.10k.ndjson"}},
+            sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+                .startTimestampPosition = "timestamp"
             }
-        };
+        ));
 
-        auto sourceRightId = logicalPlan.addOperator(
-            std::make_unique<sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator>(
-                sourceRightOutput,
-                std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-                nlohmann::json{{"path", "right.ndjson"}},
-                std::chrono::milliseconds(5)
-            ));
-
-        static auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::CompareExpression>(
-            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(1),
-            sierra::odyplan::v3::basic::expression::CompareExpression::CompareOp::EQ,
-            std::make_unique<sierra::odyplan::v3::basic::expression::FieldReferenceExpression>(3)
+        auto joinPredicate = std::make_unique<sierra::odyplan::v3::basic::expression::logical::CompareExpression>(
+            std::make_unique<sierra::odyplan::v3::basic::expression::logical::FieldReferenceExpression>("id", 0),
+            sierra::odyplan::v3::basic::expression::CompareOp::EQ,
+            std::make_unique<sierra::odyplan::v3::basic::expression::logical::FieldReferenceExpression>("bidder", 1)
         );
 
         auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
-            .leftWindowSize = std::chrono::milliseconds(10),
-            .rightWindowSize = std::chrono::milliseconds(20)
+            .allowedLateness = std::chrono::milliseconds(1).count(),
+            .card = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinCard::ONE_MANY
         };
 
         auto joinId = logicalPlan.addOperator(
             std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(
                 joinConfig,
-                joinPredicate.get()
+                std::move(joinPredicate)
             ));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0, 2, 4}
+            sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
+        //.printPunctuation = true,
+    }
             ));
 
         logicalPlan.connect(
@@ -167,19 +146,17 @@ int main() {
                                       concrete.getIOConfig(),
                                       concrete.getIOFormat(),
                                       concrete.getOutputPorts().at(0),
-                                      true,
-                                      std::nullopt,
-                                      concrete.getDelay()));
+                                      concrete.getOptions()));
                 return ot;
             });
 
         builder.registerOperatorTransformation(
             sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator::TYPE_ID,
-            [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
+            [](sierra::odyplan::v3::core::logical::operators::IOperator& op,
                 const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
                 const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
                 // NOLINTNEXTLINE
-                const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator&>(op);
+                auto& concrete = static_cast<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator&>(op);
 
                 const sierra::odyplan::v3::core::logical::port::Ports schemas{
                     concrete.getInputPorts().at(0), concrete.getInputPorts().at(1)
@@ -187,7 +164,7 @@ int main() {
 
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::physical::JoinOperator>(
-                    inputPorts.front(), outputPorts.front(), concrete.getConfig(), schemas, concrete.getPredicate()
+                    inputPorts, outputPorts.front(), concrete.getConfig(), schemas, std::move(concrete.getPredicate())
                 ));
                 return ot;
             }
@@ -207,7 +184,7 @@ int main() {
                 sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
                 ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::
                     sink::print::physical::PrintOperator>(
-                    inputPorts.front(), concrete.getPortFieldIndices()));
+                    inputPorts.front(), concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
                 return ot;
             });
 
@@ -308,19 +285,10 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnPtr),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnTimestamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
-                runtime::rtJoinSnapshotGetOwnTimestamp),
-            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidatePtr")] =
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
                         runtime::rtJoinSnapshotGetCandidatePtr),
-                    llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateTimestamp")] =
-                llvm::orc::ExecutorSymbolDef(
-                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
-                        runtime::rtJoinSnapshotGetCandidateTimestamp),
                     llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCount")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
@@ -329,7 +297,48 @@ int main() {
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotRelease")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotRelease),
-            llvm::JITSymbolFlags::Exported);
+                llvm::JITSymbolFlags::Exported);
+
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnEndTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnEndTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnStartTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnStartTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateStartTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateStartTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateEndTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateEndTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnEndTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnEndTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateStartTibreaker")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateStartTibreaker),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetCandidateEndTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetCandidateEndTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnStartTimestamp")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinSnapshotGetOwnStartTimestamp),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMatchRight")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinMatchRight),
+                llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMatchLeft")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinMatchLeft),
+                llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtJoinUnlock")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
@@ -408,38 +417,10 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseDouble),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtOdyPrintString")] = llvm::orc::ExecutorSymbolDef(
+        symbolMap[jit->mangleAndIntern("rtPrintDataPackage")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintString),
+                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtPrintDataPackage),
             llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintDouble")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintDouble),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintFloat")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintFloat),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintInt")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintInt),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintSeperator")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintSeperator),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintNewline")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintNewline),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintWindowMetadata")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintWindowMetadata),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtOdyPrintTimeStamp")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintTimeStamp),
-                llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtOdyPrintPunctuation")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtOdyPrintPunctuation),

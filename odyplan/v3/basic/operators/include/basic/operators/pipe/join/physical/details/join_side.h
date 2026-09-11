@@ -1,48 +1,48 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
 #include <basic/window/window_row_layout.h>
-#include <chrono>
 #include <core/logical/port/port.h>
 #include <deque>
 #include <map>
 
+#include "core/physical/time/time_point.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
-    using Timestamp = std::chrono::sys_time<std::chrono::milliseconds>;
+    using Timestamp = std::int64_t;
 
     class JoinSide {
     public:
         JoinSide(core::logical::port::Port schema,
-                 const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
-                 std::chrono::milliseconds windowSize);
+                 const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry);
 
         void begin();
 
-        void push(std::size_t index, const void* data);
+        void push(std::uint64_t index, const void* data);
 
-        void evict(Timestamp otherMark);
+        void evict(Timestamp threshold, bool isFinal);
 
-        void end(Timestamp timestamp);
+        void end(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         void release();
 
-        [[nodiscard]] std::size_t getSize() const;
+        [[nodiscard]] std::uint64_t getSize() const;
 
-        [[nodiscard]] std::optional<Timestamp> getMaxTimestamp() const;
+        [[nodiscard]] const std::byte* getFieldPtr(std::uint64_t rowIndex,
+                                                   std::uint64_t fieldIndex) const;
 
-        [[nodiscard]] std::chrono::milliseconds getWindowSize() const;
+        [[nodiscard]] bool overlaps(Timestamp otherStartTs, Timestamp otherEndTs, std::uint64_t rowIndex) const;
 
-        [[nodiscard]] const std::byte* getFieldPtr(std::size_t rowIndex,
-                                                   std::size_t fieldIndex) const;
+        [[nodiscard]] Timestamp getStartTimestamp(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] bool isOver(Timestamp otherTimestamp,
-                                  std::chrono::milliseconds otherWindowSize,
-                                  std::size_t rowIndex) const;
+        [[nodiscard]] Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] Timestamp getTimestamp(std::size_t rowIndex) const;
+        [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t rowIndex) const;
 
-        void enableKeyIdx(const std::vector<std::size_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
+        [[nodiscard]] std::int64_t getEndTibreaker(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] std::vector<std::size_t> getKeyFieldIndices() const;
+        void enableKeyIdx(const std::vector<std::uint64_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
+
+        [[nodiscard]] std::vector<std::uint64_t> getKeyFieldIndices() const;
 
         [[nodiscard]] bool hasKeyIndex() const;
 
@@ -52,35 +52,59 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::uint64_t getBaseIndex() const;
 
-        [[nodiscard]] const std::byte* getRowPtr(std::size_t rowIndex) const;
+        [[nodiscard]] const std::byte* getRowPtr(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] std::size_t getRowByteSize() const;
+        [[nodiscard]] std::uint64_t getRowByteSize() const;
 
-        [[nodiscard]] std::size_t getFieldCount() const;
+        [[nodiscard]] std::uint64_t getFieldCount() const;
 
-        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::uint64_t index) const;
 
-        [[nodiscard]] std::size_t getFieldOffset(std::size_t index) const;
+        [[nodiscard]] std::uint64_t getFieldOffset(std::uint64_t index) const;
+
+        void removeV(const std::vector<std::size_t>& absIndices);
+
+        [[nodiscard]] const std::byte* getLayoutFieldPtr(std::uint64_t fieldIndex) const;
+
+        [[nodiscard]] const std::byte* getLayoutRowPtr() const;
+
+        [[nodiscard]] std::uint64_t getCurrentLayoutRowSize() const;
+
+        [[nodiscard]] Timestamp getLayoutStartTs() const;
+
+        [[nodiscard]] Timestamp getLayoutEndTs() const;
+
+        [[nodiscard]] std::int64_t getLayoutStartTb() const;
+
+        [[nodiscard]] std::int64_t getLayoutEndTb() const;
+
+        void setPending(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
-            Timestamp timestamp;
+            Timestamp startTs = 0;
+            Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
+            std::int64_t startTb = 0;
+            std::int64_t endTb = 0;
         };
 
         struct KeyFieldDetails {
-            std::size_t fieldIndex;
+            std::uint64_t fieldIndex;
             core::runtime::types::RuntimeTypeRegistry::HashFunctionPtr mHashFunction;
             core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction;
         };
 
-        basic::window::WindowRowLayout mLayout;
-        std::chrono::milliseconds mWindowSize;
+        Timestamp mPendingStartTs;
+        Timestamp mPendingEndTs;
+        std::int64_t mPendingStartTb;
+        std::int64_t mPendingEndTb;
+
+        window::WindowRowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;
-        std::optional<Timestamp> mMaxTimeStamp;
         // Hash-Behavior for == predicate only
 
-        std::multimap<std::vector<std::size_t>, std::uint64_t> mKeyIndex;
+        std::multimap<std::vector<std::uint64_t>, std::uint64_t> mKeyIndex;
         std::vector<KeyFieldDetails> mKeyFields;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 

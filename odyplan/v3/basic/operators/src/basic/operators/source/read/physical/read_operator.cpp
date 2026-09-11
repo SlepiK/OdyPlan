@@ -5,28 +5,32 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
                                nlohmann::json ioConfig,
                                const io::IOFormatType ioFormat,
                                core::logical::port::Port dataSchema,
-                               const bool useProgramClock,
-                               const std::optional<std::size_t> timestampFieldIndex,
-                               const std::chrono::milliseconds rowDelay,
-                               const std::chrono::milliseconds allowedLateness)
+                               details::PReadOperatorOptions options)
         : TypedSourceOperator(std::move(outputPort)),
           mIOFormat(ioFormat),
           mDataSchema(std::move(dataSchema)),
-          mTimestampFieldIndex(timestampFieldIndex),
-          mRowDelay(rowDelay),
-          mAllowedLateness(allowedLateness),
-          mIOConfig(std::move(ioConfig)),
-          mUseProgramClock(useProgramClock) {
+          mOptions(options),
+          mIOConfig(std::move(ioConfig)) {
         if (mDataSchema.empty()) {
             throw std::invalid_argument("ReadOperator: dataSchema is empty");
         }
-        if (mTimestampFieldIndex.has_value() && *mTimestampFieldIndex >= mDataSchema.size()) {
-            throw std::out_of_range("ReadOperator: timestamp field index out of range");
+        if (mOptions.startTimestampPosition.has_value() && *mOptions.startTimestampPosition >= mDataSchema.size()) {
+            throw std::out_of_range("ReadOperator: startTimestamp field index out of range");
         }
-        if (mTimestampFieldIndex.has_value() &&
-            mDataSchema.at(*mTimestampFieldIndex).valueTypeId !=
-                std::to_underlying(core::shared::types::BuiltinValueType::INT64)) {
-            throw std::invalid_argument("ReadOperator: timestamp field wrong type");
+        if (mOptions.endTimestampPosition.has_value() && *mOptions.endTimestampPosition >= mDataSchema.size()) {
+            throw std::out_of_range("ReadOperator: endTimestamp field index out of range");
+        }
+        if (mOptions.startTimestampPosition.has_value() && core::shared::types::isTimestamp(mDataSchema.at(*mOptions.startTimestampPosition).valueTypeId)) {
+            if (core::shared::types::isIntegral(mDataSchema.at(*mOptions.startTimestampPosition).valueTypeId)) {
+                mDataSchema.at(*mOptions.startTimestampPosition).valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::TIMESTAMP);
+            }
+            throw std::invalid_argument("ReadOperator: startTimestamp field wrong type");
+        }
+        if (mOptions.endTimestampPosition.has_value() && core::shared::types::isTimestamp(mDataSchema.at(*mOptions.endTimestampPosition).valueTypeId)) {
+            if (core::shared::types::isIntegral(mDataSchema.at(*mOptions.endTimestampPosition).valueTypeId)) {
+                mDataSchema.at(*mOptions.endTimestampPosition).valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::TIMESTAMP);
+            }
+            throw std::invalid_argument("ReadOperator: endTimestamp field wrong type");
         }
     }
 
@@ -54,13 +58,13 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
         llvm::Value* hasNext = segmentCtx.builder.CreateCall(hasNextFn, {state});
 
-        if (mRowDelay.count() > 0) {
+        if (mOptions.delay.count() > 0) {
             auto* i64Ty = llvm::Type::getInt64Ty(ctx);
             auto* voidTy = llvm::Type::getVoidTy(ctx);
             const auto sleepFn = module->getOrInsertFunction(
                 "rtSleepMs", llvm::FunctionType::get(voidTy, {i64Ty}, false));
             segmentCtx.builder.CreateCall(sleepFn,
-                                          {llvm::ConstantInt::get(i64Ty, mRowDelay.count())});
+                                          {llvm::ConstantInt::get(i64Ty, mOptions.delay.count())});
         }
 
         const auto stopFn =
@@ -76,35 +80,41 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         const auto getFieldFn = module->getOrInsertFunction(
             "rtIOSourceGetField", llvm::FunctionType::get(ptrTy, {ptrTy, ptrTy}, false));
 
-        core::physical::data::DataPackage tuple;
-        tuple.reserve(mDataSchema.size());
+        std::vector<llvm::Value*> rawValues;
+        rawValues.reserve(mDataSchema.size());
 
         for (const auto& dataField : mDataSchema) {
             llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(
                 dataField.fieldName, "field_" + dataField.fieldName, 0, module);
             llvm::Value* strValue = segmentCtx.builder.CreateCall(getFieldFn, {state, fieldName});
-            tuple.pushBack(codegenField(segmentCtx, strValue, dataField.valueTypeId));
+            rawValues.push_back(codegenField(segmentCtx, strValue, dataField.valueTypeId));
         }
 
-        if (mTimestampFieldIndex.has_value()) {
-            tuple.timestamp = tuple.at(*mTimestampFieldIndex);
-        } else {
-            if (mUseProgramClock) {
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtProgramTimeNow", llvm::FunctionType::get(idTy, {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
-            } else {
-                const auto nowFn = module->getOrInsertFunction(
-                    "rtTimeNow", llvm::FunctionType::get(idTy, {}, false));
-                tuple.timestamp = segmentCtx.builder.CreateCall(nowFn, {});
+        const core::physical::time::TimePoint stp = [&]() {
+            if (mOptions.startTimestampPosition.has_value()) {
+                return core::physical::time::TimePoint(segmentCtx.builder, rawValues.at(*mOptions.startTimestampPosition));
             }
-        }
+            if (mOptions.useProgramClock) {
+                return core::physical::time::TimePoint::executionTime(segmentCtx.builder);
+            }
+            return core::physical::time::TimePoint::systemTime(segmentCtx.builder);
+        }();
+
+        const core::physical::time::TimeInterval ti = [&]() {
+            if (mOptions.endTimestampPosition.has_value()) {
+                return core::physical::time::TimeInterval(segmentCtx.builder, stp, core::physical::time::TimePoint(segmentCtx.builder, rawValues.at(*mOptions.endTimestampPosition)));
+            }
+            return core::physical::time::TimeInterval(segmentCtx.builder, stp);
+        }();
+
+        core::physical::data::DataPackage tuple(ti);
+        tuple.fields = std::move(rawValues);
 
         consumers.front().consume(segmentCtx, tuple);
 
-        llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mAllowedLateness.count());
+        llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(idTy, mOptions.allowedLateness.count());
         llvm::Function* smaxFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::smax, {idTy});
-        llvm::Value* guardedTs = segmentCtx.builder.CreateCall(smaxFn, {tuple.timestamp, llvm::ConstantInt::get(idTy, 0)});
+        llvm::Value* guardedTs = segmentCtx.builder.CreateCall(smaxFn, {tuple.timeInterval.getStart().getPoint(), llvm::ConstantInt::get(idTy, 0)});
         llvm::Value *candidateWatermark = segmentCtx.builder.CreateSub(guardedTs, allowedLatenessConst);
 
         llvm::Value* lastWatermark = segmentCtx.builder.CreateLoad(idTy, mWatermarkState);

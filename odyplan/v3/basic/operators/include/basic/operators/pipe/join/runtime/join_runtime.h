@@ -13,8 +13,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        std::uint64_t leftFieldSize,
                        const core::shared::types::ValueTypeId* rightTypeIds,
                        std::uint64_t rightFieldSize,
-                       std::uint64_t leftWindowSize,
-                       std::uint64_t rightWindowSize,
                        std::uint8_t hasEquiKey,
                        const std::uint64_t* leftKeyFieldIndices,
                        const std::uint64_t* rightKeyFieldIndices,
@@ -35,19 +33,31 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinPushRight(void* state, std::uint64_t index, const void* data);
 
-    void rtJoinEndLeft(void* state, std::int64_t timestamp);
+    void rtJoinEndLeft(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
 
-    void rtJoinEndRight(void* state, std::int64_t timestamp);
+    void rtJoinEndRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
 
-    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft);
+    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft, uint8_t extract);
 
     const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::uint64_t fieldIndex);
 
     const void* rtJoinSnapshotGetCandidatePtr(void* snapshot, std::uint64_t index, std::uint64_t fieldIndex);
 
-    std::uint64_t rtJoinSnapshotGetCandidateTimestamp(void* snapshot, std::uint64_t index);
+    std::int64_t rtJoinSnapshotGetCandidateStartTimestamp(void* snapshot, std::uint64_t index);
 
-    std::uint64_t rtJoinSnapshotGetOwnTimestamp(void* snapshot);
+    std::int64_t rtJoinSnapshotGetCandidateEndTimestamp(void* snapshot, std::uint64_t index);
+
+    std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void* snapshot, std::uint64_t index);
+
+    std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void* snapshot, std::uint64_t index);
+
+    std::int64_t rtJoinSnapshotGetOwnStartTimestamp(void* snapshot);
+
+    std::int64_t rtJoinSnapshotGetOwnEndTimestamp(void* snapshot);
+
+    std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void* snapshot);
+
+    std::int64_t rtJoinSnapshotGetOwnEndTibreaker(void* snapshot);
 
     std::uint64_t rtJoinSnapshotGetCount(void* snapshot);
 
@@ -64,7 +74,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                                        std::int64_t *outEvictLeftTh, std::int64_t *outEvictRightTh,
                                        std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal);
 
-    void rtJoinEvict(void* state, std::int64_t timestamp, std::uint8_t callFromLeft);
+    void rtJoinEvict(void* state, std::int64_t threshold, std::uint8_t callFromLeft, std::uint8_t isFinal);
+
+    void rtJoinMatchLeft(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
+
+    void rtJoinMatchRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

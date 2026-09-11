@@ -6,24 +6,18 @@
 #include <cstdint>
 #include <vector>
 
+#include <core/physical/time/time_interval.h>
+
 namespace sierra::odyplan::v3::core::physical::data {
-    struct WindowTag {
-        //start = inclusive, end = exclusive
-        llvm::Value* windowStart;
-        llvm::Value* windowEnd;
-        //hasEnd means windowEnd is a valid value. It means not that it is a finished/closed window!
-        llvm::Value* hasEnd;
-        //isClosed means the DataPackage tagged with this tag is the final DataPackage in a window.
-        llvm::Value* isClosed;
-        llvm::Value* isClosedByFlush;
-    };
-
     struct DataPackage {
-        llvm::Value* timestamp = nullptr;
-
-        std::optional<WindowTag> windowTag;
+        time::TimeInterval timeInterval;
 
         std::vector<llvm::Value*> fields;
+
+        DataPackage() = delete;
+
+        explicit DataPackage(llvm::IRBuilder<>& builder);
+        explicit DataPackage(const time::TimeInterval &ti);
 
         [[nodiscard]] std::size_t size() const;
 
@@ -38,8 +32,6 @@ namespace sierra::odyplan::v3::core::physical::data {
         void pushBack(llvm::Value* value);
 
         void reserve(std::size_t size);
-
-        [[nodiscard]] bool hasWindowTag() const noexcept;
     };
 
     struct PunctuationPackage {

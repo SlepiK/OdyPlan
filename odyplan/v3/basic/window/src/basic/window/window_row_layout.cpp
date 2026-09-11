@@ -68,4 +68,12 @@ namespace sierra::odyplan::v3::basic::window {
         releaseRow(mCurrentRow);
         mCurrentRow.clear();
     }
+
+    const std::byte* WindowRowLayout::getCurrentRowPtr() const {
+        return mCurrentRow.data();
+    }
+
+    std::size_t WindowRowLayout::getCurrentRowSize() const {
+        return mCurrentRow.size();
+    }
 }  // namespace sierra::odyplan::v3::basic::window

@@ -15,13 +15,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         struct JoinSnapshot {
             bool wasLeft = false;
             std::vector<std::byte> data;
-            std::vector<std::size_t> fieldOffsets;
+            std::vector<std::uint64_t> fieldOffsets;
             std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
-            Timestamp timestamp;
+            Timestamp startTs;
+            Timestamp endTs;
+            std::int64_t startTb;
+            std::int64_t endTb;
 
             std::vector<std::byte> candidateData;
-            std::vector<Timestamp> candidateTimestamps;
-            std::vector<std::size_t> candidateFieldOffsets;
+            std::vector<Timestamp> candidateStarts;
+            std::vector<Timestamp> candidateEnds;
+            std::vector<std::int64_t> candidateStartsTb;
+            std::vector<std::int64_t> candidateEndsTb;
+            std::vector<std::uint64_t> candidateFieldOffsets;
             std::vector<core::shared::types::ValueTypeId> candidateFieldTypeIds;
             std::size_t candidateRowByteSize = 0;
             std::size_t candidateCount = 0;
@@ -36,9 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         JoinBuffer(core::logical::port::Port leftSchema,
                    core::logical::port::Port rightSchema,
-                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
-                   std::chrono::milliseconds leftWindowSize,
-                   std::chrono::milliseconds rightWindowSize);
+                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry);
 
         ~JoinBuffer();
 
@@ -61,12 +65,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void pushRight(std::size_t index, const void* data);
 
-        void endLeft(Timestamp timestamp);
+        void endLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
-        void endRight(Timestamp timestamp);
+        void endRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+
+        void matchLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+
+        void matchRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft);
+        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft, bool extract);
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        JoinSnapshot* snapshotForCompute(bool extract);
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
@@ -74,7 +85,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                         const std::vector<std::size_t>& rightFieldIndices,
                         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
-        void evict(Timestamp timestamp, bool callFromLeft);
+        void evict(Timestamp threshold, bool callFromLeft, bool isFinal);
 
     private:
         JoinSide mLeftSide;
@@ -83,10 +94,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::vector<std::size_t> mCandidates;
-        bool mCandidateOnRight = false;
         bool mAllReleased = false;
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, Timestamp timestamp, std::chrono::milliseconds sourceWindowSize);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, Timestamp sourceStartTs, Timestamp sourceEndTs, bool extract);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,

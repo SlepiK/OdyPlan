@@ -32,8 +32,8 @@ odyplan_link_llvm_jit(${TARGET_NAME} PRIVATE)
 enable_clang_tidy_on_target(${TARGET_NAME})
 
 configure_file(
-        data/read.ndjson
-        ${CMAKE_CURRENT_BINARY_DIR}/read.ndjson
+        data/nexmark.person.10k.ndjson
+        ${CMAKE_CURRENT_BINARY_DIR}/nexmark.person.10k.ndjson
         COPYONLY
 )
 

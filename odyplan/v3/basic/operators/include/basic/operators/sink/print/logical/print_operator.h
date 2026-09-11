@@ -4,6 +4,8 @@
 #include <core/logical/operators/sink/typed_sink_operator.h>
 #include <utility>
 
+#include <basic/operators/sink/print/details/print_operator_options.h>
+
 namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
     class PrintOperator : public core::logical::operators::sink::TypedSinkOperator {
     public:
@@ -13,13 +15,17 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID =
             std::to_underlying(core::shared::types::BuiltinOperatorType::PRINT);
 
-        explicit PrintOperator(PortFieldIndexV indices);
+        explicit PrintOperator(details::PrintOperatorOptions options);
 
-        explicit PrintOperator(PortFieldNameV names);
+        explicit PrintOperator(details::PrintOperatorOptions options, PortFieldIndexV indices);
+
+        explicit PrintOperator(details::PrintOperatorOptions options, PortFieldNameV names);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
         [[nodiscard]] PortFieldIndexV getPortFieldIndices() const;
+
+        [[nodiscard]] details::PrintOperatorOptions getOptions() const;
 
     protected:
         void validateInput() override;
@@ -27,6 +33,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::logical {
     private:
         PortFieldIndexV mPortFieldIndices;
         PortFieldNameV mPortFieldNames;
+        details::PrintOperatorOptions mOptions;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::logical
 
