@@ -420,6 +420,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* outEvictRight = segmentCtx.storage.getNamed("evict_right_threshold",i64Ty);
         llvm::Value* outCurrentWatermark = segmentCtx.storage.getNamed("current_watermark",i64Ty);
         llvm::Value* outIsFinal = segmentCtx.storage.getNamed("out_is_final",i8Ty);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i8Ty, 0),outIsFinal);
 
         const auto updateWatermarkFn = module->getOrInsertFunction("rtJoinUpdateWatermark", llvm::FunctionType::get(i8Ty, {ptrTy, i8Ty, i64Ty, i8Ty, i64Ty, ptrTy, ptrTy, ptrTy, ptrTy}, false));
         llvm::Value* shouldEmit = segmentCtx.builder.CreateCall(updateWatermarkFn, {watermarkState, isLeft, punctuation.watermark, isFinal, allowedLateness, outEvictLeft, outEvictRight, outCurrentWatermark, outIsFinal});

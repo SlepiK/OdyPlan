@@ -4,7 +4,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     namespace {
-        inline bool _before(const std::int64_t lft, const std::int64_t rht) {
+        constexpr inline bool _before(const std::int64_t lft, const std::int64_t rht) {
             if (lft == core::physical::time::INFINITY_SENTINEL) {
                 return false;
             }

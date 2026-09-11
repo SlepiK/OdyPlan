@@ -5,6 +5,8 @@
 #include <deque>
 #include <map>
 
+#include "core/physical/time/time_point.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     using Timestamp = std::int64_t;
 
@@ -81,10 +83,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
-            Timestamp startTs;
-            Timestamp endTs;
-            std::int64_t startTb;
-            std::int64_t endTb;
+            Timestamp startTs = 0;
+            Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
+            std::int64_t startTb = 0;
+            std::int64_t endTb = 0;
         };
 
         struct KeyFieldDetails {

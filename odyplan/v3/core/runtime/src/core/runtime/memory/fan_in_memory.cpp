@@ -5,7 +5,7 @@ namespace sierra::odyplan::v3::core::runtime::memory {
     extern "C" {
     void *rtFanInAlloc(std::size_t size) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
-        void *ptr = std::malloc(size);
+        void *ptr = new std::byte[size];//std::malloc(size);
         if (ptr == nullptr) {
             std::abort();
         }
@@ -13,8 +13,10 @@ namespace sierra::odyplan::v3::core::runtime::memory {
     }
 
     void rtFanInFree(void *ptr) {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
-        std::free(ptr);
+        if (ptr != nullptr) {
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
+            delete[] static_cast<std::byte*>(ptr);//std::free(ptr);
+        }
     }
     }
 }
