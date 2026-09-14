@@ -5,6 +5,7 @@
 #include <basic/window/count/count_window_range.h>
 #include <basic/window/window_row_layout.h>
 #include <deque>
+#include <optional>
 #include <vector>
 
 namespace sierra::odyplan::v3::basic::window::count {
@@ -85,6 +86,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         core::logical::port::Port mSchema;
 
         std::deque<Row> mRowBuffer;
+        std::optional<Timestamp> mFirstElementStart;
         Row mPendingRow;
 
         bool mReady = false;
