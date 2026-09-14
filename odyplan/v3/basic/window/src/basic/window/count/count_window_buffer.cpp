@@ -9,6 +9,10 @@ namespace sierra::odyplan::v3::basic::window::count {
                           const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
         : mConfig(config), mRowLayout(mDataSchema, runtimeTypeRegistry),
           mSchema(std::move(mDataSchema)) {
+        if (mConfig.advance == 0) {
+            mConfig.advance = 1;
+        }
+        assert(mConfig.size >= mConfig.getEffectiveAdvance() && "Sry, Size < Advance is currently not implemented");
     }
 
     CountWindowBuffer::~CountWindowBuffer() {
@@ -32,7 +36,11 @@ namespace sierra::odyplan::v3::basic::window::count {
             mReady = true;
             mReadyRowCount = mConfig.size;
             mReadyEnd = mRowBuffer[mConfig.size].startTs;
-            mReadyEmitCount = mConfig.advance;
+            mReadyEmitCount = mConfig.getEffectiveAdvance();
+
+            if (mConfig.usesSlideParam()) {
+                mFirstElementStart = mRowBuffer.front().startTs;
+            }
         }
     }
 
@@ -49,6 +57,9 @@ namespace sierra::odyplan::v3::basic::window::count {
     }
 
     ICountWindowBuffer::Timestamp CountWindowBuffer::getRowStart(const std::uint64_t rowIndex) const {
+        if (mConfig.usesSlideParam() && mFirstElementStart.has_value()) {
+            return *mFirstElementStart;
+        }
         return mRowBuffer[rowIndex].startTs;
     }
 
@@ -69,6 +80,7 @@ namespace sierra::odyplan::v3::basic::window::count {
         mReady = false;
         mReadyRowCount = 0;
         mReadyEmitCount = 0;
+        mFirstElementStart.reset();
     }
 
     void CountWindowBuffer::flush() {
