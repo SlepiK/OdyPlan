@@ -72,7 +72,7 @@ namespace sierra::odyplan::v3::basic::window::count {
     }
 
     void CountWindowBuffer::advanceWindow() {
-        const auto n = std::min<std::uint64_t>(mConfig.advance, mRowBuffer.size());
+        const auto n = std::min<std::uint64_t>(mConfig.getEffectiveAdvance(), mRowBuffer.size());
         for (std::size_t i = 0; i < n; ++i) {
             mRowLayout.releaseRow(mRowBuffer.front().data);
             mRowBuffer.pop_front();
