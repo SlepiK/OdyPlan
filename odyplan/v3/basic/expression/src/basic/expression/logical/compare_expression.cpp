@@ -1,3 +1,4 @@
+#include <utility>
 #include <basic/expression/logical/compare_expression.h>
 
 namespace sierra::odyplan::v3::basic::expression::logical {
@@ -10,15 +11,19 @@ namespace sierra::odyplan::v3::basic::expression::logical {
         return ExpressionType::COMPARE;
     }
 
-    const IExpression& CompareExpression::getLeftPart() const {
+    IExpression& CompareExpression::getLeftPart() const {
         return *mLeftPart;
     }
 
-    const IExpression& CompareExpression::getRightPart() const {
+    IExpression& CompareExpression::getRightPart() const {
         return *mRightPart;
     }
 
     CompareOp CompareExpression::getOpr() const {
         return mOpr;
+    }
+
+    core::shared::types::ValueTypeId CompareExpression::getTypeId() const {
+        return std::to_underlying(core::shared::types::BuiltinValueType::BOOL);
     }
 }  // namespace sierra::odyplan::v3::basic::expression

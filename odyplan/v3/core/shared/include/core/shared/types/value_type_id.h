@@ -37,6 +37,23 @@ namespace sierra::odyplan::v3::core::shared::types {
         throw std::invalid_argument("isNumeric: unknown ValueTypeId/BuiltinValueType");
     }
 
+    constexpr bool isPrimitiv(const ValueTypeId type) {
+        switch (static_cast<BuiltinValueType>(type)) {
+            case BuiltinValueType::BOOL:
+            case BuiltinValueType::INT8:
+            case BuiltinValueType::INT16:
+            case BuiltinValueType::INT32:
+            case BuiltinValueType::INT64:
+            case BuiltinValueType::FLOAT:
+            case BuiltinValueType::DOUBLE:
+            case BuiltinValueType::TIMESTAMP:
+                return true;
+            default:
+                return false;
+        }
+        throw std::invalid_argument("isPrimitiv: unknown ValueTypeId/BuiltinValueType");
+    }
+
     constexpr bool isTimestamp(const ValueTypeId type) {
         return static_cast<BuiltinValueType>(type) == BuiltinValueType::TIMESTAMP;
     }

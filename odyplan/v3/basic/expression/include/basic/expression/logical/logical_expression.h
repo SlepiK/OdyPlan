@@ -17,14 +17,15 @@ namespace sierra::odyplan::v3::basic::expression::logical {
 
         [[nodiscard]] ExpressionType getExpressionType() const override;
 
-        [[nodiscard]] const IExpression& getLeftPart() const;
+        [[nodiscard]] IExpression& getLeftPart() const;
 
-        [[nodiscard]] const IExpression* getRightPart() const;
+        [[nodiscard]] IExpression* getRightPart() const;
 
         [[nodiscard]] LogicalOp getOpr() const;
 
         [[nodiscard]] bool isUnary() const;
 
+        [[nodiscard]] core::shared::types::ValueTypeId getTypeId() const override;
     private:
         std::unique_ptr<IExpression> mLeftPart;
         std::unique_ptr<IExpression> mRightPart;

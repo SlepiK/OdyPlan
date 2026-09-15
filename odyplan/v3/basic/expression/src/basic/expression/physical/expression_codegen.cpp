@@ -84,6 +84,11 @@ namespace sierra::odyplan::v3::basic::expression::physical {
                         "JoinOperator: failed to codegen left operand of logical expression");
                 }
 
+                if (!left->getType()->isIntegerTy(1)) {
+                    throw std::invalid_argument(
+                        "JoinOperator: failed to codegen left operand of logical expression (not boolean)");
+                }
+
                 if (logicExp.isUnary()) {
                     return segmentCtx.builder.CreateNot(left);
                 }
@@ -99,6 +104,11 @@ namespace sierra::odyplan::v3::basic::expression::physical {
                 if (right == nullptr) {
                     throw std::invalid_argument(
                         "JoinOperator: failed to codegen right operand of logical expression");
+                }
+
+                if (!right->getType()->isIntegerTy(1)) {
+                    throw std::invalid_argument(
+                        "JoinOperator: failed to codegen right operand of logical expression (not boolean)");
                 }
 
                 switch (logicExp.getOpr()) {
@@ -167,10 +177,10 @@ namespace sierra::odyplan::v3::basic::expression::physical {
         }
 
 
-        if (leftId != std::to_underlying(core::shared::types::BuiltinValueType::UNKNOWN)) {
+        if (leftId == std::to_underlying(core::shared::types::BuiltinValueType::STRING)) {
             if (opr != CompareOp::EQ && opr != CompareOp::NE) {
                 throw std::out_of_range(
-                    "compare: Unsupported compare expression type");
+                    "compare: Unsupported compare expression type for string based operands");
             }
 
             if (leftId != rightId) {
@@ -194,6 +204,6 @@ namespace sierra::odyplan::v3::basic::expression::physical {
             return result;
         }
 
-        throw std::out_of_range("compare: Unsupported compare operand");
+        throw std::out_of_range("compare: Unsupported compare operands");
     }
 }

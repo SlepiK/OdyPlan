@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_LOGICAL_EXPRESSION_HPP
 
 #include <basic/expression/logical/expression_type.h>
+#include <core/shared/types/value_type_id.h>
 
 namespace sierra::odyplan::v3::basic::expression::logical {
     class IExpression {
@@ -19,6 +20,8 @@ namespace sierra::odyplan::v3::basic::expression::logical {
         IExpression& operator=(IExpression&&) = delete;
 
         [[nodiscard]] virtual ExpressionType getExpressionType() const = 0;
+
+        [[nodiscard]] virtual core::shared::types::ValueTypeId getTypeId() const = 0;
     };
 }  // namespace sierra::odyplan::v3::basic::expression
 
