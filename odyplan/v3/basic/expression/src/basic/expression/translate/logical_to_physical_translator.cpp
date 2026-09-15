@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::expression::translate {
 
                 const std::size_t index = mResolver.resolve(fieldRef.getFieldName(), fieldRef.portIndex());
 
-                return std::make_unique<physical::FieldReferenceExpression>(index);
+                return std::make_unique<physical::FieldReferenceExpression>(mResolver.getTypeId(index), index);
             }
 
             case logical::ExpressionType::CONSTANT: {

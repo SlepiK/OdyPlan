@@ -1,8 +1,8 @@
 #include <basic/expression/physical/field_reference_expression.h>
 
 namespace sierra::odyplan::v3::basic::expression::physical {
-    FieldReferenceExpression::FieldReferenceExpression(const std::size_t fieldIndex)
-        : mFieldIndex(fieldIndex) {}
+    FieldReferenceExpression::FieldReferenceExpression(const core::shared::types::ValueTypeId typeId, const std::size_t fieldIndex)
+        : mTypeId(typeId), mFieldIndex(fieldIndex) {}
 
     ExpressionType FieldReferenceExpression::getExpressionType() const {
         return ExpressionType::FIELD_REFERENCE;
@@ -11,4 +11,8 @@ namespace sierra::odyplan::v3::basic::expression::physical {
     std::size_t FieldReferenceExpression::getFieldIndex() const {
         return mFieldIndex;
     };
+
+    core::shared::types::ValueTypeId FieldReferenceExpression::getTypeId() const {
+        return mTypeId;
+    }
 }  // namespace sierra::odyplan::v3::basic::expression

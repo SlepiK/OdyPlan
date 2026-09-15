@@ -121,16 +121,13 @@ namespace sierra::odyplan::v3::core::runtime::types {
             sizeof(const char*),
             true,
             [](const std::byte* ptr) -> std::size_t {
-                const char* v = nullptr;
-                std::memcpy(static_cast<void*>(&v), ptr, sizeof(v));
+                const auto* v = reinterpret_cast<const char*>(ptr);
                 return v != nullptr ? std::hash<std::string_view>{}(v)
                                     : std::hash<std::string_view>{}("");
             },
             [](const std::byte* aPtr, const std::byte* bPtr) -> bool {
-                const char* a = nullptr;
-                const char* b = nullptr;
-                std::memcpy(static_cast<void*>(&a), aPtr, sizeof(a));
-                std::memcpy(static_cast<void*>(&b), bPtr, sizeof(b));
+                const auto *a = reinterpret_cast<const char*>(aPtr);
+                const auto *b = reinterpret_cast<const char*>(bPtr);
                 if (a == nullptr || b == nullptr) {
                     return a == b;
                 }

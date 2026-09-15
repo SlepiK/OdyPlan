@@ -23,6 +23,8 @@ namespace sierra::odyplan::v3::core::logical::port {
 
         [[nodiscard]] std::size_t getPortSize(std::size_t portIndex) const;
 
+        [[nodiscard]] shared::types::ValueTypeId getTypeId(std::size_t fieldIndex) const;
+
     private:
         Port mPort;
         std::vector<std::size_t> mPortSizes;
