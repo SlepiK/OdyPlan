@@ -21,6 +21,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::logical {
             throw std::invalid_argument("SelectOperator: predicate must be non-null");
         }
 
+        if (mLPredicate->getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::BOOL)) {
+            throw std::invalid_argument("SelectOperator: predicate must return bool");
+        }
+
         const auto inputPort = getInputPorts().front();
         const core::logical::port::PortDescriptionResolver resolver(inputPort,{inputPort.size()});
         expression::translate::LogicalToPhysicalTranslator translator(resolver);
