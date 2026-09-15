@@ -53,6 +53,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         combinedPort.insert(combinedPort.end(), right.begin(), right.end());
         getOutputPortsRef() = {combinedPort};
 
+        if (mLPredicate->getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::BOOL)) {
+            throw std::invalid_argument("JoinOperator: predicate must return bool");
+        }
+
         const core::logical::port::PortDescriptionResolver resolver(combinedPort,{left.size(), right.size()});
         expression::translate::LogicalToPhysicalTranslator translator(resolver);
         mPPredicate = translator.translate(*mLPredicate);
