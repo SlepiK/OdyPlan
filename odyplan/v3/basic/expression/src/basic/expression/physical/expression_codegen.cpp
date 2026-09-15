@@ -177,9 +177,6 @@ namespace sierra::odyplan::v3::basic::expression::physical {
                 throw std::invalid_argument("expression operands have mismatched types");
             }
 
-            llvm::outs() << "DEBUG: left->getType() = " << *left->getType() << "\n";
-            llvm::outs() << "DEBUG: right->getType() = " << *right->getType() << "\n";
-
             const auto rtTypeReg = core::runtime::types::RuntimeTypeRegistry::withBuiltins();
             auto *cmpFn = rtTypeReg.getEqualFnPtr(leftId);
 
