@@ -16,7 +16,8 @@ namespace sierra::odyplan::v3::core::shared::types {
         FLOAT = 10,
         DOUBLE = 11,
         STRING = 20,
-        TIMESTAMP = 66
+        TIMESTAMP = 66,
+        UNKNOWN = 255
     };
 
     constexpr bool isNumeric(const ValueTypeId type) {

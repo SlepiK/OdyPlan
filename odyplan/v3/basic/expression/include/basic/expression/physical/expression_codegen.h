@@ -19,7 +19,9 @@ namespace sierra::odyplan::v3::basic::expression::physical {
     llvm::Value* codegenCompare(llvm::IRBuilder<>& builder,
                                  llvm::Value* left,
                                  llvm::Value* right,
-                                 CompareOp opr);
+                                 CompareOp opr,
+                                 core::shared::types::ValueTypeId leftId,
+                                 core::shared::types::ValueTypeId rightId);
 }
 
 #endif //SIERRA_ODYPLAN_V3_BASIC_EXPRESSION_PHYSICAL_EXPRESSION_CODEGEN_HPP

@@ -26,8 +26,6 @@
 #include <basic/operators/sink/print/logical/print_operator.h>
 #include <basic/operators/sink/print/physical/print_operator.h>
 
-#include <basic/expression/physical/builtin_expressions.h>
-
 namespace {
     void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
         llvm::LoopAnalysisManager loopAnaMgr;

@@ -26,8 +26,6 @@
 #include <basic/operators/sink/print/logical/print_operator.h>
 #include <basic/operators/sink/print/physical/print_operator.h>
 
-#include <../../../../../odyplan/v3/basic/expression/include/basic/expression/physical/builtin_expressions.h>
-
 #include "basic/expression/logical/compare_expression.h"
 #include "basic/expression/logical/field_reference_expression.h"
 #include "basic/operators/pipe/window/logical/time_window_operator.h"

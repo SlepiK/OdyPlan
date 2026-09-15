@@ -9,7 +9,6 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-#include <basic/expression/physical/builtin_expressions.h>
 #include <basic/operators/pipe/select/logical/select_operator.h>
 #include <basic/operators/pipe/select/physical/select_operator.h>
 #include <basic/operators/sink/print/logical/print_operator.h>
@@ -60,9 +59,9 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::example::select::logical::ConstantIntSourceOperator>());
 
-        auto selectPredicate = sierra::odyplan::v3::basic::expression::logical::LE(
-            sierra::odyplan::v3::basic::expression::logical::field("demoValue"),
-            sierra::odyplan::v3::basic::expression::logical::cInt(6));
+        auto selectPredicate = sierra::odyplan::v3::basic::expression::logical::EQ(
+            sierra::odyplan::v3::basic::expression::logical::field("testField1"),
+            sierra::odyplan::v3::basic::expression::logical::cString("ProjectOperator_Test"));
 
         auto selectId = logicalPlan.addOperator(
             std::make_unique<
@@ -73,10 +72,11 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
                 sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
-        .printPunctuation = true,
-    },
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                PortFieldIndexV{0}));
+                    .printPunctuation = true,
+                }
+                // sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
+                //PortFieldIndexV{0}
+            ));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{

@@ -9,10 +9,16 @@ namespace sierra::odyplan::v3::example::select {
     constexpr core::shared::types::ValueTypeId TYPE_INT = 1;
 
     inline core::logical::port::Port createIntPort() {
-        return {core::logical::port::PortDescription{
-            .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
-            .fieldName = "demoValue"
-            }};
+        return {
+            core::logical::port::PortDescription{
+                .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
+                .fieldName = "demoValue"
+            },
+            core::logical::port::PortDescription{
+                .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::STRING),
+                .fieldName = "testField1"
+            },
+        };
     }
 
     namespace logical {
@@ -63,10 +69,15 @@ namespace sierra::odyplan::v3::example::select {
                 llvm::Value* value = llvm::ConstantInt::get(
                     llvm::Type::getInt32Ty(segmentCtx.builder.getContext()), 5);
 
+                std::string const exampleString = "ProjectOperator_Test";
+                llvm::GlobalVariable* stringRaw =
+                    segmentCtx.builder.CreateGlobalString(exampleString);
+
                 core::physical::data::DataPackage tuple(core::physical::time::TimeInterval(segmentCtx.builder, core::physical::time::TimePoint::systemTime(segmentCtx.builder)));
                 tuple.reserve(getOutputPorts().size());
 
                 tuple.pushBack(value);
+                tuple.pushBack(stringRaw);
 
                 consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE

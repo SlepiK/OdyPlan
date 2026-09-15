@@ -61,4 +61,11 @@ namespace sierra::odyplan::v3::core::logical::port {
         }
         return mPortSizes.at(portIndex);
     }
+
+    shared::types::ValueTypeId PortDescriptionResolver::getTypeId(const std::size_t fieldIndex) const {
+        if (fieldIndex >= mPort.size()) {
+            throw std::out_of_range("invalid fieldIndex");
+        }
+        return mPort.at(fieldIndex).valueTypeId;
+    }
 }

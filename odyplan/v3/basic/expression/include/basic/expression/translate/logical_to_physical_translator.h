@@ -6,8 +6,9 @@
 
 #include <core/logical/port/port_description_resolver.h>
 
-#include "basic/expression/logical/expression.h"
-#include "basic/expression/physical/expression.h"
+#include <basic/expression/logical/expression.h>
+#include <basic/expression/physical/expression.h>
+#include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::basic::expression::translate {
     class LogicalToPhysicalTranslator {

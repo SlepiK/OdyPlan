@@ -8,7 +8,6 @@
 #include <llvm/Support/raw_os_ostream.h>
 
 #include <atomic>
-#include <basic/expression/physical/builtin_expressions.h>
 #include <basic/operators/pipe/select/logical/select_operator.h>
 #include <basic/operators/pipe/select/physical/select_operator.h>
 #include <basic/operators/sink/print/logical/print_operator.h>
