@@ -11,9 +11,11 @@ namespace sierra::odyplan::v3::example::project {
         return {
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::INT32),
+                .fieldName = "testField0"
                 },
             core::logical::port::PortDescription{
                 .valueTypeId = std::to_underlying(core::shared::types::BuiltinValueType::STRING),
+                .fieldName = "testField1"
                 },
         };
     }
@@ -68,23 +70,12 @@ namespace sierra::odyplan::v3::example::project {
                 std::string const exampleString = "ProjectOperator_Test";
                 llvm::GlobalVariable* stringRaw =
                     segmentCtx.builder.CreateGlobalString(exampleString);
-                llvm::StructType* stringType = llvm::StructType::get(
-                    segmentCtx.builder.getContext(),
-                    {llvm::PointerType::get(segmentCtx.builder.getContext(), 0),
-                     llvm::Type::getInt64Ty(segmentCtx.builder.getContext())});
-
-                llvm::Value* stringLength = llvm::ConstantInt::get(
-                    llvm::Type::getInt64Ty(segmentCtx.builder.getContext()), exampleString.size());
-
-                llvm::Value* valueField2 = llvm::PoisonValue::get(stringType);
-                valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringRaw, {0});
-                valueField2 = segmentCtx.builder.CreateInsertValue(valueField2, stringLength, {1});
 
                 core::physical::data::DataPackage tuple(core::physical::time::TimeInterval(segmentCtx.builder, core::physical::time::TimePoint::systemTime(segmentCtx.builder)));
                 tuple.reserve(getOutputPorts().size());
 
                 tuple.pushBack(valueField1);
-                tuple.pushBack(valueField2);
+                tuple.pushBack(stringRaw);
 
                 consumers.front().consume(segmentCtx, tuple);
 #ifdef ENABLE_LOOPED_SOURCE

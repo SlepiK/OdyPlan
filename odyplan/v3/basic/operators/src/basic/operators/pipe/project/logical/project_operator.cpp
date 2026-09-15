@@ -23,13 +23,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         }
 
         core::logical::port::Port output;
+        auto& inputRef = getInputPortsRef().at(0);
         auto& outputRef = getOutputPortsRef().at(0);
         for (const auto& index : mMapping) {
-            if (index >= outputRef.size()) {
+            if (index >= inputRef.size()) {
                 throw std::invalid_argument("ProjectOperator: index out of range");
             }
 
-            output.push_back(std::move(outputRef.at(index)));
+            output.push_back(std::move(inputRef.at(index)));
         }
 
         outputRef = std::move(output);

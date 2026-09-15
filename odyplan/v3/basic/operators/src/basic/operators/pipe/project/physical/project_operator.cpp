@@ -17,9 +17,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::physical {
         projected.reserve(mMapping.size());
 
         for (const auto index : mMapping) {
-            if (index >= tuple.size()) {
-                throw std::invalid_argument("ProjectOperator: index out of range");
-            }
             projected.pushBack(tuple.at(index));
         }
 
