@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <basic/operators/pipe/project/logical/project_operator.h>
 #include <stdexcept>
 
@@ -25,6 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::project::logical {
         core::logical::port::Port output;
         auto& inputRef = getInputPortsRef().at(0);
         auto& outputRef = getOutputPortsRef().at(0);
+        std::ranges::sort(mMapping);
         for (const auto& index : mMapping) {
             if (index >= inputRef.size()) {
                 throw std::invalid_argument("ProjectOperator: index out of range");
