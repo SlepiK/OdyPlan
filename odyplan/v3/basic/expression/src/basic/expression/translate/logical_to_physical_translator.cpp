@@ -13,41 +13,63 @@ namespace sierra::odyplan::v3::basic::expression::translate {
     LogicalToPhysicalTranslator::LogicalToPhysicalTranslator(const core::logical::port::PortDescriptionResolver &resolver) : mResolver(resolver) {
     }
 
-    std::unique_ptr<physical::IExpression> LogicalToPhysicalTranslator::translate(const logical::IExpression &expr) {
+    std::unique_ptr<physical::IExpression> LogicalToPhysicalTranslator::translate(logical::IExpression &expr) {
         switch (expr.getExpressionType()) {
             case logical::ExpressionType::FIELD_REFERENCE: {
-                const auto& fieldRef = static_cast<const logical::FieldReferenceExpression&>(expr);
+                auto& fieldRef = static_cast<logical::FieldReferenceExpression&>(expr);
 
                 const std::size_t index = mResolver.resolve(fieldRef.getFieldName(), fieldRef.portIndex());
+                const auto typeId = mResolver.getTypeId(index);
+                fieldRef.mTypeId = typeId;
 
-                return std::make_unique<physical::FieldReferenceExpression>(mResolver.getTypeId(index), index);
+                return std::make_unique<physical::FieldReferenceExpression>(typeId, index);
             }
 
             case logical::ExpressionType::CONSTANT: {
-                const auto& constant = static_cast<const logical::ConstantExpression&>(expr);
+                const auto& constant = static_cast<logical::ConstantExpression&>(expr);
 
                 return std::make_unique<physical::ConstantExpression>(constant.getTypeId(), constant.getSerializedValue());
             }
 
             case logical::ExpressionType::COMPARE: {
-                const auto& compare = static_cast<const logical::CompareExpression&>(expr);
+                const auto& compare = static_cast<logical::CompareExpression&>(expr);
 
                 auto left = translate(compare.getLeftPart());
                 auto right = translate(compare.getRightPart());
+
+                if (compare.getLeftPart().getTypeId() != compare.getRightPart().getTypeId()) {
+                    throw std::invalid_argument("LogicalToPhysicalTranslator: unsupported expression type");
+                }
+
+                if (!core::shared::types::isPrimitiv(compare.getLeftPart().getTypeId()) && compare.getLeftPart().getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::STRING)) {
+                    throw std::invalid_argument("LogicalToPhysicalTranslator: unsupported expression type");
+                }
+
+                if (!core::shared::types::isPrimitiv(compare.getRightPart().getTypeId()) && compare.getRightPart().getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::STRING)) {
+                    throw std::invalid_argument("LogicalToPhysicalTranslator: unsupported expression type");
+                }
 
                 return std::make_unique<physical::CompareExpression>(std::move(left), compare.getOpr(), std::move(right));
             }
 
             case logical::ExpressionType::LOGICAL: {
-                const auto& logical = static_cast<const logical::LogicalExpression&>(expr);
+                const auto& logical = static_cast<logical::LogicalExpression&>(expr);
 
                 auto left = translate(logical.getLeftPart());
+
+                if (logical.getLeftPart().getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::BOOL)) {
+                    throw std::invalid_argument("LogicalToPhysicalTranslator: unsupported expression");
+                }
 
                 if (logical.isUnary()) {
                     return std::make_unique<physical::LogicalExpression>(logical.getOpr(), std::move(left));
                 }
 
                 auto right = translate(*logical.getRightPart());
+
+                if (logical.getRightPart()->getTypeId() != std::to_underlying(core::shared::types::BuiltinValueType::BOOL)) {
+                    throw std::invalid_argument("LogicalToPhysicalTranslator: unsupported expression");
+                }
 
                 return std::make_unique<physical::LogicalExpression>(std::move(left), logical.getOpr(), std::move(right));
             }

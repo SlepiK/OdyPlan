@@ -1,3 +1,4 @@
+#include <utility>
 #include <basic/expression/logical/logical_expression.h>
 
 namespace sierra::odyplan::v3::basic::expression::logical {
@@ -14,11 +15,11 @@ namespace sierra::odyplan::v3::basic::expression::logical {
         return ExpressionType::LOGICAL;
     }
 
-    const IExpression& LogicalExpression::getLeftPart() const {
+    IExpression& LogicalExpression::getLeftPart() const {
         return *mLeftPart;
     }
 
-    const IExpression* LogicalExpression::getRightPart() const {
+    IExpression* LogicalExpression::getRightPart() const {
         return mRightPart.get();
     }
 
@@ -28,5 +29,9 @@ namespace sierra::odyplan::v3::basic::expression::logical {
 
     bool LogicalExpression::isUnary() const {
         return mRightPart == nullptr;
+    }
+
+    core::shared::types::ValueTypeId LogicalExpression::getTypeId() const {
+        return std::to_underlying(core::shared::types::BuiltinValueType::BOOL);
     }
 }  // namespace sierra::odyplan::v3::basic::expression

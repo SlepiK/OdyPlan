@@ -6,8 +6,14 @@
 #include <optional>
 #include <string>
 
+namespace sierra::odyplan::v3::basic::expression::translate {
+    class LogicalToPhysicalTranslator;
+}
+
 namespace sierra::odyplan::v3::basic::expression::logical {
+
     class FieldReferenceExpression : public IExpression {
+        friend class translate::LogicalToPhysicalTranslator;
     public:
         explicit FieldReferenceExpression(std::string fieldName);
 
@@ -23,7 +29,10 @@ namespace sierra::odyplan::v3::basic::expression::logical {
 
         [[nodiscard]] const std::optional<std::size_t>& portIndex() const;
 
+        [[nodiscard]] core::shared::types::ValueTypeId getTypeId() const override;
+
     private:
+        core::shared::types::ValueTypeId mTypeId;
         std::string mFieldName;
         std::optional<std::size_t> mPortIndex;
     };

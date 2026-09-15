@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::basic::expression::logical {
 
         [[nodiscard]] ExpressionType getExpressionType() const override;
 
-        [[nodiscard]] core::shared::types::ValueTypeId getTypeId() const;
+        [[nodiscard]] core::shared::types::ValueTypeId getTypeId() const override;
 
         [[nodiscard]] const std::string& getSerializedValue() const;
 

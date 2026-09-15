@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::expression::translate {
     public:
         explicit LogicalToPhysicalTranslator(const core::logical::port::PortDescriptionResolver& resolver);
 
-        [[nodiscard]] std::unique_ptr<physical::IExpression> translate(const logical::IExpression& expr);
+        [[nodiscard]] std::unique_ptr<physical::IExpression> translate(logical::IExpression& expr);
 
     private:
         const core::logical::port::PortDescriptionResolver& mResolver;
