@@ -19,17 +19,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                      const core::physical::data::DataPackage &tuple,
                      const core::physical::segment::SegmentDataConsumers &consumers) override;
 
-        void consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
-                                core::shared::identifiers::PortId inputPort,
-                                const core::physical::data::PunctuationPackage &punctuation,
-                                const core::physical::segment::SegmentDataConsumers &consumers) override;
-
     private:
         basic::window::time::TimeWindowConfig mConfig;
         core::logical::port::Port mDataSchema;
-        core::shared::identifiers::OperatorId mLogicalOperatorId = 0;
-        core::physical::state::StateHandle mState;
-        llvm::Function *mDrainFn = nullptr;
         basic::window::TimeWindowType mWindowType;
 
         llvm::Value* computeWindowEnd(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* eventTs) const;
