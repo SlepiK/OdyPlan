@@ -67,67 +67,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         segmentCtx.builder.CreateCall(drainFn, {state});
     }
 
-    void CountWindowOperator::end(core::physical::segment::SegmentContext& segmentCtx,
-             core::shared::identifiers::PortId  /*inputPort*/,
-             const core::physical::segment::SegmentDataConsumers& consumers) {
-        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
-        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
-
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-
-        llvm::Value* state = loadStatePtr(segmentCtx);
-
-        const auto flushFn = module->getOrInsertFunction(
-            "rtCountWindowFlush", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        segmentCtx.builder.CreateCall(flushFn, {state});
-
-        llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
-        segmentCtx.builder.CreateCall(drainFn, {state});
-    }
-
-
-    void CountWindowOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
-                            core::shared::identifiers::PortId  /*inputPort*/,
-                            const core::physical::data::PunctuationPackage &punctuation,
-                            const core::physical::segment::SegmentDataConsumers &consumers) {
-        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
-        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
-
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
-
-        llvm::Value* state = loadStatePtr(segmentCtx);
-        llvm::Value* isFinalWatermark = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
-
-        llvm::Value* condition = segmentCtx.builder.CreateICmpNE(isFinalWatermark, llvm::ConstantInt::get(i8Ty,0));
-
-        llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
-        auto* flushBB = llvm::BasicBlock::Create(ctx,"wm_punctuation_flush", fn);
-        auto* mergeBB = llvm::BasicBlock::Create(ctx,"wm_punctuation_merge", fn);
-
-        segmentCtx.builder.CreateCondBr(condition, flushBB, mergeBB);
-
-        segmentCtx.builder.SetInsertPoint(flushBB);
-
-        const auto flushFn = module->getOrInsertFunction(
-            "rtCountWindowFlush", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        segmentCtx.builder.CreateCall(flushFn, {state});
-
-        llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
-        segmentCtx.builder.CreateCall(drainFn, {state});
-
-        segmentCtx.builder.CreateBr(mergeBB);
-
-        segmentCtx.builder.SetInsertPoint(mergeBB);
-
-        for (const auto& consumer : consumers) {
-            consumer.consumePunctuation(segmentCtx, punctuation);
-        }
-    }
-
-
     llvm::Function*
     CountWindowOperator::getOrCreateDrainFn(const core::physical::segment::SegmentContext& segmentCtx,
                        const core::physical::segment::SegmentConsumerHandle& consumer) {

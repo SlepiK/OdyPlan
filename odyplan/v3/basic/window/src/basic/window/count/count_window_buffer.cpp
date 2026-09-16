@@ -83,18 +83,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         mFirstElementStart.reset();
     }
 
-    void CountWindowBuffer::flush() {
-        if (mFlushed || mRowBuffer.empty()) {
-            mReady = false;
-            return;
-        }
-        mFlushed = true;
-        /*mReady = true;
-        mReadyRowCount = mRowBuffer.size();
-        mReadyEnd = core::physical::time::INFINITY_SENTINEL;
-        mReadyEmitCount = mRowBuffer.size();*/
-    }
-
     void CountWindowBuffer::close() {
         for (auto& row : mRowBuffer) {
             mRowLayout.releaseRow(row.data);
