@@ -11,8 +11,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     public:
         TimeWindowOperator(core::physical::port::Port inputPort,
                            core::physical::port::Port outputPort,
-                           const basic::window::time::TimeWindowConfig &config,
-                           core::logical::port::Port schema);
+                           const basic::window::time::TimeWindowConfig &config);
 
         void consume(core::physical::segment::SegmentContext &segmentCtx,
                      core::shared::identifiers::PortId inputPort,
@@ -21,7 +20,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
     private:
         basic::window::time::TimeWindowConfig mConfig;
-        core::logical::port::Port mDataSchema;
         basic::window::TimeWindowType mWindowType;
 
         llvm::Value* computeWindowEnd(core::physical::segment::SegmentContext& segmentCtx, llvm::Value* eventTs) const;
