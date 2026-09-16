@@ -35,8 +35,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtCountWindowAdvance(void* state);
 
-    void rtCountWindowFlush(void* state);
-
     std::uint64_t rtCountWindowEmitCount(void* state);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime

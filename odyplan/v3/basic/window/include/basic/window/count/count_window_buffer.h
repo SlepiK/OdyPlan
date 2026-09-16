@@ -35,8 +35,6 @@ namespace sierra::odyplan::v3::basic::window::count {
 
         virtual void advanceWindow() = 0;
 
-        virtual void flush() = 0;
-
         virtual void close() = 0;
 
         [[nodiscard]] virtual std::uint64_t getEmitCount() const = 0;
@@ -68,8 +66,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         [[nodiscard]] Timestamp getWindowEnd() const override;
 
         void advanceWindow() override;
-
-        void flush() override;
 
         void close() override;
 

@@ -272,11 +272,6 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowAdvance),
                 llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtCountWindowFlush")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(
-                &sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowFlush),
-            llvm::JITSymbolFlags::Exported);
-
 
         symbolMap[jit->mangleAndIntern("rtComputeSegmentNullInit")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(

@@ -70,10 +70,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->advanceWindow();
     }
 
-    void rtCountWindowFlush(void *state) {
-        static_cast<basic::window::count::ICountWindowBuffer*>(state)->flush();
-    }
-
     std::uint64_t rtCountWindowEmitCount(void* state) {
         return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getEmitCount();
     }
