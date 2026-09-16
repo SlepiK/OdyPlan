@@ -79,13 +79,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         return segmentCtx.builder.CreateAdd(eventTs, sizeValue);
     }
-
-    void TimeWindowOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
-                                                core::shared::identifiers::PortId  /*inputPort*/,
-                                                const core::physical::data::PunctuationPackage &punctuation,
-                                                const core::physical::segment::SegmentDataConsumers &consumers) {
-        for (const auto& consumer : consumers) {
-            consumer.consumePunctuation(segmentCtx, punctuation);
-        }
-    }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical
