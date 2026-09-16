@@ -141,8 +141,7 @@ int main() {
                     std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::
                         TimeWindowOperator>(inputPorts.front(),
                                             outputPorts.front(),
-                                            config,
-                                            concrete.getInputPorts().front()));
+                                            config));
                 return ot;
             });
 

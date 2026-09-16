@@ -18,11 +18,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
     TimeWindowOperator::TimeWindowOperator(core::physical::port::Port inputPort,
                                            core::physical::port::Port outputPort,
-                                           const basic::window::time::TimeWindowConfig& config,
-                                           core::logical::port::Port schema)
+                                           const basic::window::time::TimeWindowConfig& config)
     : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                         core::physical::port::Ports{std::move(outputPort)}),
-          mConfig(config), mDataSchema(std::move(schema)), mWindowType(resolveTimeWindowType(config)) {
+          mConfig(config), mWindowType(resolveTimeWindowType(config)) {
         if (mWindowType == basic::window::TimeWindowType::PERIODIC) {
             throw std::logic_error("TimeWindowOperator: not implemented window_type periodic used");
         }
