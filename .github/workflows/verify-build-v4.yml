@@ -80,12 +80,8 @@ jobs:
           sudo apt-get install -y \
             llvm-22-dev \
             libclang-22-dev \
-            clang-22
-    
-          echo "LLVM_INSTALL_DIR=/usr/lib/llvm-22/cmake" >> $GITHUB_ENV
-
-      - name: Add LLVM to PATH
-        run: echo "/home/runner/llvm-22/bin" >> "$GITHUB_PATH"
+            clang-22 \ 
+            clang-tidy-22
 
       - name: Verify toolchain
         run: |
@@ -97,12 +93,16 @@ jobs:
         run: |
           cmake -S . -B build \
             -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang-22 \
+            -DCMAKE_CXX_COMPILER=clang++-22 \
             -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
-            -DENABLE_V2_EXAMPLES=ON
+            -DODYPLAN_VERSION=v3 \
+            -DODYPLAN_USE_SYSTEM_DEPS=ON \
+            -DENABLE_V3_EXAMPLES=ON \
+            -DENABLE_TOOLING=ON \
+            -DENABLE_CLANG_TIDY=OFF
 
       # ---- library ----
 

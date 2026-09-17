@@ -1,22 +1,22 @@
-if(NOT LLVM_INSTALL_DIR)
-    message(FATAL_ERROR
-        "LLVM_INSTALL DIR not set!\n"
-            "Please provide it via -DLLVM_INSTALL_DIR=/path/to/llvm"
-    )
-endif ()
 
-if(NOT EXISTS "${LLVM_INSTALL_DIR}")
-    message(FATAL_ERROR
-            "LLVM_INSTALL_DIR does not exist: ${LLVM_INSTALL_DIR}\n"
-            "Please check the path."
-    )
+if(LLVM_INSTALL_DIR)
+    if(NOT EXISTS "${LLVM_INSTALL_DIR}")
+        message(FATAL_ERROR "LLVM_INSTALL_DIR does not exist: ${LLVM_INSTALL_DIR}")
+    endif()
+
+    set(LLVM_DIR ${LLVM_INSTALL_DIR}/lib/cmake/llvm)
+    set(Clang_DIR ${LLVM_INSTALL_DIR}/lib/cmake/clang)
+
+    find_package(LLVM REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
+    find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
+
+    message(STATUS "Found LLVM ${LLVM_VERSION} (explicit): ${LLVM_DIR}")
+else()
+    find_package(LLVM REQUIRED CONFIG)
+    find_package(Clang REQUIRED CONFIG)
+
+    message(STATUS "Found LLVM ${LLVM_VERSION} (system): ${LLVM_DIR}")
 endif()
-
-set(LLVM_DIR  ${LLVM_INSTALL_DIR}/lib/cmake/llvm)
-set(Clang_DIR ${LLVM_INSTALL_DIR}/lib/cmake/clang)
-
-find_package(LLVM REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
-find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
 
 message(STATUS "FOUND LLVM ${LLVM_VERSION}: ${LLVM_DIR}")
 message(STATUS "FOUND Clang ${Clang_VERSION}: ${Clang_DIR}")
