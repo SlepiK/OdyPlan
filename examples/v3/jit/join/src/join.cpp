@@ -276,10 +276,35 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::pipe::join::runtime::rtJoinEndRight),
             llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtJoinSnapshotForComputeAndUnlock")] =
+        symbolMap[jit->mangleAndIntern("rtJoinMarkCandidateForRemove")] =
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
-                        runtime::rtJoinSnapshotForComputeAndUnlock),
+                        runtime::rtJoinMarkCandidateForRemove),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMarkCandidateAsMatch")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinMarkCandidateAsMatch),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinRemoveMarkedCandidates")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinRemoveMarkedCandidates),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetMatchCount")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinSnapshotGetMatchCount),
+                        llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetMatchIndex")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinSnapshotGetMatchIndex),
+                    llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinSnapshotForCompute")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinSnapshotForCompute),
                     llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetOwnPtr")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
