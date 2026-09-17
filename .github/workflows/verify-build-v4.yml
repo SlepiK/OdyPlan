@@ -16,45 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Aggressive cleanup
-        run: |
-          # Remove Java (JDKs)
-          sudo rm -rf /usr/lib/jvm
-
-          # Remove .NET SDKs
-          sudo rm -rf /usr/share/dotnet
-
-          # Remove Swift toolchain
-          sudo rm -rf /usr/share/swift
-
-          # Remove Haskell (GHC)
-          sudo rm -rf /usr/local/.ghcup
-
-          # Remove Julia
-          sudo rm -rf /usr/local/julia*
-
-          # Remove Android SDKs
-          sudo rm -rf /usr/local/lib/android
-
-          # Remove Chromium (optional if not using for browser tests)
-          sudo rm -rf /usr/local/share/chromium
-
-          # Remove Microsoft/Edge and Google Chrome builds
-          sudo rm -rf /opt/microsoft /opt/google
-
-          # Remove Azure CLI
-          sudo rm -rf /opt/az
-
-          # Remove PowerShell
-          sudo rm -rf /usr/local/share/powershell
-
-          # Remove CodeQL and other toolcaches
-          sudo rm -rf /opt/hostedtoolcache
-
-          docker system prune -af || true
-          docker builder prune -af || true
-          df -h
-
       - name: Install CMake 4.1
         run: |
           pip install cmake==4.1.0
@@ -70,18 +31,14 @@ jobs:
           sudo apt-get remove -y llvm* clang* libclang*
           sudo apt-get autoremove -y
 
-      - name: Download LLVM 22
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
+      - name: Install LLVM 22
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-22 main"
-    
-          sudo apt-get update
-          sudo apt-get install -y \
-            llvm-22-dev \
-            libclang-22-dev \
-            clang-22 \ 
-            clang-tidy-22
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          
+          echo "/usr/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=/usr/bin/llvm-config-22" >> $GITHUB_ENV
 
       - name: Verify toolchain
         run: |
