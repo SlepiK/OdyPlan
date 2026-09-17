@@ -1,6 +1,6 @@
 #include <basic/operators/pipe/merge/physical/merge_operator.h>
 
-#include "spdlog/fmt/bundled/base.h"
+#include "spdlog/fmt/fmt.h"
 
 namespace sierra::odyplan::v3::basic::operators::pipe::merge::physical {
     MergeOperator::MergeOperator(core::physical::port::Port inputPort,
