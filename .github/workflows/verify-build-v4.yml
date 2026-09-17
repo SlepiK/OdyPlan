@@ -42,8 +42,9 @@ jobs:
 
       - name: Verify toolchain
         run: |
-          clang-tidy --version
-          clang++ --version
+          clang-tidy-22 --version
+          clang++-22 --version
+          llvm-config-22 --version
           cmake --version
 
       - name: Configure
