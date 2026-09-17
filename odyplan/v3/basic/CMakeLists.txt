@@ -7,6 +7,10 @@ set(FACADE_TARGET odyplan_basic)
 add_library(${FACADE_TARGET} STATIC)
 add_library(odyplan::basic ALIAS ${FACADE_TARGET})
 
+set_target_properties(${FACADE_TARGET} PROPERTIES
+        EXPORT_NAME basic
+)
+
 target_link_libraries(${FACADE_TARGET} PUBLIC
         odyplan::basic::io
         odyplan::basic::expression

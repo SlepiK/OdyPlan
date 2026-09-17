@@ -5,6 +5,9 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 set(TARGET_NAME odyplan_core_shared)
 
 add_library(${TARGET_NAME} INTERFACE)
+set_target_properties(${FACADE_TARGET} PROPERTIES
+        EXPORT_NAME core::shared
+)
 add_library(odyplan::core::shared ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} INTERFACE
@@ -44,3 +47,9 @@ if(ENABLE_TOOLING)
         )
     endif()
 endif()
+
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.hpp"
+        PATTERN "*.h"
+)
