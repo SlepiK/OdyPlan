@@ -14,81 +14,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Aggressive cleanup
-        run: |
-          # Remove Java (JDKs)
-          sudo rm -rf /usr/lib/jvm
-
-          # Remove .NET SDKs
-          sudo rm -rf /usr/share/dotnet
-
-          # Remove Swift toolchain
-          sudo rm -rf /usr/share/swift
-
-          # Remove Haskell (GHC)
-          sudo rm -rf /usr/local/.ghcup
-
-          # Remove Julia
-          sudo rm -rf /usr/local/julia*
-
-          # Remove Android SDKs
-          sudo rm -rf /usr/local/lib/android
-
-          # Remove Chromium (optional if not using for browser tests)
-          sudo rm -rf /usr/local/share/chromium
-
-          # Remove Microsoft/Edge and Google Chrome builds
-          sudo rm -rf /opt/microsoft /opt/google
-
-          # Remove Azure CLI
-          sudo rm -rf /opt/az
-
-          # Remove PowerShell
-          sudo rm -rf /usr/local/share/powershell
-
-          # Remove CodeQL and other toolcaches
-          sudo rm -rf /opt/hostedtoolcache
-
-          docker system prune -af || true
-          docker builder prune -af || true
-          df -h
-
       - name: Install CMake 4.1
         run: |
           pip install cmake==4.1.0
           echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
 
-      - name: Install Ninja
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libstdc++-14-dev zstd ninja-build
-
-      - name: Cache LLVM 22
-        uses: actions/cache@v6
-        id: cache-llvm
-        with:
-          path: ~/llvm-22
-          key: llvm-22.1.0-linux-x64
-
-      - name: Download LLVM 22
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.0/LLVM-22.1.0-Linux-X64.tar.xz
-          mkdir -p ~/llvm-22
-          tar -xf LLVM-22.1.0-Linux-X64.tar.xz -C ~/llvm-22 --strip-components=1
+          sudo apt-get install -y \
+            libstdc++-14-dev \
+            libzstd-dev \
+            zstd \
+            ninja-build \
+            libspdlog-dev \
+            nlohmann-json3-dev \
+            libfmt-dev \
+            libffi-dev \
+            libedit-dev \
+            libcurl4-openssl-dev
 
       - name: Remove system LLVM/Clang
         run: |
           sudo apt-get remove -y llvm* clang* libclang*
           sudo apt-get autoremove -y
 
-      - name: Add LLVM to PATH
-        run: echo "$HOME/llvm-22/bin" >> "$GITHUB_PATH"
+      - name: Install LLVM 22
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22 all
+
+          echo "/usr/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=/usr/bin/llvm-config-22" >> $GITHUB_ENV
 
       - name: Verify toolchain
         run: |
-          clang-tidy --version
-          clang++ --version
+          clang-tidy-22 --version
+          clang++-22 --version
+          llvm-config-22 --version
           cmake --version
 
       - name: Configure
@@ -97,9 +61,10 @@ jobs:
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
+            -DCMAKE_C_COMPILER=clang-22 \
+            -DCMAKE_CXX_COMPILER=clang++-22 \
+            -DODYPLAN_VERSION=v3 \
+            -DODYPLAN_USE_SYSTEM_DEPS=ON \
             -DENABLE_TOOLING=ON \
             -DENABLE_CLANG_TIDY=ON
 
