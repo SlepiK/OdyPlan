@@ -97,11 +97,19 @@ jobs:
           
           tar -czvf ../odyplan-${{ github.event.release.tag_name }}-linux-x86_64.tar.gz .
 
+          ls -lh /tmp/odyplan-${{ github.event.release.tag_name }}-linux-x86_64.tar.gz
+          echo "filename=odyplan-${{ github.event.release.tag_name }}-linux-x86_64.tar.gz" >> $GITHUB_OUTPUT
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+
       - name: Upload to Release
         run: |
           cd /tmp
           gh release upload ${{ github.event.release.tag_name }} \
-            odyplan-v0.6.1.2-linux-x86_64.tar.gz \
+            ${{ steps.package.outputs.filename }} \
             --repo ${{ github.repository }} \
             --clobber
         env:
