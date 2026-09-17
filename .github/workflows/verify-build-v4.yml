@@ -65,6 +65,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libstdc++-14-dev zstd ninja-build libspdlog-dev nlohmann-json3-dev
 
+      - name: Remove system LLVM/Clang
+        run: |
+          sudo apt-get remove -y llvm* clang* libclang*
+          sudo apt-get autoremove -y
+
       - name: Download LLVM 22
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
@@ -78,11 +83,6 @@ jobs:
             clang-22
     
           echo "LLVM_INSTALL_DIR=/usr/lib/llvm-22/cmake" >> $GITHUB_ENV
-
-      - name: Remove system LLVM/Clang
-        run: |
-          sudo apt-get remove -y llvm* clang* libclang*
-          sudo apt-get autoremove -y
 
       - name: Add LLVM to PATH
         run: echo "/home/runner/llvm-22/bin" >> "$GITHUB_PATH"
