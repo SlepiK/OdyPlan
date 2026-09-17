@@ -21,15 +21,17 @@ jobs:
           pip install cmake==4.1.0
           echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
 
-      - name: Install Ninja and dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libstdc++-14-dev \
+            libzstd-dev \
             zstd \ 
             ninja-build \
             libspdlog-dev \
             nlohmann-json3-dev \
+            libfmt-dev \
             libffi-dev \
             libedit-dev \
             libcurl4-openssl-dev
