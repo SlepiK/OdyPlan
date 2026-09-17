@@ -11,6 +11,9 @@ add_library(${TARGET_NAME} OBJECT
         ${SOURCES}
         ${HEADERS}
 )
+set_target_properties(${FACADE_TARGET} PROPERTIES
+        EXPORT_NAME basic::operators
+)
 add_library(odyplan::basic::operators ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} PUBLIC
@@ -61,3 +64,9 @@ if(ENABLE_TOOLING)
         )
     endif()
 endif()
+
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.hpp"
+        PATTERN "*.h"
+)

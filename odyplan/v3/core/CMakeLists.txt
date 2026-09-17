@@ -9,6 +9,10 @@ set(FACADE_TARGET odyplan_core)
 add_library(${FACADE_TARGET} STATIC)
 add_library(odyplan::core ALIAS ${FACADE_TARGET})
 
+set_target_properties(${FACADE_TARGET} PROPERTIES
+        EXPORT_NAME core
+)
+
 target_link_libraries(${FACADE_TARGET} PUBLIC
         odyplan::core::logical
         odyplan::core::physical

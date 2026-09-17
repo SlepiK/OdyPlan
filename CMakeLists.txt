@@ -59,7 +59,7 @@ endif ()
 
 install(EXPORT OdyPlanTargets
         FILE OdyPlanTargets.cmake
-        NAMESPACE sierra::odyplan::
+        NAMESPACE odyplan::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OdyPlan
 )
 
@@ -79,12 +79,6 @@ install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/OdyPlanConfig.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/OdyPlanConfigVersion.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/OdyPlan
-)
-
-install(DIRECTORY odyplan/${ODYPLAN_VERSION}/include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/sierra/odyplan/${ODYPLAN_VERSION_DIR}
-        FILES_MATCHING PATTERN "*.hpp"
-        PATTERN "*.h"
 )
 
 message(STATUS "=== OdyPlan Build Done ===")

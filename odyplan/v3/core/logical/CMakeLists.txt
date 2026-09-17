@@ -6,11 +6,14 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 )
 
 set(TARGET_NAME odyplan_core_logical)
-
 add_library(${TARGET_NAME} OBJECT
         ${SOURCES}
         ${HEADERS}
 )
+set_target_properties(${FACADE_TARGET} PROPERTIES
+        EXPORT_NAME core::logical
+)
+
 add_library(odyplan::core::logical ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} PUBLIC
@@ -53,3 +56,9 @@ if(ENABLE_TOOLING)
         )
     endif()
 endif()
+
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.hpp"
+        PATTERN "*.h"
+)
