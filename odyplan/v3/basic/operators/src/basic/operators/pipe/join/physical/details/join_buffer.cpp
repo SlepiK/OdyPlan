@@ -79,10 +79,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 }
             }
         }
-
-        if (extract && !mCandidates.empty()) {
-            otherSide.removeV(mCandidates);
-        }
     }
 
     void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
@@ -133,7 +129,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForComputeAndUnlock(const bool callFromLeft, const bool extract) {
+    void JoinBuffer::markCandidateForRemove(JoinSnapshot *snapshot, const std::size_t candidateIdx) {
+        if (snapshot != nullptr && snapshot->isExtraction) {
+            snapshot->markedForRemove.push_back(candidateIdx);
+        }
+    }
+
+    void JoinBuffer::markCandidateAsMatch(JoinSnapshot *snapshot, const std::size_t candidateIdx) {
+        if (snapshot != nullptr) {
+            snapshot->matchIndicies.push_back(candidateIdx);
+        }
+    }
+
+    void JoinBuffer::removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft) {
+        if (snapshot == nullptr || snapshot->markedForRemove.empty()) {
+            return;
+        }
+
+        auto& otherSide = wasLeft ? mRightSide : mLeftSide;
+        otherSide.removeV(mCandidates);
+    }
+
+    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForCompute(const bool callFromLeft, const bool extract) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* snapshot = new JoinSnapshot();
         snapshot->wasLeft = callFromLeft;
@@ -189,12 +206,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);
         }
-
-        if (extract && !mCandidates.empty()) {
-            otherSide.removeV(mCandidates);
-        }
-
-        unlock();
 
         return snapshot;
     }

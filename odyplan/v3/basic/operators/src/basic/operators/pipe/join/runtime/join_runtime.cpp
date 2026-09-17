@@ -109,8 +109,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<physical::details::JoinBuffer*>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
-    void *rtJoinSnapshotForComputeAndUnlock(void *state, const uint8_t callFromLeft, const uint8_t extract) {
-        return static_cast<physical::details::JoinBuffer*>(state)->snapshotForComputeAndUnlock(callFromLeft != 0, extract != 0);
+    void *rtJoinSnapshotForCompute(void *state, const uint8_t callFromLeft, const uint8_t extract) {
+        return static_cast<physical::details::JoinBuffer*>(state)->snapshotForCompute(callFromLeft != 0, extract != 0);
     }
 
     const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::uint64_t fieldIndex) {
@@ -176,6 +176,37 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     void rtJoinWatermarkDestroy(void *state) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         delete static_cast<details::JoinWatermarkState *>(state);
+    }
+
+    void rtJoinMarkCandidateForRemove(void* state, void* snapshot, const std::uint64_t candidateIdx) {
+        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
+        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        joinBuffer->markCandidateForRemove(snap, candidateIdx);
+    }
+
+    void rtJoinMarkCandidateAsMatch(void* state, void* snapshot, const std::uint64_t candidateIdx) {
+        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
+        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        joinBuffer->markCandidateAsMatch(snap, candidateIdx);
+    }
+
+    void rtJoinRemoveMarkedCandidates(void* state, void* snapshot) {
+        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
+        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        joinBuffer->removeMarkedCandidates(snap, snap->wasLeft);
+    }
+
+    std::uint64_t rtJoinSnapshotGetMatchCount(void* snapshot) {
+        const auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        return snap != nullptr ? snap->matchIndicies.size() : 0;
+    }
+
+    std::uint64_t rtJoinSnapshotGetMatchIndex(void* snapshot, const std::uint64_t matchIndex) {
+        const auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        if (snap == nullptr || matchIndex >= snap->matchIndicies.size()) {
+            return 0;
+        }
+        return snap->matchIndicies.at(matchIndex);
     }
 
     // NOLINTNEXTLINE(readability-function-size)

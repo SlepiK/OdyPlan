@@ -35,6 +35,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<RetainPointer> retainPointers;
             const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry = nullptr;
 
+            std::vector<std::size_t> markedForRemove;
+            bool isExtraction = false;
+
+            std::vector<std::size_t> matchIndicies;
+
             [[nodiscard]] const std::byte* ownFieldPtr(std::size_t fieldIdx) const;
 
             [[nodiscard]] const std::byte* candidateFieldPtr(std::size_t candidateIdx, std::size_t fieldIdx) const;
@@ -74,10 +79,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         void matchRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForComputeAndUnlock(bool callFromLeft, bool extract);
-
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForCompute(bool extract);
+        JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract);
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
@@ -86,6 +88,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
         void evict(Timestamp threshold, bool callFromLeft, bool isFinal);
+
+        void markCandidateForRemove(JoinSnapshot *snapshot, std::size_t candidateIdx);
+
+        void markCandidateAsMatch(JoinSnapshot *snapshot, std::size_t candidateIdx);
+
+        void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
 
     private:
         JoinSide mLeftSide;

@@ -58,7 +58,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                     const std::vector<details::EquiKeyInfo>& keys,
                                                     const std::string& name);
 
-        void emitMatchFromSnapshot(core::physical::segment::SegmentContext& segmentCtx,
+        void evaluatePredicateAndMark(core::physical::segment::SegmentContext& segmentCtx,
+                llvm::Value* snapshot, llvm::Value* state, bool onLeft, bool extract);
+
+        void emitMatchesFromSnapshot(core::physical::segment::SegmentContext& segmentCtx,
                 llvm::Value* snapshot, bool onLeft,
                 const core::physical::segment::SegmentDataConsumers& consumers);
 

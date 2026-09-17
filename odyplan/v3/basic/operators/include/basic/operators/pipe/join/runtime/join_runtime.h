@@ -37,7 +37,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEndRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
 
-    void* rtJoinSnapshotForComputeAndUnlock(void* state, uint8_t callFromLeft, uint8_t extract);
+    void* rtJoinSnapshotForCompute(void* state, uint8_t callFromLeft, uint8_t extract);
 
     const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::uint64_t fieldIndex);
 
@@ -68,6 +68,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     void *rtJoinWatermarkCreate(void *typeRegistryRawPtr);
 
     void rtJoinWatermarkDestroy(void *state);
+
+    void rtJoinMarkCandidateForRemove(void* state, void* snapshot, std::uint64_t candidateIdx);
+
+    void rtJoinMarkCandidateAsMatch(void* state, void* snapshot, std::uint64_t candidateIdx);
+
+    void rtJoinRemoveMarkedCandidates(void* state, void* snapshot);
+
+    std::uint64_t rtJoinSnapshotGetMatchCount(void* snapshot);
+
+    std::uint64_t rtJoinSnapshotGetMatchIndex(void* snapshot, std::uint64_t matchIndex);
 
     std::uint8_t rtJoinUpdateWatermark(void *state, std::uint8_t isLeft, std::int64_t inWatermark,
                                        std::uint8_t inIsFinal, std::int64_t allowedLateness,
