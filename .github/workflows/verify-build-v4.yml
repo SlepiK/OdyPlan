@@ -55,7 +55,6 @@ jobs:
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_C_COMPILER=clang-22 \
             -DCMAKE_CXX_COMPILER=clang++-22 \
-            -DLLVM_INSTALL_DIR=$HOME/llvm-22 \
             -DODYPLAN_VERSION=v3 \
             -DODYPLAN_USE_SYSTEM_DEPS=ON \
             -DENABLE_V3_EXAMPLES=ON \
