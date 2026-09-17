@@ -1,12 +1,7 @@
-if(ODYPLAN_V1)
+if(ODYPLAN_VERSION STREQUAL "V1")
     add_subdirectory(v1)
-endif()
-
-
-if(ODYPLAN_V2)
+elseif(ODYPLAN_VERSION STREQUAL "V2")
     add_subdirectory(v2)
-endif()
-
-if(ODYPLAN_V3)
+elseif(ODYPLAN_VERSION STREQUAL "V3")
     add_subdirectory(v3)
 endif()
