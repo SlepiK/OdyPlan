@@ -1,7 +1,7 @@
 #include <basic/operators/pipe/window/physical/time_window_operator.h>
 #include <llvm/CodeGenTypes/MachineValueType.h>
 
-#include "spdlog/fmt/bundled/format.h"
+#include "spdlog/fmt/fmt.h"
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     namespace {

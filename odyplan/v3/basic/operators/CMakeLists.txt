@@ -7,14 +7,15 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 
 set(TARGET_NAME odyplan_basic_operators)
 
-add_library(${TARGET_NAME} STATIC
+add_library(${TARGET_NAME} OBJECT
         ${SOURCES}
         ${HEADERS}
 )
 add_library(odyplan::basic::operators ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 target_link_libraries(${TARGET_NAME}
@@ -26,9 +27,6 @@ target_link_libraries(${TARGET_NAME}
         odyplan::basic::io
         odyplan::basic::expression
         odyplan::basic::window
-        PRIVATE
-        nlohmann_json::nlohmann_json
-        spdlog::spdlog
 )
 
 odyplan_llvm_include_dirs(${TARGET_NAME} PUBLIC)

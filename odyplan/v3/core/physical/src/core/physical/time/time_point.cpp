@@ -1,8 +1,6 @@
 #include <core/physical/time/time_point.h>
 #include <llvm/IR/Module.h>
 
-#include "spdlog/fmt/bundled/chrono.h"
-
 namespace sierra::odyplan::v3::core::physical::time {
     namespace {
         llvm::Value* infinitySentinelConstant(llvm::IRBuilder<>& builder) {
