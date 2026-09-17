@@ -75,6 +75,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinRemoveMarkedCandidates(void* state, void* snapshot);
 
+    void rtJoinMarkAllCandidatesAsMatch(void* state, void* snapshot, std::uint8_t extract);
+
     std::uint64_t rtJoinSnapshotGetMatchCount(void* snapshot);
 
     std::uint64_t rtJoinSnapshotGetMatchIndex(void* snapshot, std::uint64_t matchIndex);

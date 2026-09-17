@@ -81,6 +81,20 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
+    void JoinBuffer::markAllCandidateAsMatch(JoinSnapshot *snapshot, bool extract) {
+        if (snapshot == nullptr) {
+            return;
+        }
+
+        for (std::size_t i = 0; i < snapshot->candidateCount; ++i) {
+            snapshot->matchIndicies.push_back(i);
+
+            if (extract) {
+                snapshot->markedForRemove.push_back(i);
+            }
+        }
+    }
+
     void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mLeftSide.end(startTs, endTs, startTb, endTb);
     }

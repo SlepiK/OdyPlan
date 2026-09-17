@@ -93,6 +93,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void markCandidateAsMatch(JoinSnapshot *snapshot, std::size_t candidateIdx);
 
+        void markAllCandidateAsMatch(JoinSnapshot *snapshot, bool extract);
+
         void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
 
     private:

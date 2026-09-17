@@ -291,6 +291,11 @@ int main() {
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
                         runtime::rtJoinRemoveMarkedCandidates),
                         llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtJoinMarkAllCandidatesAsMatch")] =
+                llvm::orc::ExecutorSymbolDef(
+                    llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::
+                        runtime::rtJoinMarkAllCandidatesAsMatch),
+                        llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtJoinSnapshotGetMatchCount")] =
                 llvm::orc::ExecutorSymbolDef(
                     llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::join::

@@ -190,6 +190,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         joinBuffer->markCandidateAsMatch(snap, candidateIdx);
     }
 
+    void rtJoinMarkAllCandidatesAsMatch(void* state, void* snapshot, const std::uint8_t extract) {
+        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
+        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        joinBuffer->markAllCandidateAsMatch(snap, extract != 0);
+    }
+
     void rtJoinRemoveMarkedCandidates(void* state, void* snapshot) {
         auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
         auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
