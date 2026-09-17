@@ -78,6 +78,7 @@ jobs:
         run: cmake --build build --target install -j $(nproc)
 
       - name: Create Release Package
+        id: package
         run: |
           cd /tmp/odyplan-install
 
