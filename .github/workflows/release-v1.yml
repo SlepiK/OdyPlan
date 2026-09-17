@@ -1,0 +1,101 @@
+name: release-v1
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-library:
+    name: Build OdyPlan
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install CMake 4.1
+        run: |
+          pip install cmake==4.1.0
+          echo "$(python -m site --user-base)/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libstdc++-14-dev \
+            libzstd-dev \
+            zstd \
+            ninja-build \
+            libspdlog-dev \
+            nlohmann-json3-dev \
+            libfmt-dev \
+            libffi-dev \
+            libedit-dev \
+            libcurl4-openssl-dev
+
+      - name: Remove system LLVM/Clang
+        run: |
+          sudo apt-get remove -y llvm* clang* libclang*
+          sudo apt-get autoremove -y
+
+      - name: Install LLVM 22
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22 all
+          
+          echo "/usr/bin" >> $GITHUB_PATH
+          echo "LLVM_CONFIG=/usr/bin/llvm-config-22" >> $GITHUB_ENV
+
+      - name: Verify toolchain
+        run: |
+          clang-tidy-22 --version
+          clang++-22 --version
+          llvm-config-22 --version
+          cmake --version
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_COMPILER=clang-22 \
+            -DCMAKE_CXX_COMPILER=clang++-22 \
+            -DODYPLAN_VERSION=v3 \
+            -DODYPLAN_USE_SYSTEM_DEPS=ON \
+            -DENABLE_V3_EXAMPLES=OFF \
+            -DENABLE_TOOLING=ON \
+            -DENABLE_CLANG_TIDY=OFF
+
+      # ---- library ----
+
+      - name: Build
+        run: cmake --build build --target install -j $(nproc)
+
+      - name: Create Release Package
+        run: |
+          cd /tmp/odyplan-install
+
+          cat > VERSION.txt << EOF
+          OdyPlan Library Release
+          Version: ${{ github.event.release.tag_name }}
+          Build: ${{ github.sha }}
+          Date: $(date -u)
+          LLVM: 22.1.8
+          Ubuntu: 24.04
+          
+          Usage:
+            cmake -DCMAKE_PREFIX_PATH=/path/to/extracted/odyplan
+            find_package(OdyPlan REQUIRED)
+            target_link_libraries(your_target PRIVATE odyplan::core odyplan::basic)
+          EOF
+          
+          tar -czvf ../odyplan-${{ github.event.release.tag_name }}-linux-x86_64.tar.gz .
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: /tmp/odyplan-${{ github.event.release.tag_name }}-linux-x86_64.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.event.release.tag_name, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
