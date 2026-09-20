@@ -17,6 +17,7 @@ namespace sierra::odyplan::v3::core::shared::types {
         WINDOW_COUNT = 30,
         WINDOW_TIME = 31,
         MEASURE = 40,
+        UNKNOWN = 255
     };
 }  // namespace sierra::odyplan::v3::core::shared::types
 
