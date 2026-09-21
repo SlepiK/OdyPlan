@@ -13,18 +13,18 @@ namespace sierra::odyplan::v3::core::builder {
     class PlanBuilder {
     public:
         using CodegenTypeRegistry = physical::types::CodegenTypeRegistry;
-        using ValueTypeId = shared::types::ValueTypeId;
+        using OperatorTypeId = shared::types::OperatorTypeId;
 
         explicit PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry);
 
-        void registerOperatorTransformation(ValueTypeId lId,
+        void registerOperatorTransformation(OperatorTypeId oprTypeId,
                                             transformation::OperatorTransformationFactory factory);
 
         [[nodiscard]] physical::plan::Plan build(const logical::plan::Plan& lPlan,
                                                  llvm::LLVMContext& ctx);
     private:
         const CodegenTypeRegistry* mCodegenTypeRegistry;
-        std::unordered_map<ValueTypeId, transformation::OperatorTransformationFactory> mFactories;
+        std::unordered_map<OperatorTypeId, transformation::OperatorTransformationFactory> mFactories;
 
         [[nodiscard]] physical::port::Ports resolvePorts(const logical::port::Ports& lPorts,
                                                          llvm::LLVMContext& ctx) const;

@@ -36,7 +36,8 @@ llvm_map_components_to_libnames(LLVM_LIBS
 
 set(ODYPLAN_AOT_SUPPORTED_TARGETS
         X86
-        # AArch64
+        AArch64
+        RISCV
 )
 
 llvm_map_components_to_libnames(LLVM_AOT_LIBS

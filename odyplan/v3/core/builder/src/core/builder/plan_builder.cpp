@@ -5,8 +5,8 @@ namespace sierra::odyplan::v3::core::builder {
         : mCodegenTypeRegistry(&codengenTypeRegistry) {}
 
     void PlanBuilder::registerOperatorTransformation(
-        ValueTypeId lId, transformation::OperatorTransformationFactory factory) {
-        mFactories.emplace(lId, std::move(factory));
+        OperatorTypeId oprTypeId, transformation::OperatorTransformationFactory factory) {
+        mFactories.emplace(oprTypeId, std::move(factory));
     }
 
     physical::plan::Plan PlanBuilder::build(const logical::plan::Plan& lPlan,

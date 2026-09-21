@@ -51,6 +51,7 @@ jobs:
       - name: Verify toolchain
         run: |
           clang-tidy-22 --version
+          clang-format-22 --version
           clang++-22 --version
           llvm-config-22 --version
           cmake --version
@@ -66,7 +67,9 @@ jobs:
             -DODYPLAN_VERSION=v3 \
             -DODYPLAN_USE_SYSTEM_DEPS=ON \
             -DENABLE_TOOLING=ON \
-            -DENABLE_CLANG_TIDY=ON
+            -DENABLE_CLANG_TIDY=ON \
+            -DCLANG_TIDY_EXE=clang-tidy-22 \
+            -DCLANG_FORMAT_EXE=clang-format-22
 
       - name: Run clang-tidy
         run: cmake --build build --target tidy
