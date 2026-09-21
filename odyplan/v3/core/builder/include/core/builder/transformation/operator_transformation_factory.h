@@ -6,10 +6,13 @@
 #include <core/physical/port/port.h>
 
 namespace sierra::odyplan::v3::core::builder::transformation {
-    using OperatorTransformationFactory =
+    /*using OperatorTransformationFactory =
         std::function<OperatorTransformation(logical::operators::IOperator&,
                                              const physical::port::Ports& input,
-                                             const physical::port::Ports& output)>;
+                                             const physical::port::Ports& output)>;*/
+
+    using OperatorTransformationFactory =
+        OperatorTransformation (*)(logical::operators::IOperator&, const physical::port::Ports&, const physical::port::Ports&);
 }
 
 #endif  // SIERRA_ODYPLAN_V3_CORE_BUILDER_TRANSFORMATION_OPERATOR_TRANSFORMATION_FACTORY_HPP
