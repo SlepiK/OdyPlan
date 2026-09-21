@@ -5,7 +5,7 @@ namespace sierra::odyplan::v3::core::builder {
         : mCodegenTypeRegistry(&codengenTypeRegistry) {}
 
     void PlanBuilder::registerOperatorTransformation(
-        ValueTypeId lId, transformation::OperatorTransformationFactory factory) {
+        OperatorTypeId lId, transformation::OperatorTransformationFactory factory) {
         mFactories.emplace(lId, std::move(factory));
     }
 
