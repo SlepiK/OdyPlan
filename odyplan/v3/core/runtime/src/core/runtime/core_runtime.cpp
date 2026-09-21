@@ -3,9 +3,6 @@
 namespace sierra::odyplan::v3::core::runtime {
     extern "C" {
     void rtEnd() {
-#ifdef SIERRA_RUNTIME_IO
-        sierra::odyplan::v3::basic::operators::sink::write::runtime::rtIOSinkFlushAll();
-#endif
     }
 
     bool odyStop() {

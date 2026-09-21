@@ -18,13 +18,9 @@
 #include <core/builder/plan_builder.h>
 
 #include <basic/operators/source/read/logical/read_operator.h>
-#include <basic/operators/source/read/physical/read_operator.h>
-
 #include <basic/operators/pipe/window/logical/time_window_operator.h>
-#include <basic/operators/pipe/window/physical/time_window_operator.h>
-
 #include <basic/operators/sink/print/logical/print_operator.h>
-#include <basic/operators/sink/print/physical/print_operator.h>
+#include <basic/operators/operator_transformations.h>
 
 namespace {
     void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
@@ -110,52 +106,7 @@ int main(int argc, char** argv) {
 
     sierra::odyplan::v3::core::builder::PlanBuilder builder(codegenTypeRegistry);
 
-    builder.registerOperatorTransformation(
-        sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::TYPE_ID,
-        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports&,
-            const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            // NOLINTNEXTLINE
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator&>(op);
-
-            sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::source::read::physical::ReadOperator>(
-            outputPorts.front(),
-        concrete.getIOConfig(),
-        concrete.getIOFormat(),
-        concrete.getOutputPorts().at(0),
-        concrete.getOptions()));
-            return ot;
-        }
-    );
-
-    builder.registerOperatorTransformation(
-        sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator::TYPE_ID,
-        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator&>(op);
-            const auto& config = concrete.getWindowConfig();
-
-            sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::TimeWindowOperator>(inputPorts.front(), outputPorts.front(), config));
-            return ot;
-        }
-    );
-
-    builder.registerOperatorTransformation(
-        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::TYPE_ID,
-        [](const sierra::odyplan::v3::core::logical::operators::IOperator& op,
-            const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
-            const sierra::odyplan::v3::core::physical::port::Ports&) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
-            // NOLINTNEXTLINE
-            const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator&>(op);
-
-            sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-            ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::physical::PrintOperator>(inputPorts.front(),concrete.getPortFieldIndices(), concrete.getInputPorts().front(), concrete.getOptions()));
-            return ot;
-        }
-    );
+    sierra::odyplan::v3::basic::operators::loadBuiltinOperatorTransformations(builder);
 
     auto ctx = std::make_unique<llvm::LLVMContext>();
     sierra::odyplan::v3::core::physical::plan::Plan const physicalPlan = builder.build(logicalPlan, *ctx);

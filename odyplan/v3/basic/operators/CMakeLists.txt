@@ -27,6 +27,7 @@ target_link_libraries(${TARGET_NAME}
         odyplan::core::physical
         odyplan::core::runtime
         odyplan::core::shared
+        odyplan::core::builder
         odyplan::basic::io
         odyplan::basic::expression
         odyplan::basic::window
