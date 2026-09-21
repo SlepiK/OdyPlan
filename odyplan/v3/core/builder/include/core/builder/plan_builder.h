@@ -17,7 +17,7 @@ namespace sierra::odyplan::v3::core::builder {
 
         explicit PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry);
 
-        void registerOperatorTransformation(OperatorTypeId lId,
+        void registerOperatorTransformation(OperatorTypeId oprTypeId,
                                             transformation::OperatorTransformationFactory factory);
 
         [[nodiscard]] physical::plan::Plan build(const logical::plan::Plan& lPlan,
