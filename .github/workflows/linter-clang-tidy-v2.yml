@@ -69,7 +69,7 @@ jobs:
             -DENABLE_TOOLING=ON \
             -DENABLE_CLANG_TIDY=ON \
             -DCLANG_TIDY_EXE=clang-tidy-22 \
-            -CLANG_FORMAT_EXE=clang-format-22
+            -DCLANG_FORMAT_EXE=clang-format-22
 
       - name: Run clang-tidy
         run: cmake --build build --target tidy
