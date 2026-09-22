@@ -10,18 +10,5 @@ namespace sierra::odyplan::v3::core::runtime {
     bool odyStop() {
         return atStop.load(std::memory_order_relaxed);
     }
-
-    void ody_runtime_ext_init() {
-        const auto runtimeTypeRegistry = sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
-        ody_init(&runtimeTypeRegistry);
-    }
-
-    void ody_runtime_ext_main() {
-        ody_main();
-    }
-
-    void ody_runtime_ext_shutdown() {
-        ody_shutdown();
-    }
     }
 }  // namespace sierra::odyplan::v3::core::runtime
