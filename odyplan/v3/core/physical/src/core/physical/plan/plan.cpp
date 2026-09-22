@@ -86,7 +86,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                        &stateRegistry);
 
         for (const auto& [id, chain] : mSegments) {
-            if (const bool isSource = chain.nodes.front().asConsumer == nullptr) {
+            if (chain.nodes.front().asConsumer == nullptr) {
                 auto* fnType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), {}, false);
                 auto* fn = llvm::Function::Create(fnType,
                                                   llvm::Function::PrivateLinkage,
@@ -95,7 +95,13 @@ namespace sierra::odyplan::v3::core::physical::plan {
                 auto* entryBB = llvm::BasicBlock::Create(ctx, "basicEntry", fn);
                 segment::SegmentContext segmentContext(fn, entryBB, ctx, *mCodegenTypeRegistry);
 
-                chain.nodes.front().asProducer->produce(segmentContext,
+                auto* producer = chain.nodes.front().asProducer;
+
+                if (producer == nullptr) {
+                    throw std::logic_error("Segment " + std::to_string(id) + ": asProducer is null!");
+                }
+
+                producer->produce(segmentContext,
                                                         detailBuilder.afterEntry(id));
                 segmentContext.builder.CreateRetVoid();
                 functions.push_back(fn);
