@@ -31,6 +31,7 @@ target_link_libraries(${TARGET_NAME}
         odyplan::basic::io
         odyplan::basic::expression
         odyplan::basic::window
+        spdlog::spdlog
 )
 
 odyplan_llvm_include_dirs(${TARGET_NAME} PUBLIC)

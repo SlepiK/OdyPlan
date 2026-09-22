@@ -27,6 +27,7 @@ target_link_libraries(${TARGET_NAME}
         odyplan::core::physical
         odyplan::core::runtime
         odyplan::core::shared
+        spdlog::spdlog
 )
 
 odyplan_llvm_include_dirs(${TARGET_NAME} PUBLIC)
