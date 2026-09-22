@@ -5,6 +5,10 @@
 
 namespace sierra::odyplan::v3::core::runtime {
     extern "C" {
+        void* odyCreateRtTypeRegistryExt();
+
+        void odyDestroyRtTypeRegistryExt(types::RuntimeTypeRegistry* registry);
+
         void* rtTypeRegistryRetain(const void *registry, shared::types::ValueTypeId typeId, void *ptr);
 
         void rtTypeRegistryRelease(const void* registry, shared::types::ValueTypeId typeId, void* ptr);
