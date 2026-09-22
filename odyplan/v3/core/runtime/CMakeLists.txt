@@ -24,6 +24,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
 target_link_libraries(${TARGET_NAME}
         PUBLIC
         odyplan::core::shared
+        spdlog::spdlog
 )
 
 odyplan_llvm_include_dirs(${TARGET_NAME} PRIVATE)
