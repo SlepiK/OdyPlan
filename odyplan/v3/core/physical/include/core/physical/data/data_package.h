@@ -37,6 +37,31 @@ namespace sierra::odyplan::v3::core::physical::data {
     struct PunctuationPackage {
         llvm::Value* watermark = nullptr;
         llvm::Value* isFinal = nullptr;
+        llvm::Value* isHeartbeat = nullptr;
+
+        static PunctuationPackage create(llvm::IRBuilder<>& builder, llvm::Value* watermark, llvm::Value* isFinal) {
+            PunctuationPackage pkg;
+            pkg.watermark = watermark;
+            pkg.isFinal = isFinal;
+            pkg.isHeartbeat = llvm::ConstantInt::getFalse(builder.getContext());
+            return pkg;
+        }
+
+        static PunctuationPackage createFinal(llvm::IRBuilder<>& builder, llvm::Value* watermark) {
+            PunctuationPackage pkg;
+            pkg.watermark = watermark;
+            pkg.isFinal = llvm::ConstantInt::getTrue(builder.getContext());
+            pkg.isHeartbeat = llvm::ConstantInt::getFalse(builder.getContext());
+            return pkg;
+        }
+
+        static PunctuationPackage createHeartbeat(llvm::IRBuilder<>& builder, llvm::Value* watermark) {
+            PunctuationPackage pkg;
+            pkg.watermark = watermark;
+            pkg.isFinal = llvm::ConstantInt::getFalse(builder.getContext());
+            pkg.isHeartbeat = llvm::ConstantInt::getTrue(builder.getContext());
+            return pkg;
+        }
     };
 }  // namespace sierra::odyplan::v3::core::physical::data
 

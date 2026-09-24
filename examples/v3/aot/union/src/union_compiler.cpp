@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
         nlohmann::json{{"path", "read.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-            //.startTimestampPosition = "timestamp"
+            .startTimestampPosition = "timestamp"
         }
     ));
 
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
         nlohmann::json{{"path", "read.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-            //.startTimestampPosition = "timestamp"
+            .startTimestampPosition = "timestamp"
         }
     ));
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
     sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
-        .printPunctuation = true,
+        .printPunctuation = false,
     },
         sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV {0,1,2}
     ));

@@ -66,7 +66,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void beginRight();
 
-        auto pushLeft(std::size_t index, const void* data) -> void;
+        void pushLeft(std::size_t index, const void* data);
 
         void pushRight(std::size_t index, const void* data);
 

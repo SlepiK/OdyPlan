@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::transformation {/
 
         sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
         ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::union_::physical::UnionOperator>(
-            inputPorts.front(), outputPorts.front()
+            inputPorts.front(), outputPorts.front(), concrete.getOutputPorts().front(), concrete.getOutOfOrder()
             ));
         return ot;
     };

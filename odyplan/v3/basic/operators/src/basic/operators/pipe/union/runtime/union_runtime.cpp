@@ -2,9 +2,9 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     extern "C" {
-    void *rtUnionWatermarkCreate(void* /*runtimeTypeRegistry*/, const std::int64_t numInputs) {
+    void *rtUnionWatermarkCreate(void * /*runtimeTypeRegistry*/, const std::int64_t numInputs) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        auto* state = new details::UnionWatermarkState();
+        auto *state = new details::UnionWatermarkState();
         const auto cNumInputs = static_cast<std::size_t>(numInputs);
         state->perInputWatermark.assign(cNumInputs, 0);
         state->hasReported.assign(cNumInputs, false);
@@ -14,13 +14,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
 
     void rtUnionWatermarkDestroy(void *state) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        delete static_cast<details::UnionWatermarkState*>(state);
+        delete static_cast<details::UnionWatermarkState *>(state);
     }
 
-    std::uint8_t rtUnionUpdateWatermark(void *state, const std::int64_t inputIndex, const std::int64_t incomingWatermark,
-                                            const std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
-                                            std::uint8_t *outIsFinal) {
-        auto* wState = static_cast<details::UnionWatermarkState*>(state);
+    std::uint8_t rtUnionUpdateWatermark(void *state, const std::int64_t inputIndex,
+                                        const std::int64_t incomingWatermark,
+                                        const std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
+                                        std::uint8_t *outIsFinal) {
+        auto *wState = static_cast<details::UnionWatermarkState *>(state);
 
         while (wState->lock.test_and_set(std::memory_order_acquire)) {
         }
@@ -70,6 +71,121 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         wState->lock.clear(std::memory_order_release);
 
         return sEmit;
+    }
+
+
+    std::int64_t rtUnionGetGlobalWatermark(void *state) {
+        auto *wState = static_cast<details::UnionWatermarkState *>(state);
+
+        while (wState->lock.test_and_set(std::memory_order_acquire)) {
+        }
+
+        const std::int64_t watermark = wState->lastEmittedWatermark;
+
+        wState->lock.clear(std::memory_order_release);
+
+        return watermark;
+    }
+
+    void *rtUnionBufferCreate(const core::runtime::types::RuntimeTypeRegistry *registry, const std::uint8_t outOfOrder,
+                              const core::shared::types::ValueTypeId *typeIds,
+                              const std::uint64_t fieldSize) {
+        core::logical::port::Port schema;
+
+        for (std::uint64_t i = 0; i < fieldSize; ++i) {
+            schema.push_back(
+                core::logical::port::PortDescription{.valueTypeId = typeIds[i]});
+        }
+
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        return new UnionBuffer(outOfOrder != 0, std::move(schema), registry);
+    }
+
+    void rtUnionBufferDestroy(void *state) {
+        auto *buffer = static_cast<UnionBuffer *>(state);
+        buffer->clear();
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        delete buffer;
+    }
+
+    void rtUnionBufferBegin(void *state) {
+        static_cast<UnionBuffer *>(state)->begin();
+    }
+
+    void rtUnionBufferPush(void *state, const std::uint64_t index, const void *data) {
+        static_cast<UnionBuffer *>(state)->push(index, data);
+    }
+
+    void rtUnionBufferEnd(void *state, const std::uint64_t inputPort,
+                          const std::int64_t startTs, const std::int64_t endTs,
+                          const std::int64_t startTb, const std::int64_t endTb) {
+        static_cast<UnionBuffer *>(state)->end(inputPort, startTs, endTs, startTb, endTb);
+    }
+
+    std::uint64_t rtUnionBufferGetCount(void *state) {
+        return static_cast<UnionBuffer *>(state)->getCount();
+    }
+
+    std::uint8_t rtUnionBufferIsEmpty(void *state) {
+        return static_cast<UnionBuffer *>(state)->isEmpty() ? 1 : 0;
+    }
+
+    std::int64_t rtUnionBufferGetMinStartTimestamp(void *state) {
+        return static_cast<UnionBuffer *>(state)->getMinStartTimestamp();
+    }
+
+    const std::byte *rtUnionBufferGetData(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getData(index);
+    }
+
+    const std::byte *rtUnionBufferGetFieldPtr(void *state,
+                                              const std::uint64_t rowIndex, const std::uint64_t fieldIndex) {
+        return static_cast<UnionBuffer *>(state)->getFieldPtr(rowIndex, fieldIndex);
+    }
+
+    std::int64_t rtUnionBufferGetStartTimestamp(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getStartTimestamp(index);
+    }
+
+    std::int64_t rtUnionBufferGetEndTimestamp(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getEndTimestamp(index);
+    }
+
+    std::int64_t rtUnionBufferGetStartTibreaker(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getStartTibreaker(index);
+    }
+
+    std::int64_t rtUnionBufferGetEndTibreaker(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getEndTibreaker(index);
+    }
+
+    std::uint64_t rtUnionBufferGetInputPort(void *state, const std::uint64_t index) {
+        return static_cast<UnionBuffer *>(state)->getInputPort(index);
+    }
+
+    void rtUnionLock(void* state) {
+        static_cast<UnionBuffer *>(state)->lock();
+    }
+
+    void rtUnionUnlock(void* state) {
+        static_cast<UnionBuffer *>(state)->unlock();
+    }
+
+    void rtUnionBufferRemoveV(void *state, const std::uint64_t *indices, const std::uint64_t count) {
+        auto *buffer = static_cast<union_::runtime::UnionBuffer *>(state);
+
+        std::vector<std::size_t> indexVec(count);
+        for (std::uint64_t i = 0; i < count; ++i) {
+            indexVec[i] = static_cast<std::size_t>(indices[i]);
+        }
+
+        buffer->removeV(indexVec);
+    }
+
+    std::uint64_t rtUnionBufferGetMinStartTimestampIndex(void* state, const std::int64_t watermark) {
+        auto *buffer = static_cast<union_::runtime::UnionBuffer*>(state);
+        auto index = buffer->getMinStartTimestampIndex(static_cast<Timestamp>(watermark));
+        return index.has_value() ? index.value() : -1;
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime
