@@ -1,10 +1,18 @@
 #include <basic/operators/pipe/union/runtime/union_buffer.h>
 
+#include <algorithm>
+
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
-    UnionBuffer::UnionBuffer(const bool outOfOrder, core::logical::port::Port schema, const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry)
-        : mOutOfOrder(outOfOrder),
-        mRuntimeTypeRegistry(runtimeTypeRegistry),
-        mRowLayout(std::move(schema), *runtimeTypeRegistry), mActiveRowCount(0) {
+    UnionBuffer::UnionBuffer(bool outOfOrder,
+                             core::logical::port::Port schema,
+                             const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry)
+        : mOutOfOrder(outOfOrder)
+          , mRuntimeTypeRegistry(runtimeTypeRegistry)
+          , mLayout(std::move(schema), *runtimeTypeRegistry)
+          , mMaxSortedWatermark(0)
+          , mLastEmittedWatermark(0) {
+        mRowMetas.reserve(2048);
+        mRowIndex.reserve(2048);
     }
 
     UnionBuffer::~UnionBuffer() {
@@ -19,31 +27,44 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mMutex.unlock();
     }
 
+    void UnionBuffer::lockShared() {
+        mMutex.lock_shared();
+    }
+
+    void UnionBuffer::unlockShared() {
+        mMutex.unlock_shared();
+    }
+
     void UnionBuffer::begin() {
-        mRowLayout.begin();
+        mLayout.begin();
     }
 
-    void UnionBuffer::push(const std::uint64_t index, const void *data) {
-        mRowLayout.push(index, data);
+    void UnionBuffer::push(const std::uint64_t index, const void* data) {
+        mLayout.push(index, data);
     }
 
-    void UnionBuffer::end(const core::shared::identifiers::PortId inputPort, const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
-        mRows.push_back(
-                    RowBuffer{
-                        .values = mRowLayout.pop(),
-                        .inputPort = inputPort,
-                        .startTs = startTs,
-                        .endTs = endTs,
-                        .startTb = startTb,
-                        .endTb = endTb,
-                        .isRemoved = false,
-                        .rowIndex = mRows.size()
-                    });
-        mActiveRowCount++;
-
-        if (mOutOfOrder) {
-            mRowIndex.push(mRows.back());
+    void UnionBuffer::end(const core::shared::identifiers::PortId inputPort,
+                      const Timestamp startTs, const Timestamp endTs,
+                      const std::int64_t startTb, const std::int64_t endTb) {
+        if (!mOutOfOrder) {
+            return;
         }
+
+        const std::uint64_t rowIndex = mNextRowIndex++;
+        std::vector<std::byte> rowValues = mLayout.pop();
+
+        mRowMetas.push_back(RowMeta{
+            .values = std::move(rowValues),
+            .startTs = startTs,
+            .endTs = endTs,
+            .startTb = startTb,
+            .endTb = endTb,
+            .inputPort = inputPort,
+            .isRemoved = false
+        });
+
+        mRowIndex.push_back(rowIndex);
+        mActiveRowCount++;
     }
 
     std::uint64_t UnionBuffer::getCount() const {
@@ -56,149 +77,226 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     Timestamp UnionBuffer::getMinStartTimestamp() {
         if (mRowIndex.empty()) {
-            Timestamp min = 0;
-            bool found = false;
-            for (const auto& row : mRows) {
-                if (!row.isRemoved) {
-                    if (!found || row.startTs < min) {
-                        min = row.startTs;
-                        found = true;
-                    }
-                }
-            }
-            return found ? min : core::physical::time::INFINITY_SENTINEL;
+            return core::physical::time::INFINITY_SENTINEL;
         }
 
-        while (!mRowIndex.empty()) {
-            const auto& top = mRowIndex.top();
-            if (!top.isRemoved) {
-                return top.startTs;
+        sorted(core::physical::time::INFINITY_SENTINEL);
+
+        for (const std::uint64_t idx : mRowIndex) {
+            if (idx < mRowMetas.size() && !mRowMetas[idx].isRemoved) {
+                return mRowMetas[idx].startTs;
             }
-            mRowIndex.pop();
         }
 
         return core::physical::time::INFINITY_SENTINEL;
     }
 
-    const std::byte *UnionBuffer::getData(const std::uint64_t index) const {
-        if (index >= mRows.size() || mRows[index].isRemoved) {
+    const std::byte* UnionBuffer::getData(const std::uint64_t index) const {
+        if (index >= mRowMetas.size() || mRowMetas[index].isRemoved) {
             return nullptr;
         }
-        return mRows[index].values.data();
+        return mRowMetas[index].values.data();
+    }
+
+    const std::byte* UnionBuffer::getFieldPtr(const std::uint64_t rowIndex, const std::uint64_t fieldIndex) const {
+        if (rowIndex >= mRowMetas.size() || mRowMetas[rowIndex].isRemoved) {
+            return nullptr;
+        }
+
+        const std::size_t offset = mLayout.offsetOf(fieldIndex);
+        return mRowMetas[rowIndex].values.data() + offset;
+    }
+
+    Timestamp UnionBuffer::getStartTimestamp(const std::uint64_t index) const {
+        if (index >= mRowMetas.size()) {
+            return core::physical::time::INFINITY_SENTINEL;
+        }
+        return mRowMetas[index].startTs;
+    }
+
+    Timestamp UnionBuffer::getEndTimestamp(const std::uint64_t index) const {
+        if (index >= mRowMetas.size()) {
+            return core::physical::time::INFINITY_SENTINEL;
+        }
+        return mRowMetas[index].endTs;
+    }
+
+    std::int64_t UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
+        if (index >= mRowMetas.size()) {
+            return core::physical::time::INFINITY_SENTINEL;
+        }
+        return mRowMetas[index].startTb;
+    }
+
+    std::int64_t UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
+        if (index >= mRowMetas.size()) {
+            return core::physical::time::INFINITY_SENTINEL;
+        }
+        return mRowMetas[index].endTb;
+    }
+
+    core::shared::identifiers::PortId UnionBuffer::getInputPort(const std::uint64_t index) const {
+        if (index >= mRowMetas.size()) {
+            return 0;
+        }
+        return mRowMetas[index].inputPort;
+    }
+
+    void UnionBuffer::removeV(const void* indicesPtr, const std::int64_t count) {
+        const auto* indices = static_cast<const std::uint64_t*>(indicesPtr);
+        std::int64_t actuallyRemoved = 0;
+
+        for (std::int64_t i = 0; i < count; ++i) {
+            const std::uint64_t index = indices[i];
+
+            if (index < mRowMetas.size() && !mRowMetas[index].isRemoved) {
+                mLayout.releaseRow(mRowMetas[index].values);
+                mRowMetas[index].isRemoved = true;
+                actuallyRemoved++;
+            }
+        }
+
+        if (actuallyRemoved > 0 && mActiveRowCount >= static_cast<std::size_t>(actuallyRemoved)) {
+            mActiveRowCount -= actuallyRemoved;
+        }
+    }
+
+    void UnionBuffer::clear() {
+        for (auto& meta : mRowMetas) {
+            if (!meta.isRemoved) {
+                mLayout.releaseRow(meta.values);
+            }
+        }
+        mRowMetas.clear();
+        mRowMetas.shrink_to_fit();
+
+        mRowIndex.clear();
+        mRowIndex.shrink_to_fit();
+
+        mActiveRowCount = 0;
+        mNextRowIndex = 0;
+        mMaxSortedWatermark = 0;
+        mLastEmittedWatermark = 0;
+    }
+
+    std::uint64_t UnionBuffer::getFieldCount() const {
+        return mLayout.getFieldCount();
+    }
+
+    core::shared::types::ValueTypeId UnionBuffer::getFieldTypeId(const std::uint64_t index) const {
+        return mLayout.getFieldTypeId(index);
+    }
+
+    std::uint64_t UnionBuffer::getFieldOffset(const std::uint64_t index) const {
+        return mLayout.offsetOf(index);
+    }
+
+    std::uint64_t UnionBuffer::getRowByteSize() const {
+        return mLayout.getTotalByteSize();
     }
 
     std::optional<std::uint64_t> UnionBuffer::getMinStartTimestampIndex(const Timestamp watermark) {
-        if (mRows.empty()) {
+        if (mRowMetas.empty()) {
             return std::nullopt;
         }
 
-        while (!mRowIndex.empty()) {
-            const auto& top = mRowIndex.top();
+        sorted(watermark);
 
-            if (top.isRemoved) {
-                mRowIndex.pop();
+        for (std::uint64_t idx : mRowIndex) {
+            if (idx >= mRowMetas.size()) {
                 continue;
             }
 
-            if (top.rowIndex >= mRows.size() || mRows[top.rowIndex].isRemoved) {
-                mRowIndex.pop();
+            const auto& meta = mRowMetas[idx];
+
+            if (meta.isRemoved) {
                 continue;
             }
 
-            if (top.startTs > watermark) {
+            if (meta.startTs > watermark) {
                 return std::nullopt;
             }
 
-            return top.rowIndex;
+            return idx;
         }
 
         return std::nullopt;
     }
 
-    const std::byte *UnionBuffer::getFieldPtr(const std::uint64_t rowIndex, const std::uint64_t fieldIndex) const {
-        const std::byte* data = getData(rowIndex);
-        if (data == nullptr) {
-            return nullptr;
+    UnionBuffer::BatchResult UnionBuffer::getReadyIndices(const Timestamp watermark, const std::size_t maxCount) {
+        if (mActiveRowCount == 0) {
+            return BatchResult{.count = 0, .indices = mBatchBuffer.data()};
         }
 
-        const std::size_t offset = mRowLayout.offsetOf(fieldIndex);
-        return data + offset;
-    }
+        sorted(watermark);
 
-    Timestamp UnionBuffer::getStartTimestamp(const std::uint64_t index) const {
-        if (index >= mRows.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+        const auto max = std::min(maxCount, MAX_BATCH_SIZE);
+        std::size_t foundCount = 0;
+
+        for (const std::uint64_t idx : mRowIndex) {
+            if (foundCount >= max) {
+                break;
+            }
+
+            if (idx >= mRowMetas.size()) {
+                continue;
+            }
+
+            const auto& meta = mRowMetas[idx];
+
+            if (meta.isRemoved) {
+                continue;
+            }
+
+            if (meta.startTs > watermark) {
+                break;
+            }
+
+            mBatchBuffer[foundCount++] = idx;
         }
-        return mRows[index].startTs;
-    }
 
-    Timestamp UnionBuffer::getEndTimestamp(const std::uint64_t index) const {
-        if (index >= mRows.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+        if (foundCount > 0 && watermark > mLastEmittedWatermark) {
+            drainEmittedEntries(watermark);
         }
-        return mRows[index].endTs;
+
+        return BatchResult{
+            .count = foundCount,
+            .indices = mBatchBuffer.data()
+        };
     }
 
-    std::int64_t UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
-        if (index >= mRows.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
-        }
-        return mRows[index].startTb;
-    }
+    void UnionBuffer::drainEmittedEntries(Timestamp watermark) {
+        std::size_t writeIdx = 0;
 
-    std::int64_t UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
-        if (index >= mRows.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
-        }
-        return mRows[index].endTb;
-    }
+        for (std::size_t readIdx = 0; readIdx < mRowIndex.size(); ++readIdx) {
+            std::uint64_t idx = mRowIndex[readIdx];
+            if (idx >= mRowMetas.size()) {
+                continue;
+            }
 
-    core::shared::identifiers::PortId UnionBuffer::getInputPort(const std::uint64_t index) const {
-        if (index >= mRows.size()) {
-            return 0;
-        }
-        return mRows[index].inputPort;
-    }
-
-    void UnionBuffer::removeV(const std::vector<std::uint64_t> &indices) {
-        for (const auto index : indices) {
-            if (index < mRows.size() && !mRows[index].isRemoved) {
-                mRowLayout.releaseRow(mRows[index].values);
-                mRows[index].isRemoved = true;
-                if (mActiveRowCount > 0) {
-                    mActiveRowCount--;
-                }
+            if (const auto& meta = mRowMetas[idx]; !meta.isRemoved && meta.startTs > watermark) {
+                mRowIndex[writeIdx++] = idx;
             }
         }
+
+        mRowIndex.resize(writeIdx);
+
+        mLastEmittedWatermark = watermark;
     }
 
-    void UnionBuffer::clear() {
-        for (auto& row : mRows) {
-            if (!row.isRemoved) {
-                mRowLayout.releaseRow(row.values);
-            }
+    void UnionBuffer::sorted(Timestamp watermark) {
+        if (watermark <= mMaxSortedWatermark) {
+            return;
         }
-        mRows.clear();
-        mActiveRowCount = 0;
 
-        while (!mRowIndex.empty()) {
-            mRowIndex.pop();
-        }
-    }
+        std::sort(mRowIndex.begin(), mRowIndex.end(),
+        [this](std::uint64_t a, std::uint64_t b) {
+            const auto& metaA = mRowMetas[a];
+            const auto& metaB = mRowMetas[b];
 
-    std::uint64_t UnionBuffer::getFieldCount() const {
-        return mRowLayout.getFieldCount();
-    }
+            return compareRows(metaA.startTs, metaA.startTb, metaB.startTs, metaB.startTb);
+        });
 
-    core::shared::types::ValueTypeId UnionBuffer::getFieldTypeId(const std::uint64_t index) const {
-        return mRowLayout.getFieldTypeId(index);
-    }
-
-    std::uint64_t UnionBuffer::getFieldOffset(const std::uint64_t index) const {
-        return mRowLayout.offsetOf(index);
-    }
-
-    std::uint64_t UnionBuffer::getRowByteSize() const {
-        return mRowLayout.getTotalByteSize();
+        mMaxSortedWatermark = watermark;
     }
 }

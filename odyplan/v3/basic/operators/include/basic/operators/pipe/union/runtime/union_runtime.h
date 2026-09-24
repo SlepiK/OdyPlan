@@ -66,11 +66,24 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     void rtUnionBufferRemoveV(void* state, const std::uint64_t* indices, std::uint64_t count);
 
-    void rtUnionLock(void* state);
+    void rtUnionLock(void *state);
 
-    void rtUnionUnlock(void* state);
+    void rtUnionUnlock(void *state);
 
-    std::uint64_t rtUnionBufferGetMinStartTimestampIndex(void* state, std::int64_t watermark);
+    void rtUnionLockShared(void *state);
+
+    void rtUnionUnlockShared(void *state);
+
+    using BatchResult_T = struct {
+        std::uint64_t count;
+        std::uint64_t* indices;
+    };
+
+    BatchResult_T rtUnionBufferGetReadyIndices(void* state, std::int64_t watermark, std::uint64_t maxCount);
+
+    std::int64_t rtUnionBufferGetBatchCount(BatchResult_T result);
+
+    std::int64_t rtUnionBufferGetBatchElement(BatchResult_T result, std::uint64_t index);
     }
 }
 

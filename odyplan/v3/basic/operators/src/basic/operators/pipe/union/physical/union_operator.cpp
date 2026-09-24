@@ -84,20 +84,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
             {i64Ty},
             "rtUnionWatermarkDestroy");
 
-        auto* leftTypesGlobal = buildTypeIds(
-            module, context, mSchema, "union_types_" + std::to_string(getPId()));
+        if (mOutOfOrder) {
+            auto *leftTypesGlobal = buildTypeIds(
+                module, context, mSchema, "union_types_" + std::to_string(getPId()));
 
-        mUnionBufferState = stateRegistry.createHandle(
-            "union_buffer_" +std::to_string(getPId()),
-            "rtUnionBufferCreate",
-            {
-                llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 1 : 0),
-                leftTypesGlobal,
-                llvm::ConstantInt::get(i64Ty, mSchema.size())
-            },
-            {i8Ty, ptrTy, i64Ty},
-            "rtUnionBufferDestroy"
+            mUnionBufferState = stateRegistry.createHandle(
+                "union_buffer_" + std::to_string(getPId()),
+                "rtUnionBufferCreate",
+                {
+                    llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 1 : 0),
+                    leftTypesGlobal,
+                    llvm::ConstantInt::get(i64Ty, mSchema.size())
+                },
+                {i8Ty, ptrTy, i64Ty},
+                "rtUnionBufferDestroy"
             );
+        }
     }
 
     llvm::GlobalVariable *UnionOperator::buildTypeIds(llvm::Module &module,
@@ -231,50 +233,54 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         const auto lockFn = module->getOrInsertFunction("rtUnionLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(lockFn, {bufferStatePtr});
 
-        const auto watermarkFn = module->getOrInsertFunction("rtUnionGetGlobalWatermark",
-                                                             llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto watermarkFn = module->getOrInsertFunction("rtUnionGetGlobalWatermark",llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+
         llvm::Value *currentWatermark = segmentCtx.builder.CreateCall(watermarkFn, {watermarkStatePtr});
 
-        const auto getCountFn = module->getOrInsertFunction("rtUnionBufferGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        const auto getIndexFn = module->getOrInsertFunction("rtUnionBufferGetMinStartTimestampIndex", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        llvm::Type* batchResultTy = llvm::StructType::get(ctx, {i64Ty, ptrTy});
+        const auto getReadyFn = module->getOrInsertFunction("rtUnionBufferGetReadyIndices", llvm::FunctionType::get(batchResultTy, {ptrTy, i64Ty, i64Ty}, false));
+        llvm::Value* maxBatchSize = llvm::ConstantInt::get(i64Ty, 32);
 
-        auto* indicesSlot = segmentCtx.storage.getNamed(
-            "union_flush_indicesSlot." + std::to_string(getPId()), i64Ty);
+        auto* fetchBB = llvm::BasicBlock::Create(ctx, "union_fetch_batch", segmentCtx.builder.GetInsertBlock()->getParent());
+        auto* checkBB = llvm::BasicBlock::Create(ctx, "union_check_empty", segmentCtx.builder.GetInsertBlock()->getParent());
+        auto* loopHeaderBB = llvm::BasicBlock::Create(ctx, "union_batch_loop_header", segmentCtx.builder.GetInsertBlock()->getParent());
+        auto* loopBodyBB = llvm::BasicBlock::Create(ctx, "union_batch_loop_body", segmentCtx.builder.GetInsertBlock()->getParent());
+        auto* removeBB = llvm::BasicBlock::Create(ctx, "union_remove_batch", segmentCtx.builder.GetInsertBlock()->getParent());
+        auto* flushExitBB = llvm::BasicBlock::Create(ctx, "union_flush_exit", segmentCtx.builder.GetInsertBlock()->getParent());
 
-        auto* headerBB = llvm::BasicBlock::Create(ctx, "union_flush_header", segmentCtx.builder.GetInsertBlock()->getParent());
-        auto* checkBB = llvm::BasicBlock::Create(ctx, "union_flush_check", segmentCtx.builder.GetInsertBlock()->getParent());
-        auto* bodyBB = llvm::BasicBlock::Create(ctx, "union_flush_body", segmentCtx.builder.GetInsertBlock()->getParent());
-        auto* exitBB = llvm::BasicBlock::Create(ctx, "union_flush_exit", segmentCtx.builder.GetInsertBlock()->getParent());
+        segmentCtx.builder.CreateBr(fetchBB);
 
-        segmentCtx.builder.CreateBr(headerBB);
-        segmentCtx.builder.SetInsertPoint(headerBB);
-
-        llvm::Value* count = segmentCtx.builder.CreateCall(getCountFn, {bufferStatePtr});
-        llvm::Value* isEmpty = segmentCtx.builder.CreateICmpEQ(count, llvm::ConstantInt::get(i64Ty, 0));
-        segmentCtx.builder.CreateCondBr(isEmpty, exitBB, checkBB);
+        segmentCtx.builder.SetInsertPoint(fetchBB);
+        llvm::Value* batchResult = segmentCtx.builder.CreateCall(getReadyFn, {bufferStatePtr, currentWatermark, maxBatchSize});
+        llvm::Value* batchCount = segmentCtx.builder.CreateExtractValue(batchResult, {0});
+        llvm::Value* batchIndices = segmentCtx.builder.CreateExtractValue(batchResult, {1});
+        llvm::Value* isEmpty = segmentCtx.builder.CreateICmpEQ(batchCount, llvm::ConstantInt::get(i64Ty, 0));
+        segmentCtx.builder.CreateCondBr(isEmpty, flushExitBB, checkBB);
 
         segmentCtx.builder.SetInsertPoint(checkBB);
+        auto* loopIdx = segmentCtx.storage.getNamed("union_flush_loopIdx." + std::to_string(getPId()), i64Ty);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), loopIdx);
+        segmentCtx.builder.CreateBr(loopHeaderBB);
 
-        llvm::Value* minIndex = segmentCtx.builder.CreateCall(getIndexFn, {bufferStatePtr, currentWatermark});
-        llvm::Value* hasIndex = segmentCtx.builder.CreateICmpNE(minIndex, llvm::ConstantInt::get(i64Ty, -1));
+        segmentCtx.builder.SetInsertPoint(loopHeaderBB);
+        llvm::Value* currentIdx = segmentCtx.builder.CreateLoad(i64Ty, loopIdx);
+        llvm::Value* isLoopDone = segmentCtx.builder.CreateICmpSGE(currentIdx, batchCount);
+        segmentCtx.builder.CreateCondBr(isLoopDone, removeBB, loopBodyBB);
 
-        segmentCtx.builder.CreateCondBr(hasIndex, bodyBB, exitBB);
+        segmentCtx.builder.SetInsertPoint(loopBodyBB);
+        const auto getElementFn = module->getOrInsertFunction("rtUnionBufferGetBatchElement", llvm::FunctionType::get(i64Ty, {batchResultTy, i64Ty}, false));
+        llvm::Value* flushIndex = segmentCtx.builder.CreateCall(getElementFn, {batchResult, currentIdx});
+        emitBufferedEntry(segmentCtx, consumers, flushIndex);
+        llvm::Value* nextIdx = segmentCtx.builder.CreateAdd(currentIdx, llvm::ConstantInt::get(i64Ty, 1));
+        segmentCtx.builder.CreateStore(nextIdx, loopIdx);
+        segmentCtx.builder.CreateBr(loopHeaderBB);
 
-        segmentCtx.builder.SetInsertPoint(bodyBB);
-
-        emitBufferedEntry(segmentCtx, consumers, minIndex);
-
-        segmentCtx.builder.CreateStore(minIndex, indicesSlot);
-
+        segmentCtx.builder.SetInsertPoint(removeBB);
         const auto removeFn = module->getOrInsertFunction("rtUnionBufferRemoveV", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, i64Ty}, false));
+        segmentCtx.builder.CreateCall(removeFn, {bufferStatePtr, batchIndices, batchCount});
+        segmentCtx.builder.CreateBr(fetchBB);
 
-        llvm::Value* countVal = llvm::ConstantInt::get(i64Ty, 1);
-        segmentCtx.builder.CreateCall(removeFn, {bufferStatePtr, indicesSlot, countVal});
-
-        segmentCtx.builder.CreateBr(headerBB);
-
-        segmentCtx.builder.SetInsertPoint(exitBB);
-
+        segmentCtx.builder.SetInsertPoint(flushExitBB);
         const auto unlockFn = module->getOrInsertFunction("rtUnionUnlock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(unlockFn, {bufferStatePtr});
     }
