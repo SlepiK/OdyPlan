@@ -92,7 +92,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
                 "union_buffer_" + std::to_string(getPId()),
                 "rtUnionBufferCreate",
                 {
-                    llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 1 : 0),
+                    llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 0 : 1),
                     leftTypesGlobal,
                     llvm::ConstantInt::get(i64Ty, mSchema.size())
                 },
