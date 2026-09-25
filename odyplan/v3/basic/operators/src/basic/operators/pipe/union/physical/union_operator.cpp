@@ -134,7 +134,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         auto *emitBB = llvm::BasicBlock::Create(ctx, "union_emit_watermark", wFn);
         auto *mergeBB = llvm::BasicBlock::Create(ctx, "union_watermark_merge", wFn);
-        auto *mergeSuppressBB = llvm::BasicBlock::Create(ctx, "heartbeat_merge", wFn);
+        auto *afterMergeBB = llvm::BasicBlock::Create(ctx, "union_watermark_after_merge", wFn);
+        auto *returnBB = llvm::BasicBlock::Create(ctx, "union_return", wFn);
 
         if (mOutOfOrder) {
             auto* checkHeartbeatBB = llvm::BasicBlock::Create(ctx, "check_heartbeat", wFn);
@@ -162,17 +163,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
             segmentCtx.builder.SetInsertPoint(suppressBB);
 
-            segmentCtx.builder.CreateBr(mergeSuppressBB);
+            segmentCtx.builder.CreateBr(returnBB);
 
             segmentCtx.builder.SetInsertPoint(continueBB);
 
-            segmentCtx.builder.CreateBr(mergeSuppressBB);
+            segmentCtx.builder.CreateBr(mergeBB);
 
-            segmentCtx.builder.SetInsertPoint(mergeSuppressBB);
+            segmentCtx.builder.SetInsertPoint(mergeBB);
         } else {
-            segmentCtx.builder.CreateBr(mergeSuppressBB);
+            segmentCtx.builder.CreateBr(mergeBB);
 
-            segmentCtx.builder.SetInsertPoint(mergeSuppressBB);
+            segmentCtx.builder.SetInsertPoint(mergeBB);
         }
 
         llvm::Value *isFinal = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
@@ -197,7 +198,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         llvm::Value *condition = segmentCtx.builder.CreateICmpNE(
             sEmit, llvm::ConstantInt::get(i8Ty, 0));
 
-        segmentCtx.builder.CreateCondBr(condition, emitBB, mergeBB);
+        segmentCtx.builder.CreateCondBr(condition, emitBB, afterMergeBB);
 
         segmentCtx.builder.SetInsertPoint(emitBB);
         llvm::Value *newOpGlobWatermark = segmentCtx.builder.CreateLoad(i64Ty, outWatermarkSlot);
@@ -209,13 +210,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         consumers.front().consumePunctuation(segmentCtx, outgoingPunctuation);
 
-        segmentCtx.builder.CreateBr(mergeBB);
+        segmentCtx.builder.CreateBr(afterMergeBB);
 
-        segmentCtx.builder.SetInsertPoint(mergeBB);
+        segmentCtx.builder.SetInsertPoint(afterMergeBB);
 
         if (mOutOfOrder) {
             flushBuffer(segmentCtx, consumers);
         }
+
+        segmentCtx.builder.CreateBr(returnBB);
+
+        segmentCtx.builder.SetInsertPoint(returnBB);
     }
 
     void UnionOperator::flushBuffer(core::physical::segment::SegmentContext &segmentCtx, const core::physical::segment::SegmentDataConsumers &consumers) {
