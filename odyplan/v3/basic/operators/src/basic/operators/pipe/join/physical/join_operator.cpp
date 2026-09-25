@@ -73,7 +73,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             onLeft ? "rtJoinPushLeft" : "rtJoinPushRight",
             llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
         for (std::size_t i = 0; i < schema.size(); ++i) {
-            auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
+            auto *slot = segmentCtx.storage.getNamed("join_slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
             segmentCtx.builder.CreateStore(tuple.at(i), slot);
             segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
         }

@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::core::shared::types {
     enum class BuiltinOperatorType : OperatorTypeId {
         PROJECT = 10,
         SELECT = 11,
-        MERGE = 12,
+        UNION = 12,
         JOIN = 13,
         PRINT = 20,
         READ = 21,

@@ -6,8 +6,8 @@ add_subdirectory(write_json)
 add_subdirectory(count_window)
 add_subdirectory(time_window)
 add_subdirectory(write_ndjson)
-add_subdirectory(merge)
-add_subdirectory(merge_measure)
+add_subdirectory(union)
+add_subdirectory(union_measure)
 add_subdirectory(join)
 
 add_custom_target(odyplan_example_jit_all)
@@ -20,7 +20,7 @@ add_dependencies(odyplan_example_jit_all
         odyplan_example_jit_count_window
         odyplan_example_jit_time_window
         odyplan_example_jit_write_ndjson
-        odyplan_example_jit_merge
-        odyplan_example_jit_merge_measure
+        odyplan_example_jit_union
+        odyplan_example_jit_union_measure
         odyplan_example_jit_join
 )

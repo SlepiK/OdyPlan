@@ -30,10 +30,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
 
         segmentCtx.builder.SetInsertPoint(watermarkBB);
 
-        const core::physical::data::PunctuationPackage watermark {
-            .watermark = tuple.timeInterval.getStart().getPoint(),
-            .isFinal = llvm::ConstantInt::getBool(ctx,false),
-        };
+        const auto watermark = core::physical::data::PunctuationPackage::createHeartbeat(segmentCtx.builder, tuple.timeInterval.getStart().getPoint());
 
         consumers.front().consumePunctuation(segmentCtx, watermark);
         segmentCtx.builder.CreateBr(mergeBB);
