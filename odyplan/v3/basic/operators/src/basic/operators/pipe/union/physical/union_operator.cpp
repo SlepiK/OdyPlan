@@ -24,7 +24,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             const auto lockFn = module->getOrInsertFunction("rtUnionLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
             segmentCtx.builder.CreateCall(lockFn, {bufferStatePtr});
 
@@ -84,7 +84,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
             {i64Ty},
             "rtUnionWatermarkDestroy");
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             auto *leftTypesGlobal = buildTypeIds(
                 module, context, mSchema, "union_types_" + std::to_string(getPId()));
 
@@ -137,7 +137,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto *afterMergeBB = llvm::BasicBlock::Create(ctx, "union_watermark_after_merge", wFn);
         auto *returnBB = llvm::BasicBlock::Create(ctx, "union_return", wFn);
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             auto* checkHeartbeatBB = llvm::BasicBlock::Create(ctx, "check_heartbeat", wFn);
             auto* checkBehindBB = llvm::BasicBlock::Create(ctx, "check_behind", wFn);
             auto* suppressBB = llvm::BasicBlock::Create(ctx, "heartbeat_suppress", wFn);
@@ -214,7 +214,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         segmentCtx.builder.SetInsertPoint(afterMergeBB);
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             flushBuffer(segmentCtx, consumers);
         }
 
