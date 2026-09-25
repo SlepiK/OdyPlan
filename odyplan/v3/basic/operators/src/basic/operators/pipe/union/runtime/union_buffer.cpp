@@ -10,7 +10,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         : mOutOfOrder(outOfOrder)
           , mRuntimeTypeRegistry(runtimeTypeRegistry)
           , mLayout(std::move(schema), *runtimeTypeRegistry)
-          , mMaxSortedWatermark(0)
           , mLastEmittedWatermark(0)
           , mRemovedCount(0) {
         mRowMetas.reserve(2048);
@@ -87,8 +86,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         if (mRowIndex.empty()) {
             return core::physical::time::INFINITY_SENTINEL;
         }
-
-        sorted(core::physical::time::INFINITY_SENTINEL);
 
         for (const std::uint64_t idx : mRowIndex) {
             if (idx < mRowMetas.size() && !mRowMetas[idx].isRemoved) {
@@ -197,7 +194,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mRowIndex.shrink_to_fit();
 
         mActiveRowCount = 0;
-        mMaxSortedWatermark = 0;
         mLastEmittedWatermark = 0;
         mRemovedCount = 0;
     }
@@ -222,8 +218,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         if (mRowMetas.empty()) {
             return std::nullopt;
         }
-
-        sorted(watermark);
 
         for (std::uint64_t idx : mRowIndex) {
             if (idx >= mRowMetas.size()) {
@@ -250,8 +244,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         if (mActiveRowCount == 0) {
             return BatchResult{.count = 0, .indices = mBatchBuffer.data()};
         }
-
-        sorted(watermark);
 
         const auto max = std::min(maxCount, MAX_BATCH_SIZE);
         std::size_t foundCount = 0;
@@ -306,27 +298,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mLastEmittedWatermark = watermark;
     }
 
-    void UnionBuffer::sorted(const Timestamp watermark) {
-        if (watermark <= mMaxSortedWatermark) {
-            return;
-        }
-
-        if (mRowIndex.empty()) {
-            mMaxSortedWatermark = watermark;
-            return;
-        }
-
-        std::sort(mRowIndex.begin(), mRowIndex.end(),
-        [this](std::uint64_t a, std::uint64_t b) {
-            const auto& metaA = mRowMetas[a];
-            const auto& metaB = mRowMetas[b];
-
-            return compareRows(metaA.startTs, metaA.startTb, metaB.startTs, metaB.startTb);
-        });
-
-        mMaxSortedWatermark = watermark;
-    }
-
     void UnionBuffer::compactIfNeeded() {
         if (mRemovedCount == 0) {
             return;
@@ -372,6 +343,5 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mRowIndex = std::move(newIndex);
 
         mRemovedCount = 0;
-        //mMaxSortedWatermark = 0;
     }
 }
