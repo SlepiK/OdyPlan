@@ -27,9 +27,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                core::physical::port::Port outputPort,
                                const logical::details::JoinConfig config,
                                core::logical::port::Ports schemas,
-                               std::unique_ptr<basic::expression::physical::IExpression> predicate)
+                               std::unique_ptr<basic::expression::physical::IExpression> predicate,
+                               const bool outOfOrder)
         : TypedPipeOperator(std::move(inputPorts),
-                            core::physical::port::Ports{std::move(outputPort)}),
+                            core::physical::port::Ports{std::move(outputPort)}), mOutOfOrder(outOfOrder),
           mConfig(config),
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),

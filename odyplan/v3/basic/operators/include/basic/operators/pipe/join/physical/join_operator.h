@@ -15,7 +15,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                      core::physical::port::Port outputPort,
                      logical::details::JoinConfig config,
                      core::logical::port::Ports schemas,
-                     std::unique_ptr<basic::expression::physical::IExpression> predicate);
+                     std::unique_ptr<basic::expression::physical::IExpression> predicate,
+                     bool outOfOrder);
 
         void consume(core::physical::segment::SegmentContext& segmentCtx,
                      core::shared::identifiers::PortId inputPort,
@@ -32,6 +33,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                 const core::physical::segment::SegmentDataConsumers &consumers) override;
 
     private:
+        bool mOutOfOrder;
         logical::details::JoinConfig mConfig;
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
