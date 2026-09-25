@@ -311,9 +311,11 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::union_::runtime::rtUnionBufferGetEndTibreaker),
             llvm::JITSymbolFlags::Exported);
 
-
-        symbolMap[jit->mangleAndIntern("rtUnionBufferGetMinStartTimestampIndex")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::union_::runtime::rtUnionBufferGetMinStartTimestampIndex),
+        symbolMap[jit->mangleAndIntern("rtUnionBufferGetBatchElement")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::union_::runtime::rtUnionBufferGetBatchElement),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtUnionBufferGetReadyIndices")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::union_::runtime::rtUnionBufferGetReadyIndices),
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtUnionBufferCreate")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::union_::runtime::rtUnionBufferCreate),

@@ -129,7 +129,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto *ptrTy = llvm::PointerType::getUnqual(ctx);
 
         llvm::Value *watermarkStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
-        llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
 
         auto* wFn = segmentCtx.builder.GetInsertBlock()->getParent();
 
