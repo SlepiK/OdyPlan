@@ -1,8 +1,8 @@
 add_subdirectory(count_window)
 add_subdirectory(full)
 add_subdirectory(join)
-add_subdirectory(merge)
-add_subdirectory(merge_measure)
+add_subdirectory(union)
+add_subdirectory(union_measure)
 add_subdirectory(project)
 add_subdirectory(read_ndjson)
 add_subdirectory(select)
@@ -16,8 +16,8 @@ add_dependencies(odyplan_example_aot_all
         odyplan_example_aot_count_window
         odyplan_example_aot_full
         odyplan_example_aot_join
-        odyplan_example_aot_merge
-        odyplan_example_aot_merge_measure
+        odyplan_example_aot_union
+        odyplan_example_aot_union_measure
         odyplan_example_aot_project
         odyplan_example_aot_select
         odyplan_example_aot_time_window

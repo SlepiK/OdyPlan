@@ -127,10 +127,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         segmentCtx.builder.SetInsertPoint(advanceBB);
         segmentCtx.builder.CreateStore(candidateWatermark, mWatermarkState);
 
-        const core::physical::data::PunctuationPackage punctuation{
-            .watermark = candidateWatermark,
-            .isFinal = llvm::ConstantInt::getFalse(ctx)
-        };
+        const auto punctuation = core::physical::data::PunctuationPackage::create(segmentCtx.builder, candidateWatermark, llvm::ConstantInt::getFalse(ctx));
 
         consumers.front().consumePunctuation(segmentCtx, punctuation);
 
@@ -141,10 +138,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         segmentCtx.builder.SetInsertPoint(exitBB);
 
         llvm::Value* finalWatermark = llvm::ConstantInt::get(idTy, std::numeric_limits<std::int64_t>::max());
-        const core::physical::data::PunctuationPackage finalPunctuation{
-            .watermark = finalWatermark,
-            .isFinal = llvm::ConstantInt::getTrue(ctx)
-        };
+        const auto finalPunctuation = core::physical::data::PunctuationPackage::createFinal(segmentCtx.builder, finalWatermark);
+
         consumers.front().consumePunctuation(segmentCtx, finalPunctuation);
     }
 
