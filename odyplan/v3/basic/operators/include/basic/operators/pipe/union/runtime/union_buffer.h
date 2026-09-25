@@ -107,12 +107,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         Timestamp mMaxSortedWatermark = 0;
         Timestamp mLastEmittedWatermark = 0;
 
-        std::uint64_t mNextRowIndex = 0;
         std::size_t mActiveRowCount = 0;
+        std::uint64_t mRemovedCount = 0;
         std::array<std::uint64_t, MAX_BATCH_SIZE> mBatchBuffer;
 
         void drainEmittedEntries(Timestamp watermark);
         void sorted(Timestamp watermark);
+        void compactIfNeeded();
+        void compact();
 
         static inline bool compareRows(const Timestamp tsA, const std::int64_t tbA, const Timestamp tsB, const std::int64_t tbB) {
             if (tsA != tsB) {

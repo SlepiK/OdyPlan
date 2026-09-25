@@ -1,6 +1,7 @@
 #include <basic/operators/pipe/union/runtime/union_buffer.h>
 
 #include <algorithm>
+#include <iostream>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
     UnionBuffer::UnionBuffer(bool outOfOrder,
@@ -10,7 +11,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
           , mRuntimeTypeRegistry(runtimeTypeRegistry)
           , mLayout(std::move(schema), *runtimeTypeRegistry)
           , mMaxSortedWatermark(0)
-          , mLastEmittedWatermark(0) {
+          , mLastEmittedWatermark(0)
+          , mRemovedCount(0) {
         mRowMetas.reserve(2048);
         mRowIndex.reserve(2048);
     }
@@ -24,6 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     }
 
     void UnionBuffer::unlock() {
+        compactIfNeeded();
         mMutex.unlock();
     }
 
@@ -50,7 +53,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             return;
         }
 
-        const std::uint64_t rowIndex = mNextRowIndex++;
+        const std::uint64_t rowIndex = mRowMetas.size();
         std::vector<std::byte> rowValues = mLayout.pop();
 
         mRowMetas.push_back(RowMeta{
@@ -63,7 +66,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             .isRemoved = false
         });
 
-        mRowIndex.push_back(rowIndex);
+        auto it = std::lower_bound(mRowIndex.begin(), mRowIndex.end(), std::make_pair(startTs, startTb),
+                                   [this](const std::uint64_t idx, const std::pair<Timestamp, int64_t>& val) {
+                                       return compareRows(mRowMetas[idx].startTs, mRowMetas[idx].startTb, val.first, val.second);
+                                   });
+        mRowIndex.insert(it, rowIndex);
+
         mActiveRowCount++;
     }
 
@@ -153,12 +161,27 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
                 mLayout.releaseRow(mRowMetas[index].values);
                 mRowMetas[index].isRemoved = true;
                 actuallyRemoved++;
+                mRemovedCount++;
             }
         }
 
         if (actuallyRemoved > 0 && mActiveRowCount >= static_cast<std::size_t>(actuallyRemoved)) {
             mActiveRowCount -= actuallyRemoved;
         }
+
+        std::vector<std::uint64_t> newRowIndex;
+        newRowIndex.reserve(mRowIndex.size());
+        for (std::uint64_t idx : mRowIndex) {
+            if (idx >= mRowMetas.size()) {
+                continue;
+            }
+
+            if (mRowMetas[idx].isRemoved) {
+                continue;
+            }
+            newRowIndex.push_back(idx);
+        }
+        mRowIndex = std::move(newRowIndex);
     }
 
     void UnionBuffer::clear() {
@@ -174,9 +197,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mRowIndex.shrink_to_fit();
 
         mActiveRowCount = 0;
-        mNextRowIndex = 0;
         mMaxSortedWatermark = 0;
         mLastEmittedWatermark = 0;
+        mRemovedCount = 0;
     }
 
     std::uint64_t UnionBuffer::getFieldCount() const {
@@ -255,17 +278,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             mBatchBuffer[foundCount++] = idx;
         }
 
-        if (foundCount > 0 && watermark > mLastEmittedWatermark) {
-            drainEmittedEntries(watermark);
-        }
-
         return BatchResult{
             .count = foundCount,
             .indices = mBatchBuffer.data()
         };
     }
 
-    void UnionBuffer::drainEmittedEntries(Timestamp watermark) {
+    void UnionBuffer::drainEmittedEntries(const Timestamp watermark) {
+        if (watermark <= mLastEmittedWatermark) {
+            return;
+        }
+
         std::size_t writeIdx = 0;
 
         for (std::size_t readIdx = 0; readIdx < mRowIndex.size(); ++readIdx) {
@@ -280,12 +303,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         }
 
         mRowIndex.resize(writeIdx);
-
         mLastEmittedWatermark = watermark;
     }
 
-    void UnionBuffer::sorted(Timestamp watermark) {
+    void UnionBuffer::sorted(const Timestamp watermark) {
         if (watermark <= mMaxSortedWatermark) {
+            return;
+        }
+
+        if (mRowIndex.empty()) {
+            mMaxSortedWatermark = watermark;
             return;
         }
 
@@ -298,5 +325,53 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         });
 
         mMaxSortedWatermark = watermark;
+    }
+
+    void UnionBuffer::compactIfNeeded() {
+        if (mRemovedCount == 0) {
+            return;
+        }
+
+        if (mRowMetas.size() < 10000) {
+            return;
+        }
+
+        double ratio = static_cast<double>(mRemovedCount) / mRowMetas.size();
+        if (ratio >= 0.50) {
+            compact();
+        }
+    }
+
+    void UnionBuffer::compact() {
+        if (mRemovedCount == 0) {
+            return;
+        }
+
+        std::vector<RowMeta> newMetas;
+        std::vector<std::uint64_t> newIndex;
+
+        const std::size_t estimated = mRowMetas.size() - mRemovedCount;
+        newMetas.reserve(estimated);
+        newIndex.reserve(mRowIndex.size());
+
+        for (std::uint64_t idx : mRowIndex) {
+            if (idx >= mRowMetas.size()) {
+                continue;
+            }
+
+            if (mRowMetas[idx].isRemoved) {
+                continue;
+            }
+
+            const std::size_t newIdx = newMetas.size();
+            newMetas.push_back(std::move(mRowMetas[idx]));
+            newIndex.push_back(newIdx);
+        }
+
+        mRowMetas = std::move(newMetas);
+        mRowIndex = std::move(newIndex);
+
+        mRemovedCount = 0;
+        //mMaxSortedWatermark = 0;
     }
 }
