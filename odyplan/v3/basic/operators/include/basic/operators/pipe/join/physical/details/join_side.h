@@ -13,7 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     class JoinSide {
     public:
         JoinSide(core::logical::port::Port schema,
-                 const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry);
+                 const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry, bool outOfOrder);
 
         void begin();
 
@@ -80,6 +80,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void setPending(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
+        [[nodiscard]] const core::logical::port::Port& getSchema() const;
+
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
@@ -87,6 +89,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
             std::int64_t startTb = 0;
             std::int64_t endTb = 0;
+            bool isRemoved = false;
         };
 
         struct KeyFieldDetails {
@@ -100,6 +103,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::int64_t mPendingStartTb;
         std::int64_t mPendingEndTb;
 
+        bool mOutOfOrder;
+        std::size_t mRemovedCount = 0;
+        Timestamp mMinEndTs = 0;
+
         window::WindowRowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;
         // Hash-Behavior for == predicate only
@@ -112,6 +119,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::uint64_t mLastAbsoluteIndex = 0;
 
         std::vector<std::uint64_t> computeRowKeyV(const std::byte* row) const;
+
+        void compactIfNeeded();
+        void compact();
+        void removeFromKeyIndex(const RowBuffer& row, std::size_t pos);
+        void rebuildKeyIndex();
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 

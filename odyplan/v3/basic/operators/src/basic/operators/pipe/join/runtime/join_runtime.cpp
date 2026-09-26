@@ -18,35 +18,46 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     extern "C" {
     // NOLINTNEXTLINE(readability-function-size)
-    void* rtJoinCreate(const void* typeRegistryRawPtr,
-                       const core::shared::types::ValueTypeId* leftTypeIds,
+    void *rtJoinCreate(const void *typeRegistryRawPtr,
+                       const core::shared::types::ValueTypeId *leftTypeIds,
                        const std::uint64_t leftFieldSize,
-                       const core::shared::types::ValueTypeId* rightTypeIds,
+                       const core::shared::types::ValueTypeId *rightTypeIds,
                        const std::uint64_t rightFieldSize,
                        const std::uint8_t hasEquiKey,
-                       const std::uint64_t* leftKeyFieldIndices,
-                       const std::uint64_t* rightKeyFieldIndices,
-                       const core::shared::types::ValueTypeId* keyTypeIds,
-                       const std::uint64_t equiKeyCnt) {
-        const auto* runtimeTypeRegistry =
-            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRawPtr);
+                       const std::uint64_t *leftKeyFieldIndices,
+                       const std::uint64_t *rightKeyFieldIndices,
+                       const core::shared::types::ValueTypeId *keyTypeIds,
+                       const std::uint64_t equiKeyCnt,
+                       const uint8_t outOfOrder) {
+        const auto *runtimeTypeRegistry =
+                static_cast<const core::runtime::types::RuntimeTypeRegistry *>(typeRegistryRawPtr);
 
         core::logical::port::Port leftSchema;
         core::logical::port::Port rightSchema;
+        core::logical::port::Port outputSchema;
 
         for (std::uint64_t i = 0; i < leftFieldSize; ++i) {
             leftSchema.push_back(
-                core::logical::port::PortDescription{.valueTypeId = leftTypeIds[i]});
+                core::logical::port::PortDescription{.valueTypeId = leftTypeIds[i]}
+            );
+            outputSchema.push_back(
+                core::logical::port::PortDescription{.valueTypeId = leftTypeIds[i]}
+            );
         }
 
         for (std::uint64_t i = 0; i < rightFieldSize; ++i) {
             rightSchema.push_back(
-                core::logical::port::PortDescription{.valueTypeId = rightTypeIds[i]});
+                core::logical::port::PortDescription{.valueTypeId = rightTypeIds[i]}
+            );
+            outputSchema.push_back(
+                core::logical::port::PortDescription{.valueTypeId = rightTypeIds[i]}
+            );
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        auto* buffer =
-            new physical::details::JoinBuffer(std::move(leftSchema), std::move(rightSchema), runtimeTypeRegistry);
+        auto *buffer =
+                new physical::details::JoinBuffer(std::move(leftSchema), std::move(rightSchema),
+                                                  std::move(outputSchema), runtimeTypeRegistry, outOfOrder != 0);
 
         if (hasEquiKey != 0) {
             std::vector<std::size_t> leftIndices;
@@ -69,99 +80,103 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return buffer;
     }
 
-    void rtJoinDestroy(void* state) {
-        auto* buffer = static_cast<physical::details::JoinBuffer*>(state);
+    void rtJoinDestroy(void *state) {
+        auto *buffer = static_cast<physical::details::JoinBuffer *>(state);
 
         buffer->close();
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         delete buffer;
     }
 
-    void rtJoinLock(void* state) {
-        static_cast<physical::details::JoinBuffer*>(state)->lock();
+    void rtJoinLock(void *state) {
+        static_cast<physical::details::JoinBuffer *>(state)->lock();
     }
 
-    void rtJoinUnlock(void* state) {
-        static_cast<physical::details::JoinBuffer*>(state)->unlock();
+    void rtJoinUnlock(void *state) {
+        static_cast<physical::details::JoinBuffer *>(state)->unlock();
     }
 
-    void rtJoinBeginLeft(void* state) {
-        static_cast<physical::details::JoinBuffer*>(state)->beginLeft();
+    void rtJoinBeginLeft(void *state) {
+        static_cast<physical::details::JoinBuffer *>(state)->beginLeft();
     }
 
-    void rtJoinBeginRight(void* state) {
-        static_cast<physical::details::JoinBuffer*>(state)->beginRight();
+    void rtJoinBeginRight(void *state) {
+        static_cast<physical::details::JoinBuffer *>(state)->beginRight();
     }
 
-    void rtJoinPushLeft(void* state, const std::uint64_t index, const void* data) {
-        static_cast<physical::details::JoinBuffer*>(state)->pushLeft(index, data);
+    void rtJoinPushLeft(void *state, const std::uint64_t index, const void *data) {
+        static_cast<physical::details::JoinBuffer *>(state)->pushLeft(index, data);
     }
 
-    void rtJoinPushRight(void* state, const std::uint64_t index, const void* data) {
-        static_cast<physical::details::JoinBuffer*>(state)->pushRight(index, data);
+    void rtJoinPushRight(void *state, const std::uint64_t index, const void *data) {
+        static_cast<physical::details::JoinBuffer *>(state)->pushRight(index, data);
     }
 
-    void rtJoinEndLeft(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
-        static_cast<physical::details::JoinBuffer*>(state)->endLeft(startTs, endTs, startTb, endTb);
+    void rtJoinEndLeft(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
+                       const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer *>(state)->endLeft(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinEndRight(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
-        static_cast<physical::details::JoinBuffer*>(state)->endRight(startTs, endTs, startTb, endTb);
+    void rtJoinEndRight(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
+                        const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer *>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
     void *rtJoinSnapshotForCompute(void *state, const uint8_t callFromLeft, const uint8_t extract) {
-        return static_cast<physical::details::JoinBuffer*>(state)->snapshotForCompute(callFromLeft != 0, extract != 0);
+        return static_cast<physical::details::JoinBuffer *>(state)->snapshotForCompute(callFromLeft != 0, extract != 0);
     }
 
     const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::uint64_t fieldIndex) {
-        const auto* s = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        const auto *s = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         return s->ownFieldPtr(static_cast<std::size_t>(fieldIndex));
     }
 
-    const void *rtJoinSnapshotGetCandidatePtr(void *snapshot, const std::uint64_t index, const std::uint64_t fieldIndex) {
-        auto* s = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    const void *rtJoinSnapshotGetCandidatePtr(void *snapshot, const std::uint64_t index,
+                                              const std::uint64_t fieldIndex) {
+        auto *s = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         return s->candidateFieldPtr(static_cast<std::size_t>(index), static_cast<std::size_t>(fieldIndex));
     }
 
     std::int64_t rtJoinSnapshotGetCandidateStartTimestamp(void *snapshot, const std::uint64_t index) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateStarts.at(index);
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateStarts.at(index);
     }
 
     std::int64_t rtJoinSnapshotGetCandidateEndTimestamp(void *snapshot, const std::uint64_t index) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateEnds.at(index);
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateEnds.at(index);
     }
 
     std::int64_t rtJoinSnapshotGetOwnStartTimestamp(void *snapshot) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->startTs;
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->startTs;
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void* snapshot, const std::uint64_t index) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateStartsTb.at(index);
+    std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void *snapshot, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateStartsTb.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void* snapshot, const std::uint64_t index) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->candidateEndsTb.at(index);
+    std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void *snapshot, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateEndsTb.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void* snapshot) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->startTb;
+    std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void *snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->startTb;
     }
 
-    std::int64_t rtJoinSnapshotGetOwnEndTibreaker(void* snapshot) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->endTb;
+    std::int64_t rtJoinSnapshotGetOwnEndTibreaker(void *snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->endTb;
     }
 
     std::int64_t rtJoinSnapshotGetOwnEndTimestamp(void *snapshot) {
-        return static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot)->endTs;
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->endTs;
     }
 
     std::uint64_t rtJoinSnapshotGetCount(void *snapshot) {
-        auto* s = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+        auto *s = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         return static_cast<std::uint64_t>(s->candidateCount);
     }
 
     void rtJoinSnapshotRelease(void *snapshot) {
-        physical::details::JoinBuffer::releaseSnapshot(static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot));
+        physical::details::JoinBuffer::releaseSnapshot(
+            static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot));
     }
 
     bool rtJoinSnapshotGetWasLeft(void *snapshot) {
@@ -178,37 +193,37 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         delete static_cast<details::JoinWatermarkState *>(state);
     }
 
-    void rtJoinMarkCandidateForRemove(void* state, void* snapshot, const std::uint64_t candidateIdx) {
-        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
-        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    void rtJoinMarkCandidateForRemove(void *state, void *snapshot, const std::uint64_t candidateIdx) {
+        auto *joinBuffer = static_cast<physical::details::JoinBuffer *>(state);
+        auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->markCandidateForRemove(snap, candidateIdx);
     }
 
-    void rtJoinMarkCandidateAsMatch(void* state, void* snapshot, const std::uint64_t candidateIdx) {
-        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
-        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    void rtJoinMarkCandidateAsMatch(void *state, void *snapshot, const std::uint64_t candidateIdx) {
+        auto *joinBuffer = static_cast<physical::details::JoinBuffer *>(state);
+        auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->markCandidateAsMatch(snap, candidateIdx);
     }
 
-    void rtJoinMarkAllCandidatesAsMatch(void* state, void* snapshot, const std::uint8_t extract) {
-        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
-        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    void rtJoinMarkAllCandidatesAsMatch(void *state, void *snapshot, const std::uint8_t extract) {
+        auto *joinBuffer = static_cast<physical::details::JoinBuffer *>(state);
+        auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->markAllCandidateAsMatch(snap, extract != 0);
     }
 
-    void rtJoinRemoveMarkedCandidates(void* state, void* snapshot) {
-        auto* joinBuffer = static_cast<physical::details::JoinBuffer*>(state);
-        auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    void rtJoinRemoveMarkedCandidates(void *state, void *snapshot) {
+        auto *joinBuffer = static_cast<physical::details::JoinBuffer *>(state);
+        auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->removeMarkedCandidates(snap, snap->wasLeft);
     }
 
-    std::uint64_t rtJoinSnapshotGetMatchCount(void* snapshot) {
-        const auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    std::uint64_t rtJoinSnapshotGetMatchCount(void *snapshot) {
+        const auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         return snap != nullptr ? snap->matchIndicies.size() : 0;
     }
 
-    std::uint64_t rtJoinSnapshotGetMatchIndex(void* snapshot, const std::uint64_t matchIndex) {
-        const auto* snap = static_cast<physical::details::JoinBuffer::JoinSnapshot*>(snapshot);
+    std::uint64_t rtJoinSnapshotGetMatchIndex(void *snapshot, const std::uint64_t matchIndex) {
+        const auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
         if (snap == nullptr || matchIndex >= snap->matchIndicies.size()) {
             return 0;
         }
@@ -278,16 +293,88 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return shouldEmit;
     }
 
-    void rtJoinEvict(void* state, const std::int64_t threshold, const std::uint8_t callFromLeft, const std::uint8_t isFinal) {
-        static_cast<physical::details::JoinBuffer*>(state)->evict(threshold, callFromLeft != 0, isFinal != 0);
+    void rtJoinEvict(void *state, const std::int64_t threshold, const std::uint8_t callFromLeft,
+                     const std::uint8_t isFinal) {
+        static_cast<physical::details::JoinBuffer *>(state)->evict(threshold, callFromLeft != 0, isFinal != 0);
     }
 
-    void rtJoinMatchLeft(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
-        static_cast<physical::details::JoinBuffer*>(state)->matchLeft(startTs, endTs, startTb, endTb);
+    void rtJoinMatchLeft(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
+                         const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer *>(state)->matchLeft(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinMatchRight(void* state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb, const std::int64_t endTb) {
-        static_cast<physical::details::JoinBuffer*>(state)->matchRight(startTs, endTs, startTb, endTb);
+    void rtJoinMatchRight(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
+                          const std::int64_t endTb) {
+        static_cast<physical::details::JoinBuffer *>(state)->matchRight(startTs, endTs, startTb, endTb);
+    }
+
+
+    void rtJoinBufferOutput(void *state, const void *ownRowPtr, const std::uint64_t ownRowSize, const void *candRowPtr,
+                            const std::uint64_t candRowSize, const std::uint8_t onLeft, const std::int64_t startTs,
+                            const std::int64_t endTs,
+                            const std::int64_t startTb, const std::int64_t endTb) {
+        auto *buffer = static_cast<physical::details::JoinBuffer *>(state);
+        buffer->bufferOutput(ownRowPtr, ownRowSize, candRowPtr, candRowSize, onLeft != 0, startTs, endTs, startTb,
+                             endTb);
+    }
+
+    std::uint64_t rtJoinDrainOutput(void *state, const std::int64_t watermark, const std::uint64_t maxCount,
+                                    std::uint64_t *outIndices) {
+        auto *buffer = static_cast<physical::details::JoinBuffer *>(state);
+        std::vector<std::size_t> indices;
+        auto count = buffer->drainOutput(watermark, maxCount, indices);
+        for (std::size_t i = 0; i < indices.size(); ++i) {
+            outIndices[i] = indices[i];
+        }
+        return count;
+    }
+
+    const void *rtJoinGetOutputRowPtr(void *state, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).data.data();
+    }
+
+    std::int64_t rtJoinGetOutputRowStartTs(void *state, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).startTs;
+    }
+
+    std::int64_t rtJoinGetOutputRowEndTs(void *state, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).endTs;
+    }
+
+    std::int64_t rtJoinGetOutputRowStartTb(void *state, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).startTb;
+    }
+
+    std::int64_t rtJoinGetOutputRowEndTb(void *state, const std::uint64_t index) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).endTb;
+    }
+
+    std::uint64_t rtJoinGetOutputRowSize(void *state) {
+        return static_cast<physical::details::JoinBuffer *>(state)->getOutputRowSize();
+    }
+
+    const void *rtJoinSnapshotGetOwnRowPtr(void *snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->data.data();
+    }
+
+    std::uint64_t rtJoinSnapshotGetOwnRowSize(void *snapshot) {
+        return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->data.size();
+    }
+
+    const void *rtJoinSnapshotGetCandidateRowPtr(void *snapshot, const std::uint64_t index) {
+        auto *s = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);
+        return s->candidateData.data() + (index * s->candidateRowByteSize);
+    }
+
+    std::uint64_t rtJoinSnapshotGetCandidateRowSize(void *snapshot) {
+        return static_cast<std::uint64_t>(static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->
+            candidateRowByteSize);
+    }
+
+    void rtJoinRemoveOutputRows(void* state, const std::uint64_t* indices, std::uint64_t count) {
+        auto* buf = static_cast<physical::details::JoinBuffer*>(state);
+        const std::vector<std::size_t> idx(indices, indices + count);
+        buf->removeOutputRows(idx);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime

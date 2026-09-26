@@ -73,6 +73,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
     }
 
     bool JoinOperator::isOutOfOrder() const {
-        return mAssureOrder;
+        return !mAssureOrder;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical

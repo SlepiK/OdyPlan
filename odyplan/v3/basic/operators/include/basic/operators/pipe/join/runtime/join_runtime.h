@@ -17,7 +17,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        const std::uint64_t* leftKeyFieldIndices,
                        const std::uint64_t* rightKeyFieldIndices,
                        const core::shared::types::ValueTypeId* keyTypeIds,
-                       std::uint64_t equiKeyCnt);
+                       std::uint64_t equiKeyCnt,
+                       uint8_t outOfOrder);
 
     void rtJoinDestroy(void* state);
 
@@ -91,6 +92,32 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     void rtJoinMatchLeft(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
 
     void rtJoinMatchRight(void* state, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
+
+    void rtJoinBufferOutput(void* state, const void* ownRowPtr, std::uint64_t ownRowSize, const void* candRowPtr, std::uint64_t candRowSize, std::uint8_t onLeft, std::int64_t startTs, std::int64_t endTs, std::int64_t startTb, std::int64_t endTb);
+
+    std::uint64_t rtJoinDrainOutput(void* state, std::int64_t watermark, std::uint64_t maxCount, std::uint64_t* outIndices);
+
+    const void* rtJoinGetOutputRowPtr(void* state, std::uint64_t index);
+
+    std::int64_t rtJoinGetOutputRowStartTs(void* state, std::uint64_t index);
+
+    std::int64_t rtJoinGetOutputRowEndTs(void* state, std::uint64_t index);
+
+    std::int64_t rtJoinGetOutputRowStartTb(void* state, std::uint64_t index);
+
+    std::int64_t rtJoinGetOutputRowEndTb(void* state, std::uint64_t index);
+
+    std::uint64_t rtJoinGetOutputRowSize(void* state);
+
+    const void* rtJoinSnapshotGetOwnRowPtr(void* snapshot);
+
+    std::uint64_t rtJoinSnapshotGetOwnRowSize(void* snapshot);
+
+    const void* rtJoinSnapshotGetCandidateRowPtr(void* snapshot, std::uint64_t index);
+
+    std::uint64_t rtJoinSnapshotGetCandidateRowSize(void* snapshot);
+
+    void rtJoinRemoveOutputRows(void* state, const std::uint64_t* indices, std::uint64_t count);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

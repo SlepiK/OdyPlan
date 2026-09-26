@@ -8,6 +8,8 @@
 #include <core/logical/port/port.h>
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
 
+#include "core/runtime/types/runtime_type_registry.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     class JoinOperator : public core::physical::operators::pipe::TypedPipeOperator {
     public:
@@ -40,6 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const std::unique_ptr<basic::expression::physical::IExpression> mPredicate;
         const std::optional<details::EquiKeyList> mEquiKeys;
         bool mIsEquiJoin;
+        core::runtime::types::RuntimeTypeRegistry mRuntimeTypeRegistry;
 
         core::physical::state::StateHandle mState;
         core::physical::state::StateHandle mWatermarkState;
@@ -73,6 +76,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                  llvm::Value* timestamp,
                                  bool callFromLeft,
                                  llvm::Value* isFinal);
+
+        [[nodiscard]] std::size_t getRowByteSize(const core::logical::port::Port& schema) const;
+        [[nodiscard]] std::size_t getTypeSize(core::shared::types::ValueTypeId typeId) const;
+
+        void codegenDrainAndEmitOutput(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *joinState,
+                                       llvm::Value *watermark,
+                                       const core::physical::segment::SegmentDataConsumers &consumers);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 
