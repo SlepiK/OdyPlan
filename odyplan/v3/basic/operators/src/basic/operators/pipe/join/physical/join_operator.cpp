@@ -177,10 +177,57 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         //Emit
         emitMatchesFromSnapshot(segmentCtx, snapshot, onLeft, consumers);
 
+        codegenCreateHeartbeats(segmentCtx, state, consumers);
+
         //Release snapshot
         const auto releaseFn = module->getOrInsertFunction(
             "rtJoinSnapshotRelease", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(releaseFn, {snapshot});
+    }
+
+    void JoinOperator::codegenCreateHeartbeats(core::physical::segment::SegmentContext &segmentCtx,
+                                               llvm::Value *joinState,
+                                               const core::physical::segment::SegmentDataConsumers &consumers) {
+        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+
+        const auto getMinLeftFn = module->getOrInsertFunction("rtJoinGetMinStartTimestampLeft",
+                                                              llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto getMinRightFn = module->getOrInsertFunction("rtJoinGetMinStartTimestampRight",
+                                                               llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+
+        llvm::Value* minLeft = segmentCtx.builder.CreateCall(getMinLeftFn, {joinState});
+        llvm::Value* minRight = segmentCtx.builder.CreateCall(getMinRightFn, {joinState});
+
+        llvm::Value* heartbeat = segmentCtx.builder.CreateICmpSGT(minLeft, minRight);
+        heartbeat = segmentCtx.builder.CreateSelect(heartbeat, minLeft, minRight);
+
+        auto *lastHbSlot = segmentCtx.storage.getNamed("join_last_heartbeat." + std::to_string(getPId()), i64Ty);
+        llvm::Value *lastHb = segmentCtx.builder.CreateLoad(i64Ty, lastHbSlot);
+
+        llvm::Value *shouldEmit = segmentCtx.builder.CreateICmpSGT(heartbeat, lastHb);
+
+        auto *emitBB = llvm::BasicBlock::Create(ctx, "join_emit_heartbeat",
+                                                segmentCtx.builder.GetInsertBlock()->getParent());
+        auto *mergeBB = llvm::BasicBlock::Create(ctx, "join_merge_heartbeat",
+                                                 segmentCtx.builder.GetInsertBlock()->getParent());
+
+        segmentCtx.builder.CreateCondBr(shouldEmit, emitBB, mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(emitBB);
+
+        segmentCtx.builder.CreateStore(heartbeat, lastHbSlot);
+
+        const auto watermark = core::physical::data::PunctuationPackage::createHeartbeat(segmentCtx.builder, heartbeat);
+
+        consumers.front().consumePunctuation(segmentCtx, watermark);
+
+        segmentCtx.builder.CreateBr(mergeBB);
+
+        segmentCtx.builder.SetInsertPoint(mergeBB);
     }
 
     // NOLINTNEXTLINE(readability-function-size)

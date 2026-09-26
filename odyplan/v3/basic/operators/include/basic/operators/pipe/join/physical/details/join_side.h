@@ -82,6 +82,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] const core::logical::port::Port& getSchema() const;
 
+        [[nodiscard]] Timestamp getMinStartTimestamp() const;
+
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
@@ -105,6 +107,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         bool mOutOfOrder;
         std::size_t mRemovedCount = 0;
+        Timestamp mMinStartTs = 0;
         Timestamp mMinEndTs = 0;
 
         window::WindowRowLayout mLayout;

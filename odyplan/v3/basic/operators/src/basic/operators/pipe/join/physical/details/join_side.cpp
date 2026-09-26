@@ -23,7 +23,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         : mOutOfOrder(outOfOrder),
           mLayout(std::move(schema), *runtimeTypeRegistry),
           mRuntimeTypeRegistry(runtimeTypeRegistry),
-          mMinEndTs(0) {
+          mMinEndTs(0),
+          mMinStartTs(0) {
     }
 
     void JoinSide::begin() {
@@ -58,13 +59,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::deque<RowBuffer> newRows;
 
         mMinEndTs = std::numeric_limits<Timestamp>::max();
+        mMinStartTs = std::numeric_limits<Timestamp>::max();
 
         for (auto& row : mBufferedRows) {
             if (!row.isRemoved) {
-                newRows.push_back(std::move(row));
                 if (row.endTs < mMinEndTs) {
                     mMinEndTs = row.endTs;
                 }
+
+                if (row.startTs < mMinStartTs) {
+                    mMinStartTs = row.startTs;
+                }
+
+                newRows.push_back(std::move(row));
             } else {
                 mLayout.releaseRow(row.values);
             }
@@ -183,6 +190,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 .endTb = endTb,
                 .isRemoved = false
             });
+
+        if (mBufferedRows.size() == 1 || startTs < mMinStartTs) {
+            mMinStartTs = startTs;
+        }
 
         if (mBufferedRows.size() == 1 || endTs < mMinEndTs) {
             mMinEndTs = endTs;
@@ -409,5 +420,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     const core::logical::port::Port& JoinSide::getSchema() const {
         return mLayout.getSchema();
+    }
+
+    Timestamp JoinSide::getMinStartTimestamp() const {
+        return mMinStartTs;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

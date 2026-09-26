@@ -392,4 +392,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         mOutputBuffer = std::move(remain);
     }
+
+    Timestamp JoinBuffer::getMinStartTimestampLeft() const {
+        return mLeftSide.getMinStartTimestamp();
+    }
+
+    Timestamp JoinBuffer::getMaxStartTimestampRight() const {
+        return mRightSide.getMinStartTimestamp();
+    }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

@@ -376,5 +376,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         const std::vector<std::size_t> idx(indices, indices + count);
         buf->removeOutputRows(idx);
     }
+
+    std::int64_t rtJoinGetMinStartTimestampLeft(void* state) {
+        return static_cast<physical::details::JoinBuffer*>(state)->getMinStartTimestampLeft();
+    }
+
+    std::int64_t rtJoinGetMinStartTimestampRight(void* state) {
+        return static_cast<physical::details::JoinBuffer*>(state)->getMaxStartTimestampRight();
+    }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime

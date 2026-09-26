@@ -118,6 +118,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     std::uint64_t rtJoinSnapshotGetCandidateRowSize(void* snapshot);
 
     void rtJoinRemoveOutputRows(void* state, const std::uint64_t* indices, std::uint64_t count);
+
+    std::int64_t rtJoinGetMinStartTimestampLeft(void* state);
+
+    std::int64_t rtJoinGetMinStartTimestampRight(void* state);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 

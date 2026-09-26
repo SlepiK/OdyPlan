@@ -121,6 +121,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::size_t getOutputRowSize() const;
 
+        [[nodiscard]] Timestamp getMinStartTimestampLeft() const;
+
+        [[nodiscard]] Timestamp getMaxStartTimestampRight() const;
+
     private:
         bool mOutOfOrder;
         JoinSide mLeftSide;
@@ -130,6 +134,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         std::vector<std::size_t> mCandidates;
         bool mAllReleased = false;
+        Timestamp mLastHeartbeat = 0;
 
         std::vector<OutputRow> mOutputBuffer;
         std::vector<std::size_t> mOutputOrder;
