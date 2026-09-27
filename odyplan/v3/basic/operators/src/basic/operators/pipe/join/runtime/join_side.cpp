@@ -1,8 +1,8 @@
-#include <basic/operators/pipe/join/physical/details/join_side.h>
+#include <basic/operators/pipe/join/runtime/join_side.h>
 
 #include "core/physical/time/time_point.h"
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     namespace {
         constexpr inline bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
             if (lft == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {

@@ -4,7 +4,7 @@
 #include <basic/expression/physical/expression.h>
 #include <basic/expression/physical/expression_codegen.h>
 #include <basic/operators/pipe/join/logical/details/join_config.h>
-#include <basic/operators/pipe/join/physical/details/join_predmod.h>
+#include <basic/operators/pipe/join/physical/join_predmod.h>
 #include <core/logical/port/port.h>
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
 
@@ -40,7 +40,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         core::logical::port::Port mLeftSchema;
         core::logical::port::Port mRightSchema;
         const std::unique_ptr<basic::expression::physical::IExpression> mPredicate;
-        const std::optional<details::EquiKeyList> mEquiKeys;
+        const std::optional<EquiKeyList> mEquiKeys;
         bool mIsEquiJoin;
         core::runtime::types::RuntimeTypeRegistry mRuntimeTypeRegistry;
 
@@ -57,12 +57,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         static llvm::GlobalVariable* buildEquiFieldIndices(llvm::Module& module,
                                                     llvm::LLVMContext& ctx,
-                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    const std::vector<EquiKeyInfo>& keys,
                                                     bool useLeftIndex,
                                                     const std::string& name);
 
         static llvm::GlobalVariable* buildEquiTypeIds(llvm::Module& module, llvm::LLVMContext& ctx,
-                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    const std::vector<EquiKeyInfo>& keys,
                                                     const std::string& name);
 
         void evaluatePredicateAndMark(core::physical::segment::SegmentContext& segmentCtx,

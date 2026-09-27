@@ -1,15 +1,14 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_SIDE_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_SIDE_HPP
 #include <basic/window/window_row_layout.h>
 #include <core/logical/port/port.h>
 #include <deque>
 #include <map>
 
 #include <core/physical/time/time_point.h>
-
 #include <core/shared/types/global_types.h>
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     class JoinSide {
     public:
         JoinSide(core::logical::port::Port schema,
@@ -130,4 +129,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_SIDE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_SIDE_HPP

@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_RUNTIME_HPP
 
-#include <basic/operators/pipe/join/physical/details/join_buffer.h>
+#include <basic/operators/pipe/join/runtime/join_buffer.h>
 #include <core/logical/port/port.h>
 #include <cstdint>
 

@@ -1,13 +1,13 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
-#include <basic/operators/pipe/join/physical/details/join_side.h>
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_BUFFER_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_BUFFER_HPP
+#include <basic/operators/pipe/join/runtime/join_side.h>
 #include <chrono>
 #include <mutex>
 #include <shared_mutex>
 
 #include <core/shared/types/global_types.h>
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     class JoinBuffer {
     public:
         struct RetainPointer {
@@ -150,6 +150,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                                  std::vector<std::size_t>& offsetsOut, std::vector<core::shared::types::ValueTypeId>& typeIdsOut,
                                  std::vector<RetainPointer>& retainedOut) const;
     };
-}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
+}
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_BUFFER_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_BUFFER_HPP

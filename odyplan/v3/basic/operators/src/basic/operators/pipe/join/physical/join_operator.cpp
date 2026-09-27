@@ -37,7 +37,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
           mLeftSchema(std::move(schemas.at(0))),
           mRightSchema(std::move(schemas.at(1))),
           mPredicate(std::move(predicate)),
-          mEquiKeys(details::tryGetEquiKeyList(mPredicate.get(), mLeftSchema, mRightSchema)),
+          mEquiKeys(tryGetEquiKeyList(mPredicate.get(), mLeftSchema, mRightSchema)),
           mIsEquiJoin(mEquiKeys.has_value()) {
         mRuntimeTypeRegistry = core::runtime::types::RuntimeTypeRegistry::withBuiltins();
     }
@@ -569,7 +569,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             module, context, mRightSchema, "join_right_side_types_" + std::to_string(getPId()));
 
         const auto isEqui = mEquiKeys.has_value();
-        const auto& equiKeys = isEqui ? mEquiKeys->keys : std::vector<details::EquiKeyInfo>{};
+        const auto& equiKeys = isEqui ? mEquiKeys->keys : std::vector<EquiKeyInfo>{};
 
         auto* leftEquiIndices = buildEquiFieldIndices(module, context, equiKeys,
             true, "join_left_equi_indices_" +std::to_string(getPId()));
@@ -646,7 +646,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
     llvm::GlobalVariable* JoinOperator::buildEquiFieldIndices(llvm::Module& module,
                                                     llvm::LLVMContext& ctx,
-                                                    const std::vector<details::EquiKeyInfo>& keys,
+                                                    const std::vector<EquiKeyInfo>& keys,
                                                     bool useLeftIndex,
                                                     const std::string& name) {
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
@@ -664,7 +664,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     }
 
     llvm::GlobalVariable* JoinOperator::buildEquiTypeIds(llvm::Module& module, llvm::LLVMContext& ctx,
-                                                const std::vector<details::EquiKeyInfo>& keys,
+                                                const std::vector<EquiKeyInfo>& keys,
                                                 const std::string& name) {
         auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         std::vector<llvm::Constant*> values;

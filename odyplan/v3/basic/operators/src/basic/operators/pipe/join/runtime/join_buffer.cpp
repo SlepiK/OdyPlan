@@ -1,9 +1,9 @@
-#include <basic/operators/pipe/join/physical/details/join_buffer.h>
+#include <basic/operators/pipe/join/runtime/join_buffer.h>
 #include <cassert>
 #include <cstring>
 #include <set>
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
                            core::logical::port::Port rightSchema,
                            core::logical::port::Port outputSchema,
