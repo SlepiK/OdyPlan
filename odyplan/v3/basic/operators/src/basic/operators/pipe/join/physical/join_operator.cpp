@@ -162,6 +162,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             segmentCtx.builder.CreateCall(removeFn, {state, snapshot});
         }
 
+        //Heartbeat
+        codegenCreateHeartbeat(segmentCtx, state, consumers);
+
         segmentCtx.builder.CreateBr(unlockBB);
 
         segmentCtx.builder.SetInsertPoint(unlockBB);
@@ -177,17 +180,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         //Emit
         emitMatchesFromSnapshot(segmentCtx, snapshot, onLeft, consumers);
 
-        codegenCreateHeartbeats(segmentCtx, state, consumers);
-
         //Release snapshot
         const auto releaseFn = module->getOrInsertFunction(
             "rtJoinSnapshotRelease", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         segmentCtx.builder.CreateCall(releaseFn, {snapshot});
     }
 
-    void JoinOperator::codegenCreateHeartbeats(core::physical::segment::SegmentContext &segmentCtx,
+    void JoinOperator::codegenCreateHeartbeat(core::physical::segment::SegmentContext &segmentCtx,
                                                llvm::Value *joinState,
-                                               const core::physical::segment::SegmentDataConsumers &consumers) {
+                                               const core::physical::segment::SegmentDataConsumers &consumers) const {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
@@ -682,68 +683,121 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                             const core::physical::segment::SegmentDataConsumers &consumers) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+        llvm::Function *fn = segmentCtx.builder.GetInsertBlock()->getParent();
+
+        const bool onLeft = (compactInputIndex(inputPort) == 0);
 
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
 
-        const bool onLeft = (compactInputIndex(inputPort) == 0);
+        llvm::Value *watermarkStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
+        llvm::Value *joinState = loadStatePtr(segmentCtx);
 
-        llvm::Value* watermarkState = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
-        llvm::Value* joinState = loadStatePtr(segmentCtx);
+        auto *mergeBB = llvm::BasicBlock::Create(ctx, "join_watermark_merge", fn);
+        auto *emitBB = llvm::BasicBlock::Create(ctx, "join_emit_watermark", fn);
+        auto *afterMergeBB = llvm::BasicBlock::Create(ctx, "join_after_merge", fn);
+        auto *returnBB = llvm::BasicBlock::Create(ctx, "join_return", fn);
 
-        llvm::Value* isLeft = llvm::ConstantInt::get(i8Ty, onLeft ? 1 : 0);
-        llvm::Value* isFinal = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
+        if (!mOutOfOrder) {
+            auto *checkHeartbeatBB = llvm::BasicBlock::Create(ctx, "join_check_heartbeat", fn);
+            auto *checkBehindBB = llvm::BasicBlock::Create(ctx, "join_check_behind", fn);
+            auto *suppressBB = llvm::BasicBlock::Create(ctx, "join_heartbeat_suppress", fn);
+            auto *continueBB = llvm::BasicBlock::Create(ctx, "join_heartbeat_continue", fn);
+
+            segmentCtx.builder.CreateBr(checkHeartbeatBB);
+            segmentCtx.builder.SetInsertPoint(checkHeartbeatBB);
+
+            llvm::Value *isHeartbeatTrue = segmentCtx.builder.CreateICmpEQ(
+                punctuation.isHeartbeat, llvm::ConstantInt::getTrue(ctx));
+
+            segmentCtx.builder.CreateCondBr(isHeartbeatTrue, checkBehindBB, continueBB);
+
+            segmentCtx.builder.SetInsertPoint(checkBehindBB);
+
+            const auto getGlobalWmFn = module->getOrInsertFunction("rtJoinGetGlobalWatermark",
+                                                                   llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+            llvm::Value *currentWatermark = segmentCtx.builder.CreateCall(getGlobalWmFn, {watermarkStatePtr});
+
+            llvm::Value *isBehind = segmentCtx.builder.CreateICmpSLT(punctuation.watermark, currentWatermark);
+
+            segmentCtx.builder.CreateCondBr(isBehind, suppressBB, continueBB);
+
+            segmentCtx.builder.SetInsertPoint(suppressBB);
+
+            segmentCtx.builder.CreateBr(returnBB);
+
+            segmentCtx.builder.SetInsertPoint(continueBB);
+
+            segmentCtx.builder.CreateBr(mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(mergeBB);
+        } else {
+            segmentCtx.builder.CreateBr(mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(mergeBB);
+        }
+
+        llvm::Value *isFinal = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
+        llvm::Value* isLeft = llvm::ConstantInt::get(i8Ty, (compactInputIndex(inputPort) == 0) ? 1 : 0);
         llvm::Value* allowedLateness = llvm::ConstantInt::get(i64Ty, mConfig.allowedLateness);
 
-        llvm::Value* outEvictLeft = segmentCtx.storage.getNamed("evict_left_threshold",i64Ty);
-        llvm::Value* outEvictRight = segmentCtx.storage.getNamed("evict_right_threshold",i64Ty);
-        llvm::Value* outCurrentWatermark = segmentCtx.storage.getNamed("current_watermark",i64Ty);
-        llvm::Value* outIsFinal = segmentCtx.storage.getNamed("out_is_final",i8Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i8Ty, 0),outIsFinal);
+        llvm::FunctionType *updateFnType = llvm::FunctionType::get(i8Ty, {ptrTy, i8Ty, i64Ty, i8Ty, i64Ty, ptrTy, ptrTy, ptrTy, ptrTy}, false);
+        const llvm::FunctionCallee updateFn = module->getOrInsertFunction("rtJoinUpdateWatermark", updateFnType);
 
-        const auto updateWatermarkFn = module->getOrInsertFunction("rtJoinUpdateWatermark", llvm::FunctionType::get(i8Ty, {ptrTy, i8Ty, i64Ty, i8Ty, i64Ty, ptrTy, ptrTy, ptrTy, ptrTy}, false));
-        llvm::Value* shouldEmit = segmentCtx.builder.CreateCall(updateWatermarkFn, {watermarkState, isLeft, punctuation.watermark, isFinal, allowedLateness, outEvictLeft, outEvictRight, outCurrentWatermark, outIsFinal});
+        auto *outEvictLeft = segmentCtx.storage.getNamed("evict_left_threshold", i64Ty);
+        auto *outEvictRight = segmentCtx.storage.getNamed("evict_right_threshold", i64Ty);
+        auto *outCurrentWatermark = segmentCtx.storage.getNamed("current_watermark", i64Ty);
+        auto *outIsFinal = segmentCtx.storage.getNamed("out_is_final", i8Ty);
 
-        llvm::Value* evictLeftTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictLeft);
-        llvm::Value* evictRightTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictRight);
-        llvm::Value* isFinalOut = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i8Ty, 0), outIsFinal);
+
+        llvm::Value *sEmit = segmentCtx.builder.CreateCall(updateFn, {
+                                                               watermarkStatePtr, isLeft, punctuation.watermark,
+                                                               isFinal, allowedLateness, outEvictLeft, outEvictRight,
+                                                               outCurrentWatermark, outIsFinal
+                                                           }, "should_emit");
+
+        llvm::Value *condition = segmentCtx.builder.CreateICmpNE(sEmit, llvm::ConstantInt::get(i8Ty, 0));
+
+        segmentCtx.builder.CreateCondBr(condition, emitBB, afterMergeBB);
+
+        segmentCtx.builder.SetInsertPoint(emitBB);
+
+        llvm::Value *currentWatermark = segmentCtx.builder.CreateLoad(i64Ty, outCurrentWatermark);
+        llvm::Value *currentIsFinal = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
+        llvm::Value *newIsFinal = segmentCtx.builder.CreateICmpNE(currentIsFinal, llvm::ConstantInt::get(i8Ty, 0));
+
+        const auto outgoingPunctuation = core::physical::data::PunctuationPackage::create(segmentCtx.builder, currentWatermark, newIsFinal);
+
+        consumers.front().consumePunctuation(segmentCtx, outgoingPunctuation);
+
+        segmentCtx.builder.CreateBr(afterMergeBB);
+
+        segmentCtx.builder.SetInsertPoint(afterMergeBB);
 
         const auto lockFn = module->getOrInsertFunction("rtJoinLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         const auto unlockFn = module->getOrInsertFunction("rtJoinUnlock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
 
-        segmentCtx.builder.CreateCall(lockFn, joinState);
+        segmentCtx.builder.CreateCall(lockFn, {joinState});
+
+        llvm::Value *evictLeftTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictLeft);
+        llvm::Value *evictRightTh = segmentCtx.builder.CreateLoad(i64Ty, outEvictRight);
+        llvm::Value *isFinalOut = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
+
         codegenEvict(segmentCtx, joinState, evictLeftTh, false, isFinalOut);
         codegenEvict(segmentCtx, joinState, evictRightTh, true, isFinalOut);
-        segmentCtx.builder.CreateCall(unlockFn, joinState);
 
         if (!mOutOfOrder) {
             codegenDrainAndEmitOutput(segmentCtx, joinState, outCurrentWatermark, consumers);
         }
 
-        llvm::Value* condition = segmentCtx.builder.CreateICmpNE(shouldEmit, llvm::ConstantInt::get(i8Ty, 0));
+        segmentCtx.builder.CreateCall(unlockFn, {joinState});
 
-        auto* fn = segmentCtx.builder.GetInsertBlock()->getParent();
-        auto* emitBB = llvm::BasicBlock::Create(ctx, "join_forward_by_watermark", fn);
-        auto* mergeBB = llvm::BasicBlock::Create(ctx, "join_merge_watermark", fn);
-        segmentCtx.builder.CreateCondBr(condition, emitBB, mergeBB);
+        segmentCtx.builder.CreateBr(returnBB);
 
-        segmentCtx.builder.SetInsertPoint(emitBB);
-
-        llvm::Value* currentWatermark = segmentCtx.builder.CreateLoad(i64Ty, outCurrentWatermark);
-        llvm::Value* currentIsFinal = segmentCtx.builder.CreateICmpNE(isFinalOut, llvm::ConstantInt::get(i8Ty, 0));
-
-        const core::physical::data::PunctuationPackage forwardedPunctuation {
-            .watermark = currentWatermark,
-            .isFinal = currentIsFinal
-        };
-
-        consumers.front().consumePunctuation(segmentCtx, forwardedPunctuation);
-
-        segmentCtx.builder.CreateBr(mergeBB);
-
-        segmentCtx.builder.SetInsertPoint(mergeBB);
+        segmentCtx.builder.SetInsertPoint(returnBB);
     }
 
     void JoinOperator::codegenDrainAndEmitOutput(core::physical::segment::SegmentContext &segmentCtx,

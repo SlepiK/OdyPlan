@@ -193,6 +193,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         delete static_cast<details::JoinWatermarkState *>(state);
     }
 
+    std::int64_t rtJoinGetGlobalWatermark(void* state) {
+        auto* watermark = static_cast<details::JoinWatermarkState*>(state);
+        if (!watermark->leftReported || !watermark->rightReported) {
+            return core::physical::time::INFINITY_SENTINEL;
+        }
+        return std::min(watermark->leftWatermark, watermark->rightWatermark);
+    }
+
     void rtJoinMarkCandidateForRemove(void *state, void *snapshot, const std::uint64_t candidateIdx) {
         auto *joinBuffer = static_cast<physical::details::JoinBuffer *>(state);
         auto *snap = static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot);

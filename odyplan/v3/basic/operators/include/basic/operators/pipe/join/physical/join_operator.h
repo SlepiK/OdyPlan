@@ -84,8 +84,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                        llvm::Value *watermark,
                                        const core::physical::segment::SegmentDataConsumers &consumers);
 
-        void codegenCreateHeartbeats(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *joinState,
-                                     const core::physical::segment::SegmentDataConsumers &consumers);
+        void codegenCreateHeartbeat(core::physical::segment::SegmentContext &segmentCtx, llvm::Value *joinState,
+                                     const core::physical::segment::SegmentDataConsumers &consumers) const;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
 

@@ -122,6 +122,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     std::int64_t rtJoinGetMinStartTimestampLeft(void* state);
 
     std::int64_t rtJoinGetMinStartTimestampRight(void* state);
+
+    std::int64_t rtJoinGetGlobalWatermark(void* state);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 
