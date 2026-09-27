@@ -303,13 +303,6 @@ int main() {
                         &sierra::odyplan::v3::core::runtime::rtComputeSegmentDrain),
                     llvm::JITSymbolFlags::Exported);
 
-        symbolMap[jit->mangleAndIntern("rtTypeRegistryRetain")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtTypeRegistryRetain),
-            llvm::JITSymbolFlags::Exported);
-        symbolMap[jit->mangleAndIntern("rtTypeRegistryRelease")] = llvm::orc::ExecutorSymbolDef(
-            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtTypeRegistryRelease),
-            llvm::JITSymbolFlags::Exported);
-
         symbolMap[jit->mangleAndIntern("rtFanInAlloc")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::memory::rtFanInAlloc),
             llvm::JITSymbolFlags::Exported);
