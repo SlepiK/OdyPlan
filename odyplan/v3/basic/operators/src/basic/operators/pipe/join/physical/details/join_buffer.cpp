@@ -1,34 +1,20 @@
 #include <basic/operators/pipe/join/physical/details/join_buffer.h>
 #include <cassert>
 #include <cstring>
-#include <set>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
                            core::logical::port::Port rightSchema,
-                           core::logical::port::Port outputSchema,
-                           const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry,
-                           const bool outOfOrder)
-        : mOutOfOrder(outOfOrder),
-          mLeftSide(std::move(leftSchema), runtimeTypeRegistry, outOfOrder),
-          mRightSide(std::move(rightSchema), runtimeTypeRegistry, outOfOrder),
-          mRuntimeTypeRegistry(runtimeTypeRegistry),
-          mOutputSchema(std::move(outputSchema)) {
-    }
+                           const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry)
+        : mLeftSide(std::move(leftSchema), runtimeTypeRegistry),
+            mRightSide(std::move(rightSchema), runtimeTypeRegistry),
+          mRuntimeTypeRegistry(runtimeTypeRegistry) {}
 
     JoinBuffer::~JoinBuffer() {
         assert(mAllReleased && "JoinBuffer: left and right side was never released!");
     }
 
     void JoinBuffer::close() {
-        {
-            std::lock_guard<std::mutex> lock(mOutputMutex);
-            for (auto& row : mOutputBuffer) {
-                for (const auto& [typeId, ptr] : row.retainPointers) {
-                    mRuntimeTypeRegistry->release(typeId, ptr);
-                }
-            }
-        }
         mLeftSide.release();
         mRightSide.release();
         mAllReleased = true;
@@ -264,140 +250,5 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     [[nodiscard]] const std::byte* JoinBuffer::JoinSnapshot::candidateFieldPtr(const std::size_t candidateIdx, const std::size_t fieldIdx) const {
         return candidateData.data() + (candidateIdx * candidateRowByteSize) + candidateFieldOffsets.at(fieldIdx);
-    }
-
-
-    void JoinBuffer::bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize,
-        const bool onLeft, const Timestamp startTs, const Timestamp endTs,
-        const std::int64_t startTb, const std::int64_t endTb) {
-        if (mOutOfOrder) {
-            return;
-        }
-
-        const std::lock_guard<std::mutex> lock(mOutputMutex);
-
-        const std::size_t totalSize = ownRowSize + candRowSize;
-        mOutputTempBuf.resize(totalSize);
-
-        if (onLeft) {
-            std::memcpy(mOutputTempBuf.data(), ownRowPtr, ownRowSize);
-            std::memcpy(mOutputTempBuf.data() + ownRowSize, candRowPtr, candRowSize);
-        } else {
-            std::memcpy(mOutputTempBuf.data(), candRowPtr, candRowSize);
-            std::memcpy(mOutputTempBuf.data() + candRowSize, ownRowPtr, ownRowSize);
-        }
-
-        std::vector<RetainPointer> retainPointers;
-
-        std::size_t offset = 0;
-        for (const auto& field : mLeftSide.getSchema()) {
-            if (mRuntimeTypeRegistry->isPointerType(field.valueTypeId)) {
-                void* ptr = nullptr;
-                std::memcpy(&ptr, mOutputTempBuf.data() + offset, sizeof(void*));
-                if (ptr != nullptr) {
-                    void* retainedPtr = mRuntimeTypeRegistry->retain(field.valueTypeId, ptr);
-                    std::memcpy(mOutputTempBuf.data() + offset, &retainedPtr, sizeof(void*));
-                    retainPointers.push_back({.typeId=field.valueTypeId, .ptr=retainedPtr});
-                }
-            }
-            offset += mRuntimeTypeRegistry->byteSize(field.valueTypeId);
-        }
-
-        for (const auto& field : mRightSide.getSchema()) {
-            if (mRuntimeTypeRegistry->isPointerType(field.valueTypeId)) {
-                void* ptr = nullptr;
-                std::memcpy(&ptr, mOutputTempBuf.data() + offset, sizeof(void*));
-                if (ptr != nullptr) {
-                    void* retainedPtr = mRuntimeTypeRegistry->retain(field.valueTypeId, ptr);
-                    std::memcpy(mOutputTempBuf.data() + offset, &retainedPtr, sizeof(void*));
-                    retainPointers.push_back({field.valueTypeId, retainedPtr});
-                }
-            }
-            offset += mRuntimeTypeRegistry->byteSize(field.valueTypeId);
-        }
-
-        mOutputBuffer.push_back(OutputRow{
-            .data = mOutputTempBuf,
-            .startTs = startTs,
-            .endTs = endTs,
-            .startTb = startTb,
-            .endTb = endTb,
-            .retainPointers = std::move(retainPointers)
-        });
-    }
-
-    std::size_t JoinBuffer::drainOutput(const Timestamp watermark, const std::size_t maxCount, std::vector<std::size_t>& outIndices) {
-        const std::lock_guard<std::mutex> lock(mOutputMutex);
-
-        if (mOutputBuffer.empty()) {
-            return 0;
-        }
-
-        mOutputOrder.resize(mOutputBuffer.size());
-        std::iota(mOutputOrder.begin(), mOutputOrder.end(), 0);
-        std::sort(mOutputOrder.begin(), mOutputOrder.end(),
-            [this](std::size_t a, std::size_t b) {
-                const auto& ra = mOutputBuffer[a];
-                const auto& rb = mOutputBuffer[b];
-                if (ra.startTs != rb.startTs) {
-                    return ra.startTs < rb.startTs;
-                }
-                return ra.startTb < rb.startTb;
-            }
-        );
-
-        std::size_t count = 0;
-        for (std::size_t i = 0; i < mOutputOrder.size() && count < maxCount; ++i) {
-            const auto& row = mOutputBuffer[mOutputOrder[i]];
-            if (row.startTs > watermark) {
-                break;
-            }
-
-            outIndices.push_back(mOutputOrder[i]);
-
-            count++;
-        }
-
-        return count;
-    }
-
-    const JoinBuffer::OutputRow& JoinBuffer::getOutputRow(const std::size_t index) const {
-        return mOutputBuffer[index];
-    }
-
-    std::size_t JoinBuffer::getOutputRowSize() const {
-        return mOutputSchema.size();
-    }
-
-    void JoinBuffer::removeOutputRows(const std::vector<std::size_t> &indices) {
-        if (indices.empty()) {
-            return;
-        }
-
-        const std::lock_guard<std::mutex> lock(mOutputMutex);
-
-        std::set<std::size_t> toRemove(indices.begin(), indices.end());
-        std::vector<OutputRow> remain;
-        remain.reserve(mOutputBuffer.size() - toRemove.size());
-
-        for (std::size_t i = 0; i < mOutputBuffer.size(); ++i) {
-            if (toRemove.find(i) != toRemove.end()) {
-                for (const auto& [typeId, ptr] : mOutputBuffer[i].retainPointers) {
-                    mRuntimeTypeRegistry->release(typeId, ptr);
-                }
-            } else {
-                remain.push_back(std::move(mOutputBuffer[i]));
-            }
-        }
-
-        mOutputBuffer = std::move(remain);
-    }
-
-    Timestamp JoinBuffer::getMinStartTimestampLeft() const {
-        return mLeftSide.getMinStartTimestamp();
-    }
-
-    Timestamp JoinBuffer::getMaxStartTimestampRight() const {
-        return mRightSide.getMinStartTimestamp();
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

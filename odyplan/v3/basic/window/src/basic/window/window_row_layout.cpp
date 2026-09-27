@@ -76,8 +76,4 @@ namespace sierra::odyplan::v3::basic::window {
     std::size_t WindowRowLayout::getCurrentRowSize() const {
         return mCurrentRow.size();
     }
-
-    const core::logical::port::Port& WindowRowLayout::getSchema() const {
-        return mDataSchema;
-    }
 }  // namespace sierra::odyplan::v3::basic::window

@@ -19,7 +19,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::transformation {
 
         sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
         ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::physical::JoinOperator>(
-            inputPorts, outputPorts.front(), concrete.getConfig(), schemas, std::move(concrete.getPredicate()), concrete.isOutOfOrder()
+            inputPorts, outputPorts.front(), concrete.getConfig(), schemas, std::move(concrete.getPredicate())
         ));
         return ot;
     };
