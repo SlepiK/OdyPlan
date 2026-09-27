@@ -85,7 +85,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         struct RowMeta {
             std::vector<std::byte> values;
             core::shared::types::Timestamp startTs = 0;
-            core::shared::types::Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
+            core::shared::types::Timestamp endTs = core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
             core::shared::types::TiBreak startTb = 0;
             core::shared::types::TiBreak endTb = 0;
             core::shared::identifiers::PortId inputPort = 0;

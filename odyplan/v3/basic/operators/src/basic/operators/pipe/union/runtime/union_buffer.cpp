@@ -84,7 +84,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     core::shared::types::Timestamp UnionBuffer::getMinStartTimestamp() {
         if (mRowIndex.empty()) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
 
         for (const std::uint64_t idx : mRowIndex) {
@@ -93,7 +93,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             }
         }
 
-        return core::physical::time::INFINITY_SENTINEL;
+        return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
     }
 
     const std::byte* UnionBuffer::getData(const std::uint64_t index) const {
@@ -114,28 +114,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     core::shared::types::Timestamp UnionBuffer::getStartTimestamp(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].startTs;
     }
 
     core::shared::types::Timestamp UnionBuffer::getEndTimestamp(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].endTs;
     }
 
     core::shared::types::TiBreak UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].startTb;
     }
 
     core::shared::types::TiBreak UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].endTb;
     }

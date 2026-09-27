@@ -4,7 +4,7 @@
 namespace sierra::odyplan::v3::core::physical::time {
     namespace {
         llvm::Value* infinitySentinelConstant(llvm::IRBuilder<>& builder) {
-            return llvm::ConstantInt::getSigned(builder.getInt64Ty(), INFINITY_SENTINEL);
+            return llvm::ConstantInt::getSigned(builder.getInt64Ty(), shared::types::INFINITY_TIMESTAMP_SENTINEL);
         }
 
         llvm::GlobalVariable *getOrCreateSeqCnt(llvm::Module &module) {

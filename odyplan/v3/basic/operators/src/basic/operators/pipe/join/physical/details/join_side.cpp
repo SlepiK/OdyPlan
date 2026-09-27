@@ -5,11 +5,11 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     namespace {
         constexpr inline bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
-            if (lft == core::physical::time::INFINITY_SENTINEL) {
+            if (lft == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return false;
             }
 
-            if (rht == core::physical::time::INFINITY_SENTINEL) {
+            if (rht == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return true;
             }
 

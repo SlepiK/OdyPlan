@@ -196,7 +196,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     core::shared::types::Timestamp rtJoinGetGlobalWatermark(void* state) {
         auto* watermark = static_cast<details::JoinWatermarkState*>(state);
         if (!watermark->leftReported || !watermark->rightReported) {
-            return core::physical::time::INFINITY_SENTINEL;
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return std::min(watermark->leftWatermark, watermark->rightWatermark);
     }
