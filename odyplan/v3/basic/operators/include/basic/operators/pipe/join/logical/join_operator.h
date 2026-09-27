@@ -15,15 +15,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
             std::to_underlying(core::shared::types::BuiltinOperatorType::JOIN);
 
         explicit JoinOperator(details::JoinConfig config,
-                              std::unique_ptr<basic::expression::logical::IExpression> predicate = nullptr, bool assureOrder = true);
+                              std::unique_ptr<basic::expression::logical::IExpression> predicate = nullptr);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
         [[nodiscard]] const details::JoinConfig& getConfig() const;
 
         [[nodiscard]] std::unique_ptr<basic::expression::physical::IExpression> getPredicate();
-
-        [[nodiscard]] bool isOutOfOrder() const;
 
     protected:
         void bindInput(core::shared::identifiers::PortId portId,
@@ -37,7 +35,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         details::JoinConfig mConfig;
         const std::unique_ptr<basic::expression::logical::IExpression> mLPredicate;
         std::unique_ptr<basic::expression::physical::IExpression> mPPredicate;
-        bool mAssureOrder; //true == IN_ORDER | false == OUT_OF_ORDER
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical
 

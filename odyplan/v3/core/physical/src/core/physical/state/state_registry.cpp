@@ -60,17 +60,6 @@ namespace sierra::odyplan::v3::core::physical::state {
         return StateHandle{globalVar};
     }
 
-    StateHandle StateRegistry::createPrimitiveHandle(const std::string &uniqueName, llvm::Type *type, llvm::Constant *initialValue) {
-        auto* globalVar = new llvm::GlobalVariable(*mModule,
-                                               type,
-                                               false,
-                                               llvm::GlobalValue::InternalLinkage,
-                                               initialValue,
-                                               "ody_state_" + uniqueName);
-
-        return StateHandle{globalVar};
-    }
-
     llvm::GlobalVariable* StateRegistry::getRuntimeTypeRegistryGlobal() const {
         return mRuntimeTypeRegistryGlobal;
     }

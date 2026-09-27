@@ -4,23 +4,12 @@
 #include <chrono>
 #include <mutex>
 
-#include <basic/operators/pipe/union/runtime/union_buffer.h>
-
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     class JoinBuffer {
     public:
         struct RetainPointer {
             core::shared::types::ValueTypeId typeId;
             void* ptr;
-        };
-
-        struct OutputRow {
-            std::vector<std::byte> data;
-            Timestamp startTs = 0;
-            Timestamp endTs = 0;
-            std::int64_t startTb = 0;
-            std::int64_t endTb = 0;
-            std::vector<RetainPointer> retainPointers;
         };
 
         struct JoinSnapshot {
@@ -58,9 +47,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         JoinBuffer(core::logical::port::Port leftSchema,
                    core::logical::port::Port rightSchema,
-                   core::logical::port::Port outputSchema,
-                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
-                   bool outOfOrder);
+                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry);
 
         ~JoinBuffer();
 
@@ -110,37 +97,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
 
-        void bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize, bool onLeft, Timestamp startTs, Timestamp endTs,
-            std::int64_t startTb, std::int64_t endTb);
-
-        std::size_t drainOutput(Timestamp watermark, std::size_t maxCount, std::vector<std::size_t>& outIndices);
-
-        void removeOutputRows(const std::vector<std::size_t>& indices);
-
-        [[nodiscard]] const OutputRow& getOutputRow(std::size_t index) const;
-
-        [[nodiscard]] std::size_t getOutputRowSize() const;
-
-        [[nodiscard]] Timestamp getMinStartTimestampLeft() const;
-
-        [[nodiscard]] Timestamp getMaxStartTimestampRight() const;
-
     private:
-        bool mOutOfOrder;
         JoinSide mLeftSide;
         JoinSide mRightSide;
-        std::shared_mutex mMutex;
+        std::mutex mMutex;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::vector<std::size_t> mCandidates;
         bool mAllReleased = false;
-        Timestamp mLastHeartbeat = 0;
-
-        std::vector<OutputRow> mOutputBuffer;
-        std::vector<std::size_t> mOutputOrder;
-        core::logical::port::Port mOutputSchema;
-        std::vector<std::byte> mOutputTempBuf;
-        std::mutex mOutputMutex;
 
         void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, Timestamp sourceStartTs, Timestamp sourceEndTs, bool extract);
 
