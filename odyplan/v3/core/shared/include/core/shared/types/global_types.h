@@ -2,6 +2,7 @@
 #define SIERRA_ODYPLAN_V3_CORE_SHARED_TYPES_GLOBAL_TYPES_HPP
 
 #include <cstdint>
+#include <limits>
 
 namespace sierra::odyplan::v3::core::shared::types {
     using Timestamp = std::int64_t;
