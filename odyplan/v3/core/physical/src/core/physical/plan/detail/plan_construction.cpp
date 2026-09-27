@@ -198,8 +198,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                                                                              inner) {
         auto *i64Ty = llvm::Type::getInt64Ty(*ctx);
         auto *i1Ty = llvm::Type::getInt1Ty(*ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(*ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(*ctx);
         auto *voidTy = llvm::Type::getVoidTy(*ctx);
+        auto* sizeTTy = module->getDataLayout().getIntPtrType(*ctx);
 
         std::vector<llvm::Type *> memberTypes;
         memberTypes.reserve(portSchema.size() + 4);
@@ -228,13 +230,13 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         auto *runtimeRegistryGlobal = stateRegistry->getRuntimeTypeRegistryGlobal();
 
         const auto retainFn = module->getOrInsertFunction(
-            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, ptrTy}, false));
+            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty, ptrTy}, false));
         const auto releaseFn = module->getOrInsertFunction(
-            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
+            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i8Ty, ptrTy}, false));
         const auto freeFn = module->getOrInsertFunction(
             "rtFanInFree", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         const auto allocFnDecl = module->getOrInsertFunction(
-            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {i64Ty}, false));
+            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {sizeTTy}, false));
 
         auto *dataContinuationFn = segment::SegmentBuilder::createContinuation(
             *module, *ctx, *codegenTypeRegistry, "ody_continuation_" + uniqueKey,
@@ -263,7 +265,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     if (!memberTypes[i + 4]->isPointerTy()) {
                         continue;
                     }
-                    llvm::Value *typeIdConst = llvm::ConstantInt::get(i64Ty, portSchema.at(i).valueTypeId);
+                    llvm::Value *typeIdConst = llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
                     computeCtx.builder.CreateCall(
                         releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
                 }
@@ -291,10 +293,12 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
                 auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
+                auto *i8TyLocal = llvm::Type::getInt8Ty(*ctx);
                 auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
+                auto* sizeTTyLocal = module->getDataLayout().getIntPtrType(*ctx);
 
                 const auto allocFn = module->getOrInsertFunction(
-                    "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {i64TyLocal}, false));
+                    "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {sizeTTyLocal}, false));
                 llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
                     allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
 
@@ -321,7 +325,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
                     if (memberTypes[i + 4]->isPointerTy()) {
                         llvm::Value *typeIdConst =
-                                llvm::ConstantInt::get(i64TyLocal, portSchema.at(i).valueTypeId);
+                                llvm::ConstantInt::get(i8TyLocal, portSchema.at(i).valueTypeId);
                         fieldVal = sCtx.builder.CreateCall(
                             retainFn, {runtimeRegistryPtrLocal, typeIdConst, fieldVal});
                     }
@@ -332,10 +336,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             },
             [this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl]
     (segment::SegmentContext &sCtx, const data::PunctuationPackage &punctuation) {
-                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
+                auto* sizeTTyLocal = module->getDataLayout().getIntPtrType(*ctx);
 
                 llvm::Value *punctPtrLocal = sCtx.builder.CreateCall(
-                    allocFnDecl, {llvm::ConstantInt::get(i64TyLocal, punctByteSize)});
+                    allocFnDecl, {llvm::ConstantInt::get(sizeTTyLocal, punctByteSize)});
 
                 sCtx.builder.CreateStore(
                     punctuation.watermark, sCtx.builder.CreateStructGEP(punctStructTy, punctPtrLocal, 0));

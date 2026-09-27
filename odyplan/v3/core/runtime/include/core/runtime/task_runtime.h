@@ -12,7 +12,7 @@ inline std::atomic_uint64_t gNextComputeHandle{0};
 
 inline sierra::odyplan::v3::core::runtime::thread::IoThreadPool gIoThreadPool;
 
-using IOTaskHandle = std::uint64_t;
+using IOTaskHandle = std::size_t;
 
 namespace sierra::odyplan::v3::core::runtime {
     extern "C" {

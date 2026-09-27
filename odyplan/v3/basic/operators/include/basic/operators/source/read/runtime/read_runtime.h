@@ -33,7 +33,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
     }  // namespace detail
 
     extern "C" {
-    void* rtIOSourceCreate(const void* typeRegistryRawPtr, std::uint8_t ioFormat, const char* path);
+    void* rtIOSourceCreate(const void* typeRegistryRawPtr, io::IOFormatType ioFormat, const char* path);
 
     void rtIOSourceDestroy(void* state);
 
