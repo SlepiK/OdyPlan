@@ -333,6 +333,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             return 0;
         }
 
+        mOutputOrder.clear();
         mOutputOrder.resize(mOutputBuffer.size());
         std::iota(mOutputOrder.begin(), mOutputOrder.end(), 0);
         std::sort(mOutputOrder.begin(), mOutputOrder.end(),
@@ -345,6 +346,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 return ra.startTb < rb.startTb;
             }
         );
+
+        outIndices.clear();
 
         std::size_t count = 0;
         for (std::size_t i = 0; i < mOutputOrder.size() && count < maxCount; ++i) {
