@@ -3,7 +3,7 @@
 
 #include <atomic>
 #include <queue>
-#include <basic/window/window_row_layout.h>
+#include <basic/storage/row_layout.h>
 #include <core/physical/time/time_point.h>
 #include <mutex>
 #include <shared_mutex>
@@ -98,7 +98,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         const bool mOutOfOrder;
         const core::runtime::types::RuntimeTypeRegistry *mRuntimeTypeRegistry;
 
-        window::WindowRowLayout mLayout;
+        storage::RowLayout mLayout;
         std::vector<RowMeta> mRowMetas;
 
         std::vector<std::uint64_t> mRowIndex;

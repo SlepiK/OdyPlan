@@ -1,14 +1,14 @@
-#ifndef SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H
-#define SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_BUFFER_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_BUFFER_HPP
 
-#include <basic/window/count/count_window_config.h>
-#include <basic/window/count/count_window_range.h>
-#include <basic/window/window_row_layout.h>
+#include <basic/operators/pipe/window/details/count_window_options.h>
+#include <basic/operators/pipe/window/runtime/count_window_range.h>
+#include <basic/storage/row_layout.h>
 #include <deque>
 #include <optional>
 #include <vector>
 
-namespace sierra::odyplan::v3::basic::window::count {
+namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     class ICountWindowBuffer {
     public:
         using Timestamp = std::int64_t;
@@ -42,7 +42,7 @@ namespace sierra::odyplan::v3::basic::window::count {
 
     class CountWindowBuffer final : public ICountWindowBuffer {
     public:
-        CountWindowBuffer(const CountWindowConfig& config,
+        CountWindowBuffer(const details::CountWindowOptions& config,
                           core::logical::port::Port mDataSchema,
                           const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry);
 
@@ -77,8 +77,8 @@ namespace sierra::odyplan::v3::basic::window::count {
             Timestamp endTs;
         };
 
-        CountWindowConfig mConfig;
-        WindowRowLayout mRowLayout;
+        details::CountWindowOptions mConfig;
+        storage::RowLayout mRowLayout;
         core::logical::port::Port mSchema;
 
         std::deque<Row> mRowBuffer;
@@ -91,6 +91,6 @@ namespace sierra::odyplan::v3::basic::window::count {
         std::int64_t mReadyEnd = 0;
         bool mFlushed = false;
     };
-}  // namespace sierra::odyplan::v3::basic::window::count
+}
 
-#endif  // SIERRA_ODYPLAN_V2_COMMON_WINDOW_COUNT_WINDOW_BUFFER_H
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_BUFFER_HPP

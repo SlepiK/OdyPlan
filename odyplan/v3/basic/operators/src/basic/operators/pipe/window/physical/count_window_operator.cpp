@@ -3,7 +3,7 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     CountWindowOperator::CountWindowOperator(core::physical::port::Port inputPort,
                                              core::physical::port::Port outputPort,
-                                             const basic::window::count::CountWindowConfig& config,
+                                             const details::CountWindowOptions& config,
                                              core::logical::port::Port schema)
     : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                     core::physical::port::Ports{std::move(outputPort)}),

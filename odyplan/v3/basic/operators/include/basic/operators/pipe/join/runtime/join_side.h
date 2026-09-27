@@ -1,6 +1,6 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_SIDE_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_RUNTIME_JOIN_SIDE_HPP
-#include <basic/window/window_row_layout.h>
+#include <basic/storage/row_layout.h>
 #include <core/logical/port/port.h>
 #include <deque>
 #include <map>
@@ -109,7 +109,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         core::shared::types::Timestamp mMinStartTs = 0;
         core::shared::types::Timestamp mMinEndTs = 0;
 
-        window::WindowRowLayout mLayout;
+        storage::RowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;
         // Hash-Behavior for == predicate only
 

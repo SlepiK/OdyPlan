@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     ));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
-        sierra::odyplan::v3::basic::window::time::TimeWindowConfig{
+        sierra::odyplan::v3::basic::operators::pipe::window::details::TimeWindowOptions{
             .size = std::chrono::milliseconds(5).count(),
             .advance = std::chrono::milliseconds(1).count()}
     ));

@@ -1,7 +1,7 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_WINDOW_RUNTIME_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_WINDOW_RUNTIME_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_RUNTIME_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_RUNTIME_HPP
 #include <algorithm>
-#include <basic/window/count/count_window_buffer.h>
+#include <basic/operators/pipe/window/runtime/count_window_buffer.h>
 #include <memory>
 #include <vector>
 #include <core/shared/types/global_types.h>
@@ -38,6 +38,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     std::uint64_t rtCountWindowEmitCount(void* state);
     }
-}  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime
+}
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_WINDOW_RUNTIME_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_RUNTIME_COUNT_WINDOW_RUNTIME_HPP

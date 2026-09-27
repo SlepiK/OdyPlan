@@ -1,10 +1,9 @@
-#include <basic/window/count/count_window_buffer.h>
 #include <cassert>
+#include <basic/operators/pipe/window/runtime/count_window_buffer.h>
+#include <core/physical/time/time_point.h>
 
-#include "core/physical/time/time_point.h"
-
-namespace sierra::odyplan::v3::basic::window::count {
-    CountWindowBuffer::CountWindowBuffer(const CountWindowConfig& config,
+namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
+    CountWindowBuffer::CountWindowBuffer(const details::CountWindowOptions& config,
                           core::logical::port::Port mDataSchema,
                           const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
         : mConfig(config), mRowLayout(mDataSchema, runtimeTypeRegistry),

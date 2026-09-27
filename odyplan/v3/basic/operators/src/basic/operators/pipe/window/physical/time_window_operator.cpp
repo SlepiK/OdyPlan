@@ -5,24 +5,24 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     namespace {
-        basic::window::TimeWindowType resolveTimeWindowType(const basic::window::time::TimeWindowConfig& config ) {
+        details::TimeWindowType resolveTimeWindowType(const details::TimeWindowOptions& config ) {
             if (!config.slide.has_value() && !config.advance.has_value()) {
-                return basic::window::TimeWindowType::SLIDING;
+                return details::TimeWindowType::SLIDING;
             }
             if (!config.slide.has_value()) {
-                return basic::window::TimeWindowType::ADVANCE;
+                return details::TimeWindowType::ADVANCE;
             }
-            return basic::window::TimeWindowType::PERIODIC;
+            return details::TimeWindowType::PERIODIC;
         }
     }
 
     TimeWindowOperator::TimeWindowOperator(core::physical::port::Port inputPort,
                                            core::physical::port::Port outputPort,
-                                           const basic::window::time::TimeWindowConfig& config)
+                                           const details::TimeWindowOptions& config)
     : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
                         core::physical::port::Ports{std::move(outputPort)}),
           mConfig(config), mWindowType(resolveTimeWindowType(config)) {
-        if (mWindowType == basic::window::TimeWindowType::PERIODIC) {
+        if (mWindowType == details::TimeWindowType::PERIODIC) {
             throw std::logic_error("TimeWindowOperator: not implemented window_type periodic used");
         }
 
@@ -69,7 +69,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         llvm::Value* sizeValue = llvm::ConstantInt::get(i64Ty, mConfig.size);
 
-        if (mWindowType == basic::window::TimeWindowType::ADVANCE) {
+        if (mWindowType == details::TimeWindowType::ADVANCE) {
             llvm::Value* advanceValue = llvm::ConstantInt::get(i64Ty, *mConfig.advance);
             llvm::Value* floor = segmentCtx.builder.CreateSDiv(eventTs, advanceValue);
             llvm::Value* alignedStart = segmentCtx.builder.CreateMul(floor, advanceValue);
