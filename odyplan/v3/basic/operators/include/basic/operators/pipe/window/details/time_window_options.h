@@ -6,9 +6,9 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::details {
     struct TimeWindowOptions {
-        std::uint64_t size = 1;
-        std::optional<std::uint64_t> slide = std::nullopt;
-        std::optional<std::uint64_t> advance = std::nullopt;
+        std::size_t size = 1;
+        std::optional<std::size_t> slide = std::nullopt;
+        std::optional<std::size_t> advance = std::nullopt;
     };
 }  // namespace sierra::odyplan::v3::basic::window::time
 
