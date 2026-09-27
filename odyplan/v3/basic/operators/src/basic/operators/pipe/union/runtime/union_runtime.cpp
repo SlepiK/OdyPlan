@@ -18,8 +18,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     }
 
     std::uint8_t rtUnionUpdateWatermark(void *state, const std::int64_t inputIndex,
-                                        const std::int64_t incomingWatermark,
-                                        const std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
+                                        const core::shared::types::Timestamp incomingWatermark,
+                                        const std::uint8_t incomingIsFinal, core::shared::types::Timestamp *outWatermark,
                                         std::uint8_t *outIsFinal) {
 
         auto *wState = static_cast<details::UnionWatermarkState *>(state);
@@ -42,7 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
             wState->perInputFinal[index] = true;
         }
 
-        std::int64_t effMin = std::numeric_limits<std::int64_t>::max();
+        std::int64_t effMin = std::numeric_limits<core::shared::types::Timestamp>::max();
         bool allFinal = true;
 
         for (std::size_t i = 0; i < wState->perInputWatermark.size(); ++i) {
@@ -58,7 +58,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         if (allFinal) {
             if (!wState->finalEmitted) {
                 wState->finalEmitted = true;
-                *outWatermark = std::numeric_limits<std::uint64_t>::max();
+                *outWatermark = std::numeric_limits<core::shared::types::Timestamp>::max();
                 *outIsFinal = 1;
                 sEmit = 1;
             }
@@ -117,8 +117,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     }
 
     void rtUnionBufferEnd(void *state, const std::uint64_t inputPort,
-                          const std::int64_t startTs, const std::int64_t endTs,
-                          const std::int64_t startTb, const std::int64_t endTb) {
+                          const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,
+                          const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         static_cast<UnionBuffer *>(state)->end(inputPort, startTs, endTs, startTb, endTb);
     }
 
@@ -151,11 +151,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         return static_cast<UnionBuffer *>(state)->getEndTimestamp(index);
     }
 
-    std::int64_t rtUnionBufferGetStartTibreaker(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtUnionBufferGetStartTibreaker(void *state, const std::uint64_t index) {
         return static_cast<UnionBuffer *>(state)->getStartTibreaker(index);
     }
 
-    std::int64_t rtUnionBufferGetEndTibreaker(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtUnionBufferGetEndTibreaker(void *state, const std::uint64_t index) {
         return static_cast<UnionBuffer *>(state)->getEndTibreaker(index);
     }
 
@@ -185,16 +185,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         buffer->removeV(static_cast<const void*>(indices), static_cast<std::int64_t>(count));
     }
 
-    std::uint64_t rtUnionBufferGetMinStartTimestampIndex(void* state, const std::int64_t watermark) {
+    std::uint64_t rtUnionBufferGetMinStartTimestampIndex(void* state, const core::shared::types::Timestamp watermark) {
         auto *buffer = static_cast<union_::runtime::UnionBuffer*>(state);
-        auto index = buffer->getMinStartTimestampIndex(static_cast<Timestamp>(watermark));
+        auto index = buffer->getMinStartTimestampIndex(static_cast<core::shared::types::Timestamp>(watermark));
         return index.has_value() ? index.value() : -1;
     }
 
-    BatchResult_T rtUnionBufferGetReadyIndices(void* state, const std::int64_t watermark, const std::uint64_t maxCount) {
+    BatchResult_T rtUnionBufferGetReadyIndices(void* state, const core::shared::types::Timestamp watermark, const std::uint64_t maxCount) {
         auto* buffer = static_cast<UnionBuffer*>(state);
 
-        const auto result = buffer->getReadyIndices(static_cast<Timestamp>(watermark), static_cast<std::size_t>(maxCount));
+        const auto result = buffer->getReadyIndices(static_cast<core::shared::types::Timestamp>(watermark), static_cast<std::size_t>(maxCount));
 
         return BatchResult_T{
             .count = result.count,

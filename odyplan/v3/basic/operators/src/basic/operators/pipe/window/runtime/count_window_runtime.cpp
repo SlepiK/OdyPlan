@@ -42,7 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->push(fieldIndex, rawData);
     }
 
-    void rtCountWindowEndRow(void *state, const std::int64_t startTs, const std::int64_t endTs) {
+    void rtCountWindowEndRow(void *state, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs) {
         static_cast<basic::window::count::ICountWindowBuffer*>(state)->end(startTs, endTs);
     }
 
@@ -58,11 +58,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getData(rowIndex, fieldIndex);
     }
 
-    std::int64_t rtCountWindowRowStart(void *state, const std::uint64_t rowIndex) {
+    core::shared::types::Timestamp rtCountWindowRowStart(void *state, const std::uint64_t rowIndex) {
         return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getRowStart(rowIndex);
     }
 
-    std::int64_t rtCountWindowEnd(void *state) {
+    core::shared::types::Timestamp rtCountWindowEnd(void *state) {
         return static_cast<basic::window::count::ICountWindowBuffer*>(state)->getWindowEnd();
     }
 

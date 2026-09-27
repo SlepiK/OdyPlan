@@ -21,7 +21,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void evict(core::shared::types::Timestamp threshold, bool isFinal);
 
-        void end(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void end(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         void release();
 
@@ -36,9 +36,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] std::int64_t getEndTibreaker(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::uint64_t rowIndex) const;
 
         void enableKeyIdx(const std::vector<std::uint64_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
@@ -74,11 +74,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] core::shared::types::Timestamp getLayoutEndTs() const;
 
-        [[nodiscard]] std::int64_t getLayoutStartTb() const;
+        [[nodiscard]] core::shared::types::TiBreak getLayoutStartTb() const;
 
-        [[nodiscard]] std::int64_t getLayoutEndTb() const;
+        [[nodiscard]] core::shared::types::TiBreak getLayoutEndTb() const;
 
-        void setPending(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void setPending(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         [[nodiscard]] const core::logical::port::Port& getSchema() const;
 
@@ -89,8 +89,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<std::byte> values;
             core::shared::types::Timestamp startTs = 0;
             core::shared::types::Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
-            std::int64_t startTb = 0;
-            std::int64_t endTb = 0;
+            core::shared::types::TiBreak startTb = 0;
+            core::shared::types::TiBreak endTb = 0;
             bool isRemoved = false;
         };
 
@@ -102,8 +102,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         core::shared::types::Timestamp mPendingStartTs;
         core::shared::types::Timestamp mPendingEndTs;
-        std::int64_t mPendingStartTb;
-        std::int64_t mPendingEndTb;
+        core::shared::types::TiBreak mPendingStartTb;
+        core::shared::types::TiBreak mPendingEndTb;
 
         bool mOutOfOrder;
         std::size_t mRemovedCount = 0;

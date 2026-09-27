@@ -43,7 +43,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         void end(core::shared::identifiers::PortId inputPort,
                  core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
-                 std::int64_t startTb, std::int64_t endTb);
+                 core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         [[nodiscard]] std::uint64_t getCount() const;
 
@@ -59,9 +59,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::uint64_t index) const;
 
-        [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::uint64_t index) const;
 
-        [[nodiscard]] std::int64_t getEndTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::uint64_t index) const;
 
         [[nodiscard]] core::shared::identifiers::PortId getInputPort(std::uint64_t index) const;
 
@@ -77,7 +77,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         [[nodiscard]] std::uint64_t getRowByteSize() const;
 
-        [[nodiscard]] std::optional<std::uint64_t> getMinStartTimestampIndex(core::shared::types::Timestamp watermark);
+        [[nodiscard]] std::optional<core::shared::types::Timestamp> getMinStartTimestampIndex(core::shared::types::Timestamp watermark);
 
         [[nodiscard]] BatchResult getReadyIndices(core::shared::types::Timestamp watermark, std::size_t maxCount = 32);
 
@@ -86,8 +86,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             std::vector<std::byte> values;
             core::shared::types::Timestamp startTs = 0;
             core::shared::types::Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
-            std::int64_t startTb = 0;
-            std::int64_t endTb = 0;
+            core::shared::types::TiBreak startTb = 0;
+            core::shared::types::TiBreak endTb = 0;
             core::shared::identifiers::PortId inputPort = 0;
             bool isRemoved = false;
         };
@@ -113,7 +113,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         void compactIfNeeded();
         void compact();
 
-        static inline bool compareRows(const core::shared::types::Timestamp tsA, const std::int64_t tbA, const core::shared::types::Timestamp tsB, const std::int64_t tbB) {
+        static inline bool compareRows(const core::shared::types::Timestamp tsA, const core::shared::types::TiBreak tbA, const core::shared::types::Timestamp tsB, const core::shared::types::TiBreak tbB) {
             if (tsA != tsB) {
                 return tsA < tsB;
             }

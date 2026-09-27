@@ -58,12 +58,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mRightSide.push(index, data);
     }
 
-    void JoinBuffer::matchLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::matchLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mLeftSide.setPending(startTs, endTs, startTb, endTb);
         matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs, false);
     }
 
-    void JoinBuffer::matchRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::matchRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mRightSide.setPending(startTs, endTs, startTb, endTb);
         matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs, false);
     }
@@ -109,11 +109,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinBuffer::endLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::endLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mLeftSide.end(startTs, endTs, startTb, endTb);
     }
 
-    void JoinBuffer::endRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::endRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mRightSide.end(startTs, endTs, startTb, endTb);
     }
 

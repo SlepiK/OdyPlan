@@ -5,6 +5,7 @@
 
 namespace sierra::odyplan::v3::core::shared::types {
     using Timestamp = std::int64_t;
+    using TiBreak = std::int64_t;
 
 
 }

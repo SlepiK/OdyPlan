@@ -11,10 +11,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     namespace details {
         struct UnionWatermarkState {
             std::atomic_flag lock = ATOMIC_FLAG_INIT;
-            std::vector<std::int64_t> perInputWatermark;
+            std::vector<core::shared::types::Timestamp> perInputWatermark;
             std::vector<bool> hasReported;
             std::vector<bool> perInputFinal;
-            std::int64_t lastEmittedWatermark = std::numeric_limits<std::int64_t>::min();;
+            core::shared::types::Timestamp lastEmittedWatermark = std::numeric_limits<core::shared::types::Timestamp>::min();;
             bool finalEmitted = false;
         };
     }
@@ -24,8 +24,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     void rtUnionWatermarkDestroy(void *state);
 
-    std::uint8_t rtUnionUpdateWatermark(void *state, std::int64_t inputIndex, std::int64_t incomingWatermark,
-                                        std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
+    std::uint8_t rtUnionUpdateWatermark(void *state, std::int64_t inputIndex, core::shared::types::Timestamp incomingWatermark,
+                                        std::uint8_t incomingIsFinal, core::shared::types::Timestamp *outWatermark,
                                         std::uint8_t *outIsFinal);
 
     core::shared::types::Timestamp rtUnionGetGlobalWatermark(void* state);
@@ -41,8 +41,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     void rtUnionBufferPush(void *state, std::uint64_t index, const void *data);
 
     void rtUnionBufferEnd(void *state, std::uint64_t inputPort,
-        std::int64_t startTs, std::int64_t endTs,
-        std::int64_t startTb, std::int64_t endTb);
+        core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
+        core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
     std::uint64_t rtUnionBufferGetCount(void *state);
 
@@ -80,7 +80,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         std::uint64_t* indices;
     };
 
-    BatchResult_T rtUnionBufferGetReadyIndices(void* state, std::int64_t watermark, std::uint64_t maxCount);
+    BatchResult_T rtUnionBufferGetReadyIndices(void* state, core::shared::types::Timestamp watermark, std::uint64_t maxCount);
 
     std::int64_t rtUnionBufferGetBatchCount(BatchResult_T result);
 

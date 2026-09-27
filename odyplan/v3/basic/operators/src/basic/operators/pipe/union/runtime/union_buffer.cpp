@@ -47,7 +47,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     void UnionBuffer::end(const core::shared::identifiers::PortId inputPort,
                       const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,
-                      const std::int64_t startTb, const std::int64_t endTb) {
+                      const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         if (!mOutOfOrder) {
             return;
         }
@@ -66,7 +66,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         });
 
         auto it = std::lower_bound(mRowIndex.begin(), mRowIndex.end(), std::make_pair(startTs, startTb),
-                                   [this](const std::uint64_t idx, const std::pair<core::shared::types::Timestamp, int64_t>& val) {
+                                   [this](const std::uint64_t idx, const std::pair<core::shared::types::Timestamp, core::shared::types::TiBreak>& val) {
                                        return compareRows(mRowMetas[idx].startTs, mRowMetas[idx].startTb, val.first, val.second);
                                    });
         mRowIndex.insert(it, rowIndex);
@@ -126,14 +126,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         return mRowMetas[index].endTs;
     }
 
-    std::int64_t UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
+    core::shared::types::TiBreak UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
             return core::physical::time::INFINITY_SENTINEL;
         }
         return mRowMetas[index].startTb;
     }
 
-    std::int64_t UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
+    core::shared::types::TiBreak UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
         if (index >= mRowMetas.size()) {
             return core::physical::time::INFINITY_SENTINEL;
         }
@@ -214,7 +214,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         return mLayout.getTotalByteSize();
     }
 
-    std::optional<std::uint64_t> UnionBuffer::getMinStartTimestampIndex(const core::shared::types::Timestamp watermark) {
+    std::optional<core::shared::types::Timestamp> UnionBuffer::getMinStartTimestampIndex(const core::shared::types::Timestamp watermark) {
         if (mRowMetas.empty()) {
             return std::nullopt;
         }

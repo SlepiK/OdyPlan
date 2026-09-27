@@ -5,14 +5,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     namespace details {
         struct JoinWatermarkState {
             std::atomic_flag lock = ATOMIC_FLAG_INIT;
-            std::int64_t leftWatermark{0};
-            std::int64_t rightWatermark{0};
+            core::shared::types::Timestamp leftWatermark{0};
+            core::shared::types::Timestamp rightWatermark{0};
             bool leftReported{false};
             bool rightReported{false};
             bool leftFinal{false};
             bool rightFinal{false};
             bool finalEmitted = false;
-            std::int64_t lastEmittedWatermark{0};
+            core::shared::types::Timestamp lastEmittedWatermark{0};
         };
     }
 
@@ -112,13 +112,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<physical::details::JoinBuffer *>(state)->pushRight(index, data);
     }
 
-    void rtJoinEndLeft(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
-                       const std::int64_t endTb) {
+    void rtJoinEndLeft(void *state, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb,
+                       const core::shared::types::TiBreak endTb) {
         static_cast<physical::details::JoinBuffer *>(state)->endLeft(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinEndRight(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
-                        const std::int64_t endTb) {
+    void rtJoinEndRight(void *state, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb,
+                        const core::shared::types::TiBreak endTb) {
         static_cast<physical::details::JoinBuffer *>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
@@ -149,19 +149,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->startTs;
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void *snapshot, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinSnapshotGetCandidateStartTibreaker(void *snapshot, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateStartsTb.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void *snapshot, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinSnapshotGetCandidateEndTibreaker(void *snapshot, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateEndsTb.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void *snapshot) {
+    core::shared::types::TiBreak rtJoinSnapshotGetOwnStartTibreaker(void *snapshot) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->startTb;
     }
 
-    std::int64_t rtJoinSnapshotGetOwnEndTibreaker(void *snapshot) {
+    core::shared::types::TiBreak rtJoinSnapshotGetOwnEndTibreaker(void *snapshot) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->endTb;
     }
 
@@ -239,8 +239,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     // NOLINTNEXTLINE(readability-function-size)
-    std::uint8_t rtJoinUpdateWatermark(void *state, const std::uint8_t isLeft, const std::int64_t inWatermark,
-                                       const std::uint8_t inIsFinal, const std::int64_t allowedLateness,
+    std::uint8_t rtJoinUpdateWatermark(void *state, const std::uint8_t isLeft, const core::shared::types::Timestamp inWatermark,
+                                       const std::uint8_t inIsFinal, const core::shared::types::Timestamp allowedLateness,
                                        std::int64_t *outEvictLeftTh, std::int64_t *outEvictRightTh,
                                        std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal) {
         auto *watermarkState = static_cast<details::JoinWatermarkState *>(state);
@@ -301,32 +301,31 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return shouldEmit;
     }
 
-    void rtJoinEvict(void *state, const std::int64_t threshold, const std::uint8_t callFromLeft,
+    void rtJoinEvict(void *state, const core::shared::types::Timestamp threshold, const std::uint8_t callFromLeft,
                      const std::uint8_t isFinal) {
         static_cast<physical::details::JoinBuffer *>(state)->evict(threshold, callFromLeft != 0, isFinal != 0);
     }
 
-    void rtJoinMatchLeft(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
-                         const std::int64_t endTb) {
+    void rtJoinMatchLeft(void *state, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb,
+                         const core::shared::types::TiBreak endTb) {
         static_cast<physical::details::JoinBuffer *>(state)->matchLeft(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinMatchRight(void *state, const std::int64_t startTs, const std::int64_t endTs, const std::int64_t startTb,
-                          const std::int64_t endTb) {
+    void rtJoinMatchRight(void *state, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb,
+                          const core::shared::types::TiBreak endTb) {
         static_cast<physical::details::JoinBuffer *>(state)->matchRight(startTs, endTs, startTb, endTb);
     }
 
-
     void rtJoinBufferOutput(void *state, const void *ownRowPtr, const std::uint64_t ownRowSize, const void *candRowPtr,
-                            const std::uint64_t candRowSize, const std::uint8_t onLeft, const std::int64_t startTs,
-                            const std::int64_t endTs,
-                            const std::int64_t startTb, const std::int64_t endTb) {
+                            const std::uint64_t candRowSize, const std::uint8_t onLeft, const core::shared::types::Timestamp startTs,
+                            const core::shared::types::Timestamp endTs,
+                            const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         auto *buffer = static_cast<physical::details::JoinBuffer *>(state);
         buffer->bufferOutput(ownRowPtr, ownRowSize, candRowPtr, candRowSize, onLeft != 0, startTs, endTs, startTb,
                              endTb);
     }
 
-    std::uint64_t rtJoinDrainOutput(void *state, const std::int64_t watermark, const std::uint64_t maxCount,
+    std::uint64_t rtJoinDrainOutput(void *state, const core::shared::types::Timestamp watermark, const std::uint64_t maxCount,
                                     std::uint64_t *outIndices) {
         auto *buffer = static_cast<physical::details::JoinBuffer *>(state);
         std::vector<std::size_t> indices;
@@ -349,11 +348,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).endTs;
     }
 
-    std::int64_t rtJoinGetOutputRowStartTb(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinGetOutputRowStartTb(void *state, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).startTb;
     }
 
-    std::int64_t rtJoinGetOutputRowEndTb(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinGetOutputRowEndTb(void *state, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).endTb;
     }
 

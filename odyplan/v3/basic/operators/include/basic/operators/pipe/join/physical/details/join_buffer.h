@@ -19,8 +19,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<std::byte> data;
             core::shared::types::Timestamp startTs = 0;
             core::shared::types::Timestamp endTs = 0;
-            std::int64_t startTb = 0;
-            std::int64_t endTb = 0;
+            core::shared::types::TiBreak startTb = 0;
+            core::shared::types::TiBreak endTb = 0;
             std::vector<RetainPointer> retainPointers;
         };
 
@@ -31,14 +31,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
             core::shared::types::Timestamp startTs;
             core::shared::types::Timestamp endTs;
-            std::int64_t startTb;
-            std::int64_t endTb;
+            core::shared::types::TiBreak startTb;
+            core::shared::types::TiBreak endTb;
 
             std::vector<std::byte> candidateData;
             std::vector<core::shared::types::Timestamp> candidateStarts;
             std::vector<core::shared::types::Timestamp> candidateEnds;
-            std::vector<std::int64_t> candidateStartsTb;
-            std::vector<std::int64_t> candidateEndsTb;
+            std::vector<core::shared::types::TiBreak> candidateStartsTb;
+            std::vector<core::shared::types::TiBreak> candidateEndsTb;
             std::vector<std::uint64_t> candidateFieldOffsets;
             std::vector<core::shared::types::ValueTypeId> candidateFieldTypeIds;
             std::size_t candidateRowByteSize = 0;
@@ -84,13 +84,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void pushRight(std::size_t index, const void* data);
 
-        void endLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void endLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-        void endRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void endRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-        void matchLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void matchLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-        void matchRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void matchRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract);
@@ -112,7 +112,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
 
         void bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize, bool onLeft, core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
-            std::int64_t startTb, std::int64_t endTb);
+            core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         std::size_t drainOutput(core::shared::types::Timestamp watermark, std::size_t maxCount, std::vector<std::size_t>& outIndices);
 

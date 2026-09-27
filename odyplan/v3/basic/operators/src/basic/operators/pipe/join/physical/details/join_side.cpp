@@ -4,7 +4,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     namespace {
-        constexpr inline bool _before(const std::int64_t lft, const std::int64_t rht) {
+        constexpr inline bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
             if (lft == core::physical::time::INFINITY_SENTINEL) {
                 return false;
             }
@@ -170,15 +170,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    std::int64_t JoinSide::getStartTibreaker(const std::uint64_t rowIndex) const {
+    core::shared::types::TiBreak JoinSide::getStartTibreaker(const std::uint64_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).startTb;
     }
 
-    std::int64_t JoinSide::getEndTibreaker(const std::uint64_t rowIndex) const {
+    core::shared::types::TiBreak JoinSide::getEndTibreaker(const std::uint64_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).endTb;
     }
 
-    void JoinSide::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         const auto absoluteIndex = mBasisIndex + mBufferedRows.size();
 
         mBufferedRows.push_back(
@@ -353,7 +353,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.offsetOf(index);
     }
 
-    void JoinSide::setPending(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::setPending(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mPendingStartTs = startTs;
         mPendingStartTb = startTb;
         mPendingEndTs = endTs;
