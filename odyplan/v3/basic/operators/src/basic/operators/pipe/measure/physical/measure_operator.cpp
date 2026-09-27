@@ -1,6 +1,6 @@
 #include <basic/operators/pipe/measure/physical/measure_operator.h>
 
-#include "basic/operators/pipe/measure/runtime/details/measure_state.h"
+#include <basic/operators/pipe/measure/runtime/measure_state.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
     MeasureOperator::MeasureOperator(core::physical::port::Port inputPort,

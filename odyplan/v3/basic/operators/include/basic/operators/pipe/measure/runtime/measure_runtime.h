@@ -1,7 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_MEASURE_RUNTIME_HPP
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_MEASURE_RUNTIME_HPP
 
-#include <basic/operators/pipe/measure/runtime/details/measure_state.h>
+#include <basic/operators/pipe/measure/runtime/measure_state.h>
 #include <cstdint>
 #include <mutex>
 #include <print>

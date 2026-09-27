@@ -1,12 +1,12 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAILS_MEASURE_STATE_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAILS_MEASURE_STATE_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_MEASURE_STATE_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_MEASURE_STATE_HPP
 
 #include <atomic>
 #include <chrono>
 #include <mutex>
 #include <string>
 
-namespace sierra::odyplan::v3::core::runtime::measure::details {
+namespace sierra::odyplan::v3::core::runtime::measure {
     struct MeasureState {
         std::string label;
         std::atomic_uint64_t counter{0};
@@ -21,6 +21,6 @@ namespace sierra::odyplan::v3::core::runtime::measure::details {
         std::once_flag finalReportFlag;
 
     };
-}  // namespace sierra::odyplan::v2::core::runtime::measure::details
+}  // namespace sierra::odyplan::v2::core::runtime::measure
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_DETAIL_MEASURE_STATE_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_MESSURE_RUNTIME_MEASURE_STATE_HPP

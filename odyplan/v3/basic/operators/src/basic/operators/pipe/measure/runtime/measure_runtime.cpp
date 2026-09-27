@@ -4,20 +4,20 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
     extern "C" {
     void* rtCreateMeasure(const void* /*typeRegistry*/, const char* label) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        auto* state = new sierra::odyplan::v3::core::runtime::measure::details::MeasureState();
+        auto* state = new sierra::odyplan::v3::core::runtime::measure::MeasureState();
         state->label = label;
         return state;
     }
 
     void rtDestroyMeasure(void* measureState) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        delete static_cast<sierra::odyplan::v3::core::runtime::measure::details::MeasureState*>(
+        delete static_cast<sierra::odyplan::v3::core::runtime::measure::MeasureState*>(
             measureState);
     }
 
     void rtMeasureTick(void* measureState) {
         auto* state =
-            static_cast<sierra::odyplan::v3::core::runtime::measure::details::MeasureState*>(
+            static_cast<sierra::odyplan::v3::core::runtime::measure::MeasureState*>(
                 measureState);
         const auto n = state->counter.fetch_add(1, std::memory_order_relaxed) + 1;
 
@@ -79,7 +79,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
 
     void rtMeasureFinalReport(void* measureState) {
         auto* state =
-            static_cast<sierra::odyplan::v3::core::runtime::measure::details::MeasureState*>(
+            static_cast<sierra::odyplan::v3::core::runtime::measure::MeasureState*>(
                 measureState);
         std::call_once(state->finalReportFlag, [state]() {
             const auto total = state->counter.load(std::memory_order_relaxed);
