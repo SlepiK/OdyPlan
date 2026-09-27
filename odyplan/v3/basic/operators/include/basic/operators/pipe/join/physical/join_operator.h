@@ -46,6 +46,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         core::physical::state::StateHandle mState;
         core::physical::state::StateHandle mWatermarkState;
+        core::physical::state::StateHandle mLastHeartbeatState;
 
         llvm::Value* loadStatePtr(core::physical::segment::SegmentContext& segmentCtx) const;
 

@@ -206,8 +206,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* heartbeat = segmentCtx.builder.CreateICmpSGT(minLeft, minRight);
         heartbeat = segmentCtx.builder.CreateSelect(heartbeat, minLeft, minRight);
 
-        auto *lastHbSlot = segmentCtx.storage.getNamed("join_last_heartbeat." + std::to_string(getPId()), i64Ty);
-        llvm::Value *lastHb = segmentCtx.builder.CreateLoad(i64Ty, lastHbSlot);
+        llvm::Value *lastHb = segmentCtx.builder.CreateLoad(i64Ty, mLastHeartbeatState.var);
 
         llvm::Value *shouldEmit = segmentCtx.builder.CreateICmpSGT(heartbeat, lastHb);
 
@@ -220,7 +219,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         segmentCtx.builder.SetInsertPoint(emitBB);
 
-        segmentCtx.builder.CreateStore(heartbeat, lastHbSlot);
+        segmentCtx.builder.CreateStore(heartbeat, mLastHeartbeatState.var);
 
         const auto watermark = core::physical::data::PunctuationPackage::createHeartbeat(segmentCtx.builder, heartbeat);
 
@@ -598,6 +597,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             "join_watermark_" + std::to_string(getPId()),
             "rtJoinWatermarkCreate", {}, {},
             "rtJoinWatermarkDestroy");
+
+        mLastHeartbeatState = stateRegistry.createPrimitiveHandle(
+            "join_last_heartbeat_" + std::to_string(getPId()),
+            i64Ty, llvm::ConstantInt::get(i64Ty, 0));
     }
 
     llvm::Value*
