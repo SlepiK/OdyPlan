@@ -92,13 +92,12 @@ int main(int argc, char** argv) {
         }
     ));
 
-    auto unionId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>());
+    auto unionId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>(true));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
     sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
         .printPunctuation = false,
-    },
-        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV {0,1,2}
+    }
     ));
 
     logicalPlan.connect(
