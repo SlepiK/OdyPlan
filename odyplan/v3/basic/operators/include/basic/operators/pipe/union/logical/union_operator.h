@@ -11,18 +11,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::logical {// NOLIN
         static constexpr core::shared::types::OperatorTypeId TYPE_ID =
             std::to_underlying(core::shared::types::BuiltinOperatorType::UNION);
 
-        explicit UnionOperator(const bool assureOrder = true) : mAssureOrder(assureOrder) {
+        explicit UnionOperator(const bool order = true) : mOutOfOrder(order) {
         }
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
-        [[nodiscard]] bool isOutOfOrder() const;
+        [[nodiscard]] bool getOutOfOrder() const;
 
     protected:
         void validateInput() override;
 
     private:
-        bool mAssureOrder; //true == IN_ORDER | false == OUT_OF_ORDER
+        bool mOutOfOrder;
     };
 }
 

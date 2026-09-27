@@ -32,7 +32,6 @@ namespace sierra::odyplan::v3::basic::window {
 
         [[nodiscard]] std::size_t getCurrentRowSize() const;
 
-        [[nodiscard]] const core::logical::port::Port& getSchema() const;
     private:
         core::logical::port::Port mDataSchema;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;

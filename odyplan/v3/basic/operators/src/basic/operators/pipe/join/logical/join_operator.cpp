@@ -3,8 +3,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
     JoinOperator::JoinOperator(const details::JoinConfig config,
-                               std::unique_ptr<basic::expression::logical::IExpression> predicate, const bool assureOrder)
-        : mConfig(config), mLPredicate(std::move(predicate)), mAssureOrder(assureOrder) {}
+                               std::unique_ptr<basic::expression::logical::IExpression> predicate)
+        : mConfig(config), mLPredicate(std::move(predicate)) {}
 
     core::shared::types::OperatorTypeId JoinOperator::getOperatorTypeId() const {
         return TYPE_ID;
@@ -70,9 +70,5 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         if (getOutputPorts().empty() || getOutputPorts().front().empty()) {
             throw std::logic_error("IntervalJoinOperator::validate: output schema never computed");
         }
-    }
-
-    bool JoinOperator::isOutOfOrder() const {
-        return !mAssureOrder;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::logical
