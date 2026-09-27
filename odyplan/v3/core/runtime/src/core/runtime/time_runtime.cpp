@@ -2,8 +2,10 @@
 
 namespace sierra::odyplan::v3::core::runtime::thread {
     namespace {
-        const std::chrono::steady_clock::time_point PROGRAM_CLOCK =
-            std::chrono::steady_clock::now();
+        const std::chrono::steady_clock::time_point& programClock() {
+            static const std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
+            return t;
+        }
     }
 
     extern "C" {
@@ -15,7 +17,7 @@ namespace sierra::odyplan::v3::core::runtime::thread {
 
     shared::types::Timestamp rtProgramTimeNow() {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
-                   std::chrono::steady_clock::now() - PROGRAM_CLOCK)
+                   std::chrono::steady_clock::now() - programClock())
             .count();
     }
     }

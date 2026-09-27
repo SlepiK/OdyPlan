@@ -24,11 +24,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         mRowLayout.begin();
     }
 
-    void CountWindowBuffer::push(const std::uint64_t fieldIndex, const void *rawData) {
+    void CountWindowBuffer::push(const std::size_t fieldIndex, const void *rawData) {
         mRowLayout.push(fieldIndex, rawData);
     }
 
-    void CountWindowBuffer::end(const Timestamp startTs, const Timestamp endTs) {
+    void CountWindowBuffer::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs) {
         mRowBuffer.push_back(Row{.data=mRowLayout.pop(), .startTs=startTs, .endTs=endTs});
 
         if (mRowBuffer.size() == mConfig.size + 1) {
@@ -47,26 +47,26 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         return mReady;
     }
 
-    std::uint64_t CountWindowBuffer::getRowCount() const {
+    std::size_t CountWindowBuffer::getRowCount() const {
         return mReadyRowCount;
     }
 
-    const std::byte *CountWindowBuffer::getData(const std::uint64_t rowIndex, const std::uint64_t fieldIndex) const {
+    const std::byte *CountWindowBuffer::getData(const std::size_t rowIndex, const std::size_t fieldIndex) const {
         return mRowBuffer[rowIndex].data.data() + mRowLayout.offsetOf(fieldIndex);
     }
 
-    ICountWindowBuffer::Timestamp CountWindowBuffer::getRowStart(const std::uint64_t rowIndex) const {
+    core::shared::types::Timestamp CountWindowBuffer::getRowStart(const std::size_t rowIndex) const {
         if (mConfig.usesSlideParam() && mFirstElementStart.has_value()) {
             return *mFirstElementStart;
         }
         return mRowBuffer[rowIndex].startTs;
     }
 
-    ICountWindowBuffer::Timestamp CountWindowBuffer::getWindowEnd() const {
+    core::shared::types::Timestamp CountWindowBuffer::getWindowEnd() const {
         return mReadyEnd;
     }
 
-    std::uint64_t CountWindowBuffer::getEmitCount() const {
+    std::size_t CountWindowBuffer::getEmitCount() const {
         return mReady ? mReadyEmitCount : 0;
     }
 

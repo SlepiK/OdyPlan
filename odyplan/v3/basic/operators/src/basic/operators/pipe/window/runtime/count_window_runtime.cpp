@@ -3,22 +3,22 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
     void* rtCreateCountWindowBuffer(const void* typeRegistryRaw,
-                                    const std::int64_t size,
-                                    const std::int64_t slide,
-                                    const std::int64_t advance,
+                                    const std::size_t size,
+                                    const std::size_t slide,
+                                    const std::size_t advance,
                                     const core::shared::types::ValueTypeId* typeIds,
-                                    const std::uint64_t fieldCount) {
+                                    const std::size_t fieldCount) {
         const auto* runtimeTypeRegistry =
             static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const details::CountWindowOptions config{
-            .size = static_cast<std::uint64_t>(size),
-            .slide = static_cast<std::uint64_t>(slide),
-            .advance = static_cast<std::uint64_t>(advance)
+            .size = size,
+            .slide = slide,
+            .advance = advance
         };
 
         core::logical::port::Port schema;
-        for (std::uint64_t i = 0; i < fieldCount; ++i) {
+        for (std::size_t i = 0; i < fieldCount; ++i) {
             schema.push_back(core::logical::port::PortDescription{.valueTypeId = typeIds[i]});
         }
 
@@ -38,7 +38,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         static_cast<ICountWindowBuffer*>(state)->begin();
     }
 
-    void rtCountWindowPush(void *state, const std::uint64_t fieldIndex, const void *rawData) {
+    void rtCountWindowPush(void *state, const std::size_t fieldIndex, const void *rawData) {
         static_cast<ICountWindowBuffer*>(state)->push(fieldIndex, rawData);
     }
 
@@ -50,15 +50,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         return static_cast<ICountWindowBuffer*>(state)->ready();
     }
 
-    std::uint64_t rtCountWindowRowCount(void *state) {
+    std::size_t rtCountWindowRowCount(void *state) {
         return static_cast<ICountWindowBuffer*>(state)->getRowCount();
     }
 
-    const void *rtCountWindowGetData(void *state, const std::uint64_t rowIndex, const std::uint64_t fieldIndex) {
+    const void *rtCountWindowGetData(void *state, const std::size_t rowIndex, const std::size_t fieldIndex) {
         return static_cast<ICountWindowBuffer*>(state)->getData(rowIndex, fieldIndex);
     }
 
-    core::shared::types::Timestamp rtCountWindowRowStart(void *state, const std::uint64_t rowIndex) {
+    core::shared::types::Timestamp rtCountWindowRowStart(void *state, const std::size_t rowIndex) {
         return static_cast<ICountWindowBuffer*>(state)->getRowStart(rowIndex);
     }
 
@@ -70,7 +70,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         static_cast<ICountWindowBuffer*>(state)->advanceWindow();
     }
 
-    std::uint64_t rtCountWindowEmitCount(void* state) {
+    std::size_t rtCountWindowEmitCount(void* state) {
         return static_cast<ICountWindowBuffer*>(state)->getEmitCount();
     }
     }

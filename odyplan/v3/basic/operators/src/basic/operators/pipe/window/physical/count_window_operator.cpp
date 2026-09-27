@@ -16,9 +16,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     void CountWindowOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                            llvm::Module& module,
                                            llvm::LLVMContext& context) {
-        auto* i8Ty = llvm::Type::getInt8Ty(context);
-        auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
+        auto* sizeTTy = module.getDataLayout().getIntPtrType(context);
 
         auto* typesGlobal = buildTypeIds(
             module, context, mDataSchema, "count_window_types_" + std::to_string(getPId()));
@@ -26,12 +25,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         mState = stateRegistry.createHandle("count_window_" + std::to_string(getPId()),
                                             "rtCreateCountWindowBuffer",
                                             {
-                                             llvm::ConstantInt::get(i64Ty, mConfig.size),
-                                             llvm::ConstantInt::get(i64Ty, mConfig.slide),
-                                             llvm::ConstantInt::get(i64Ty, mConfig.advance),
+                                             llvm::ConstantInt::get(sizeTTy, mConfig.size),
+                                             llvm::ConstantInt::get(sizeTTy, mConfig.slide),
+                                             llvm::ConstantInt::get(sizeTTy, mConfig.advance),
                                              typesGlobal,
-                                             llvm::ConstantInt::get(i64Ty, mDataSchema.size())},
-                                            {i64Ty, i64Ty, i64Ty, ptrTy, i64Ty},
+                                             llvm::ConstantInt::get(sizeTTy, mDataSchema.size())},
+                                            {sizeTTy, sizeTTy, sizeTTy, ptrTy, sizeTTy},
                                             "rtDestroyCountWindowBuffer");
     }
 
@@ -114,13 +113,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* i1Ty = llvm::Type::getInt1Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto* sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         const auto readyFn = module->getOrInsertFunction("rtCountWindowReady", llvm::FunctionType::get(i1Ty, {ptrTy}, false));
-        const auto rowCountFn = module->getOrInsertFunction("rtCountWindowRowCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         const auto endFn = module->getOrInsertFunction("rtCountWindowEnd", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-        const auto rowStartFn = module->getOrInsertFunction("rtCountWindowRowStart", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        const auto rowStartFn = module->getOrInsertFunction("rtCountWindowRowStart", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto advanceFn = module->getOrInsertFunction("rtCountWindowAdvance", llvm::FunctionType::get(voidTy, {ptrTy}, false));
-        const auto emitCountFn = module->getOrInsertFunction("rtCountWindowEmitCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto emitCountFn = module->getOrInsertFunction("rtCountWindowEmitCount", llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
 
         auto* headerBB = llvm::BasicBlock::Create(ctx, "windowHeader", fn);
         auto* bodyBB = llvm::BasicBlock::Create(ctx, "windowBody", fn);
@@ -132,13 +131,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         segmentCtx.builder.CreateCondBr(isReady, bodyBB, exitBB);
 
         segmentCtx.builder.SetInsertPoint(bodyBB);
-        //llvm::Value* rowCount = segmentCtx.builder.CreateCall(rowCountFn, {state});
         llvm::Value* emitCount = segmentCtx.builder.CreateCall(emitCountFn, {state});
         llvm::Value* endTs = segmentCtx.builder.CreateCall(endFn, {state});
 
         const core::physical::time::TimePoint sharedEndTP(segmentCtx.builder, endTs);
 
-        auto* rowIndexSlot = segmentCtx.storage.getNamed("countWindowRowIndex." + std::to_string(getPId()), i64Ty);
+        auto* rowIndexSlot = segmentCtx.storage.getNamed("countWindowRowIndex." + std::to_string(getPId()), sizeTTy);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), rowIndexSlot);
 
         auto* rowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
@@ -147,7 +145,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         segmentCtx.builder.CreateBr(rowHeaderBB);
         segmentCtx.builder.SetInsertPoint(rowHeaderBB);
-        llvm::Value* rowIndex = segmentCtx.builder.CreateLoad(i64Ty, rowIndexSlot);
+        llvm::Value* rowIndex = segmentCtx.builder.CreateLoad(sizeTTy, rowIndexSlot);
         segmentCtx.builder.CreateCondBr(segmentCtx.builder.CreateICmpSLT(rowIndex, emitCount), rowBodyBB, rowExitBB);
 
         segmentCtx.builder.SetInsertPoint(rowBodyBB);
@@ -160,13 +158,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         emit.reserve(getOutputPorts().at(0).size());
         for (std::size_t i = 0; i < getOutputPorts().at(0).size(); ++i) {
             emit.pushBack(codegenGet(segmentCtx, state, rowIndex,
-                                     llvm::ConstantInt::get(i64Ty, i),
+                                     llvm::ConstantInt::get(sizeTTy, i),
                                      getOutputPorts().at(0).at(i).valueTypeId));
         }
 
         consumer.consume(segmentCtx, emit);
 
-        llvm::Value* nextRow = segmentCtx.builder.CreateAdd(rowIndex, llvm::ConstantInt::get(i64Ty, 1));
+        llvm::Value* nextRow = segmentCtx.builder.CreateAdd(rowIndex, llvm::ConstantInt::get(sizeTTy, 1));
         segmentCtx.builder.CreateStore(nextRow, rowIndexSlot);
         segmentCtx.builder.CreateBr(rowHeaderBB);
 
@@ -185,11 +183,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         const auto fn = module->getOrInsertFunction(
-            "rtCountWindowGetData", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
+            "rtCountWindowGetData", llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy, sizeTTy}, false));
         llvm::Value* ret =
             segmentCtx.builder.CreateCall(fn, {state, rowIndex, dataIndex});
 
@@ -235,14 +233,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
         auto* voidTy = llvm::Type::getVoidTy(ctx);
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), typeId);
         segmentCtx.builder.CreateStore(value, slot);
 
         const auto fn = module->getOrInsertFunction(
-            "rtCountWindowPush", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
-        segmentCtx.builder.CreateCall(fn, {state, llvm::ConstantInt::get(i64Ty, fieldIndex), slot});
+            "rtCountWindowPush", llvm::FunctionType::get(voidTy, {ptrTy, sizeTTy, ptrTy}, false));
+        segmentCtx.builder.CreateCall(fn, {state, llvm::ConstantInt::get(sizeTTy, fieldIndex), slot});
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::physical

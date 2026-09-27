@@ -4,8 +4,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     struct CountWindowRange {
-        std::uint64_t start;
-        std::uint64_t count;
+        std::size_t start;
+        std::size_t count;
     };
 }
 
