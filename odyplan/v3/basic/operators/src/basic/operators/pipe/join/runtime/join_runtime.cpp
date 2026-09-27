@@ -137,15 +137,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return s->candidateFieldPtr(static_cast<std::size_t>(index), static_cast<std::size_t>(fieldIndex));
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateStartTimestamp(void *snapshot, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateStartTimestamp(void *snapshot, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateStarts.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetCandidateEndTimestamp(void *snapshot, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateEndTimestamp(void *snapshot, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->candidateEnds.at(index);
     }
 
-    std::int64_t rtJoinSnapshotGetOwnStartTimestamp(void *snapshot) {
+    core::shared::types::Timestamp rtJoinSnapshotGetOwnStartTimestamp(void *snapshot) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->startTs;
     }
 
@@ -165,7 +165,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->endTb;
     }
 
-    std::int64_t rtJoinSnapshotGetOwnEndTimestamp(void *snapshot) {
+    core::shared::types::Timestamp rtJoinSnapshotGetOwnEndTimestamp(void *snapshot) {
         return static_cast<physical::details::JoinBuffer::JoinSnapshot *>(snapshot)->endTs;
     }
 
@@ -193,7 +193,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         delete static_cast<details::JoinWatermarkState *>(state);
     }
 
-    std::int64_t rtJoinGetGlobalWatermark(void* state) {
+    core::shared::types::Timestamp rtJoinGetGlobalWatermark(void* state) {
         auto* watermark = static_cast<details::JoinWatermarkState*>(state);
         if (!watermark->leftReported || !watermark->rightReported) {
             return core::physical::time::INFINITY_SENTINEL;
@@ -341,11 +341,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).data.data();
     }
 
-    std::int64_t rtJoinGetOutputRowStartTs(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinGetOutputRowStartTs(void *state, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).startTs;
     }
 
-    std::int64_t rtJoinGetOutputRowEndTs(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinGetOutputRowEndTs(void *state, const std::uint64_t index) {
         return static_cast<physical::details::JoinBuffer *>(state)->getOutputRow(index).endTs;
     }
 
@@ -385,11 +385,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         buf->removeOutputRows(idx);
     }
 
-    std::int64_t rtJoinGetMinStartTimestampLeft(void* state) {
+    core::shared::types::Timestamp rtJoinGetMinStartTimestampLeft(void* state) {
         return static_cast<physical::details::JoinBuffer*>(state)->getMinStartTimestampLeft();
     }
 
-    std::int64_t rtJoinGetMinStartTimestampRight(void* state) {
+    core::shared::types::Timestamp rtJoinGetMinStartTimestampRight(void* state) {
         return static_cast<physical::details::JoinBuffer*>(state)->getMaxStartTimestampRight();
     }
     }

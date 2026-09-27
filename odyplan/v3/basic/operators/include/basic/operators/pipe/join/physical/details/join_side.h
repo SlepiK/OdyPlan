@@ -5,11 +5,11 @@
 #include <deque>
 #include <map>
 
-#include "core/physical/time/time_point.h"
+#include <core/physical/time/time_point.h>
+
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
-    using Timestamp = std::int64_t;
-
     class JoinSide {
     public:
         JoinSide(core::logical::port::Port schema,
@@ -19,9 +19,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void push(std::uint64_t index, const void* data);
 
-        void evict(Timestamp threshold, bool isFinal);
+        void evict(core::shared::types::Timestamp threshold, bool isFinal);
 
-        void end(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void end(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         void release();
 
@@ -30,11 +30,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         [[nodiscard]] const std::byte* getFieldPtr(std::uint64_t rowIndex,
                                                    std::uint64_t fieldIndex) const;
 
-        [[nodiscard]] bool overlaps(Timestamp otherStartTs, Timestamp otherEndTs, std::uint64_t rowIndex) const;
+        [[nodiscard]] bool overlaps(core::shared::types::Timestamp otherStartTs, core::shared::types::Timestamp otherEndTs, std::uint64_t rowIndex) const;
 
-        [[nodiscard]] Timestamp getStartTimestamp(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::uint64_t rowIndex) const;
 
-        [[nodiscard]] Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
 
         [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t rowIndex) const;
 
@@ -70,25 +70,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::uint64_t getCurrentLayoutRowSize() const;
 
-        [[nodiscard]] Timestamp getLayoutStartTs() const;
+        [[nodiscard]] core::shared::types::Timestamp getLayoutStartTs() const;
 
-        [[nodiscard]] Timestamp getLayoutEndTs() const;
+        [[nodiscard]] core::shared::types::Timestamp getLayoutEndTs() const;
 
         [[nodiscard]] std::int64_t getLayoutStartTb() const;
 
         [[nodiscard]] std::int64_t getLayoutEndTb() const;
 
-        void setPending(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void setPending(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         [[nodiscard]] const core::logical::port::Port& getSchema() const;
 
-        [[nodiscard]] Timestamp getMinStartTimestamp() const;
+        [[nodiscard]] core::shared::types::Timestamp getMinStartTimestamp() const;
 
     private:
         struct RowBuffer {
             std::vector<std::byte> values;
-            Timestamp startTs = 0;
-            Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
+            core::shared::types::Timestamp startTs = 0;
+            core::shared::types::Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
             std::int64_t startTb = 0;
             std::int64_t endTb = 0;
             bool isRemoved = false;
@@ -100,15 +100,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction;
         };
 
-        Timestamp mPendingStartTs;
-        Timestamp mPendingEndTs;
+        core::shared::types::Timestamp mPendingStartTs;
+        core::shared::types::Timestamp mPendingEndTs;
         std::int64_t mPendingStartTb;
         std::int64_t mPendingEndTb;
 
         bool mOutOfOrder;
         std::size_t mRemovedCount = 0;
-        Timestamp mMinStartTs = 0;
-        Timestamp mMinEndTs = 0;
+        core::shared::types::Timestamp mMinStartTs = 0;
+        core::shared::types::Timestamp mMinEndTs = 0;
 
         window::WindowRowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;

@@ -58,18 +58,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mRightSide.push(index, data);
     }
 
-    void JoinBuffer::matchLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::matchLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mLeftSide.setPending(startTs, endTs, startTb, endTb);
         matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs, false);
     }
 
-    void JoinBuffer::matchRight(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::matchRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mRightSide.setPending(startTs, endTs, startTb, endTb);
         matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs, false);
     }
 
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const Timestamp sourceStartTs, const Timestamp sourceEndTs, const bool extract) {
+        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const core::shared::types::Timestamp sourceStartTs, const core::shared::types::Timestamp sourceEndTs, const bool extract) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
@@ -109,15 +109,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinBuffer::endLeft(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::endLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mLeftSide.end(startTs, endTs, startTb, endTb);
     }
 
-    void JoinBuffer::endRight(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinBuffer::endRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mRightSide.end(startTs, endTs, startTb, endTb);
     }
 
-    void JoinBuffer::evict(const Timestamp threshold, const bool callFromLeft, const bool isFinal) {
+    void JoinBuffer::evict(const core::shared::types::Timestamp threshold, const bool callFromLeft, const bool isFinal) {
         if (callFromLeft) {
             mRightSide.evict(threshold, isFinal);
         } else {
@@ -268,7 +268,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
 
     void JoinBuffer::bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize,
-        const bool onLeft, const Timestamp startTs, const Timestamp endTs,
+        const bool onLeft, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,
         const std::int64_t startTb, const std::int64_t endTb) {
         if (mOutOfOrder) {
             return;
@@ -326,7 +326,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         });
     }
 
-    std::size_t JoinBuffer::drainOutput(const Timestamp watermark, const std::size_t maxCount, std::vector<std::size_t>& outIndices) {
+    std::size_t JoinBuffer::drainOutput(const core::shared::types::Timestamp watermark, const std::size_t maxCount, std::vector<std::size_t>& outIndices) {
         const std::lock_guard<std::mutex> lock(mOutputMutex);
 
         if (mOutputBuffer.empty()) {
@@ -396,11 +396,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mOutputBuffer = std::move(remain);
     }
 
-    Timestamp JoinBuffer::getMinStartTimestampLeft() const {
+    core::shared::types::Timestamp JoinBuffer::getMinStartTimestampLeft() const {
         return mLeftSide.getMinStartTimestamp();
     }
 
-    Timestamp JoinBuffer::getMaxStartTimestampRight() const {
+    core::shared::types::Timestamp JoinBuffer::getMaxStartTimestampRight() const {
         return mRightSide.getMinStartTimestamp();
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

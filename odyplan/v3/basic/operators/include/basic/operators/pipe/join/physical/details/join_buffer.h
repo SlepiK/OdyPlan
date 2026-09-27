@@ -3,8 +3,9 @@
 #include <basic/operators/pipe/join/physical/details/join_side.h>
 #include <chrono>
 #include <mutex>
+#include <shared_mutex>
 
-#include <basic/operators/pipe/union/runtime/union_buffer.h>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     class JoinBuffer {
@@ -16,8 +17,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         struct OutputRow {
             std::vector<std::byte> data;
-            Timestamp startTs = 0;
-            Timestamp endTs = 0;
+            core::shared::types::Timestamp startTs = 0;
+            core::shared::types::Timestamp endTs = 0;
             std::int64_t startTb = 0;
             std::int64_t endTb = 0;
             std::vector<RetainPointer> retainPointers;
@@ -28,14 +29,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
             std::vector<std::byte> data;
             std::vector<std::uint64_t> fieldOffsets;
             std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
-            Timestamp startTs;
-            Timestamp endTs;
+            core::shared::types::Timestamp startTs;
+            core::shared::types::Timestamp endTs;
             std::int64_t startTb;
             std::int64_t endTb;
 
             std::vector<std::byte> candidateData;
-            std::vector<Timestamp> candidateStarts;
-            std::vector<Timestamp> candidateEnds;
+            std::vector<core::shared::types::Timestamp> candidateStarts;
+            std::vector<core::shared::types::Timestamp> candidateEnds;
             std::vector<std::int64_t> candidateStartsTb;
             std::vector<std::int64_t> candidateEndsTb;
             std::vector<std::uint64_t> candidateFieldOffsets;
@@ -83,13 +84,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void pushRight(std::size_t index, const void* data);
 
-        void endLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void endLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
-        void endRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void endRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
-        void matchLeft(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void matchLeft(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
-        void matchRight(Timestamp startTs, Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
+        void matchRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, std::int64_t startTb, std::int64_t endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract);
@@ -100,7 +101,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                         const std::vector<std::size_t>& rightFieldIndices,
                         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
-        void evict(Timestamp threshold, bool callFromLeft, bool isFinal);
+        void evict(core::shared::types::Timestamp threshold, bool callFromLeft, bool isFinal);
 
         void markCandidateForRemove(JoinSnapshot *snapshot, std::size_t candidateIdx);
 
@@ -110,10 +111,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
 
-        void bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize, bool onLeft, Timestamp startTs, Timestamp endTs,
+        void bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize, bool onLeft, core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
             std::int64_t startTb, std::int64_t endTb);
 
-        std::size_t drainOutput(Timestamp watermark, std::size_t maxCount, std::vector<std::size_t>& outIndices);
+        std::size_t drainOutput(core::shared::types::Timestamp watermark, std::size_t maxCount, std::vector<std::size_t>& outIndices);
 
         void removeOutputRows(const std::vector<std::size_t>& indices);
 
@@ -121,9 +122,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         [[nodiscard]] std::size_t getOutputRowSize() const;
 
-        [[nodiscard]] Timestamp getMinStartTimestampLeft() const;
+        [[nodiscard]] core::shared::types::Timestamp getMinStartTimestampLeft() const;
 
-        [[nodiscard]] Timestamp getMaxStartTimestampRight() const;
+        [[nodiscard]] core::shared::types::Timestamp getMaxStartTimestampRight() const;
 
     private:
         bool mOutOfOrder;
@@ -134,7 +135,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         std::vector<std::size_t> mCandidates;
         bool mAllReleased = false;
-        Timestamp mLastHeartbeat = 0;
+        core::shared::types::Timestamp mLastHeartbeat = 0;
 
         std::vector<OutputRow> mOutputBuffer;
         std::vector<std::size_t> mOutputOrder;
@@ -142,7 +143,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         std::vector<std::byte> mOutputTempBuf;
         std::mutex mOutputMutex;
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, Timestamp sourceStartTs, Timestamp sourceEndTs, bool extract);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs, bool extract);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,

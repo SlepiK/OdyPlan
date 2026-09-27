@@ -4,7 +4,8 @@
 #include <iostream>
 #include <syncstream>
 
-#include "core/shared/types/value_type_id.h"
+#include <core/shared/types/value_type_id.h>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     struct PrintField {
@@ -16,8 +17,8 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     struct PrintContext {
         const PrintField* fields;
         std::size_t fieldCount;
-        std::int64_t startTs;
-        std::int64_t endTs;
+        core::shared::types::Timestamp startTs;
+        core::shared::types::Timestamp endTs;
     };
 
     extern "C" {
@@ -25,7 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
 
     void rtOdyPrintNewline();
 
-    void rtOdyPrintPunctuation(std::int64_t watermark, bool isFinal);
+    void rtOdyPrintPunctuation(core::shared::types::Timestamp watermark, bool isFinal);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime
 

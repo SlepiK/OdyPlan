@@ -58,8 +58,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         std::deque<RowBuffer> newRows;
 
-        mMinEndTs = std::numeric_limits<Timestamp>::max();
-        mMinStartTs = std::numeric_limits<Timestamp>::max();
+        mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
 
         for (auto& row : mBufferedRows) {
             if (!row.isRemoved) {
@@ -122,7 +122,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
+    void JoinSide::evict(const core::shared::types::Timestamp threshold, const bool isFinal) {
         if (!mOutOfOrder) {
             if (!isFinal && !_before(mMinEndTs, threshold)) {
                 return;
@@ -178,7 +178,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mBufferedRows.at(rowIndex - mBasisIndex).endTb;
     }
 
-    void JoinSide::end(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         const auto absoluteIndex = mBasisIndex + mBufferedRows.size();
 
         mBufferedRows.push_back(
@@ -227,7 +227,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                mLayout.offsetOf(fieldIndex);
     }
 
-    bool JoinSide::overlaps(const Timestamp otherStartTs, const Timestamp otherEndTs, const std::uint64_t rowIndex) const {
+    bool JoinSide::overlaps(const core::shared::types::Timestamp otherStartTs, const core::shared::types::Timestamp otherEndTs, const std::uint64_t rowIndex) const {
         const auto& row = mBufferedRows.at(rowIndex - mBasisIndex);
 
         if (row.isRemoved) {
@@ -237,11 +237,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return _before(row.startTs, otherEndTs) && _before(otherStartTs, row.endTs);
     }
 
-    Timestamp JoinSide::getStartTimestamp(const std::uint64_t rowIndex) const {
+    core::shared::types::Timestamp JoinSide::getStartTimestamp(const std::uint64_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).startTs;
     }
 
-    Timestamp JoinSide::getEndTimestamp(const std::uint64_t rowIndex) const {
+    core::shared::types::Timestamp JoinSide::getEndTimestamp(const std::uint64_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).endTs;
     }
 
@@ -353,7 +353,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.offsetOf(index);
     }
 
-    void JoinSide::setPending(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::setPending(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
         mPendingStartTs = startTs;
         mPendingStartTb = startTb;
         mPendingEndTs = endTs;
@@ -402,11 +402,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.getCurrentRowPtr();
     }
 
-    Timestamp JoinSide::getLayoutStartTs() const {
+    core::shared::types::Timestamp JoinSide::getLayoutStartTs() const {
         return mPendingStartTs;
     }
 
-    Timestamp JoinSide::getLayoutEndTs() const {
+    core::shared::types::Timestamp JoinSide::getLayoutEndTs() const {
         return mPendingEndTs;
     }
 
@@ -422,7 +422,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.getSchema();
     }
 
-    Timestamp JoinSide::getMinStartTimestamp() const {
+    core::shared::types::Timestamp JoinSide::getMinStartTimestamp() const {
         return mMinStartTs;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

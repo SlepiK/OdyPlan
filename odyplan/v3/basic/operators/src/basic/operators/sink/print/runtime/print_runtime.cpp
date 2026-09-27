@@ -46,7 +46,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer.clear();
     }
 
-    void rtOdyPrintPunctuation(const std::int64_t watermark, const bool isFinal) {
+    void rtOdyPrintPunctuation(const core::shared::types::Timestamp watermark, const bool isFinal) {
         threadPrintBuffer += "[PUNCTUATION ";
         if (isFinal) {
             threadPrintBuffer += "FINAL]";

@@ -5,6 +5,7 @@
 #include <mutex>
 #include <vector>
 #include <basic/operators/pipe/union/runtime/union_buffer.h>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
     namespace details {
@@ -27,7 +28,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
                                         std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
                                         std::uint8_t *outIsFinal);
 
-    std::int64_t rtUnionGetGlobalWatermark(void* state);
+    core::shared::types::Timestamp rtUnionGetGlobalWatermark(void* state);
 
     void *rtUnionBufferCreate(const core::runtime::types::RuntimeTypeRegistry *registry, std::uint8_t outOfOrder,
         const core::shared::types::ValueTypeId* typeIds,
@@ -47,16 +48,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     std::uint8_t rtUnionBufferIsEmpty(void *state);
 
-    std::int64_t rtUnionBufferGetMinStartTimestamp(void *state);
+    core::shared::types::Timestamp rtUnionBufferGetMinStartTimestamp(void *state);
 
     const std::byte *rtUnionBufferGetData(void *state, std::uint64_t index);
 
     const std::byte *rtUnionBufferGetFieldPtr(void *state,
         std::uint64_t rowIndex, std::uint64_t fieldIndex);
 
-    std::int64_t rtUnionBufferGetStartTimestamp(void *state, std::uint64_t index);
+    core::shared::types::Timestamp rtUnionBufferGetStartTimestamp(void *state, std::uint64_t index);
 
-    std::int64_t rtUnionBufferGetEndTimestamp(void *state, std::uint64_t index);
+    core::shared::types::Timestamp rtUnionBufferGetEndTimestamp(void *state, std::uint64_t index);
 
     std::int64_t rtUnionBufferGetStartTibreaker(void *state, std::uint64_t index);
 

@@ -75,7 +75,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     }
 
 
-    std::int64_t rtUnionGetGlobalWatermark(void *state) {
+    core::shared::types::Timestamp rtUnionGetGlobalWatermark(void *state) {
         auto *wState = static_cast<details::UnionWatermarkState *>(state);
 
         while (wState->lock.test_and_set(std::memory_order_acquire)) {
@@ -130,7 +130,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         return static_cast<UnionBuffer *>(state)->isEmpty() ? 1 : 0;
     }
 
-    std::int64_t rtUnionBufferGetMinStartTimestamp(void *state) {
+    core::shared::types::Timestamp rtUnionBufferGetMinStartTimestamp(void *state) {
         return static_cast<UnionBuffer *>(state)->getMinStartTimestamp();
     }
 
@@ -143,11 +143,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         return static_cast<UnionBuffer *>(state)->getFieldPtr(rowIndex, fieldIndex);
     }
 
-    std::int64_t rtUnionBufferGetStartTimestamp(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtUnionBufferGetStartTimestamp(void *state, const std::uint64_t index) {
         return static_cast<UnionBuffer *>(state)->getStartTimestamp(index);
     }
 
-    std::int64_t rtUnionBufferGetEndTimestamp(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtUnionBufferGetEndTimestamp(void *state, const std::uint64_t index) {
         return static_cast<UnionBuffer *>(state)->getEndTimestamp(index);
     }
 

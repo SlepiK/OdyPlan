@@ -44,17 +44,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     const void* rtJoinSnapshotGetCandidatePtr(void* snapshot, std::uint64_t index, std::uint64_t fieldIndex);
 
-    std::int64_t rtJoinSnapshotGetCandidateStartTimestamp(void* snapshot, std::uint64_t index);
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateStartTimestamp(void* snapshot, std::uint64_t index);
 
-    std::int64_t rtJoinSnapshotGetCandidateEndTimestamp(void* snapshot, std::uint64_t index);
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateEndTimestamp(void* snapshot, std::uint64_t index);
 
     std::int64_t rtJoinSnapshotGetCandidateStartTibreaker(void* snapshot, std::uint64_t index);
 
     std::int64_t rtJoinSnapshotGetCandidateEndTibreaker(void* snapshot, std::uint64_t index);
 
-    std::int64_t rtJoinSnapshotGetOwnStartTimestamp(void* snapshot);
+    core::shared::types::Timestamp rtJoinSnapshotGetOwnStartTimestamp(void* snapshot);
 
-    std::int64_t rtJoinSnapshotGetOwnEndTimestamp(void* snapshot);
+    core::shared::types::Timestamp rtJoinSnapshotGetOwnEndTimestamp(void* snapshot);
 
     std::int64_t rtJoinSnapshotGetOwnStartTibreaker(void* snapshot);
 
@@ -99,9 +99,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     const void* rtJoinGetOutputRowPtr(void* state, std::uint64_t index);
 
-    std::int64_t rtJoinGetOutputRowStartTs(void* state, std::uint64_t index);
+    core::shared::types::Timestamp rtJoinGetOutputRowStartTs(void* state, std::uint64_t index);
 
-    std::int64_t rtJoinGetOutputRowEndTs(void* state, std::uint64_t index);
+    core::shared::types::Timestamp rtJoinGetOutputRowEndTs(void* state, std::uint64_t index);
 
     std::int64_t rtJoinGetOutputRowStartTb(void* state, std::uint64_t index);
 
@@ -119,11 +119,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinRemoveOutputRows(void* state, const std::uint64_t* indices, std::uint64_t count);
 
-    std::int64_t rtJoinGetMinStartTimestampLeft(void* state);
+    core::shared::types::Timestamp rtJoinGetMinStartTimestampLeft(void* state);
 
-    std::int64_t rtJoinGetMinStartTimestampRight(void* state);
+    core::shared::types::Timestamp rtJoinGetMinStartTimestampRight(void* state);
 
-    std::int64_t rtJoinGetGlobalWatermark(void* state);
+    core::shared::types::Timestamp rtJoinGetGlobalWatermark(void* state);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime
 
