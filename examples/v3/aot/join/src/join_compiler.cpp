@@ -23,6 +23,7 @@
 #include "basic/expression/logical/compare_expression.h"
 #include "basic/expression/logical/field_reference_expression.h"
 #include <basic/operators/operator_transformations.h>
+#include <llvm/IR/Verifier.h>
 
 namespace {
     void optimizeLlvmModule(llvm::Module& module, const llvm::OptimizationLevel level) {
@@ -99,7 +100,8 @@ int main(int argc, char** argv) {
         .allowedLateness = std::chrono::milliseconds(1).count(),
         .card = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinCard::ONE_MANY
         },
-        std::move(joinPredicate)
+        std::move(joinPredicate),
+        true
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
@@ -144,6 +146,11 @@ int main(int argc, char** argv) {
     module->print(ros, nullptr);
     ros.flush();
 
+    std::string errorInfo;
+    llvm::raw_string_ostream errorStream(errorInfo);
+    if (llvm::verifyModule(*module, &errorStream)) {
+        throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
+    }
 
     std::cout << "Running LLVM-AoT Stuff...\n";
 

@@ -18,7 +18,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::logical {
         }
     }
 
-    bool UnionOperator::getOutOfOrder() const {
-        return mOutOfOrder;
+    bool UnionOperator::isOutOfOrder() const {
+        return !mAssureOrder;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::logical

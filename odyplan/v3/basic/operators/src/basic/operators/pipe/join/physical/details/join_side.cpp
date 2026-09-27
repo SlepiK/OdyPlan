@@ -18,9 +18,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
     }
 
     JoinSide::JoinSide(core::logical::port::Port schema,
-                       const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry)
-        : mLayout(std::move(schema), *runtimeTypeRegistry),
-          mRuntimeTypeRegistry(runtimeTypeRegistry) {
+                       const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry,
+                       const bool outOfOrder)
+        : mOutOfOrder(outOfOrder),
+          mLayout(std::move(schema), *runtimeTypeRegistry),
+          mRuntimeTypeRegistry(runtimeTypeRegistry),
+          mMinEndTs(0),
+          mMinStartTs(0) {
     }
 
     void JoinSide::begin() {
@@ -31,26 +35,138 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mLayout.push(index, data);
     }
 
-    void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
-        while (!mBufferedRows.empty()) {
-            const auto& front = mBufferedRows.front();
-            if (!isFinal && !_before(front.endTs, threshold)) {
+    void JoinSide::compactIfNeeded() {
+        if (mRemovedCount == 0) {
+            return;
+        }
+
+        if (mBufferedRows.size() < 10000) {
+            return;
+        }
+
+        if (static_cast<double>(mRemovedCount) / mBufferedRows.size() < 0.50) {
+            return;
+        }
+
+        compact();
+    }
+
+    void JoinSide::compact() {
+        if (mRemovedCount == 0) {
+            return;
+        }
+
+        std::deque<RowBuffer> newRows;
+
+        mMinEndTs = std::numeric_limits<Timestamp>::max();
+        mMinStartTs = std::numeric_limits<Timestamp>::max();
+
+        for (auto& row : mBufferedRows) {
+            if (!row.isRemoved) {
+                if (row.endTs < mMinEndTs) {
+                    mMinEndTs = row.endTs;
+                }
+
+                if (row.startTs < mMinStartTs) {
+                    mMinStartTs = row.startTs;
+                }
+
+                newRows.push_back(std::move(row));
+            } else {
+                mLayout.releaseRow(row.values);
+            }
+        }
+
+        mBufferedRows = std::move(newRows);
+        mBasisIndex = 0;
+        mRemovedCount = 0;
+
+        rebuildKeyIndex();
+    }
+
+    void JoinSide::rebuildKeyIndex() {
+        mKeyIndex.clear();
+
+        if (mKeyFields.empty()) {
+            return;
+        }
+
+        for (std::size_t i = 0; i < mBufferedRows.size(); ++i) {
+            if (mBufferedRows[i].isRemoved) {
+                continue;
+            }
+
+            const auto* keyPtr = mBufferedRows[i].values.data();
+            const auto key = computeRowKeyV(keyPtr);
+            const auto absIndex = mBasisIndex + i;
+            mKeyIndex.emplace(key, absIndex);
+        }
+    }
+
+    void JoinSide::removeFromKeyIndex(const RowBuffer& row, std::size_t pos) {
+        if (mKeyFields.empty()) {
+            return;
+        }
+
+        const auto* keyPtr = row.values.data();
+        const auto key = computeRowKeyV(keyPtr);
+        const auto absIndex = mBasisIndex + pos;
+
+        auto [v, g] = mKeyIndex.equal_range(key);
+
+        for (auto iter = v; iter != g; ++iter) {
+            if (iter->second == absIndex) {
+                mKeyIndex.erase(iter);
                 break;
             }
-            if (!mKeyFields.empty()) {
-                const auto* keyPtr = front.values.data();
-                const auto key = computeRowKeyV(keyPtr);
-                auto [v, g] = mKeyIndex.equal_range(key);
-                for (auto iter = v; iter != g; ++iter) {
-                    if (iter->second == mBasisIndex) {
-                        mKeyIndex.erase(iter);
-                        break;
-                    }
+        }
+    }
+
+    void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
+        if (!mOutOfOrder) {
+            if (!isFinal && !_before(mMinEndTs, threshold)) {
+                return;
+            }
+
+            std::size_t evictedCount = 0;
+            for (std::size_t i = 0; i < mBufferedRows.size(); ++i) {
+                auto& row = mBufferedRows[i];
+
+                if (row.isRemoved) {
+                    continue;
+                }
+
+                if (isFinal || _before(row.endTs, threshold)) {
+                    removeFromKeyIndex(row, i);
+
+                    row.isRemoved = true;
+                    evictedCount++;
                 }
             }
-            mLayout.releaseRow(front.values);
-            mBufferedRows.pop_front();
-            ++mBasisIndex;
+
+            if (evictedCount > 0) {
+                compactIfNeeded();
+            }
+        } else { //InOrder
+            while (!mBufferedRows.empty()) {
+                auto& front = mBufferedRows.front();
+
+                if (front.isRemoved) {
+                    mBufferedRows.pop_front();
+                    mLayout.releaseRow(front.values);
+                    continue;
+                }
+
+                if (!isFinal && !_before(front.endTs, threshold)) {
+                    break;
+                }
+
+                removeFromKeyIndex(front, 0);
+
+                mLayout.releaseRow(front.values);
+                mBufferedRows.pop_front();
+                ++mBasisIndex;
+            }
         }
     }
 
@@ -71,8 +187,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 .startTs = startTs,
                 .endTs = endTs,
                 .startTb = startTb,
-                .endTb = endTb
+                .endTb = endTb,
+                .isRemoved = false
             });
+
+        if (mBufferedRows.size() == 1 || startTs < mMinStartTs) {
+            mMinStartTs = startTs;
+        }
+
+        if (mBufferedRows.size() == 1 || endTs < mMinEndTs) {
+            mMinEndTs = endTs;
+        }
 
         if (!mKeyFields.empty()) {
             const auto* keyPtr =
@@ -89,6 +214,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
         mBufferedRows.clear();
         mKeyIndex.clear();
+        mRemovedCount = 0;
     }
 
     std::uint64_t JoinSide::getSize() const {
@@ -103,6 +229,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     bool JoinSide::overlaps(const Timestamp otherStartTs, const Timestamp otherEndTs, const std::uint64_t rowIndex) const {
         const auto& row = mBufferedRows.at(rowIndex - mBasisIndex);
+
+        if (row.isRemoved) {
+            return false;
+        }
+
         return _before(row.startTs, otherEndTs) && _before(otherStartTs, row.endTs);
     }
 
@@ -170,6 +301,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         for (auto iter = z; iter != h; ++iter) {
             const auto candidateIndex = iter->second;
+            const auto locIndex = candidateIndex - mBasisIndex;
+
+            if (locIndex >= mBufferedRows.size()) {
+                continue;
+            }
+
+            if (mBufferedRows[locIndex].isRemoved) {
+                continue;
+            }
+
             const auto* candidateRowPtr = getRowPtr(candidateIndex);
 
             bool allMatch = true;
@@ -233,21 +374,20 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
                 continue;
             }
 
-            if (!mKeyFields.empty()) {
-                const auto* keyPtr = mBufferedRows.at(locIndex).values.data();
-                const auto key = computeRowKeyV(keyPtr);
-                auto [vi, g] = mKeyIndex.equal_range(key);
-                for (auto iter = vi; iter != g; ++iter) {
-                    if (iter->second == absIndex) {
-                        mKeyIndex.erase(iter);
-                        break;
-                    }
-                }
+            auto& row = mBufferedRows[locIndex];
+
+            if (row.isRemoved) {
+                continue;
             }
 
-            mLayout.releaseRow(mBufferedRows[locIndex].values);
-            mBufferedRows.erase(mBufferedRows.begin() + static_cast<std::ptrdiff_t>(locIndex));
+            removeFromKeyIndex(row, locIndex);
+
+            //mLayout.releaseRow(mBufferedRows[locIndex].values);
+            row.isRemoved = true;
+            mRemovedCount++;
         }
+
+        compactIfNeeded();
     }
 
     const std::byte* JoinSide::getLayoutFieldPtr(std::uint64_t fieldIndex) const {
@@ -276,5 +416,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
     std::int64_t JoinSide::getLayoutEndTb() const {
         return mPendingEndTb;
+    }
+
+    const core::logical::port::Port& JoinSide::getSchema() const {
+        return mLayout.getSchema();
+    }
+
+    Timestamp JoinSide::getMinStartTimestamp() const {
+        return mMinStartTs;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
