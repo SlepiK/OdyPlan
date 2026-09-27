@@ -1,6 +1,7 @@
 #ifndef SIERRA_ODYPLAN_V3_CORE_RUNTIME_TYPES_RUNTIME_TYPE_REGISTRY_HPP
 #define SIERRA_ODYPLAN_V3_CORE_RUNTIME_TYPES_RUNTIME_TYPE_REGISTRY_HPP
-#include "core/shared/types/value_type_id.h"
+#include <core/shared/types/value_type_id.h>
+#include <core/shared/types/global_types.h>
 
 #include <cstddef>
 #include <stdexcept>

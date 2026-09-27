@@ -16,7 +16,7 @@ namespace sierra::odyplan::v3::core::runtime::thread {
         }
     }
 
-    std::uint64_t IoThreadPool::submitTask(Task task) {
+    std::size_t IoThreadPool::submitTask(Task task) {
         std::unique_lock<std::mutex> lock(mMutex);
 
         if (!mIdleWorkers.empty()) {

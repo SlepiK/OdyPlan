@@ -148,15 +148,15 @@ namespace sierra::odyplan::v3::core::runtime::types {
 
         registry.registerType(
             std::to_underlying(T::TIMESTAMP),
-            sizeof(std::int64_t),
+            sizeof(shared::types::Timestamp),
             false,
             [](const std::byte* ptr) -> std::size_t {
-                std::int64_t v{};
+                shared::types::Timestamp v{};
                 std::memcpy(&v, ptr, sizeof(v));
-                return std::hash<std::int64_t>{}(v);
+                return std::hash<shared::types::Timestamp>{}(v);
             },
             [](const std::byte* a, const std::byte* b) -> bool {
-                return std::memcmp(a, b, sizeof(std::int64_t)) == 0;
+                return std::memcmp(a, b, sizeof(shared::types::Timestamp)) == 0;
             });
 
         return registry;

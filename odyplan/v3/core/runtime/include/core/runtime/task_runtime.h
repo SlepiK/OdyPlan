@@ -4,6 +4,7 @@
 #include <core/runtime/thread/io_thread_pool.h>
 #include <iostream>
 #include <ostream>
+#include <core/shared/types/global_types.h>
 
 
 inline std::mutex gComputeMutex;
@@ -19,7 +20,7 @@ namespace sierra::odyplan::v3::core::runtime {
 
     void rtIOTaskJoin(IOTaskHandle ioTaskHandle);
 
-    void rtSleepMs(std::int64_t ms);
+    void rtSleepMs(shared::types::Timestamp ms);
     }
 }  // namespace sierra::odyplan::v3::core::runtime
 
