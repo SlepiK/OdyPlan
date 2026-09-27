@@ -17,6 +17,10 @@ namespace sierra::odyplan::v3::core::physical::state {
                                  const std::vector<llvm::Type*>& extraArgTypes,
                                  const std::string& destroyFnName);
 
+        StateHandle createPrimitiveHandle(const std::string& uniqueName,
+                                   llvm::Type* type,
+                                   llvm::Constant* initialValue);
+
         void finish();
 
         [[nodiscard]] llvm::GlobalVariable* getRuntimeTypeRegistryGlobal() const;
