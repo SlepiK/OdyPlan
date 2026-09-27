@@ -29,7 +29,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     }
 
     void TimeWindowOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
-                                     core::shared::identifiers::PortId inputPort,
+                                     core::shared::identifiers::PortId  /*inputPort*/,
                                      const core::physical::data::DataPackage &tuple,
                                      const core::physical::segment::SegmentDataConsumers &consumers) {
         llvm::LLVMContext &ctx = segmentCtx.builder.getContext();
