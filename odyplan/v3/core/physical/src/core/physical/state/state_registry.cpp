@@ -15,9 +15,11 @@ namespace sierra::odyplan::v3::core::physical::state {
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
 
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         mRuntimeTypeRegistryGlobal = new llvm::GlobalVariable(
             *module, ptrTy, false, llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantPointerNull::get(ptrTy), "ody_runtime_type_registry");
+        // NOLINTEND(cppcoreguidelines-owning-memory)
         mInitBuilder->CreateStore(mInitFn->getArg(0), mRuntimeTypeRegistryGlobal);
 
         auto* shutdownFnType = llvm::FunctionType::get(voidTy, {}, false);
