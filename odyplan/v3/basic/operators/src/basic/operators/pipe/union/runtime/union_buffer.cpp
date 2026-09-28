@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
-    UnionBuffer::UnionBuffer(bool outOfOrder,
+    UnionBuffer::UnionBuffer(const bool outOfOrder,
                              core::logical::port::Port schema,
                              const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry)
         : mOutOfOrder(outOfOrder)
@@ -41,7 +41,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mLayout.begin();
     }
 
-    void UnionBuffer::push(const std::uint64_t index, const void* data) {
+    void UnionBuffer::push(const std::size_t index, const void* data) {
         mLayout.push(index, data);
     }
 
@@ -52,7 +52,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             return;
         }
 
-        const std::uint64_t rowIndex = mRowMetas.size();
+        const std::size_t rowIndex = mRowMetas.size();
         std::vector<std::byte> rowValues = mLayout.pop();
 
         mRowMetas.push_back(RowMeta{
@@ -66,7 +66,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         });
 
         auto it = std::lower_bound(mRowIndex.begin(), mRowIndex.end(), std::make_pair(startTs, startTb),
-                                   [this](const std::uint64_t idx, const std::pair<core::shared::types::Timestamp, core::shared::types::TiBreak>& val) {
+                                   [this](const std::size_t idx, const std::pair<core::shared::types::Timestamp, core::shared::types::TiBreak>& val) {
                                        return compareRows(mRowMetas[idx].startTs, mRowMetas[idx].startTb, val.first, val.second);
                                    });
         mRowIndex.insert(it, rowIndex);
@@ -74,7 +74,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mActiveRowCount++;
     }
 
-    std::uint64_t UnionBuffer::getCount() const {
+    std::size_t UnionBuffer::getCount() const {
         return mActiveRowCount;
     }
 
@@ -82,12 +82,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         return mActiveRowCount == 0;
     }
 
-    core::shared::types::Timestamp UnionBuffer::getMinStartTimestamp() {
+    core::shared::types::Timestamp UnionBuffer::getMinStartTimestamp() const {
         if (mRowIndex.empty()) {
             return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
 
-        for (const std::uint64_t idx : mRowIndex) {
+        for (const auto idx : mRowIndex) {
             if (idx < mRowMetas.size() && !mRowMetas[idx].isRemoved) {
                 return mRowMetas[idx].startTs;
             }
@@ -96,14 +96,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
     }
 
-    const std::byte* UnionBuffer::getData(const std::uint64_t index) const {
+    const std::byte* UnionBuffer::getData(const std::size_t index) const {
         if (index >= mRowMetas.size() || mRowMetas[index].isRemoved) {
             return nullptr;
         }
         return mRowMetas[index].values.data();
     }
 
-    const std::byte* UnionBuffer::getFieldPtr(const std::uint64_t rowIndex, const std::uint64_t fieldIndex) const {
+    const std::byte* UnionBuffer::getFieldPtr(const std::size_t rowIndex, const std::size_t fieldIndex) const {
         if (rowIndex >= mRowMetas.size() || mRowMetas[rowIndex].isRemoved) {
             return nullptr;
         }
@@ -112,47 +112,46 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         return mRowMetas[rowIndex].values.data() + offset;
     }
 
-    core::shared::types::Timestamp UnionBuffer::getStartTimestamp(const std::uint64_t index) const {
+    core::shared::types::Timestamp UnionBuffer::getStartTimestamp(const std::size_t index) const {
         if (index >= mRowMetas.size()) {
             return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].startTs;
     }
 
-    core::shared::types::Timestamp UnionBuffer::getEndTimestamp(const std::uint64_t index) const {
+    core::shared::types::Timestamp UnionBuffer::getEndTimestamp(const std::size_t index) const {
         if (index >= mRowMetas.size()) {
             return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].endTs;
     }
 
-    core::shared::types::TiBreak UnionBuffer::getStartTibreaker(const std::uint64_t index) const {
+    core::shared::types::TiBreak UnionBuffer::getStartTibreaker(const std::size_t index) const {
         if (index >= mRowMetas.size()) {
             return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].startTb;
     }
 
-    core::shared::types::TiBreak UnionBuffer::getEndTibreaker(const std::uint64_t index) const {
+    core::shared::types::TiBreak UnionBuffer::getEndTibreaker(const std::size_t index) const {
         if (index >= mRowMetas.size()) {
             return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
         }
         return mRowMetas[index].endTb;
     }
 
-    core::shared::identifiers::PortId UnionBuffer::getInputPort(const std::uint64_t index) const {
+    core::shared::identifiers::PortId UnionBuffer::getInputPort(const std::size_t index) const {
         if (index >= mRowMetas.size()) {
             return 0;
         }
         return mRowMetas[index].inputPort;
     }
 
-    void UnionBuffer::removeV(const void* indicesPtr, const std::int64_t count) {
-        const auto* indices = static_cast<const std::uint64_t*>(indicesPtr);
-        std::int64_t actuallyRemoved = 0;
+    void UnionBuffer::removeV(const std::size_t* indices, const std::size_t count) {
+        std::size_t actuallyRemoved = 0;
 
         for (std::int64_t i = 0; i < count; ++i) {
-            const std::uint64_t index = indices[i];
+            const auto index = indices[i];
 
             if (index < mRowMetas.size() && !mRowMetas[index].isRemoved) {
                 mLayout.releaseRow(mRowMetas[index].values);
@@ -162,13 +161,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             }
         }
 
-        if (actuallyRemoved > 0 && mActiveRowCount >= static_cast<std::size_t>(actuallyRemoved)) {
+        if (actuallyRemoved > 0 && mActiveRowCount >= actuallyRemoved) {
             mActiveRowCount -= actuallyRemoved;
         }
 
-        std::vector<std::uint64_t> newRowIndex;
+        std::vector<std::size_t> newRowIndex;
         newRowIndex.reserve(mRowIndex.size());
-        for (std::uint64_t idx : mRowIndex) {
+        for (auto idx : mRowIndex) {
             if (idx >= mRowMetas.size()) {
                 continue;
             }
@@ -198,28 +197,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         mRemovedCount = 0;
     }
 
-    std::uint64_t UnionBuffer::getFieldCount() const {
+    std::size_t UnionBuffer::getFieldCount() const {
         return mLayout.getFieldCount();
     }
 
-    core::shared::types::ValueTypeId UnionBuffer::getFieldTypeId(const std::uint64_t index) const {
+    core::shared::types::ValueTypeId UnionBuffer::getFieldTypeId(const std::size_t index) const {
         return mLayout.getFieldTypeId(index);
     }
 
-    std::uint64_t UnionBuffer::getFieldOffset(const std::uint64_t index) const {
+    std::size_t UnionBuffer::getFieldOffset(const std::size_t index) const {
         return mLayout.offsetOf(index);
     }
 
-    std::uint64_t UnionBuffer::getRowByteSize() const {
+    std::size_t UnionBuffer::getRowByteSize() const {
         return mLayout.getTotalByteSize();
     }
 
-    std::optional<core::shared::types::Timestamp> UnionBuffer::getMinStartTimestampIndex(const core::shared::types::Timestamp watermark) {
+    std::optional<core::shared::types::Timestamp> UnionBuffer::getMinStartTimestampIndex(const core::shared::types::Timestamp watermark) const {
         if (mRowMetas.empty()) {
             return std::nullopt;
         }
 
-        for (std::uint64_t idx : mRowIndex) {
+        for (auto idx : mRowIndex) {
             if (idx >= mRowMetas.size()) {
                 continue;
             }
@@ -248,7 +247,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         const auto max = std::min(maxCount, MAX_BATCH_SIZE);
         std::size_t foundCount = 0;
 
-        for (const std::uint64_t idx : mRowIndex) {
+        for (const auto idx : mRowIndex) {
             if (foundCount >= max) {
                 break;
             }
@@ -284,7 +283,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         std::size_t writeIdx = 0;
 
         for (std::size_t readIdx = 0; readIdx < mRowIndex.size(); ++readIdx) {
-            std::uint64_t idx = mRowIndex[readIdx];
+            auto idx = mRowIndex[readIdx];
             if (idx >= mRowMetas.size()) {
                 continue;
             }
@@ -319,13 +318,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         }
 
         std::vector<RowMeta> newMetas;
-        std::vector<std::uint64_t> newIndex;
+        std::vector<std::size_t> newIndex;
 
         const std::size_t estimated = mRowMetas.size() - mRemovedCount;
         newMetas.reserve(estimated);
         newIndex.reserve(mRowIndex.size());
 
-        for (std::uint64_t idx : mRowIndex) {
+        for (auto idx : mRowIndex) {
             if (idx >= mRowMetas.size()) {
                 continue;
             }

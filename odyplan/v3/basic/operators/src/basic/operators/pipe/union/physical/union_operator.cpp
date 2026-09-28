@@ -21,6 +21,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto *voidTy = llvm::Type::getVoidTy(ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(ctx);
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
 
@@ -34,23 +35,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
             const auto pushFn = module->getOrInsertFunction("rtUnionBufferPush",
                                                             llvm::FunctionType::get(
-                                                                voidTy, {ptrTy, i64Ty, ptrTy}, false));
+                                                                voidTy, {ptrTy, sizeTTy, ptrTy}, false));
 
             for (std::size_t i = 0; i < mSchema.size(); ++i) {
                 auto *slot = segmentCtx.storage.getNamed("union_slot." + std::to_string(getPId()),
                                                          mSchema.at(i).valueTypeId);
                 segmentCtx.builder.CreateStore(tuple.at(i), slot);
-                segmentCtx.builder.CreateCall(pushFn, {bufferStatePtr, llvm::ConstantInt::get(i64Ty, i), slot});
+                segmentCtx.builder.CreateCall(pushFn, {bufferStatePtr, llvm::ConstantInt::get(sizeTTy, i), slot});
             }
 
             const auto endFn = module->getOrInsertFunction("rtUnionBufferEnd",
                                                            llvm::FunctionType::get(
-                                                               voidTy, {ptrTy, i64Ty, i64Ty, i64Ty, i64Ty, i64Ty},
+                                                               voidTy, {ptrTy, sizeTTy, i64Ty, i64Ty, i64Ty, i64Ty},
                                                                false));
 
-            llvm::Value *inputPortVal = llvm::ConstantInt::get(i64Ty,
-                                                               static_cast<std::uint64_t>(compactInputIndex(
-                                                                   inputPort)));
+            llvm::Value *inputPortVal = llvm::ConstantInt::get(sizeTTy,compactInputIndex(inputPort));
             llvm::Value *startTsVal = tuple.timeInterval.getStart().getPoint();
             llvm::Value *endTsVal = tuple.timeInterval.getEnd().getPoint();
             llvm::Value *startTbVal = tuple.timeInterval.getStart().getTiBreaker();
@@ -76,12 +75,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* i8Ty = llvm::Type::getInt8Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
+        auto* sizeTTy = module.getDataLayout().getIntPtrType(context);
 
         mWatermarkState = stateRegistry.createHandle(
             "union_watermark_" +std::to_string(getPId()),
             "rtUnionWatermarkCreate",
-            {llvm::ConstantInt::get(i64Ty, static_cast<std::int64_t>(sizeOfConnectedPorts()))},
-            {i64Ty},
+            {llvm::ConstantInt::get(sizeTTy, sizeOfConnectedPorts())},
+            {sizeTTy},
             "rtUnionWatermarkDestroy");
 
         if (!mOutOfOrder) {
@@ -94,9 +94,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
                 {
                     llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 0 : 1),
                     leftTypesGlobal,
-                    llvm::ConstantInt::get(i64Ty, mSchema.size())
+                    llvm::ConstantInt::get(sizeTTy, mSchema.size())
                 },
-                {i8Ty, ptrTy, i64Ty},
+                {i8Ty, ptrTy, sizeTTy},
                 "rtUnionBufferDestroy"
             );
         }
@@ -127,6 +127,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
         auto *i8Ty = llvm::Type::getInt8Ty(ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value *watermarkStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
 
@@ -177,9 +178,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         }
 
         llvm::Value *isFinal = segmentCtx.builder.CreateZExt(punctuation.isFinal, i8Ty);
-        llvm::Value *inputIndex = llvm::ConstantInt::get(i64Ty, static_cast<std::int64_t>(compactInputIndex(inputPort)));
+        llvm::Value *inputIndex = llvm::ConstantInt::get(sizeTTy, compactInputIndex(inputPort));
 
-        llvm::FunctionType *fnType = llvm::FunctionType::get(i8Ty, {ptrTy, i64Ty, i64Ty, i8Ty, ptrTy, ptrTy}, false);
+        llvm::FunctionType *fnType = llvm::FunctionType::get(i8Ty, {ptrTy, sizeTTy, i64Ty, i8Ty, ptrTy, ptrTy}, false);
         const llvm::FunctionCallee fn = module->getOrInsertFunction("rtUnionUpdateWatermark", fnType);
 
         auto *outWatermarkSlot = segmentCtx.storage.getNamed("union_outWatermarkSlot." + std::to_string(getPId()),
@@ -227,9 +228,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *voidTy = llvm::Type::getVoidTy(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value *watermarkStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
         llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
@@ -241,9 +243,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         llvm::Value *currentWatermark = segmentCtx.builder.CreateCall(watermarkFn, {watermarkStatePtr});
 
-        llvm::Type* batchResultTy = llvm::StructType::get(ctx, {i64Ty, ptrTy});
-        const auto getReadyFn = module->getOrInsertFunction("rtUnionBufferGetReadyIndices", llvm::FunctionType::get(batchResultTy, {ptrTy, i64Ty, i64Ty}, false));
-        llvm::Value* maxBatchSize = llvm::ConstantInt::get(i64Ty, 32);
+        llvm::Type* batchResultTy = llvm::StructType::get(ctx, {sizeTTy, ptrTy});
+        const auto getReadyFn = module->getOrInsertFunction("rtUnionBufferGetReadyIndices", llvm::FunctionType::get(batchResultTy, {ptrTy, i64Ty, sizeTTy}, false));
+        llvm::Value* maxBatchSize = llvm::ConstantInt::get(sizeTTy, 32);
 
         auto* fetchBB = llvm::BasicBlock::Create(ctx, "union_fetch_batch", segmentCtx.builder.GetInsertBlock()->getParent());
         auto* checkBB = llvm::BasicBlock::Create(ctx, "union_check_empty", segmentCtx.builder.GetInsertBlock()->getParent());
@@ -258,29 +260,29 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         llvm::Value* batchResult = segmentCtx.builder.CreateCall(getReadyFn, {bufferStatePtr, currentWatermark, maxBatchSize});
         llvm::Value* batchCount = segmentCtx.builder.CreateExtractValue(batchResult, {0});
         llvm::Value* batchIndices = segmentCtx.builder.CreateExtractValue(batchResult, {1});
-        llvm::Value* isEmpty = segmentCtx.builder.CreateICmpEQ(batchCount, llvm::ConstantInt::get(i64Ty, 0));
+        llvm::Value* isEmpty = segmentCtx.builder.CreateICmpEQ(batchCount, llvm::ConstantInt::get(sizeTTy, 0));
         segmentCtx.builder.CreateCondBr(isEmpty, flushExitBB, checkBB);
 
         segmentCtx.builder.SetInsertPoint(checkBB);
-        auto* loopIdx = segmentCtx.storage.getNamed("union_flush_loopIdx." + std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), loopIdx);
+        auto* loopIdx = segmentCtx.storage.getNamed("union_flush_loopIdx." + std::to_string(getPId()), sizeTTy);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), loopIdx);
         segmentCtx.builder.CreateBr(loopHeaderBB);
 
         segmentCtx.builder.SetInsertPoint(loopHeaderBB);
-        llvm::Value* currentIdx = segmentCtx.builder.CreateLoad(i64Ty, loopIdx);
+        llvm::Value* currentIdx = segmentCtx.builder.CreateLoad(sizeTTy, loopIdx);
         llvm::Value* isLoopDone = segmentCtx.builder.CreateICmpSGE(currentIdx, batchCount);
         segmentCtx.builder.CreateCondBr(isLoopDone, removeBB, loopBodyBB);
 
         segmentCtx.builder.SetInsertPoint(loopBodyBB);
-        const auto getElementFn = module->getOrInsertFunction("rtUnionBufferGetBatchElement", llvm::FunctionType::get(i64Ty, {batchResultTy, i64Ty}, false));
+        const auto getElementFn = module->getOrInsertFunction("rtUnionBufferGetBatchElement", llvm::FunctionType::get(sizeTTy, {batchResultTy, sizeTTy}, false));
         llvm::Value* flushIndex = segmentCtx.builder.CreateCall(getElementFn, {batchResult, currentIdx});
         emitBufferedEntry(segmentCtx, consumers, flushIndex);
-        llvm::Value* nextIdx = segmentCtx.builder.CreateAdd(currentIdx, llvm::ConstantInt::get(i64Ty, 1));
+        llvm::Value* nextIdx = segmentCtx.builder.CreateAdd(currentIdx, llvm::ConstantInt::get(sizeTTy, 1));
         segmentCtx.builder.CreateStore(nextIdx, loopIdx);
         segmentCtx.builder.CreateBr(loopHeaderBB);
 
         segmentCtx.builder.SetInsertPoint(removeBB);
-        const auto removeFn = module->getOrInsertFunction("rtUnionBufferRemoveV", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, i64Ty}, false));
+        const auto removeFn = module->getOrInsertFunction("rtUnionBufferRemoveV", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, sizeTTy}, false));
         segmentCtx.builder.CreateCall(removeFn, {bufferStatePtr, batchIndices, batchCount});
         segmentCtx.builder.CreateBr(fetchBB);
 
@@ -295,17 +297,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
 
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
 
         const auto getStartTsFn = module->getOrInsertFunction("rtUnionBufferGetStartTimestamp",
-        llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getEndTsFn = module->getOrInsertFunction("rtUnionBufferGetEndTimestamp",
-            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+            llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getStartTbFn = module->getOrInsertFunction("rtUnionBufferGetStartTibreaker",
-            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+            llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getEndTbFn = module->getOrInsertFunction("rtUnionBufferGetEndTibreaker",
-            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+            llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
 
         llvm::Value* startTs = segmentCtx.builder.CreateCall(getStartTsFn, {bufferStatePtr, index});
         llvm::Value* endTs = segmentCtx.builder.CreateCall(getEndTsFn, {bufferStatePtr, index});
@@ -320,10 +323,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         reconstructedTuple.reserve(mSchema.size());
 
         const auto getFieldPtrFn = module->getOrInsertFunction("rtUnionBufferGetFieldPtr",
-        llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
+        llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy, sizeTTy}, false));
 
         for (std::size_t i = 0; i < mSchema.size(); ++i) {
-            llvm::Value* fieldIndexVal = llvm::ConstantInt::get(i64Ty, i);
+            llvm::Value* fieldIndexVal = llvm::ConstantInt::get(sizeTTy, i);
             llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                 getFieldPtrFn, {bufferStatePtr, index, fieldIndexVal});
 

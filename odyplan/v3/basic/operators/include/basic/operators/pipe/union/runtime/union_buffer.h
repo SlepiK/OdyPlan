@@ -14,8 +14,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     class UnionBuffer {
     public:
         struct BatchResult {
-            std::uint64_t count;
-            std::uint64_t *indices;
+            std::size_t count;
+            std::size_t *indices;
         };
 
         explicit UnionBuffer(bool outOfOrder,
@@ -39,45 +39,45 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         void begin();
 
-        void push(std::uint64_t index, const void *data);
+        void push(std::size_t index, const void *data);
 
         void end(core::shared::identifiers::PortId inputPort,
                  core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
                  core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-        [[nodiscard]] std::uint64_t getCount() const;
+        [[nodiscard]] std::size_t getCount() const;
 
         [[nodiscard]] bool isEmpty() const;
 
-        [[nodiscard]] core::shared::types::Timestamp getMinStartTimestamp();
+        [[nodiscard]] core::shared::types::Timestamp getMinStartTimestamp() const;
 
-        [[nodiscard]] const std::byte *getData(std::uint64_t index) const;
+        [[nodiscard]] const std::byte *getData(std::size_t index) const;
 
-        [[nodiscard]] const std::byte *getFieldPtr(std::uint64_t rowIndex, std::uint64_t fieldIndex) const;
+        [[nodiscard]] const std::byte *getFieldPtr(std::size_t rowIndex, std::size_t fieldIndex) const;
 
-        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::size_t index) const;
 
-        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::size_t index) const;
 
-        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::size_t index) const;
 
-        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::size_t index) const;
 
-        [[nodiscard]] core::shared::identifiers::PortId getInputPort(std::uint64_t index) const;
+        [[nodiscard]] core::shared::identifiers::PortId getInputPort(std::size_t index) const;
 
-        void removeV(const void *indicesPtr, std::int64_t count);
+        void removeV(const std::size_t *indices, std::size_t count);
 
         void clear();
 
-        [[nodiscard]] std::uint64_t getFieldCount() const;
+        [[nodiscard]] std::size_t getFieldCount() const;
 
-        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
 
-        [[nodiscard]] std::uint64_t getFieldOffset(std::uint64_t index) const;
+        [[nodiscard]] std::size_t getFieldOffset(std::size_t index) const;
 
-        [[nodiscard]] std::uint64_t getRowByteSize() const;
+        [[nodiscard]] std::size_t getRowByteSize() const;
 
-        [[nodiscard]] std::optional<core::shared::types::Timestamp> getMinStartTimestampIndex(core::shared::types::Timestamp watermark);
+        [[nodiscard]] std::optional<core::shared::types::Timestamp> getMinStartTimestampIndex(core::shared::types::Timestamp watermark) const;
 
         [[nodiscard]] BatchResult getReadyIndices(core::shared::types::Timestamp watermark, std::size_t maxCount = 32);
 
@@ -101,13 +101,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         storage::RowLayout mLayout;
         std::vector<RowMeta> mRowMetas;
 
-        std::vector<std::uint64_t> mRowIndex;
+        std::vector<std::size_t> mRowIndex;
 
         core::shared::types::Timestamp mLastEmittedWatermark = 0;
 
         std::size_t mActiveRowCount = 0;
-        std::uint64_t mRemovedCount = 0;
-        std::array<std::uint64_t, MAX_BATCH_SIZE> mBatchBuffer;
+        std::size_t mRemovedCount = 0;
+        std::array<std::size_t, MAX_BATCH_SIZE> mBatchBuffer;
 
         void drainEmittedEntries(core::shared::types::Timestamp watermark);
         void compactIfNeeded();
