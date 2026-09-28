@@ -72,7 +72,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
     }
 
     void UnionOperator::declareState(core::physical::state::StateRegistry &stateRegistry, llvm::Module &module, llvm::LLVMContext &context) {
-        auto* i64Ty = llvm::Type::getInt64Ty(context);
         auto* i8Ty = llvm::Type::getInt8Ty(context);
         auto* ptrTy = llvm::PointerType::getUnqual(context);
         auto* sizeTTy = module.getDataLayout().getIntPtrType(context);
