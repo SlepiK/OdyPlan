@@ -88,10 +88,8 @@ int main() {
         std::cout << "Logical Plan: OK\n";
 
         std::cout << "Building Physical Plan...\n";
-        auto codegebTypeRegistry =
-                sierra::odyplan::v3::core::physical::types::CodegenTypeRegistry::withBuiltins();
 
-        sierra::odyplan::v3::core::builder::PlanBuilder builder(codegebTypeRegistry);
+        sierra::odyplan::v3::core::builder::PlanBuilder builder{};
 
         sierra::odyplan::v3::basic::operators::loadBuiltinOperatorTransformations(builder);
 

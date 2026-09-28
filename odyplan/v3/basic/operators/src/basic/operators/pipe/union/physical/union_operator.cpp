@@ -330,7 +330,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                 getFieldPtrFn, {bufferStatePtr, index, fieldIndexVal});
 
-            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry.resolveType(
+            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry->resolveType(
                 mSchema.at(i).valueTypeId, ctx);
 
             reconstructedTuple.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));

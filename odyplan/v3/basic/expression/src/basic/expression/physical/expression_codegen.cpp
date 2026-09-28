@@ -27,7 +27,7 @@ namespace sierra::odyplan::v3::basic::expression::physical {
                 const auto& constExp =
                     static_cast<const basic::expression::physical::ConstantExpression&>(expression);
                 // NOLINTEND(cppcoreguidelines-pro-type-static-cast-downcast)
-                return segmentCtx.codegenTypeRegistry.compileConstant(
+                return segmentCtx.codegenTypeRegistry->compileConstant(
                     constExp.getTypeId(), segmentCtx.builder, constExp.getSerializedValue());
             }
             case basic::expression::physical::ExpressionType::COMPARE: {

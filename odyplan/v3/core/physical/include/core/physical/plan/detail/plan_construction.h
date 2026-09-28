@@ -31,7 +31,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         llvm::Module* moduleIn,
         llvm::LLVMContext* ctxIn,
         std::vector<llvm::Function*>* functionsIn,
-        const types::CodegenTypeRegistry* codegenTypeRegistryIn,
+        const types::CodegenTypeRegistry& codegenTypeRegistryIn,
         state::StateRegistry* stateRegistryIn)
         : segments(segmentsIn),
           outgoingConnections(outgoingConnectionsIn),
@@ -40,7 +40,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
           module(moduleIn),
           ctx(ctxIn),
           functions(functionsIn),
-          codegenTypeRegistry(codegenTypeRegistryIn),
+          codegenTypeRegistry(&codegenTypeRegistryIn),
           stateRegistry(stateRegistryIn) {}
 
         segment::SegmentDataConsumers buildExit(OperatorId operatorId);

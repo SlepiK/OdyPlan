@@ -200,7 +200,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
         std::string fnName;
-        llvm::Type* retTy = segmentCtx.codegenTypeRegistry.resolveType(typeId, ctx);
+        llvm::Type* retTy = segmentCtx.codegenTypeRegistry->resolveType(typeId, ctx);
 
         switch (typeId) {
             case std::to_underlying(core::shared::types::BuiltinValueType::BOOL): {
