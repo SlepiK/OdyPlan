@@ -1,4 +1,6 @@
 #include <basic/operators/pipe/measure/runtime/measure_runtime.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/fmt.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
     extern "C" {
@@ -59,17 +61,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
 
         const double printWindowMs = currentPureElapsedMs - currentLastPrintElapsedMs;
 
-        std::println(stdout,
-                         "[{}] {} lines, {:.3f} lines/ms (window: {:.3f} ms), {:.3f} lines/ms (total: {:.3f} ms)",
-                         state->label,
-                         static_cast<unsigned long long>(n),
-                         printWindowMs > 0.0
-                            ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / printWindowMs)
-                            : 0.0,
-                         printWindowMs,
-                         currentPureElapsedMs > 0.0 ? (static_cast<double>(n) / currentPureElapsedMs) : 0.0,
-                             currentPureElapsedMs);
-        std::fflush(stdout);
+        spdlog::info(fmt::format("[{}] {} lines, {:.3f} lines/ms (window: {:.3f} ms), {:.3f} lines/ms (total: {:.3f} ms)",
+        state->label,
+            n,
+            printWindowMs > 0.0 ? (static_cast<double>(MEASUREMENT_AFTER_LINES_REPORT) / printWindowMs) : 0.0, printWindowMs,
+            currentPureElapsedMs > 0.0 ? (static_cast<double>(n) / currentPureElapsedMs) : 0.0,
+            currentPureElapsedMs ));
 
         state->lastPrintAccuPureMs = snapshotMs;
         state->lastPrintAccuPureMsCarry = snapshotCarry;
@@ -94,13 +91,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
             while (state->printLock.test_and_set(std::memory_order_acquire)) {
             }
 
-            std::println(stdout,
-                         "[{}] Total: {} lines in {:.3f} ms ({:.3f} lines/ms)",
-                         state->label,
-                         static_cast<unsigned long long>(total),
-                         purePrintElapsedMs,
-                         purePrintElapsedMs > 0.0 ? (static_cast<double>(total) / purePrintElapsedMs) : 0.0);
-            std::fflush(stdout);
+
+            spdlog::info(fmt::format("[{}] Total: {} lines in {:.3f} ms ({:.3f} lines/ms)",
+                state->label,
+                total,
+                purePrintElapsedMs,
+                purePrintElapsedMs > 0.0 ? (static_cast<double>(total) / purePrintElapsedMs) : 0.0));
+
             state->printLock.clear(std::memory_order_release);
         });
     }
