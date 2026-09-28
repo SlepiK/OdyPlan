@@ -35,9 +35,6 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
         io::IOFormatType mIOFormat;
         nlohmann::json mIOConfig;
         details::LReadOperatorOptions mOptions;
-
-    protected:
-        void validate() const override;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical
 

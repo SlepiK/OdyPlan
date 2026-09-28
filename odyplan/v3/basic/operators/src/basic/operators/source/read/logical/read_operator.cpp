@@ -39,7 +39,4 @@ namespace sierra::odyplan::v3::basic::operators::source::read::logical {
     details::PReadOperatorOptions ReadOperator::getOptions() const {
         return details::resolve(mOptions, getOutputPorts().front());
     }
-
-    void ReadOperator::validate() const {
-    }
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::logical
