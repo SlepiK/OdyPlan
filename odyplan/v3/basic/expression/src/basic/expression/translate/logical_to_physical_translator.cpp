@@ -10,12 +10,13 @@
 #include "basic/expression/physical/logical_expression.h"
 
 namespace sierra::odyplan::v3::basic::expression::translate {
-    LogicalToPhysicalTranslator::LogicalToPhysicalTranslator(const core::logical::port::PortDescriptionResolver &resolver) : mResolver(resolver) {
+    LogicalToPhysicalTranslator::LogicalToPhysicalTranslator(core::logical::port::PortDescriptionResolver resolver) : mResolver(std::move(resolver)) {
     }
 
     std::unique_ptr<physical::IExpression> LogicalToPhysicalTranslator::translate(logical::IExpression &expr) {
         switch (expr.getExpressionType()) {
             case logical::ExpressionType::FIELD_REFERENCE: {
+                // NOLINTNEXTLINE
                 auto& fieldRef = static_cast<logical::FieldReferenceExpression&>(expr);
 
                 const std::size_t index = mResolver.resolve(fieldRef.getFieldName(), fieldRef.portIndex());
@@ -26,12 +27,14 @@ namespace sierra::odyplan::v3::basic::expression::translate {
             }
 
             case logical::ExpressionType::CONSTANT: {
+                // NOLINTNEXTLINE
                 const auto& constant = static_cast<logical::ConstantExpression&>(expr);
 
                 return std::make_unique<physical::ConstantExpression>(constant.getTypeId(), constant.getSerializedValue());
             }
 
             case logical::ExpressionType::COMPARE: {
+                // NOLINTNEXTLINE
                 const auto& compare = static_cast<logical::CompareExpression&>(expr);
 
                 auto left = translate(compare.getLeftPart());
@@ -53,6 +56,7 @@ namespace sierra::odyplan::v3::basic::expression::translate {
             }
 
             case logical::ExpressionType::LOGICAL: {
+                // NOLINTNEXTLINE
                 const auto& logical = static_cast<logical::LogicalExpression&>(expr);
 
                 auto left = translate(logical.getLeftPart());

@@ -21,11 +21,12 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         using OperatorPortReferenceConnection = shared::operators::OperatorPortReferenceConnection;
         using IOperator = operators::IOperator;
 
+        // NOLINTNEXTLINE(readability-function-size)
         PlanConstruction(
-        std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segmentsIn,
-        std::reference_wrapper<const std::unordered_map<
+        const std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segmentsIn,
+        const std::reference_wrapper<const std::unordered_map<
             OperatorId, std::vector<OperatorPortReferenceConnection>>> outgoingConnectionsIn,
-        std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegreeIn,
+        const std::reference_wrapper<const std::unordered_map<OperatorId, std::size_t>> inDegreeIn,
         segment::SegmentConsumerHandle noopConsumerIn,
         llvm::Module* moduleIn,
         llvm::LLVMContext* ctxIn,

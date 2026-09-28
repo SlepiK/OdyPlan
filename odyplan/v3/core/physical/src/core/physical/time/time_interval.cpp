@@ -92,6 +92,7 @@ namespace sierra::odyplan::v3::core::physical::time {
     }
 
     llvm::Value *TimeInterval::totallyAfter(llvm::IRBuilder<> &builder, const TimeInterval &tiLft, const TimeInterval &tiRht) {
+        // NOLINTNEXTLINE(readability-suspicious-call-argument)
         return totallyBefore(builder, tiRht, tiLft);
     }
 

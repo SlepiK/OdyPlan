@@ -41,6 +41,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 branches.reserve(edgesForPort.size());
 
                 for (std::size_t branchIdx = 0; branchIdx < edgesForPort.size(); ++branchIdx) {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     const auto& edge = edgesForPort[branchIdx];
                     const std::string key = "fanout_" + std::to_string(operatorId) + "_" +
                                             std::to_string(portIndex) + "_" +
@@ -49,13 +50,13 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                         key, chain.exitSchemas.at(portIndex), buildEnter(edge)));
                 }
                 result.at(portIndex) = segment::SegmentConsumerHandle{
-                    [branches](segment::SegmentContext& sCtx,
+                    .consume=[branches](segment::SegmentContext& sCtx,
                                               const data::DataPackage& tuple) {
                         for (const auto& branch : branches) {
                             branch.consume(sCtx, tuple);
                         }
                     },
-                    [branches](segment::SegmentContext& sCtx,
+                    .consumePunctuation=[branches](segment::SegmentContext& sCtx,
                                               const data::PunctuationPackage& punctuation) {
                         for (const auto& branch : branches) {
                             branch.consumePunctuation(sCtx, punctuation);
@@ -86,11 +87,11 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         segment::SegmentDataConsumers const tail = afterEntry(id);
 
         return segment::SegmentConsumerHandle{
-            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+            .consume=[entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
                                             const data::DataPackage& tuple) {
                 entryOpr->consume(sCtx, inputIndex, tuple, tail);
             },
-            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+            .consumePunctuation=[entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
                                             const data::PunctuationPackage& punctuation) {
                 entryOpr->consumePunctuation(sCtx, inputIndex, punctuation, tail);
             }
@@ -158,10 +159,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         flow::IConsumer* consumerNode = node.asConsumer;
 
         return segment::SegmentConsumerHandle{
-            [consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
+            .consume=[consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
                 consumerNode->consume(sCtx, 0, tuple, rest);
             },
-            [consumerNode, rest](segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
+            .consumePunctuation=[consumerNode, rest](segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
                 consumerNode->consumePunctuation(sCtx, 0, punctuation, rest);
             }
         };
@@ -198,8 +199,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                                                                              inner) {
         auto *i64Ty = llvm::Type::getInt64Ty(*ctx);
         auto *i1Ty = llvm::Type::getInt1Ty(*ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(*ctx);
         auto *ptrTy = llvm::PointerType::getUnqual(*ctx);
         auto *voidTy = llvm::Type::getVoidTy(*ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(*ctx);
 
         std::vector<llvm::Type *> memberTypes;
         memberTypes.reserve(portSchema.size() + 4);
@@ -214,10 +217,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 llvm::StructType::create(*ctx, memberTypes, "ody_snapshot_" + uniqueKey);
 
         const auto &dataLayout = module->getDataLayout();
-        const std::uint64_t structByteSize = dataLayout.getTypeAllocSize(snapshotStructTy);
+        const std::size_t structByteSize = dataLayout.getTypeAllocSize(snapshotStructTy);
 
         auto* punctStructTy = llvm::StructType::create(*ctx, {i64Ty, i1Ty}, "ody_punct_" + uniqueKey);
-        const std::uint64_t punctByteSize = dataLayout.getTypeAllocSize(punctStructTy);
+        const std::size_t punctByteSize = dataLayout.getTypeAllocSize(punctStructTy);
 
         const auto queueState = stateRegistry->createHandle(
             "queue_" + uniqueKey, "rtComputeSegmentNullInit", {}, {},
@@ -228,13 +231,13 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         auto *runtimeRegistryGlobal = stateRegistry->getRuntimeTypeRegistryGlobal();
 
         const auto retainFn = module->getOrInsertFunction(
-            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, ptrTy}, false));
+            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty, ptrTy}, false));
         const auto releaseFn = module->getOrInsertFunction(
-            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
+            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i8Ty, ptrTy}, false));
         const auto freeFn = module->getOrInsertFunction(
             "rtFanInFree", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         const auto allocFnDecl = module->getOrInsertFunction(
-            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {i64Ty}, false));
+            "rtFanInAlloc", llvm::FunctionType::get(ptrTy, {sizeTTy}, false));
 
         auto *dataContinuationFn = segment::SegmentBuilder::createContinuation(
             *module, *ctx, *codegenTypeRegistry, "ody_continuation_" + uniqueKey,
@@ -254,18 +257,20 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 reconstructed.fields.reserve(portSchema.size());
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 4);
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 4], slot));
                 }
 
                 inner.consume(computeCtx, reconstructed);
 
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     if (!memberTypes[i + 4]->isPointerTy()) {
                         continue;
                     }
-                    llvm::Value *typeIdConst = llvm::ConstantInt::get(i64Ty, portSchema.at(i).valueTypeId);
-                    computeCtx.builder.CreateCall(
-                        releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
+                    llvm::Value *typeIdConst = llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+                    computeCtx.builder.CreateCall(releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
                 }
 
                 computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
@@ -287,16 +292,11 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         );
 
         return segment::SegmentConsumerHandle{
-            [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
-                    queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn]
+            .consume=[snapshotStructTy, structByteSize, memberTypes, portSchema,
+                    queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn, ptrTy, sizeTTy, i8Ty, allocFnDecl]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
-                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
-                auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
-
-                const auto allocFn = module->getOrInsertFunction(
-                    "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {i64TyLocal}, false));
                 llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
-                    allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
+                    allocFnDecl, {llvm::ConstantInt::get(sizeTTy, structByteSize)});
 
                 sCtx.builder.CreateStore(
                     tuple.timeInterval.getStart().getPoint(),
@@ -312,16 +312,17 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 3));
 
                 llvm::Value *runtimeRegistryPtrLocal =
-                        sCtx.builder.CreateLoad(ptrTyLocal, runtimeRegistryGlobal);
+                        sCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
 
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     llvm::Value *fieldVal = tuple.fields.at(i);
                     llvm::Value *fieldSlot =
                             sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 4);
 
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     if (memberTypes[i + 4]->isPointerTy()) {
                         llvm::Value *typeIdConst =
-                                llvm::ConstantInt::get(i64TyLocal, portSchema.at(i).valueTypeId);
+                                llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
                         fieldVal = sCtx.builder.CreateCall(
                             retainFn, {runtimeRegistryPtrLocal, typeIdConst, fieldVal});
                     }
@@ -330,12 +331,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
                 segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, dataContinuationFn, snapshotPtrLocal);
             },
-            [this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl]
+            .consumePunctuation=[this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl, sizeTTy]
     (segment::SegmentContext &sCtx, const data::PunctuationPackage &punctuation) {
-                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
-
                 llvm::Value *punctPtrLocal = sCtx.builder.CreateCall(
-                    allocFnDecl, {llvm::ConstantInt::get(i64TyLocal, punctByteSize)});
+                    allocFnDecl, {llvm::ConstantInt::get(sizeTTy, punctByteSize)});
 
                 sCtx.builder.CreateStore(
                     punctuation.watermark, sCtx.builder.CreateStructGEP(punctStructTy, punctPtrLocal, 0));

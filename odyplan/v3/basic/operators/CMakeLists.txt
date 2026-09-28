@@ -30,7 +30,7 @@ target_link_libraries(${TARGET_NAME}
         odyplan::core::builder
         odyplan::basic::io
         odyplan::basic::expression
-        odyplan::basic::window
+        odyplan::basic::storage
         spdlog::spdlog
 )
 

@@ -15,7 +15,7 @@
 namespace sierra::odyplan::v3::core::logical::port {
     class PortDescriptionResolver {
     public:
-        explicit PortDescriptionResolver(const Port& port, std::vector<std::size_t> portSizes);
+        explicit PortDescriptionResolver(Port  port, std::vector<std::size_t> portSizes);
 
         [[nodiscard]] std::size_t resolve(const std::string& fieldName, const std::optional<std::size_t>& portIndex) const;
 

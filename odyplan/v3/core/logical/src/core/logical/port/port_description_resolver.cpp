@@ -1,7 +1,9 @@
 #include <core/logical/port/port_description_resolver.h>
 
+#include <utility>
+
 namespace sierra::odyplan::v3::core::logical::port {
-    PortDescriptionResolver::PortDescriptionResolver(const Port& port, std::vector<std::size_t> portSizes) : mPort(port), mPortSizes(std::move(portSizes)) {
+    PortDescriptionResolver::PortDescriptionResolver(Port  port, std::vector<std::size_t> portSizes) : mPort(std::move(port)), mPortSizes(std::move(portSizes)) {
         mPortOffsets.reserve(mPort.size());
 
         //collect offsets for multi-port

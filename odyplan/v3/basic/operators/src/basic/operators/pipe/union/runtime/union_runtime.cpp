@@ -2,10 +2,10 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     extern "C" {
-    void *rtUnionWatermarkCreate(void * /*runtimeTypeRegistry*/, const std::int64_t numInputs) {
+    void *rtUnionWatermarkCreate(void * /*runtimeTypeRegistry*/, const std::size_t numInputs) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto *state = new details::UnionWatermarkState();
-        const auto cNumInputs = static_cast<std::size_t>(numInputs);
+        const auto cNumInputs = numInputs;
         state->perInputWatermark.assign(cNumInputs, 0);
         state->hasReported.assign(cNumInputs, false);
         state->perInputFinal.assign(cNumInputs, false);
@@ -17,9 +17,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         delete static_cast<details::UnionWatermarkState *>(state);
     }
 
-    std::uint8_t rtUnionUpdateWatermark(void *state, const std::int64_t inputIndex,
-                                        const std::int64_t incomingWatermark,
-                                        const std::uint8_t incomingIsFinal, std::int64_t *outWatermark,
+    std::uint8_t rtUnionUpdateWatermark(void *state, const std::size_t inputIndex,
+                                        const core::shared::types::Timestamp incomingWatermark,
+                                        const std::uint8_t incomingIsFinal, core::shared::types::Timestamp *outWatermark,
                                         std::uint8_t *outIsFinal) {
 
         auto *wState = static_cast<details::UnionWatermarkState *>(state);
@@ -29,7 +29,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
 
         const bool isFinalBool = (incomingIsFinal != 0);
 
-        const auto index = static_cast<std::size_t>(inputIndex);
+        const auto index = inputIndex;
 
         if (wState->hasReported[index]) {
             wState->perInputWatermark[index] = std::max(wState->perInputWatermark[index], incomingWatermark);
@@ -42,7 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
             wState->perInputFinal[index] = true;
         }
 
-        std::int64_t effMin = std::numeric_limits<std::int64_t>::max();
+        core::shared::types::Timestamp effMin = std::numeric_limits<core::shared::types::Timestamp>::max();
         bool allFinal = true;
 
         for (std::size_t i = 0; i < wState->perInputWatermark.size(); ++i) {
@@ -58,7 +58,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         if (allFinal) {
             if (!wState->finalEmitted) {
                 wState->finalEmitted = true;
-                *outWatermark = std::numeric_limits<std::uint64_t>::max();
+                *outWatermark = std::numeric_limits<core::shared::types::Timestamp>::max();
                 *outIsFinal = 1;
                 sEmit = 1;
             }
@@ -75,13 +75,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     }
 
 
-    std::int64_t rtUnionGetGlobalWatermark(void *state) {
+    core::shared::types::Timestamp rtUnionGetGlobalWatermark(void *state) {
         auto *wState = static_cast<details::UnionWatermarkState *>(state);
 
         while (wState->lock.test_and_set(std::memory_order_acquire)) {
         }
 
-        const std::int64_t watermark = wState->lastEmittedWatermark;
+        const auto watermark = wState->lastEmittedWatermark;
 
         wState->lock.clear(std::memory_order_release);
 
@@ -90,10 +90,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
 
     void *rtUnionBufferCreate(const core::runtime::types::RuntimeTypeRegistry *registry, const std::uint8_t outOfOrder,
                               const core::shared::types::ValueTypeId *typeIds,
-                              const std::uint64_t fieldSize) {
+                              const std::size_t fieldSize) {
         core::logical::port::Port schema;
 
-        for (std::uint64_t i = 0; i < fieldSize; ++i) {
+        for (std::size_t i = 0; i < fieldSize; ++i) {
             schema.push_back(
                 core::logical::port::PortDescription{.valueTypeId = typeIds[i]});
         }
@@ -112,17 +112,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         static_cast<UnionBuffer *>(state)->begin();
     }
 
-    void rtUnionBufferPush(void *state, const std::uint64_t index, const void *data) {
+    void rtUnionBufferPush(void *state, const std::size_t index, const void *data) {
         static_cast<UnionBuffer *>(state)->push(index, data);
     }
 
-    void rtUnionBufferEnd(void *state, const std::uint64_t inputPort,
-                          const std::int64_t startTs, const std::int64_t endTs,
-                          const std::int64_t startTb, const std::int64_t endTb) {
+    void rtUnionBufferEnd(void *state, const core::shared::identifiers::PortId inputPort,
+                          const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,
+                          const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         static_cast<UnionBuffer *>(state)->end(inputPort, startTs, endTs, startTb, endTb);
     }
 
-    std::uint64_t rtUnionBufferGetCount(void *state) {
+    std::size_t rtUnionBufferGetCount(void *state) {
         return static_cast<UnionBuffer *>(state)->getCount();
     }
 
@@ -130,36 +130,36 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         return static_cast<UnionBuffer *>(state)->isEmpty() ? 1 : 0;
     }
 
-    std::int64_t rtUnionBufferGetMinStartTimestamp(void *state) {
+    core::shared::types::Timestamp rtUnionBufferGetMinStartTimestamp(void *state) {
         return static_cast<UnionBuffer *>(state)->getMinStartTimestamp();
     }
 
-    const std::byte *rtUnionBufferGetData(void *state, const std::uint64_t index) {
+    const std::byte *rtUnionBufferGetData(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getData(index);
     }
 
     const std::byte *rtUnionBufferGetFieldPtr(void *state,
-                                              const std::uint64_t rowIndex, const std::uint64_t fieldIndex) {
+                                              const std::size_t rowIndex, const std::size_t fieldIndex) {
         return static_cast<UnionBuffer *>(state)->getFieldPtr(rowIndex, fieldIndex);
     }
 
-    std::int64_t rtUnionBufferGetStartTimestamp(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtUnionBufferGetStartTimestamp(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getStartTimestamp(index);
     }
 
-    std::int64_t rtUnionBufferGetEndTimestamp(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtUnionBufferGetEndTimestamp(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getEndTimestamp(index);
     }
 
-    std::int64_t rtUnionBufferGetStartTibreaker(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtUnionBufferGetStartTibreaker(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getStartTibreaker(index);
     }
 
-    std::int64_t rtUnionBufferGetEndTibreaker(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtUnionBufferGetEndTibreaker(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getEndTibreaker(index);
     }
 
-    std::uint64_t rtUnionBufferGetInputPort(void *state, const std::uint64_t index) {
+    core::shared::identifiers::PortId rtUnionBufferGetInputPort(void *state, const std::size_t index) {
         return static_cast<UnionBuffer *>(state)->getInputPort(index);
     }
 
@@ -179,22 +179,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         static_cast<UnionBuffer *>(state)->unlockShared();
     }
 
-    void rtUnionBufferRemoveV(void *state, const std::uint64_t *indices, const std::uint64_t count) {
+    void rtUnionBufferRemoveV(void *state, const std::size_t *indices, const std::size_t count) {
         auto *buffer = static_cast<union_::runtime::UnionBuffer *>(state);
 
-        buffer->removeV(static_cast<const void*>(indices), static_cast<std::int64_t>(count));
+        buffer->removeV(indices, count);
     }
 
-    std::uint64_t rtUnionBufferGetMinStartTimestampIndex(void* state, const std::int64_t watermark) {
+    std::size_t rtUnionBufferGetMinStartTimestampIndex(void* state, const core::shared::types::Timestamp watermark) {
         auto *buffer = static_cast<union_::runtime::UnionBuffer*>(state);
-        auto index = buffer->getMinStartTimestampIndex(static_cast<Timestamp>(watermark));
+        auto index = buffer->getMinStartTimestampIndex(watermark);
         return index.has_value() ? index.value() : -1;
     }
 
-    BatchResult_T rtUnionBufferGetReadyIndices(void* state, const std::int64_t watermark, const std::uint64_t maxCount) {
+    BatchResult_T rtUnionBufferGetReadyIndices(void* state, const core::shared::types::Timestamp watermark, const std::size_t maxCount) {
         auto* buffer = static_cast<UnionBuffer*>(state);
 
-        const auto result = buffer->getReadyIndices(static_cast<Timestamp>(watermark), static_cast<std::size_t>(maxCount));
+        const auto result = buffer->getReadyIndices(watermark, maxCount);
 
         return BatchResult_T{
             .count = result.count,
@@ -202,15 +202,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         };
     }
 
-    std::int64_t rtUnionBufferGetBatchCount(const BatchResult_T result) {
-        return static_cast<std::int64_t>(result.count);
+    std::size_t rtUnionBufferGetBatchCount(const BatchResult_T result) {
+        return result.count;
     }
 
-    std::int64_t rtUnionBufferGetBatchElement(const BatchResult_T result, const std::uint64_t index) {
+    std::size_t rtUnionBufferGetBatchElement(const BatchResult_T result, const std::size_t index) {
         if (index >= result.count) {
             return -1;
         }
-        return static_cast<std::int64_t>(result.indices[index]);
+        return result.indices[index];
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::merge::runtime

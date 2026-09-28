@@ -4,13 +4,12 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
+#include <core/shared/types/global_types.h>
 
 /**
  * Based on Odysseus PointInTime Class
  */
 namespace sierra::odyplan::v3::core::physical::time {
-    constexpr std::int64_t INFINITY_SENTINEL = -std::numeric_limits<std::int64_t>::max();
-
     class TimePoint {
     public:
         TimePoint(llvm::IRBuilder<>& builder, llvm::Value* point);

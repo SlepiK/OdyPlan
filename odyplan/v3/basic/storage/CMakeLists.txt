@@ -5,16 +5,16 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
 )
 
-set(TARGET_NAME odyplan_basic_window)
+set(TARGET_NAME odyplan_basic_storage)
 
 add_library(${TARGET_NAME} OBJECT
         ${SOURCES}
         ${HEADERS}
 )
 set_target_properties(${FACADE_TARGET} PROPERTIES
-        EXPORT_NAME basic::window
+        EXPORT_NAME basic::storage
 )
-add_library(odyplan::basic::window ALIAS ${TARGET_NAME})
+add_library(odyplan::basic::storage ALIAS ${TARGET_NAME})
 
 target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -56,7 +56,7 @@ if(ENABLE_TOOLING)
     register_tidy_sources(${SOURCES})
 
     if(ENABLE_CLANG_TIDY)
-        add_header_tidy_check(odyplan_window_header_check
+        add_header_tidy_check(odyplan_storage_header_check
                 HEADERS ${HEADERS}
                 LINK_LIBS ${TARGET_NAME}
         )

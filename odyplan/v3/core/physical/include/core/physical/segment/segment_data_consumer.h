@@ -5,7 +5,6 @@
 #include <core/physical/segment/segment_context.h>
 
 namespace sierra::odyplan::v3::core::physical::segment {
-
     struct SegmentConsumerHandle {
         std::function<void(SegmentContext&, const data::DataPackage&)> consume;
         std::function<void(SegmentContext&, const data::PunctuationPackage&)> consumePunctuation;

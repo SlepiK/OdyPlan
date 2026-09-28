@@ -1,5 +1,5 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_PREDMOD_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_PREDMOD_HPP
 #include <basic/expression/physical/compare_expression.h>
 #include <basic/expression/physical/expression.h>
 #include <basic/expression/physical/field_reference_expression.h>
@@ -9,7 +9,7 @@
 #include <optional>
 #include <basic/expression/physical/logical_expression.h>
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     struct EquiKeyInfo {
         std::size_t leftFieldIndex;
         std::size_t rightFieldIndex;
@@ -26,6 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
 
         if (expr->getExpressionType() == expression::physical::ExpressionType::LOGICAL) {
+            // NOLINTNEXTLINE
             const auto& logicalExp = static_cast<const expression::physical::LogicalExpression&>(*expr);
             if (logicalExp.isUnary() || logicalExp.getOpr() != expression::LogicalOp::AND) {
                 return false;
@@ -130,6 +131,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         return list;
     }
-}  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details
+}
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_DETAILS_JOIN_PREDMOD_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_JOIN_PHYSICAL_JOIN_PREDMOD_HPP

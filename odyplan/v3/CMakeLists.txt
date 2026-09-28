@@ -34,7 +34,7 @@ install(TARGETS
 install(TARGETS
         odyplan_basic_operators
         odyplan_basic_expression
-        odyplan_basic_window
+        odyplan_basic_storage
         odyplan_basic_io
 
         EXPORT OdyPlanTargets

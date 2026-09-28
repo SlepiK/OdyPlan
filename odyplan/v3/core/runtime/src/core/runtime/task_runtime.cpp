@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::core::runtime {
         gIoThreadPool.joinWorker(ioTaskHandle);
     }
 
-    void rtSleepMs(const std::int64_t ms) {
+    void rtSleepMs(const shared::types::Timestamp ms) {
         std::this_thread::sleep_for(std::chrono::milliseconds(ms));
     }
     }

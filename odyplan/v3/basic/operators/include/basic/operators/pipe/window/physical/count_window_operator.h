@@ -2,7 +2,7 @@
 #define SIERRA_ODYPLAN_V3_BASIC_OPERATORS_PIPE_WINDOW_PHYSICAL_COUNT_WINDOW_OPERATOR_HPP
 
 #include <core/physical/operators/pipe/typed_pipe_operator.h>
-#include <basic/window/count/count_window_config.h>
+#include <basic/operators/pipe/window/details/count_window_options.h>
 #include <core/logical/port/port.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     public:
         CountWindowOperator(core::physical::port::Port inputPort,
                             core::physical::port::Port outputPort,
-                            const basic::window::count::CountWindowConfig& config,
+                            const details::CountWindowOptions& config,
                             core::logical::port::Port schema);
 
         void declareState(core::physical::state::StateRegistry& stateRegistry,
@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                      const core::physical::segment::SegmentDataConsumers& consumers) override;
 
     private:
-        basic::window::count::CountWindowConfig mConfig;
+        details::CountWindowOptions mConfig;
         core::logical::port::Port mDataSchema;
         core::physical::state::StateHandle mState;
         llvm::Function* mDrainFn = nullptr;

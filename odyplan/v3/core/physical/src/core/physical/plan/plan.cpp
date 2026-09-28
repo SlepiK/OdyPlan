@@ -148,7 +148,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                            const std::vector<llvm::Function*>& functions,
                            const std::vector<llvm::GlobalVariable*>& computeSegmentSlots,
                            llvm::Function* endPhase) {
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* sizeTTy = module.getDataLayout().getIntPtrType(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
 
@@ -162,9 +162,9 @@ namespace sierra::odyplan::v3::core::physical::plan {
 
 
         auto ioSpawnFn = module.getOrInsertFunction("rtIOTaskSpawn",
-                                                    llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+                                                    llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
         auto ioJoinFn = module.getOrInsertFunction(
-            "rtIOTaskJoin", llvm::FunctionType::get(voidTy, {i64Ty}, false));
+            "rtIOTaskJoin", llvm::FunctionType::get(voidTy, {sizeTTy}, false));
 
         std::vector<llvm::Value*> ioHandles;
 

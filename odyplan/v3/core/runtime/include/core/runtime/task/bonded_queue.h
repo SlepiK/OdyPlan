@@ -9,7 +9,7 @@
 namespace sierra::odyplan::v3::core::runtime::task {
     class BoundedQueue {
     public:
-        explicit BoundedQueue(const std::size_t maxSize = 8192);
+        explicit BoundedQueue(std::size_t maxSize = 8192);
 
         void push(void* item);
 

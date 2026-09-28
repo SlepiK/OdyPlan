@@ -2,7 +2,7 @@
 #include <basic/operators/pipe/join/logical/join_operator.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
-    JoinOperator::JoinOperator(const details::JoinConfig config,
+    JoinOperator::JoinOperator(const details::JoinOperatorOptions config,
                                std::unique_ptr<basic::expression::logical::IExpression> predicate, const bool assureOrder)
         : mConfig(config), mLPredicate(std::move(predicate)), mAssureOrder(assureOrder) {}
 
@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         return TYPE_ID;
     }
 
-    const details::JoinConfig& JoinOperator::getConfig() const {
+    const details::JoinOperatorOptions& JoinOperator::getConfig() const {
         return mConfig;
     }
 

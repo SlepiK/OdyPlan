@@ -43,12 +43,12 @@ namespace sierra::odyplan::v3::core::physical::flow {
         }
 
     protected:
-        [[nodiscard]] std::int64_t compactInputIndex(shared::identifiers::PortId portId) const {
+        [[nodiscard]] std::size_t compactInputIndex(const shared::identifiers::PortId portId) const {
             const auto it = std::ranges::find(mConnectedPorts, portId);
             if (it == mConnectedPorts.end()) {
                 throw std::logic_error("IConsumer::compactInputIndex: unconfigured PortId used (" + std::to_string(portId) + ")");
             }
-            return static_cast<std::int64_t>(std::distance(mConnectedPorts.begin(), it));
+            return static_cast<std::size_t>(std::distance(mConnectedPorts.begin(), it));
         }
 
         [[nodiscard]] std::size_t sizeOfConnectedPorts() const noexcept {

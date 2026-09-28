@@ -19,10 +19,6 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
                      const core::physical::data::DataPackage& tuple,
                      const core::physical::segment::SegmentDataConsumers& /*consumers*/) override;
 
-        void end(core::physical::segment::SegmentContext& segmentCtx,
-                 core::shared::identifiers::PortId inputPort,
-                 const core::physical::segment::SegmentDataConsumers& consumers) override;
-
         void consumePunctuation(core::physical::segment::SegmentContext &segmentCtx,
                                 core::shared::identifiers::PortId inputPort,
                                 const core::physical::data::PunctuationPackage &punctuation,
