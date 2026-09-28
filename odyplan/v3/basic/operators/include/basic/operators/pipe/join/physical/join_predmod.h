@@ -26,6 +26,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
 
         if (expr->getExpressionType() == expression::physical::ExpressionType::LOGICAL) {
+            // NOLINTNEXTLINE
             const auto& logicalExp = static_cast<const expression::physical::LogicalExpression&>(*expr);
             if (logicalExp.isUnary() || logicalExp.getOpr() != expression::LogicalOp::AND) {
                 return false;

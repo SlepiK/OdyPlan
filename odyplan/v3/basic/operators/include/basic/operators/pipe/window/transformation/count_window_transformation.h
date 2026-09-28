@@ -10,6 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::transformation {
     static constexpr core::builder::transformation::OperatorTransformationFactory COUNT_WINDOW_TRANSFORMATION = [](sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v3::core::physical::port::Ports& outputPorts) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+        // NOLINTNEXTLINE
         const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator&>(op);
         const auto& config = concrete.getWindowConfig();
 

@@ -292,7 +292,6 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
             [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
                     queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
-                auto *i64TyLocal = llvm::Type::getInt64Ty(*ctx);
                 auto *i8TyLocal = llvm::Type::getInt8Ty(*ctx);
                 auto *ptrTyLocal = llvm::PointerType::getUnqual(*ctx);
                 auto* sizeTTyLocal = module->getDataLayout().getIntPtrType(*ctx);
@@ -300,7 +299,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 const auto allocFn = module->getOrInsertFunction(
                     "rtFanInAlloc", llvm::FunctionType::get(ptrTyLocal, {sizeTTyLocal}, false));
                 llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
-                    allocFn, {llvm::ConstantInt::get(i64TyLocal, structByteSize)});
+                    allocFn, {llvm::ConstantInt::get(sizeTTyLocal, structByteSize)});
 
                 sCtx.builder.CreateStore(
                     tuple.timeInterval.getStart().getPoint(),

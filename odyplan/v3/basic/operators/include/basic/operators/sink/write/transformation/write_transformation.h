@@ -10,6 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::transformation {
     static constexpr core::builder::transformation::OperatorTransformationFactory TRANSFORMATION = [](sierra::odyplan::v3::core::logical::operators::IOperator& op,
             const sierra::odyplan::v3::core::physical::port::Ports& inputPorts,
             const sierra::odyplan::v3::core::physical::port::Ports&) -> sierra::odyplan::v3::core::builder::transformation::OperatorTransformation {
+        // NOLINTNEXTLINE
         const auto& concrete = static_cast<const sierra::odyplan::v3::basic::operators::sink::write::logical::WriteOperator&>(op);
 
         sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;

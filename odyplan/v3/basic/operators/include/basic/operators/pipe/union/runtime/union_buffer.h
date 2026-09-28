@@ -113,7 +113,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         void compactIfNeeded();
         void compact();
 
-        static inline bool compareRows(const core::shared::types::Timestamp tsA, const core::shared::types::TiBreak tbA, const core::shared::types::Timestamp tsB, const core::shared::types::TiBreak tbB) {
+        static bool compareRows(const core::shared::types::Timestamp tsA, const core::shared::types::TiBreak tbA, const core::shared::types::Timestamp tsB, const core::shared::types::TiBreak tbB) {
             if (tsA != tsB) {
                 return tsA < tsB;
             }
