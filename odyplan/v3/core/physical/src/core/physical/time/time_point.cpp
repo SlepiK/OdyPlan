@@ -9,7 +9,7 @@ namespace sierra::odyplan::v3::core::physical::time {
 
         llvm::GlobalVariable *getOrCreateSeqCnt(llvm::Module &module) {
             const auto *seqCnt = "__tp_seq_cnt";
-            if (auto *existing = module.getGlobalVariable((seqCnt))) {
+            if (auto *existing = module.getGlobalVariable(seqCnt)) {
                 return existing;
             }
 

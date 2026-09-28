@@ -42,7 +42,6 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
         auto *ptrTy = llvm::PointerType::getUnqual(ctx);
         auto *i1Ty = llvm::Type::getInt1Ty(ctx);
-        auto *idTy = llvm::Type::getInt8Ty(ctx);
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);

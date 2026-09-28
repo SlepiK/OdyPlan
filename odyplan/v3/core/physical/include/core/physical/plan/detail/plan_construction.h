@@ -21,6 +21,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         using OperatorPortReferenceConnection = shared::operators::OperatorPortReferenceConnection;
         using IOperator = operators::IOperator;
 
+        // NOLINTNEXTLINE(readability-function-size)
         PlanConstruction(
         const std::reference_wrapper<const std::unordered_map<OperatorId, segment::Segment>> segmentsIn,
         const std::reference_wrapper<const std::unordered_map<
