@@ -23,7 +23,7 @@ namespace sierra::odyplan::v3::basic::io::ndjson {
             std::vector<core::logical::port::PortDescription> descriptions;
             descriptions.reserve(sample.size());
 
-            for (auto& [key, value] : sample.items()) {
+            for (const auto& [key, value] : sample.items()) {
                 core::shared::types::BuiltinValueType type;
                 switch (value.type()) {
                     case nlohmann::json::value_t::number_integer:

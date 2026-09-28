@@ -14,6 +14,7 @@ namespace sierra::odyplan::v3::core::builder {
         auto pPlan = physical::plan::Plan(*mCodegenTypeRegistry);
 
         for (const auto lOprId : lPlan.topologicalOrder()) {
+            // NOLINTNEXTLINE(misc-const-correctness)
             logical::operators::IOperator& lOpr = lPlan.op(lOprId);
 
             lOpr.validate();

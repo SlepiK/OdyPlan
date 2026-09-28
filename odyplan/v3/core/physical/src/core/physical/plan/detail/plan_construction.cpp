@@ -41,6 +41,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 branches.reserve(edgesForPort.size());
 
                 for (std::size_t branchIdx = 0; branchIdx < edgesForPort.size(); ++branchIdx) {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     const auto& edge = edgesForPort[branchIdx];
                     const std::string key = "fanout_" + std::to_string(operatorId) + "_" +
                                             std::to_string(portIndex) + "_" +
@@ -49,13 +50,13 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                         key, chain.exitSchemas.at(portIndex), buildEnter(edge)));
                 }
                 result.at(portIndex) = segment::SegmentConsumerHandle{
-                    [branches](segment::SegmentContext& sCtx,
+                    .consume=[branches](segment::SegmentContext& sCtx,
                                               const data::DataPackage& tuple) {
                         for (const auto& branch : branches) {
                             branch.consume(sCtx, tuple);
                         }
                     },
-                    [branches](segment::SegmentContext& sCtx,
+                    .consumePunctuation=[branches](segment::SegmentContext& sCtx,
                                               const data::PunctuationPackage& punctuation) {
                         for (const auto& branch : branches) {
                             branch.consumePunctuation(sCtx, punctuation);
@@ -86,11 +87,11 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         segment::SegmentDataConsumers const tail = afterEntry(id);
 
         return segment::SegmentConsumerHandle{
-            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+            .consume=[entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
                                             const data::DataPackage& tuple) {
                 entryOpr->consume(sCtx, inputIndex, tuple, tail);
             },
-            [entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
+            .consumePunctuation=[entryOpr, inputIndex, tail](segment::SegmentContext& sCtx,
                                             const data::PunctuationPackage& punctuation) {
                 entryOpr->consumePunctuation(sCtx, inputIndex, punctuation, tail);
             }
@@ -158,10 +159,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         flow::IConsumer* consumerNode = node.asConsumer;
 
         return segment::SegmentConsumerHandle{
-            [consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
+            .consume=[consumerNode, rest](segment::SegmentContext& sCtx, const data::DataPackage& tuple) {
                 consumerNode->consume(sCtx, 0, tuple, rest);
             },
-            [consumerNode, rest](segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
+            .consumePunctuation=[consumerNode, rest](segment::SegmentContext& sCtx, const data::PunctuationPackage& punctuation) {
                 consumerNode->consumePunctuation(sCtx, 0, punctuation, rest);
             }
         };
@@ -256,18 +257,20 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                 reconstructed.fields.reserve(portSchema.size());
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     llvm::Value *slot = computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, i + 4);
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     reconstructed.fields.push_back(computeCtx.builder.CreateLoad(memberTypes[i + 4], slot));
                 }
 
                 inner.consume(computeCtx, reconstructed);
 
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     if (!memberTypes[i + 4]->isPointerTy()) {
                         continue;
                     }
                     llvm::Value *typeIdConst = llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
-                    computeCtx.builder.CreateCall(
-                        releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
+                    computeCtx.builder.CreateCall(releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
                 }
 
                 computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
@@ -316,6 +319,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     llvm::Value *fieldSlot =
                             sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, i + 4);
 
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
                     if (memberTypes[i + 4]->isPointerTy()) {
                         llvm::Value *typeIdConst =
                                 llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);

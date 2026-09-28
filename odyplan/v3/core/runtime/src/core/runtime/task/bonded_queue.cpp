@@ -30,7 +30,7 @@ namespace sierra::odyplan::v3::core::runtime::task {
 
     void BoundedQueue::close() {
         {
-            std::scoped_lock lock(mMutex);
+            const std::scoped_lock lock(mMutex);
             mClosed = true;
         }
         mNotEmpty.notify_all();
