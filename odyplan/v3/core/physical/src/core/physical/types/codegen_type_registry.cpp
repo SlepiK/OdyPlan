@@ -1,12 +1,22 @@
 #include <core/physical/types/codegen_type_registry.h>
+#include <mutex>
+#include <utility>
 
 namespace sierra::odyplan::v3::core::physical::types {
-    // NOLINTNEXTLINE(readability-function-size)
-    CodegenTypeRegistry CodegenTypeRegistry::withBuiltins() {
-        using T = shared::types::BuiltinValueType;
-        CodegenTypeRegistry registry;
+    CodegenTypeRegistry &CodegenTypeRegistry::instance() {
+        static CodegenTypeRegistry instance;
+        static std::once_flag initFl;
+        std::call_once(initFl, []() {
+            instance.initializeBuiltins();
+        });
+        return instance;
+    }
 
-        registry.registerType(
+    // NOLINTNEXTLINE(readability-function-size)
+    void CodegenTypeRegistry::initializeBuiltins() {
+        using T = shared::types::BuiltinValueType;
+
+        registerType(
             std::to_underlying(T::BOOL),
             {.typeName = "bool",
              .parseFunctionName = "rtParseBool",
@@ -18,7 +28,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                    boolVal ? 1 : 0);
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT8),
             {.typeName = "int8",
              .parseFunctionName = "rtParseInt8",
@@ -29,7 +39,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                    std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT16),
             {.typeName = "int16",
              .parseFunctionName = "rtParseInt16",
@@ -40,7 +50,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                    std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT32),
             {.typeName = "int32",
              .parseFunctionName = "rtParseInt32",
@@ -51,7 +61,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                    std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT64),
             {.typeName = "int64",
              .parseFunctionName = "rtParseInt64",
@@ -62,7 +72,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                    std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::FLOAT),
             {.typeName = "float",
              .parseFunctionName = "rtParseFloat",
@@ -73,7 +83,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                   std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::DOUBLE),
             {.typeName = "double",
              .parseFunctionName = "rtParseDouble",
@@ -84,7 +94,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                                   std::stoi(v));
                  }});
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::STRING),
             {.typeName = "string",
              .parseFunctionName = "",
@@ -94,7 +104,7 @@ namespace sierra::odyplan::v3::core::physical::types {
                                    const std::string& v) { return b.CreateGlobalString(v); }});
 
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::TIMESTAMP),
             {.typeName = "timestamp",
              .parseFunctionName = "rtParseInt64",
@@ -104,7 +114,5 @@ namespace sierra::odyplan::v3::core::physical::types {
                      return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()),
                                                    std::stoi(v));
                  }});
-
-        return registry;
     }
 }  // namespace sierra::odyplan::v3::core::physical::types

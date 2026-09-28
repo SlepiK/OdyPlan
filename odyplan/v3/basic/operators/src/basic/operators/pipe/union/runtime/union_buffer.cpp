@@ -5,11 +5,9 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
     UnionBuffer::UnionBuffer(const bool outOfOrder,
-                             core::logical::port::Port schema,
-                             const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry)
+                             core::logical::port::Port schema)
         : mOutOfOrder(outOfOrder)
-          , mRuntimeTypeRegistry(runtimeTypeRegistry)
-          , mLayout(std::move(schema), *runtimeTypeRegistry)
+          , mLayout(std::move(schema))
           , mLastEmittedWatermark(0)
           , mRemovedCount(0) {
         mRowMetas.reserve(2048);

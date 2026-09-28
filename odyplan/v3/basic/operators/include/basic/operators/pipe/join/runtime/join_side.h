@@ -11,8 +11,7 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     class JoinSide {
     public:
-        JoinSide(core::logical::port::Port schema,
-                 const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry, bool outOfOrder);
+        JoinSide(core::logical::port::Port schema, bool outOfOrder);
 
         void begin();
 
@@ -99,6 +98,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction;
         };
 
+        const core::runtime::types::RuntimeTypeRegistry* mRegistry;
+
         core::shared::types::Timestamp mPendingStartTs;
         core::shared::types::Timestamp mPendingEndTs;
         core::shared::types::TiBreak mPendingStartTb;
@@ -115,7 +116,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         std::multimap<std::vector<std::size_t>, std::size_t> mKeyIndex;
         std::vector<KeyFieldDetails> mKeyFields;
-        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::size_t mBasisIndex = 0;
         std::size_t mLastAbsoluteIndex = 0;

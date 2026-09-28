@@ -11,16 +11,8 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto* initFnType = llvm::FunctionType::get(voidTy, {ptrTy}, false);
         mInitFn = llvm::Function::Create(
             initFnType, llvm::Function::ExternalLinkage, "ody_init", *module);
-        mInitFn->getArg(0)->setName("runtimeTypeRegistry");
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
-
-        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-        mRuntimeTypeRegistryGlobal = new llvm::GlobalVariable(
-            *module, ptrTy, false, llvm::GlobalValue::PrivateLinkage,
-            llvm::ConstantPointerNull::get(ptrTy), "ody_runtime_type_registry");
-        // NOLINTEND(cppcoreguidelines-owning-memory)
-        mInitBuilder->CreateStore(mInitFn->getArg(0), mRuntimeTypeRegistryGlobal);
 
         auto* shutdownFnType = llvm::FunctionType::get(voidTy, {}, false);
         mShutdownFn = llvm::Function::Create(
@@ -31,8 +23,8 @@ namespace sierra::odyplan::v3::core::physical::state {
 
     StateHandle StateRegistry::createHandle(const std::string& uniqueName,
                                             const std::string& createFnName,
-                                            const std::vector<llvm::Value*>& extraArgs,
-                                            const std::vector<llvm::Type*>& extraArgTypes,
+                                            const std::vector<llvm::Value*>& args,
+                                            const std::vector<llvm::Type*>& argTypes,
                                             const std::string& destroyFnName) {
         auto* ptrTy = llvm::PointerType::getUnqual(*mContext);
         auto* voidTy = llvm::Type::getVoidTy(*mContext);
@@ -46,14 +38,8 @@ namespace sierra::odyplan::v3::core::physical::state {
                                                    "ody_state_" + uniqueName);
         // NOLINTEND(cppcoreguidelines-owning-memory)
 
-        std::vector<llvm::Type*> argTypes{ptrTy};
-        argTypes.insert(argTypes.end(), extraArgTypes.begin(), extraArgTypes.end());
-
         auto createFn = mModule->getOrInsertFunction(
             createFnName, llvm::FunctionType::get(ptrTy, argTypes, false));
-
-        std::vector<llvm::Value*> args{mInitFn->getArg(0)};
-        args.insert(args.end(), extraArgs.begin(), extraArgs.end());
 
         llvm::Value* created = mInitBuilder->CreateCall(createFn, args);
         mInitBuilder->CreateStore(created, globalVar);
@@ -77,10 +63,6 @@ namespace sierra::odyplan::v3::core::physical::state {
         // NOLINTEND(cppcoreguidelines-owning-memory)
 
         return StateHandle{globalVar};
-    }
-
-    llvm::GlobalVariable* StateRegistry::getRuntimeTypeRegistryGlobal() const {
-        return mRuntimeTypeRegistryGlobal;
     }
 
     void StateRegistry::finish() {

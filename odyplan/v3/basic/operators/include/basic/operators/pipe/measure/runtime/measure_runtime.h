@@ -10,7 +10,7 @@ constexpr std::uint64_t MEASUREMENT_AFTER_LINES_REPORT = 2;
 
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
     extern "C" {
-    void* rtCreateMeasure(const void* /*typeRegistry*/, const char* label);
+    void* rtCreateMeasure(const char* label);
 
     void rtDestroyMeasure(void* measureState);
 

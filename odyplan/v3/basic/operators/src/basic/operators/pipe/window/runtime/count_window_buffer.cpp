@@ -4,9 +4,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     CountWindowBuffer::CountWindowBuffer(const details::CountWindowOptions& config,
-                          core::logical::port::Port mDataSchema,
-                          const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
-        : mConfig(config), mRowLayout(mDataSchema, runtimeTypeRegistry),
+                          core::logical::port::Port mDataSchema)
+        : mConfig(config), mRowLayout(mDataSchema),
           mSchema(std::move(mDataSchema)) {
         if (mConfig.advance == 0) {
             mConfig.advance = 1;

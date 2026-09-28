@@ -8,7 +8,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
     extern "C" {
-    void* rtIOSinkCreate(const void* typeRegistryRawPtr, io::IOFormatType ioFormat, const char* path);
+    void* rtIOSinkCreate(io::IOFormatType ioFormat, const char* path);
 
     void rtIOSinkDestroy(void* state);
 

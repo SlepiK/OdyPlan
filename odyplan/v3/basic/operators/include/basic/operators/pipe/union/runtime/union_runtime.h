@@ -20,7 +20,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     }
 
     extern "C" {
-    void *rtUnionWatermarkCreate(void* runtimeTypeRegistry, std::size_t numInputs);
+    void *rtUnionWatermarkCreate(std::size_t numInputs);
 
     void rtUnionWatermarkDestroy(void *state);
 
@@ -30,7 +30,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
     core::shared::types::Timestamp rtUnionGetGlobalWatermark(void* state);
 
-    void *rtUnionBufferCreate(const core::runtime::types::RuntimeTypeRegistry *registry, std::uint8_t outOfOrder,
+    void *rtUnionBufferCreate(std::uint8_t outOfOrder,
         const core::shared::types::ValueTypeId* typeIds,
         std::size_t fieldSize);
 

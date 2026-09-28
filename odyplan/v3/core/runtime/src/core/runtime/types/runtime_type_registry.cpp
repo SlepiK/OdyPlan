@@ -1,15 +1,24 @@
 #include <cmath>
 #include <core/runtime/types/runtime_type_registry.h>
 #include <cstring>
+#include <mutex>
 #include <utility>
 
 namespace sierra::odyplan::v3::core::runtime::types {
-    // NOLINTNEXTLINE(readability-function-size)
-    RuntimeTypeRegistry RuntimeTypeRegistry::withBuiltins() {
-        using T = shared::types::BuiltinValueType;
-        RuntimeTypeRegistry registry;
+    RuntimeTypeRegistry &RuntimeTypeRegistry::instance() {
+        static RuntimeTypeRegistry instance;
+        static std::once_flag initFl;
+        std::call_once(initFl, []() {
+            instance.initializeBuiltins();
+        });
+        return instance;
+    }
 
-        registry.registerType(
+    // NOLINTNEXTLINE(readability-function-size)
+    void RuntimeTypeRegistry::initializeBuiltins() {
+        using T = shared::types::BuiltinValueType;
+
+        registerType(
             std::to_underlying(T::BOOL),
             sizeof(bool),
             false,
@@ -22,7 +31,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return std::memcmp(a, b, sizeof(bool)) == 0;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT8),
             sizeof(std::int8_t),
             false,
@@ -35,7 +44,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return std::memcmp(a, b, sizeof(std::int8_t)) == 0;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT16),
             sizeof(std::int16_t),
             false,
@@ -48,7 +57,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return std::memcmp(a, b, sizeof(std::int16_t)) == 0;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT32),
             sizeof(std::int32_t),
             false,
@@ -61,7 +70,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return std::memcmp(a, b, sizeof(std::int32_t)) == 0;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::INT64),
             sizeof(std::int64_t),
             false,
@@ -74,7 +83,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return std::memcmp(a, b, sizeof(std::int64_t)) == 0;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::FLOAT),
             sizeof(std::float_t),
             false,
@@ -95,7 +104,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return fA == fB;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::DOUBLE),
             sizeof(std::double_t),
             false,
@@ -116,7 +125,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 return dA == dB;
             });
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::STRING),
             sizeof(const char*),
             true,
@@ -146,7 +155,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
             });
 
 
-        registry.registerType(
+        registerType(
             std::to_underlying(T::TIMESTAMP),
             sizeof(shared::types::Timestamp),
             false,
@@ -158,7 +167,5 @@ namespace sierra::odyplan::v3::core::runtime::types {
             [](const std::byte* a, const std::byte* b) -> bool {
                 return std::memcmp(a, b, sizeof(shared::types::Timestamp)) == 0;
             });
-
-        return registry;
     }
 }  // namespace sierra::odyplan::v3::core::runtime::types

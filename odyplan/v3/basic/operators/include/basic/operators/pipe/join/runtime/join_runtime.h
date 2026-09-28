@@ -8,8 +8,7 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     extern "C" {
     // NOLINTNEXTLINE(readability-function-size)
-    void* rtJoinCreate(const void* typeRegistryRawPtr,
-                       const core::shared::types::ValueTypeId* leftTypeIds,
+    void* rtJoinCreate(const core::shared::types::ValueTypeId* leftTypeIds,
                        std::size_t leftFieldSize,
                        const core::shared::types::ValueTypeId* rightTypeIds,
                        std::size_t rightFieldSize,
@@ -38,7 +37,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void rtJoinEndRight(void* state, core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-    void* rtJoinSnapshotForCompute(void* state, uint8_t callFromLeft, uint8_t extract);
+    void* rtJoinSnapshotForCompute(void* state, uint8_t callFromLeft);
 
     const void* rtJoinSnapshotGetOwnPtr(void* snapshot, std::size_t fieldIndex);
 
@@ -66,7 +65,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     bool rtJoinSnapshotGetWasLeft(void *snapshot);
 
-    void *rtJoinWatermarkCreate(void *typeRegistryRawPtr);
+    void *rtJoinWatermarkCreate();
 
     void rtJoinWatermarkDestroy(void *state);
 

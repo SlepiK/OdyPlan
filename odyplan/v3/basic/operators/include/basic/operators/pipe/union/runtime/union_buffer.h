@@ -19,8 +19,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         };
 
         explicit UnionBuffer(bool outOfOrder,
-                             core::logical::port::Port schema,
-                             const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry);
+                             core::logical::port::Port schema);
 
         ~UnionBuffer();
 
@@ -96,7 +95,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         std::shared_mutex mMutex;
         const bool mOutOfOrder;
-        const core::runtime::types::RuntimeTypeRegistry *mRuntimeTypeRegistry;
 
         storage::RowLayout mLayout;
         std::vector<RowMeta> mRowMetas;

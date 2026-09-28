@@ -6,7 +6,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     namespace {
-        bool _shouldExtract(const details::JoinOperatorCard card, const bool onLeft) {
+        bool shouldExtract(const details::JoinOperatorCard card, const bool onLeft) {
             switch (card) {
                 case details::JoinOperatorCard::ONE_ONE: return true;
                 case details::JoinOperatorCard::MANY_ONE: return !onLeft;
@@ -15,7 +15,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             }
         }
 
-        bool _shouldInsert(const details::JoinOperatorCard card, const bool onLeft, const bool hit) {
+        bool shouldInsert(const details::JoinOperatorCard card, const bool onLeft, const bool hit) {
             switch (card) {
                 case details::JoinOperatorCard::ONE_ONE: return !hit;
                 case details::JoinOperatorCard::ONE_MANY: return onLeft || !hit;
@@ -38,8 +38,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
           mRightSchema(std::move(schemas.at(1))),
           mPredicate(std::move(predicate)),
           mEquiKeys(tryGetEquiKeyList(mPredicate.get(), mLeftSchema, mRightSchema)),
-          mIsEquiJoin(mEquiKeys.has_value()) {
-        mRuntimeTypeRegistry = core::runtime::types::RuntimeTypeRegistry::withBuiltins();
+          mIsEquiJoin(mEquiKeys.has_value()),
+        mRegistry(&core::runtime::types::RuntimeTypeRegistry::instance()){
     }
 
     void JoinOperator::consume(core::physical::segment::SegmentContext& segmentCtx,
@@ -54,7 +54,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto *ptrTy = llvm::PointerType::getUnqual(ctx);
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
         auto *i8Ty = llvm::Type::getInt8Ty(ctx);
-        auto *i1Ty = llvm::Type::getInt1Ty(ctx);
         auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);
@@ -92,13 +91,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             tuple.timeInterval.getStart().getTiBreaker(),
             tuple.timeInterval.getEnd().getTiBreaker()});
 
+
+        const bool extract = shouldExtract(mConfig.card, onLeft);
+
         //Snapshot (no extraction is executed here!)
-        const bool extract = _shouldExtract(mConfig.card, onLeft);
         const auto snapshotFn = module->getOrInsertFunction("rtJoinSnapshotForCompute",
-            llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty, i8Ty}, false));
+            llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty}, false));
         llvm::Value* snapshot = segmentCtx.builder.CreateCall(snapshotFn, {state,
-            llvm::ConstantInt::get(i8Ty, onLeft ? 1 : 0),
-            llvm::ConstantInt::get(i8Ty, extract ? 1 : 0)});
+            llvm::ConstantInt::get(i8Ty, onLeft ? 1 : 0)});
 
         //Check predicate and mark
         llvm::Value* hasMatches = nullptr;
@@ -122,8 +122,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
 
         //If_Insert like in Odysseus
-        const bool insertAlways = _shouldInsert(mConfig.card, onLeft, true);
-        const bool insertNever = _shouldInsert(mConfig.card, onLeft, false);
+        const bool insertAlways = shouldInsert(mConfig.card, onLeft, true);
+        const bool insertNever = shouldInsert(mConfig.card, onLeft, false);
 
         auto* insertBB = llvm::BasicBlock::Create(ctx, "join_insert", fn);
         auto* removeBB = llvm::BasicBlock::Create(ctx, "join_remove", fn);
@@ -318,7 +318,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                     getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
-                    segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
+                    segmentCtx.codegenTypeRegistry->resolveType(ownSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             }
 
@@ -326,7 +326,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                     getCandFn, {snapshot, index, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
-                    segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+                    segmentCtx.codegenTypeRegistry->resolveType(otherSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             }
         } else {
@@ -334,7 +334,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                     getCandFn, {snapshot, index, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
-                    segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+                    segmentCtx.codegenTypeRegistry->resolveType(otherSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             }
 
@@ -342,7 +342,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
                     getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
-                    segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
+                    segmentCtx.codegenTypeRegistry->resolveType(ownSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             }
         }
@@ -510,7 +510,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
                         getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
-                            segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
+                            segmentCtx.codegenTypeRegistry->resolveType(ownSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
                 }
 
@@ -518,7 +518,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
                         getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
-                            segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+                            segmentCtx.codegenTypeRegistry->resolveType(otherSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
                 }
             } else {
@@ -526,7 +526,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
                         getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
-                            segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
+                            segmentCtx.codegenTypeRegistry->resolveType(otherSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
                 }
 
@@ -534,7 +534,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
                         getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
-                            segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
+                            segmentCtx.codegenTypeRegistry->resolveType(ownSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
                 }
             }
@@ -550,15 +550,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     }
 
     std::size_t JoinOperator::getTypeSize(const core::shared::types::ValueTypeId typeId) const {
-        return mRuntimeTypeRegistry.byteSize(typeId);
+        return mRegistry->byteSize(typeId);
     }
 
     std::size_t JoinOperator::getRowByteSize(const core::logical::port::Port& schema) const {
-        const auto rtTypeReg = core::runtime::types::RuntimeTypeRegistry::withBuiltins();
-
         std::size_t size = 0;
         for (const auto& field : schema) {
-            size += mRuntimeTypeRegistry.byteSize(field.valueTypeId);
+            size += mRegistry->byteSize(field.valueTypeId);
         }
         return size;
     }
@@ -890,7 +888,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         for (std::size_t i = 0; i < mLeftSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateGEP(
                 i8Ty, rowPtr, llvm::ConstantInt::get(sizeTTy, offset));
-            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry.resolveType(
+            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry->resolveType(
                 mLeftSchema.at(i).valueTypeId, ctx);
             combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             offset += getTypeSize(mLeftSchema.at(i).valueTypeId);
@@ -899,7 +897,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         for (std::size_t i = 0; i < mRightSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateGEP(
                 i8Ty, rowPtr, llvm::ConstantInt::get(sizeTTy, offset));
-            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry.resolveType(
+            llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry->resolveType(
                 mRightSchema.at(i).valueTypeId, ctx);
             combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
             offset += getTypeSize(mRightSchema.at(i).valueTypeId);

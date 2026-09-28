@@ -7,12 +7,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     JoinBuffer::JoinBuffer(core::logical::port::Port leftSchema,
                            core::logical::port::Port rightSchema,
                            core::logical::port::Port outputSchema,
-                           const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry,
                            const bool outOfOrder)
-        : mOutOfOrder(outOfOrder),
-          mLeftSide(std::move(leftSchema), runtimeTypeRegistry, outOfOrder),
-          mRightSide(std::move(rightSchema), runtimeTypeRegistry, outOfOrder),
-          mRuntimeTypeRegistry(runtimeTypeRegistry),
+        : mRegistry(&core::runtime::types::RuntimeTypeRegistry::instance()),
+          mOutOfOrder(outOfOrder),
+          mLeftSide(std::move(leftSchema), outOfOrder),
+          mRightSide(std::move(rightSchema), outOfOrder),
           mOutputSchema(std::move(outputSchema)) {
     }
 
@@ -26,7 +25,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             std::lock_guard<std::mutex> lock(mOutputMutex);
             for (auto& row : mOutputBuffer) {
                 for (const auto& [typeId, ptr] : row.retainPointers) {
-                    mRuntimeTypeRegistry->release(typeId, ptr);
+                    mRegistry->release(typeId, ptr);
                 }
             }
         }
@@ -146,7 +145,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             typeIdsOut[p] = typeId;
 
-            if (!mRuntimeTypeRegistry->isPointerType(typeId)) {
+            if (!mRegistry->isPointerType(typeId)) {
                 continue;
             }
 
@@ -154,7 +153,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&oriPtr, &dst[dstOffset + offset], sizeof(void*));
 
-            void* retainedPtr = mRuntimeTypeRegistry->retain(typeId, oriPtr);
+            void* retainedPtr = mRegistry->retain(typeId, oriPtr);
 
 
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -185,11 +184,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         otherSide.removeV(mCandidates);
     }
 
-    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForCompute(const bool callFromLeft, const bool extract) const {
+    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForCompute(const bool callFromLeft) const {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* snapshot = new JoinSnapshot();
         snapshot->wasLeft = callFromLeft;
-        snapshot->runtimeTypeRegistry = mRuntimeTypeRegistry;
 
         const auto& side = callFromLeft ? mLeftSide : mRightSide;
         auto& otherSide = callFromLeft ? mRightSide : mLeftSide;
@@ -215,7 +213,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             snapshot->fieldTypeIds[p] = side.getFieldTypeId(p);
 
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
-            if (!mRuntimeTypeRegistry->isPointerType(snapshot->fieldTypeIds[p])) {
+            if (!mRegistry->isPointerType(snapshot->fieldTypeIds[p])) {
                 continue;
             }
 
@@ -223,7 +221,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&oriPtr, &snapshot->data[snapshot->fieldOffsets[p]], sizeof(void*));
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
-            void* retainedPtr = mRuntimeTypeRegistry->retain(snapshot->fieldTypeIds[p], oriPtr);
+            void* retainedPtr = mRegistry->retain(snapshot->fieldTypeIds[p], oriPtr);
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&snapshot->data[snapshot->fieldOffsets[p]], &retainedPtr, sizeof(void*));
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -237,6 +235,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         snapshot->candidateEnds.resize(mCandidates.size());
         snapshot->candidateStartsTb.resize(mCandidates.size());
         snapshot->candidateEndsTb.resize(mCandidates.size());
+
+        snapshot->mRegistry = mRegistry;
 
         for (std::size_t i = 0; i < mCandidates.size(); ++i) {
             // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
@@ -260,7 +260,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
 
         for (const auto& [typeId, ptr] : snapshot->retainPointers) {
-            snapshot->runtimeTypeRegistry->release(typeId, ptr);
+            snapshot->mRegistry->release(typeId, ptr);
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
@@ -306,29 +306,29 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         std::size_t offset = 0;
         for (const auto& field : mLeftSide.getSchema()) {
-            if (mRuntimeTypeRegistry->isPointerType(field.valueTypeId)) {
+            if (mRegistry->isPointerType(field.valueTypeId)) {
                 void* ptr = nullptr;
                 std::memcpy(&ptr, mOutputTempBuf.data() + offset, sizeof(void*));
                 if (ptr != nullptr) {
-                    void* retainedPtr = mRuntimeTypeRegistry->retain(field.valueTypeId, ptr);
+                    void* retainedPtr = mRegistry->retain(field.valueTypeId, ptr);
                     std::memcpy(mOutputTempBuf.data() + offset, &retainedPtr, sizeof(void*));
                     retainPointers.push_back({.typeId=field.valueTypeId, .ptr=retainedPtr});
                 }
             }
-            offset += mRuntimeTypeRegistry->byteSize(field.valueTypeId);
+            offset += mRegistry->byteSize(field.valueTypeId);
         }
 
         for (const auto& field : mRightSide.getSchema()) {
-            if (mRuntimeTypeRegistry->isPointerType(field.valueTypeId)) {
+            if (mRegistry->isPointerType(field.valueTypeId)) {
                 void* ptr = nullptr;
                 std::memcpy(&ptr, mOutputTempBuf.data() + offset, sizeof(void*));
                 if (ptr != nullptr) {
-                    void* retainedPtr = mRuntimeTypeRegistry->retain(field.valueTypeId, ptr);
+                    void* retainedPtr = mRegistry->retain(field.valueTypeId, ptr);
                     std::memcpy(mOutputTempBuf.data() + offset, &retainedPtr, sizeof(void*));
                     retainPointers.push_back({field.valueTypeId, retainedPtr});
                 }
             }
-            offset += mRuntimeTypeRegistry->byteSize(field.valueTypeId);
+            offset += mRegistry->byteSize(field.valueTypeId);
         }
 
         mOutputBuffer.push_back(OutputRow{
@@ -401,7 +401,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         for (std::size_t i = 0; i < mOutputBuffer.size(); ++i) {
             if (toRemove.find(i) != toRemove.end()) {
                 for (const auto& [typeId, ptr] : mOutputBuffer[i].retainPointers) {
-                    mRuntimeTypeRegistry->release(typeId, ptr);
+                    mRegistry->release(typeId, ptr);
                 }
             } else {
                 remain.push_back(std::move(mOutputBuffer[i]));

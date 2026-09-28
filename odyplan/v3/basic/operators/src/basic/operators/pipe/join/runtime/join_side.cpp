@@ -4,7 +4,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     namespace {
-        constexpr inline bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
+        constexpr bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
             if (lft == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return false;
             }
@@ -18,13 +18,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     JoinSide::JoinSide(core::logical::port::Port schema,
-                       const core::runtime::types::RuntimeTypeRegistry *runtimeTypeRegistry,
                        const bool outOfOrder)
         : mOutOfOrder(outOfOrder),
-          mLayout(std::move(schema), *runtimeTypeRegistry),
-          mRuntimeTypeRegistry(runtimeTypeRegistry),
+          mMinStartTs(0),
           mMinEndTs(0),
-          mMinStartTs(0) {
+          mLayout(std::move(schema)) {
     }
 
     void JoinSide::begin() {
@@ -250,11 +248,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         mKeyFields.clear();
         mKeyFields.reserve(fieldIndices.size());
 
+        const auto& registry = core::runtime::types::RuntimeTypeRegistry::instance();
+
         for (std::size_t i = 0; i < fieldIndices.size(); ++i) {
             mKeyFields.push_back(KeyFieldDetails{
                 .fieldIndex=fieldIndices.at(i),
-                .mHashFunction=mRuntimeTypeRegistry->getHashFnPtr(keyTypeIds.at(i)),
-                .mEqualFunction=mRuntimeTypeRegistry->getEqualFnPtr(keyTypeIds.at(i))
+                .mHashFunction=registry.getHashFnPtr(keyTypeIds.at(i)),
+                .mEqualFunction=registry.getEqualFnPtr(keyTypeIds.at(i))
             });
         }
     }
