@@ -61,7 +61,7 @@ int main() {
         auto pipeId = logicalPlan.addOperator(
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
-                sierra::odyplan::v3::basic::window::count::CountWindowConfig{
+                sierra::odyplan::v3::basic::operators::pipe::window::details::CountWindowOptions{
                     .size = 3,
                 }));
 

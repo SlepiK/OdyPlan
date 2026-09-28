@@ -48,8 +48,9 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
     void WriteOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                      llvm::Module& module,
                                      llvm::LLVMContext& context) {
-        auto* i8Ty = llvm::Type::getInt8Ty(context);
-        auto* ptrTy = llvm::PointerType::getUnqual(context);
+        auto *i8Ty = llvm::Type::getInt8Ty(context);
+        auto *ptrTy = llvm::PointerType::getUnqual(context);
+        auto *sizeTTy = module.getDataLayout().getIntPtrType(context);
 
         const std::string path = mIOConfig.at("path").get<std::string>();
 
@@ -66,8 +67,8 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
         llvm::Value* pathPtr = llvm::ConstantExpr::getInBoundsGetElementPtr(
             gPath->getValueType(),
             gPath,
-            std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
-                                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
+            std::vector<llvm::Value*>{llvm::ConstantInt::get(sizeTTy, 0),
+                                      llvm::ConstantInt::get(sizeTTy, 0)});
         // NOLINTEND(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
 
         mState = stateRegistry.createHandle(
@@ -109,7 +110,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::write::physical {
 
         auto* voidTy = llvm::Type::getVoidTy(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* typeIdTy = llvm::Type::getInt64Ty(ctx);
+        auto* typeIdTy = llvm::Type::getInt8Ty(ctx);
 
         llvm::Value* ptrFieldValue = nullptr;
 

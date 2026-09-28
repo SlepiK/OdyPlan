@@ -1,5 +1,7 @@
 #include <core/physical/state/state_registry.h>
 
+#include <ranges>
+
 namespace sierra::odyplan::v3::core::physical::state {
     StateRegistry::StateRegistry(llvm::Module* module, llvm::LLVMContext* context)
         : mModule(module), mContext(context) {
@@ -13,9 +15,11 @@ namespace sierra::odyplan::v3::core::physical::state {
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
             llvm::BasicBlock::Create(*context, "entry", mInitFn));
 
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         mRuntimeTypeRegistryGlobal = new llvm::GlobalVariable(
             *module, ptrTy, false, llvm::GlobalValue::PrivateLinkage,
             llvm::ConstantPointerNull::get(ptrTy), "ody_runtime_type_registry");
+        // NOLINTEND(cppcoreguidelines-owning-memory)
         mInitBuilder->CreateStore(mInitFn->getArg(0), mRuntimeTypeRegistryGlobal);
 
         auto* shutdownFnType = llvm::FunctionType::get(voidTy, {}, false);
@@ -33,12 +37,14 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto* ptrTy = llvm::PointerType::getUnqual(*mContext);
         auto* voidTy = llvm::Type::getVoidTy(*mContext);
 
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         auto* globalVar = new llvm::GlobalVariable(*mModule,
                                                    ptrTy,
                                                    false,
                                                    llvm::GlobalValue::InternalLinkage,
                                                    llvm::ConstantPointerNull::get(ptrTy),
                                                    "ody_state_" + uniqueName);
+        // NOLINTEND(cppcoreguidelines-owning-memory)
 
         std::vector<llvm::Type*> argTypes{ptrTy};
         argTypes.insert(argTypes.end(), extraArgTypes.begin(), extraArgTypes.end());
@@ -55,18 +61,20 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto destroyFn = mModule->getOrInsertFunction(
             destroyFnName, llvm::FunctionType::get(voidTy, {ptrTy}, false));
 
-        mPendingDestroys.push_back({destroyFn, globalVar});
+        mPendingDestroys.push_back({.destroyFn=destroyFn, .statePtr=globalVar});
 
         return StateHandle{globalVar};
     }
 
     StateHandle StateRegistry::createPrimitiveHandle(const std::string &uniqueName, llvm::Type *type, llvm::Constant *initialValue) {
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         auto* globalVar = new llvm::GlobalVariable(*mModule,
                                                type,
                                                false,
                                                llvm::GlobalValue::InternalLinkage,
                                                initialValue,
                                                "ody_state_" + uniqueName);
+        // NOLINTEND(cppcoreguidelines-owning-memory)
 
         return StateHandle{globalVar};
     }
@@ -80,9 +88,9 @@ namespace sierra::odyplan::v3::core::physical::state {
 
         auto* ptrTy = llvm::PointerType::getUnqual(*mContext);
 
-        for (auto it = mPendingDestroys.rbegin(); it != mPendingDestroys.rend(); ++it) {
-            llvm::Value* loaded = mShutdownBuilder->CreateLoad(ptrTy, it->statePtr);
-            mShutdownBuilder->CreateCall(it->destroyFn, {loaded});
+        for (auto &[destroyFn, statePtr] : std::ranges::reverse_view(mPendingDestroys)) {
+            llvm::Value* loaded = mShutdownBuilder->CreateLoad(ptrTy, statePtr);
+            mShutdownBuilder->CreateCall(destroyFn, {loaded});
         }
 
         mShutdownBuilder->CreateRetVoid();

@@ -1,12 +1,10 @@
-#include "basic/io/io_registry.h"
-
 #include <basic/operators/source/read/runtime/read_runtime.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
 
     extern "C" {
     void* rtIOSourceCreate(const void* /*typeRegistryRawPtr*/,
-                           const std::uint8_t ioFormat,
+                           const io::IOFormatType ioFormat,
                            const char* path) {
         static const io::IORegistry ioRegistry = io::IORegistry::withBuiltins();
         const nlohmann::json config = {{"path", path}};

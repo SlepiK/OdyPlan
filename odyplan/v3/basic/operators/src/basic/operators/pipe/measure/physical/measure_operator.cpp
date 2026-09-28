@@ -1,6 +1,6 @@
 #include <basic/operators/pipe/measure/physical/measure_operator.h>
 
-#include "basic/operators/pipe/measure/runtime/details/measure_state.h"
+#include <basic/operators/pipe/measure/runtime/measure_state.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
     MeasureOperator::MeasureOperator(core::physical::port::Port inputPort,
@@ -46,6 +46,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
                                        llvm::Module& module,
                                        llvm::LLVMContext& context) {
         auto* ptrTy = llvm::PointerType::getUnqual(context);
+        auto* sizeTTy = module.getDataLayout().getIntPtrType(context);
+
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         auto* labelGlobalVariable = new llvm::GlobalVariable(
             module,
@@ -58,8 +60,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::measure::physical {
         llvm::Value* labelGlobal = llvm::ConstantExpr::getInBoundsGetElementPtr(
             llvm::ArrayType::get(llvm::Type::getInt8Ty(context), mLabel.size() + 1),
             labelGlobalVariable,
-            std::vector<llvm::Value*>{llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0),
-                                      llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), 0)});
+            std::vector<llvm::Value*>{llvm::ConstantInt::get(sizeTTy, 0),
+                                      llvm::ConstantInt::get(sizeTTy, 0)});
 
         mStateHandle = stateRegistry.createHandle("measure_" + std::to_string(getPId()),
                                                   "rtCreateMeasure",

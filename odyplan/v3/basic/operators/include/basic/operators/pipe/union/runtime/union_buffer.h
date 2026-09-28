@@ -3,20 +3,19 @@
 
 #include <atomic>
 #include <queue>
-#include <basic/window/window_row_layout.h>
+#include <basic/storage/row_layout.h>
 #include <core/physical/time/time_point.h>
 #include <mutex>
 #include <shared_mutex>
 #include <core/shared/identifiers/port_id.h>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLINT(readability-identifier-naming)
-    using Timestamp = std::int64_t;
-
     class UnionBuffer {
     public:
         struct BatchResult {
-            std::uint64_t count;
-            std::uint64_t *indices;
+            std::size_t count;
+            std::size_t *indices;
         };
 
         explicit UnionBuffer(bool outOfOrder,
@@ -40,55 +39,55 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
 
         void begin();
 
-        void push(std::uint64_t index, const void *data);
+        void push(std::size_t index, const void *data);
 
         void end(core::shared::identifiers::PortId inputPort,
-                 Timestamp startTs, Timestamp endTs,
-                 std::int64_t startTb, std::int64_t endTb);
+                 core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
+                 core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
-        [[nodiscard]] std::uint64_t getCount() const;
+        [[nodiscard]] std::size_t getCount() const;
 
         [[nodiscard]] bool isEmpty() const;
 
-        [[nodiscard]] Timestamp getMinStartTimestamp();
+        [[nodiscard]] core::shared::types::Timestamp getMinStartTimestamp() const;
 
-        [[nodiscard]] const std::byte *getData(std::uint64_t index) const;
+        [[nodiscard]] const std::byte *getData(std::size_t index) const;
 
-        [[nodiscard]] const std::byte *getFieldPtr(std::uint64_t rowIndex, std::uint64_t fieldIndex) const;
+        [[nodiscard]] const std::byte *getFieldPtr(std::size_t rowIndex, std::size_t fieldIndex) const;
 
-        [[nodiscard]] Timestamp getStartTimestamp(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::size_t index) const;
 
-        [[nodiscard]] Timestamp getEndTimestamp(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::size_t index) const;
 
-        [[nodiscard]] std::int64_t getStartTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::size_t index) const;
 
-        [[nodiscard]] std::int64_t getEndTibreaker(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::size_t index) const;
 
-        [[nodiscard]] core::shared::identifiers::PortId getInputPort(std::uint64_t index) const;
+        [[nodiscard]] core::shared::identifiers::PortId getInputPort(std::size_t index) const;
 
-        void removeV(const void *indicesPtr, std::int64_t count);
+        void removeV(const std::size_t *indices, std::size_t count);
 
         void clear();
 
-        [[nodiscard]] std::uint64_t getFieldCount() const;
+        [[nodiscard]] std::size_t getFieldCount() const;
 
-        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
 
-        [[nodiscard]] std::uint64_t getFieldOffset(std::uint64_t index) const;
+        [[nodiscard]] std::size_t getFieldOffset(std::size_t index) const;
 
-        [[nodiscard]] std::uint64_t getRowByteSize() const;
+        [[nodiscard]] std::size_t getRowByteSize() const;
 
-        [[nodiscard]] std::optional<std::uint64_t> getMinStartTimestampIndex(Timestamp watermark);
+        [[nodiscard]] std::optional<core::shared::types::Timestamp> getMinStartTimestampIndex(core::shared::types::Timestamp watermark) const;
 
-        [[nodiscard]] BatchResult getReadyIndices(Timestamp watermark, std::size_t maxCount = 32);
+        [[nodiscard]] BatchResult getReadyIndices(core::shared::types::Timestamp watermark, std::size_t maxCount = 32);
 
     private:
         struct RowMeta {
             std::vector<std::byte> values;
-            Timestamp startTs = 0;
-            Timestamp endTs = core::physical::time::INFINITY_SENTINEL;
-            std::int64_t startTb = 0;
-            std::int64_t endTb = 0;
+            core::shared::types::Timestamp startTs = 0;
+            core::shared::types::Timestamp endTs = core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
+            core::shared::types::TiBreak startTb = 0;
+            core::shared::types::TiBreak endTb = 0;
             core::shared::identifiers::PortId inputPort = 0;
             bool isRemoved = false;
         };
@@ -99,22 +98,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
         const bool mOutOfOrder;
         const core::runtime::types::RuntimeTypeRegistry *mRuntimeTypeRegistry;
 
-        window::WindowRowLayout mLayout;
+        storage::RowLayout mLayout;
         std::vector<RowMeta> mRowMetas;
 
-        std::vector<std::uint64_t> mRowIndex;
+        std::vector<std::size_t> mRowIndex;
 
-        Timestamp mLastEmittedWatermark = 0;
+        core::shared::types::Timestamp mLastEmittedWatermark = 0;
 
         std::size_t mActiveRowCount = 0;
-        std::uint64_t mRemovedCount = 0;
-        std::array<std::uint64_t, MAX_BATCH_SIZE> mBatchBuffer;
+        std::size_t mRemovedCount = 0;
+        std::array<std::size_t, MAX_BATCH_SIZE> mBatchBuffer;
 
-        void drainEmittedEntries(Timestamp watermark);
+        void drainEmittedEntries(core::shared::types::Timestamp watermark);
         void compactIfNeeded();
         void compact();
 
-        static inline bool compareRows(const Timestamp tsA, const std::int64_t tbA, const Timestamp tsB, const std::int64_t tbB) {
+        static bool compareRows(const core::shared::types::Timestamp tsA, const core::shared::types::TiBreak tbA, const core::shared::types::Timestamp tsB, const core::shared::types::TiBreak tbB) {
             if (tsA != tsB) {
                 return tsA < tsB;
             }

@@ -1,15 +1,15 @@
-#include <basic/operators/pipe/join/physical/details/join_side.h>
+#include <basic/operators/pipe/join/runtime/join_side.h>
 
 #include "core/physical/time/time_point.h"
 
-namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
+namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     namespace {
-        constexpr inline bool _before(const std::int64_t lft, const std::int64_t rht) {
-            if (lft == core::physical::time::INFINITY_SENTINEL) {
+        constexpr inline bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
+            if (lft == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return false;
             }
 
-            if (rht == core::physical::time::INFINITY_SENTINEL) {
+            if (rht == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return true;
             }
 
@@ -31,7 +31,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         mLayout.begin();
     }
 
-    void JoinSide::push(const std::uint64_t index, const void* data) {
+    void JoinSide::push(const std::size_t index, const void* data) {
         mLayout.push(index, data);
     }
 
@@ -58,8 +58,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
         std::deque<RowBuffer> newRows;
 
-        mMinEndTs = std::numeric_limits<Timestamp>::max();
-        mMinStartTs = std::numeric_limits<Timestamp>::max();
+        mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
 
         for (auto& row : mBufferedRows) {
             if (!row.isRemoved) {
@@ -103,7 +103,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinSide::removeFromKeyIndex(const RowBuffer& row, std::size_t pos) {
+    void JoinSide::removeFromKeyIndex(const RowBuffer& row, const std::size_t pos) {
         if (mKeyFields.empty()) {
             return;
         }
@@ -122,7 +122,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    void JoinSide::evict(const Timestamp threshold, const bool isFinal) {
+    void JoinSide::evict(const core::shared::types::Timestamp threshold, const bool isFinal) {
         if (!mOutOfOrder) {
             if (!isFinal && !_before(mMinEndTs, threshold)) {
                 return;
@@ -170,15 +170,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    std::int64_t JoinSide::getStartTibreaker(const std::uint64_t rowIndex) const {
+    core::shared::types::TiBreak JoinSide::getStartTibreaker(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).startTb;
     }
 
-    std::int64_t JoinSide::getEndTibreaker(const std::uint64_t rowIndex) const {
+    core::shared::types::TiBreak JoinSide::getEndTibreaker(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).endTb;
     }
 
-    void JoinSide::end(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         const auto absoluteIndex = mBasisIndex + mBufferedRows.size();
 
         mBufferedRows.push_back(
@@ -221,13 +221,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mBufferedRows.size();
     }
 
-    const std::byte* JoinSide::getFieldPtr(const std::uint64_t rowIndex,
-                                           const std::uint64_t fieldIndex) const {
+    const std::byte* JoinSide::getFieldPtr(const std::size_t rowIndex,
+                                           const std::size_t fieldIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).values.data() +
                mLayout.offsetOf(fieldIndex);
     }
 
-    bool JoinSide::overlaps(const Timestamp otherStartTs, const Timestamp otherEndTs, const std::uint64_t rowIndex) const {
+    bool JoinSide::overlaps(const core::shared::types::Timestamp otherStartTs, const core::shared::types::Timestamp otherEndTs, const std::size_t rowIndex) const {
         const auto& row = mBufferedRows.at(rowIndex - mBasisIndex);
 
         if (row.isRemoved) {
@@ -237,15 +237,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return _before(row.startTs, otherEndTs) && _before(otherStartTs, row.endTs);
     }
 
-    Timestamp JoinSide::getStartTimestamp(const std::uint64_t rowIndex) const {
+    core::shared::types::Timestamp JoinSide::getStartTimestamp(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).startTs;
     }
 
-    Timestamp JoinSide::getEndTimestamp(const std::uint64_t rowIndex) const {
+    core::shared::types::Timestamp JoinSide::getEndTimestamp(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).endTs;
     }
 
-    void JoinSide::enableKeyIdx(const std::vector<std::uint64_t>& fieldIndices,
+    void JoinSide::enableKeyIdx(const std::vector<std::size_t>& fieldIndices,
         const std::vector<core::shared::types::ValueTypeId>& keyTypeIds) {
         mKeyFields.clear();
         mKeyFields.reserve(fieldIndices.size());
@@ -259,8 +259,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         }
     }
 
-    std::vector<std::uint64_t> JoinSide::getKeyFieldIndices() const {
-        std::vector<std::uint64_t> result;
+    std::vector<std::size_t> JoinSide::getKeyFieldIndices() const {
+        std::vector<std::size_t> result;
         result.reserve(mKeyFields.size());
         for (const auto& field : mKeyFields) {
             result.push_back(field.fieldIndex);
@@ -272,12 +272,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return !mKeyFields.empty();
     }
 
-    std::uint64_t JoinSide::getLastAbsoluteIndex() const {
+    std::size_t JoinSide::getLastAbsoluteIndex() const {
         return mLastAbsoluteIndex;
     }
 
-    std::vector<std::uint64_t> JoinSide::computeRowKeyV(const std::byte* row) const {
-        std::vector<std::uint64_t> result;
+    std::vector<std::size_t> JoinSide::computeRowKeyV(const std::byte* row) const {
+        std::vector<std::size_t> result;
         result.reserve(mKeyFields.size());
 
         for (const auto& field : mKeyFields) {
@@ -288,10 +288,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return result;
     }
 
-    std::vector<std::uint64_t> JoinSide::hashLookup(const std::vector<const std::byte*>& query) {
-        std::vector<std::uint64_t> result;
+    std::vector<std::size_t> JoinSide::hashLookup(const std::vector<const std::byte*>& query) {
+        std::vector<std::size_t> result;
 
-        std::vector<std::uint64_t> qKey;
+        std::vector<std::size_t> qKey;
         qKey.reserve(mKeyFields.size());
         for (std::size_t i = 0; i < mKeyFields.size(); ++i) {
             qKey.push_back(mKeyFields.at(i).mHashFunction(query.at(i)));
@@ -329,31 +329,31 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return result;
     }
 
-    std::uint64_t JoinSide::getBaseIndex() const {
+    std::size_t JoinSide::getBaseIndex() const {
         return mBasisIndex;
     }
 
-    const std::byte* JoinSide::getRowPtr(const std::uint64_t rowIndex) const {
+    const std::byte* JoinSide::getRowPtr(const std::size_t rowIndex) const {
         return mBufferedRows.at(rowIndex - mBasisIndex).values.data();
     }
 
-    std::uint64_t JoinSide::getRowByteSize() const {
+    std::size_t JoinSide::getRowByteSize() const {
         return mLayout.getTotalByteSize();
     }
 
-    std::uint64_t JoinSide::getFieldCount() const {
+    std::size_t JoinSide::getFieldCount() const {
         return mLayout.getFieldCount();
     }
 
-    core::shared::types::ValueTypeId JoinSide::getFieldTypeId(const std::uint64_t index) const {
+    core::shared::types::ValueTypeId JoinSide::getFieldTypeId(const std::size_t index) const {
         return mLayout.getFieldTypeId(index);
     }
 
-    std::uint64_t JoinSide::getFieldOffset(const std::uint64_t index) const {
+    std::size_t JoinSide::getFieldOffset(const std::size_t index) const {
         return mLayout.offsetOf(index);
     }
 
-    void JoinSide::setPending(const Timestamp startTs, const Timestamp endTs, const std::int64_t startTb, const std::int64_t endTb) {
+    void JoinSide::setPending(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mPendingStartTs = startTs;
         mPendingStartTb = startTb;
         mPendingEndTs = endTs;
@@ -382,7 +382,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
 
             removeFromKeyIndex(row, locIndex);
 
-            //mLayout.releaseRow(mBufferedRows[locIndex].values);
             row.isRemoved = true;
             mRemovedCount++;
         }
@@ -390,11 +389,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         compactIfNeeded();
     }
 
-    const std::byte* JoinSide::getLayoutFieldPtr(std::uint64_t fieldIndex) const {
+    const std::byte* JoinSide::getLayoutFieldPtr(const std::size_t fieldIndex) const {
         return mLayout.getCurrentRowPtr() + mLayout.offsetOf(fieldIndex);
     }
 
-    std::uint64_t JoinSide::getCurrentLayoutRowSize() const {
+    std::size_t JoinSide::getCurrentLayoutRowSize() const {
         return mLayout.getCurrentRowSize();
     }
 
@@ -402,19 +401,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.getCurrentRowPtr();
     }
 
-    Timestamp JoinSide::getLayoutStartTs() const {
+    core::shared::types::Timestamp JoinSide::getLayoutStartTs() const {
         return mPendingStartTs;
     }
 
-    Timestamp JoinSide::getLayoutEndTs() const {
+    core::shared::types::Timestamp JoinSide::getLayoutEndTs() const {
         return mPendingEndTs;
     }
 
-    std::int64_t JoinSide::getLayoutStartTb() const {
+    core::shared::types::TiBreak JoinSide::getLayoutStartTb() const {
         return mPendingStartTb;
     }
 
-    std::int64_t JoinSide::getLayoutEndTb() const {
+    core::shared::types::TiBreak JoinSide::getLayoutEndTb() const {
         return mPendingEndTb;
     }
 
@@ -422,7 +421,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details {
         return mLayout.getSchema();
     }
 
-    Timestamp JoinSide::getMinStartTimestamp() const {
+    core::shared::types::Timestamp JoinSide::getMinStartTimestamp() const {
         return mMinStartTs;
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical::details

@@ -76,9 +76,9 @@ int main() {
             std::make_unique<sierra::odyplan::v3::basic::expression::logical::FieldReferenceExpression>("bidder", 1)
         );
 
-        auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinConfig{
+        auto joinConfig = sierra::odyplan::v3::basic::operators::pipe::join::details::JoinOperatorOptions{
             .allowedLateness = std::chrono::milliseconds(1).count(),
-            .card = sierra::odyplan::v3::basic::operators::pipe::join::logical::details::JoinCard::ONE_MANY
+            .card = sierra::odyplan::v3::basic::operators::pipe::join::details::JoinOperatorCard::ONE_MANY
         };
 
         auto joinId = logicalPlan.addOperator(

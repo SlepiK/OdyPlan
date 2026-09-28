@@ -1,8 +1,8 @@
-#include <basic/window/window_row_layout.h>
+#include <basic/storage/row_layout.h>
 #include <cstring>
 
-namespace sierra::odyplan::v3::basic::window {
-    WindowRowLayout::WindowRowLayout(
+namespace sierra::odyplan::v3::basic::storage {
+    RowLayout::RowLayout(
         core::logical::port::Port dataSchema,
         const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
         : mDataSchema(std::move(dataSchema)), mRuntimeTypeRegistry(&runtimeTypeRegistry) {
@@ -15,11 +15,11 @@ namespace sierra::odyplan::v3::basic::window {
         mRowByteSize = offset;
     }
 
-    void WindowRowLayout::begin() {
+    void RowLayout::begin() {
         mCurrentRow.assign(mRowByteSize, std::byte{0});
     }
 
-    void WindowRowLayout::push(const std::size_t index, const void* rawData) {
+    void RowLayout::push(const std::size_t index, const void* rawData) {
         const auto typeId = mDataSchema.at(index).valueTypeId;
         void* dst = mCurrentRow.data() + mOffset.at(index);
         if (mRuntimeTypeRegistry->isPointerType(typeId)) {
@@ -32,15 +32,15 @@ namespace sierra::odyplan::v3::basic::window {
         }
     }
 
-    std::vector<std::byte> WindowRowLayout::pop() {
+    std::vector<std::byte> RowLayout::pop() {
         return std::exchange(mCurrentRow, {});
     }
 
-    std::size_t WindowRowLayout::offsetOf(const std::size_t field) const {
+    std::size_t RowLayout::offsetOf(const std::size_t field) const {
         return mOffset.at(field);
     }
 
-    void WindowRowLayout::releaseRow(const std::vector<std::byte>& row) const {
+    void RowLayout::releaseRow(const std::vector<std::byte>& row) const {
         for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
             const auto typeId = mDataSchema.at(i).valueTypeId;
             if (!mRuntimeTypeRegistry->isPointerType(typeId)) {
@@ -52,32 +52,32 @@ namespace sierra::odyplan::v3::basic::window {
         }
     }
 
-    std::size_t WindowRowLayout::getTotalByteSize() const noexcept {
+    std::size_t RowLayout::getTotalByteSize() const noexcept {
         return mRowByteSize;
     }
 
-    std::size_t WindowRowLayout::getFieldCount() const noexcept {
+    std::size_t RowLayout::getFieldCount() const noexcept {
         return mDataSchema.size();
     }
 
-    core::shared::types::ValueTypeId WindowRowLayout::getFieldTypeId(std::size_t index) const {
+    core::shared::types::ValueTypeId RowLayout::getFieldTypeId(std::size_t index) const {
         return mDataSchema.at(index).valueTypeId;
     }
 
-    void WindowRowLayout::discardCurrentRow() {
+    void RowLayout::discardCurrentRow() {
         releaseRow(mCurrentRow);
         mCurrentRow.clear();
     }
 
-    const std::byte* WindowRowLayout::getCurrentRowPtr() const {
+    const std::byte* RowLayout::getCurrentRowPtr() const {
         return mCurrentRow.data();
     }
 
-    std::size_t WindowRowLayout::getCurrentRowSize() const {
+    std::size_t RowLayout::getCurrentRowSize() const {
         return mCurrentRow.size();
     }
 
-    const core::logical::port::Port& WindowRowLayout::getSchema() const {
+    const core::logical::port::Port& RowLayout::getSchema() const {
         return mDataSchema;
     }
 }  // namespace sierra::odyplan::v3::basic::window

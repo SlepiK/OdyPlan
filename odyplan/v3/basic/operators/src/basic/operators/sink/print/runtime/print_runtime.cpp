@@ -32,7 +32,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer += ";";
         threadPrintBuffer += std::to_string(ctx->startTs);
         threadPrintBuffer += "|";
-        if (ctx->endTs == core::physical::time::INFINITY_SENTINEL) {
+        if (ctx->endTs == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
             threadPrintBuffer += "oo";
         } else {
             threadPrintBuffer += std::to_string(ctx->endTs);
@@ -46,7 +46,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
         threadPrintBuffer.clear();
     }
 
-    void rtOdyPrintPunctuation(const std::int64_t watermark, const bool isFinal) {
+    void rtOdyPrintPunctuation(const core::shared::types::Timestamp watermark, const bool isFinal) {
         threadPrintBuffer += "[PUNCTUATION ";
         if (isFinal) {
             threadPrintBuffer += "FINAL]";

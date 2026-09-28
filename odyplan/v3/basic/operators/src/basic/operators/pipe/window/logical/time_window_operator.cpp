@@ -2,7 +2,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     TimeWindowOperator::TimeWindowOperator(
-        const basic::window::time::TimeWindowConfig& windowConfig)
+        const details::TimeWindowOptions& windowConfig)
         : mWindowConfig(windowConfig) {
     }
 
@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
         return TYPE_ID;
     }
 
-    const basic::window::time::TimeWindowConfig& TimeWindowOperator::getWindowConfig() const {
+    const details::TimeWindowOptions& TimeWindowOperator::getWindowConfig() const {
         return mWindowConfig;
     }
 

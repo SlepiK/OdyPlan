@@ -10,6 +10,7 @@
 #include <core/logical/port/port.h>
 #include <core/physical/operators/source/typed_source_operator.h>
 #include <basic/operators/source/read/details/read_operator_options.h>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     class ReadOperator : public core::physical::operators::source::TypedSourceOperator {

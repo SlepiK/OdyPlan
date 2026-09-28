@@ -5,7 +5,7 @@
 namespace sierra::odyplan::v3::basic::operators::sink::write::runtime {
     extern "C" {
     void*
-    rtIOSinkCreate(const void* /*typeRegistryRawPtr*/, std::uint8_t ioFormat, const char* path) {
+    rtIOSinkCreate(const void* /*typeRegistryRawPtr*/, io::IOFormatType ioFormat, const char* path) {
         static const io::IORegistry ioRegistry = io::IORegistry::withBuiltins();
         const nlohmann::json config = {{"path", path}};
         auto sink = ioRegistry.createSinkIO(

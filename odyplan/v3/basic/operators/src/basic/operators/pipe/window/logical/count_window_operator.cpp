@@ -2,7 +2,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     CountWindowOperator::CountWindowOperator(
-        const basic::window::count::CountWindowConfig& windowConfig)
+        const details::CountWindowOptions& windowConfig)
         : mWindowConfig(windowConfig) {
     }
 
@@ -10,7 +10,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
         return TYPE_ID;
     }
 
-    const basic::window::count::CountWindowConfig& CountWindowOperator::getWindowConfig() const {
+    const details::CountWindowOptions& CountWindowOperator::getWindowConfig() const {
         return mWindowConfig;
     }
 

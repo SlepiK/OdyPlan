@@ -38,8 +38,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::select::physical {
         segmentCtx.builder.SetInsertPoint(mergeBB);
     }
 
-    void SelectOperator::end(core::physical::segment::SegmentContext& segmentCtx,
-                             const core::shared::identifiers::PortId inputPort,
-                             const core::physical::segment::SegmentDataConsumers& consumers) {}
-
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::select::physical

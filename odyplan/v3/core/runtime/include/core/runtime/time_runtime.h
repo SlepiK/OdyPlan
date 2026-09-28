@@ -3,11 +3,12 @@
 
 #include <chrono>
 #include <cstdint>
+#include <core/shared/types/global_types.h>
 
 namespace sierra::odyplan::v3::core::runtime {
     extern "C" {
-    std::int64_t rtTimeNow();
-    std::int64_t rtProgramTimeNow();
+    shared::types::Timestamp rtTimeNow();
+    shared::types::Timestamp rtProgramTimeNow();
     }
 }  // namespace sierra::odyplan::v3::core::runtime
 
