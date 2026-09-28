@@ -150,7 +150,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
     void UnionBuffer::removeV(const std::size_t* indices, const std::size_t count) {
         std::size_t actuallyRemoved = 0;
 
-        for (std::int64_t i = 0; i < count; ++i) {
+        for (std::size_t i = 0; i < count; ++i) {
             const auto index = indices[i];
 
             if (index < mRowMetas.size() && !mRowMetas[index].isRemoved) {
