@@ -9,6 +9,8 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <basic/io/io_registry.h>
+#include <basic/io/io_format.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
     namespace detail {

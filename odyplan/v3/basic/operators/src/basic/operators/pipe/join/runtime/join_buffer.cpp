@@ -22,6 +22,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void JoinBuffer::close() {
         {
+            // NOLINTNEXTLINE(modernize-use-scoped-lock)
             std::lock_guard<std::mutex> lock(mOutputMutex);
             for (auto& row : mOutputBuffer) {
                 for (const auto& [typeId, ptr] : row.retainPointers) {
@@ -60,16 +61,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void JoinBuffer::matchLeft(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mLeftSide.setPending(startTs, endTs, startTb, endTb);
-        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs, false);
+        matchAgainst(mLeftSide, mRightSide, mLeftSide.getKeyFieldIndices(), startTs, endTs);
     }
 
     void JoinBuffer::matchRight(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         mRightSide.setPending(startTs, endTs, startTb, endTb);
-        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs, false);
+        matchAgainst(mRightSide, mLeftSide, mRightSide.getKeyFieldIndices(), startTs, endTs);
     }
 
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::size_t>& sourceKeyFieldIndices, const core::shared::types::Timestamp sourceStartTs, const core::shared::types::Timestamp sourceEndTs, const bool extract) {
+        const std::vector<std::size_t>& sourceKeyFieldIndices, const core::shared::types::Timestamp sourceStartTs, const core::shared::types::Timestamp sourceEndTs) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
@@ -95,7 +96,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
     }
 
-    void JoinBuffer::markAllCandidateAsMatch(JoinSnapshot *snapshot, bool extract) {
+    void JoinBuffer::markAllCandidateAsMatch(JoinSnapshot *snapshot, const bool extract) {
         if (snapshot == nullptr) {
             return;
         }
@@ -130,6 +131,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         const std::size_t rowSize = side.getRowByteSize();
         const std::byte* rowPtr = side.getRowPtr(rowIndex);
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
         std::memcpy(&dst[dstOffset], rowPtr, rowSize);
 
         const std::size_t fieldCount = side.getFieldCount();
@@ -139,7 +141,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         for (std::size_t p = 0; p < fieldCount; ++p) {
             const auto typeId = side.getFieldTypeId(p);
             const auto offset = side.getFieldOffset(p);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             offsetsOut[p] = offset;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             typeIdsOut[p] = typeId;
 
             if (!mRuntimeTypeRegistry->isPointerType(typeId)) {
@@ -147,10 +151,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             }
 
             void* oriPtr = nullptr;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&oriPtr, &dst[dstOffset + offset], sizeof(void*));
 
             void* retainedPtr = mRuntimeTypeRegistry->retain(typeId, oriPtr);
 
+
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&dst[dstOffset + offset], &retainedPtr, sizeof(void*));
 
             retainedOut.push_back({.typeId=typeId, .ptr=retainedPtr});
@@ -169,7 +176,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
     }
 
-    void JoinBuffer::removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft) {
+    void JoinBuffer::removeMarkedCandidates(const JoinSnapshot *snapshot, const bool wasLeft) {
         if (snapshot == nullptr || snapshot->markedForRemove.empty()) {
             return;
         }
@@ -178,7 +185,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         otherSide.removeV(mCandidates);
     }
 
-    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForCompute(const bool callFromLeft, const bool extract) {
+    JoinBuffer::JoinSnapshot *JoinBuffer::snapshotForCompute(const bool callFromLeft, const bool extract) const {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* snapshot = new JoinSnapshot();
         snapshot->wasLeft = callFromLeft;
@@ -202,17 +209,24 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         snapshot->fieldTypeIds.resize(fieldCount);
 
         for (std::size_t p = 0; p < fieldCount; ++p) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             snapshot->fieldOffsets[p] = side.getFieldOffset(p);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             snapshot->fieldTypeIds[p] = side.getFieldTypeId(p);
 
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             if (!mRuntimeTypeRegistry->isPointerType(snapshot->fieldTypeIds[p])) {
                 continue;
             }
 
             void* oriPtr = nullptr;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&oriPtr, &snapshot->data[snapshot->fieldOffsets[p]], sizeof(void*));
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             void* retainedPtr = mRuntimeTypeRegistry->retain(snapshot->fieldTypeIds[p], oriPtr);
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             std::memcpy(&snapshot->data[snapshot->fieldOffsets[p]], &retainedPtr, sizeof(void*));
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             snapshot->retainPointers.push_back({.typeId = snapshot->fieldTypeIds[p], .ptr = retainedPtr});
         }
 
@@ -225,11 +239,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         snapshot->candidateEndsTb.resize(mCandidates.size());
 
         for (std::size_t i = 0; i < mCandidates.size(); ++i) {
+            // NOLINTBEGIN(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
             const auto rowIndex = mCandidates[i];
             snapshot->candidateStarts[i] = otherSide.getStartTimestamp(rowIndex);
             snapshot->candidateEnds[i] = otherSide.getEndTimestamp(rowIndex);
             snapshot->candidateStartsTb[i] = otherSide.getStartTibreaker(rowIndex);
             snapshot->candidateEndsTb[i] = otherSide.getEndTibreaker(rowIndex);
+            // NOLINTEND(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
 
             copyRowIntoSnapshot(otherSide, rowIndex, snapshot->candidateData, i * snapshot->candidateRowByteSize,
                                 snapshot->candidateFieldOffsets, snapshot->candidateFieldTypeIds, snapshot->retainPointers);
@@ -265,7 +281,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     [[nodiscard]] const std::byte* JoinBuffer::JoinSnapshot::candidateFieldPtr(const std::size_t candidateIdx, const std::size_t fieldIdx) const {
         return candidateData.data() + (candidateIdx * candidateRowByteSize) + candidateFieldOffsets.at(fieldIdx);
     }
-
 
     void JoinBuffer::bufferOutput(const void* ownRowPtr, const std::size_t ownRowSize, const void* candRowPtr, const std::size_t candRowSize,
         const bool onLeft, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,

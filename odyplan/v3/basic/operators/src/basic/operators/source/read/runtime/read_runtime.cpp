@@ -1,6 +1,4 @@
-#include <basic/io/io_registry.h>
 #include <basic/operators/source/read/runtime/read_runtime.h>
-#include <basic/io/io_format.h>
 
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
 

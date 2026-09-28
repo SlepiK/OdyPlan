@@ -292,7 +292,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         );
 
         return segment::SegmentConsumerHandle{
-            [this, snapshotStructTy, structByteSize, memberTypes, portSchema,
+            .consume=[snapshotStructTy, structByteSize, memberTypes, portSchema,
                     queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn, ptrTy, sizeTTy, i8Ty, allocFnDecl]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
                 llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
@@ -331,7 +331,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
                 segment::SegmentBuilder::enqueueToComputeSegment(sCtx, queueState.var, dataContinuationFn, snapshotPtrLocal);
             },
-            [this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl, sizeTTy]
+            .consumePunctuation=[this, punctStructTy, punctByteSize, queueState, punctuationContinuationFn, allocFnDecl, sizeTTy]
     (segment::SegmentContext &sCtx, const data::PunctuationPackage &punctuation) {
                 llvm::Value *punctPtrLocal = sCtx.builder.CreateCall(
                     allocFnDecl, {llvm::ConstantInt::get(sizeTTy, punctByteSize)});

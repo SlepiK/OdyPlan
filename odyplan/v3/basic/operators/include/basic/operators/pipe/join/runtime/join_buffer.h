@@ -93,7 +93,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         void matchRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract);
+        JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract) const;
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
@@ -103,13 +103,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         void evict(core::shared::types::Timestamp threshold, bool callFromLeft, bool isFinal);
 
-        void markCandidateForRemove(JoinSnapshot *snapshot, std::size_t candidateIdx);
+        static void markCandidateForRemove(JoinSnapshot *snapshot, std::size_t candidateIdx);
 
-        void markCandidateAsMatch(JoinSnapshot *snapshot, std::size_t candidateIdx);
+        static void markCandidateAsMatch(JoinSnapshot *snapshot, std::size_t candidateIdx);
 
-        void markAllCandidateAsMatch(JoinSnapshot *snapshot, bool extract);
+        static void markAllCandidateAsMatch(JoinSnapshot *snapshot, bool extract);
 
-        void removeMarkedCandidates(JoinSnapshot *snapshot, bool wasLeft);
+        void removeMarkedCandidates(const JoinSnapshot *snapshot, bool wasLeft);
 
         void bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize, bool onLeft, core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs,
             core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
@@ -143,7 +143,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         std::vector<std::byte> mOutputTempBuf;
         std::mutex mOutputMutex;
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs, bool extract);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs);
 
 
         void copyRowIntoSnapshot(const JoinSide& side, std::size_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
