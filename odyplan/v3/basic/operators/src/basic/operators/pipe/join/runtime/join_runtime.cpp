@@ -18,8 +18,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     extern "C" {
     // NOLINTNEXTLINE(readability-function-size)
-    void *rtJoinCreate(const void *typeRegistryRawPtr,
-                       const core::shared::types::ValueTypeId *leftTypeIds,
+    void *rtJoinCreate(const core::shared::types::ValueTypeId *leftTypeIds,
                        const std::size_t leftFieldSize,
                        const core::shared::types::ValueTypeId *rightTypeIds,
                        const std::size_t rightFieldSize,
@@ -29,8 +28,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        const core::shared::types::ValueTypeId *keyTypeIds,
                        const std::size_t equiKeyCnt,
                        const uint8_t outOfOrder) {
-        const auto *runtimeTypeRegistry =
-                static_cast<const core::runtime::types::RuntimeTypeRegistry *>(typeRegistryRawPtr);
 
         core::logical::port::Port leftSchema;
         core::logical::port::Port rightSchema;
@@ -57,7 +54,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto *buffer =
                 new JoinBuffer(std::move(leftSchema), std::move(rightSchema),
-                                                  std::move(outputSchema), runtimeTypeRegistry, outOfOrder != 0);
+                                                  std::move(outputSchema), outOfOrder != 0);
 
         if (hasEquiKey != 0) {
             std::vector<std::size_t> leftIndices;
@@ -122,8 +119,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<JoinBuffer *>(state)->endRight(startTs, endTs, startTb, endTb);
     }
 
-    void *rtJoinSnapshotForCompute(void *state, const uint8_t callFromLeft, const uint8_t extract) {
-        return static_cast<JoinBuffer *>(state)->snapshotForCompute(callFromLeft != 0, extract != 0);
+    void *rtJoinSnapshotForCompute(void *state, const uint8_t callFromLeft) {
+        return static_cast<JoinBuffer *>(state)->snapshotForCompute(callFromLeft != 0);
     }
 
     const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::size_t fieldIndex) {
@@ -183,7 +180,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->wasLeft;
     }
 
-    void *rtJoinWatermarkCreate(void * /*typeRegistryRawPtr*/) {
+    void *rtJoinWatermarkCreate() {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         return new details::JoinWatermarkState();
     }

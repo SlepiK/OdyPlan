@@ -1,6 +1,7 @@
 #include <core/physical/plan/detail/plan_construction.h>
 
-#include "core/physical/segment/segment_builder.h"
+#include <core/physical/segment/segment_builder.h>
+#include <core/runtime/types/runtime_type_registry.h>
 
 namespace sierra::odyplan::v3::core::physical::plan::detail {
     segment::SegmentDataConsumers PlanConstruction::buildExit(const OperatorId operatorId) {
@@ -228,12 +229,10 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         mComputeSegmentSlots.push_back(queueState.var);
 
-        auto *runtimeRegistryGlobal = stateRegistry->getRuntimeTypeRegistryGlobal();
-
         const auto retainFn = module->getOrInsertFunction(
-            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {ptrTy, i8Ty, ptrTy}, false));
+            "rtTypeRegistryRetain", llvm::FunctionType::get(ptrTy, {i8Ty, ptrTy}, false));
         const auto releaseFn = module->getOrInsertFunction(
-            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {ptrTy, i8Ty, ptrTy}, false));
+            "rtTypeRegistryRelease", llvm::FunctionType::get(voidTy, {i8Ty, ptrTy}, false));
         const auto freeFn = module->getOrInsertFunction(
             "rtFanInFree", llvm::FunctionType::get(voidTy, {ptrTy}, false));
         const auto allocFnDecl = module->getOrInsertFunction(
@@ -242,8 +241,6 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
         auto *dataContinuationFn = segment::SegmentBuilder::createContinuation(
             *module, *ctx, *codegenTypeRegistry, "ody_continuation_" + uniqueKey,
             [&](segment::SegmentContext &computeCtx, llvm::Value *snapshotPtr) {
-                llvm::Value *runtimeRegistryPtr = computeCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
-
                 llvm::Value* sTs = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 0));
                 llvm::Value* sTB = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 1));
                 llvm::Value* eTs = computeCtx.builder.CreateLoad(i64Ty, computeCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtr, 2));
@@ -270,7 +267,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     }
                     llvm::Value *typeIdConst = llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
                     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-avoid-unchecked-container-access)
-                    computeCtx.builder.CreateCall(releaseFn, {runtimeRegistryPtr, typeIdConst, reconstructed.fields[i]});
+                    computeCtx.builder.CreateCall(releaseFn, {typeIdConst, reconstructed.fields[i]});
                 }
 
                 computeCtx.builder.CreateCall(freeFn, {snapshotPtr});
@@ -293,7 +290,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
 
         return segment::SegmentConsumerHandle{
             .consume=[snapshotStructTy, structByteSize, memberTypes, portSchema,
-                    queueState, dataContinuationFn, runtimeRegistryGlobal, retainFn, ptrTy, sizeTTy, i8Ty, allocFnDecl]
+                    queueState, dataContinuationFn, retainFn, sizeTTy, i8Ty, allocFnDecl]
         (segment::SegmentContext &sCtx, const data::DataPackage &tuple) {
                 llvm::Value *snapshotPtrLocal = sCtx.builder.CreateCall(
                     allocFnDecl, {llvm::ConstantInt::get(sizeTTy, structByteSize)});
@@ -311,9 +308,6 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                     tuple.timeInterval.getEnd().getTiBreaker(),
                     sCtx.builder.CreateStructGEP(snapshotStructTy, snapshotPtrLocal, 3));
 
-                llvm::Value *runtimeRegistryPtrLocal =
-                        sCtx.builder.CreateLoad(ptrTy, runtimeRegistryGlobal);
-
                 for (std::size_t i = 0; i < portSchema.size(); ++i) {
                     llvm::Value *fieldVal = tuple.fields.at(i);
                     llvm::Value *fieldSlot =
@@ -324,7 +318,7 @@ namespace sierra::odyplan::v3::core::physical::plan::detail {
                         llvm::Value *typeIdConst =
                                 llvm::ConstantInt::get(i8Ty, portSchema.at(i).valueTypeId);
                         fieldVal = sCtx.builder.CreateCall(
-                            retainFn, {runtimeRegistryPtrLocal, typeIdConst, fieldVal});
+                            retainFn, {typeIdConst, fieldVal});
                     }
                     sCtx.builder.CreateStore(fieldVal, fieldSlot);
                 }

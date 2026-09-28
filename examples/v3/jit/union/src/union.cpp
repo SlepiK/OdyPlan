@@ -70,7 +70,7 @@ int main() {
 
         auto unionId = logicalPlan.addOperator(
             std::make_unique<
-                sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>(true));
+                sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>(false));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
@@ -125,18 +125,18 @@ int main() {
         auto module = std::make_unique<llvm::Module>("example_union", *ctx);
         physicalPlan.codegen(*module, *ctx);
 
-        std::string errorInfo;
-        llvm::raw_string_ostream errorStream(errorInfo);
-        if (llvm::verifyModule(*module, &errorStream)) {
-            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
-        }
-
         std::cout << "\n\n";
         std::cout << "\n\n--- Raw IR ---\n";
         llvm::raw_os_ostream ros(std::cout);
         module->print(ros, nullptr);
         ros.flush();
         std::cout << "\n\n";
+
+        std::string errorInfo;
+        llvm::raw_string_ostream errorStream(errorInfo);
+        if (llvm::verifyModule(*module, &errorStream)) {
+            throw std::runtime_error("Invalid LLVM IR generated: " + errorStream.str());
+        }
 
         std::cout << "LLVM-IR: OK\n";
         std::cout << "Running via LLVM-JIT...\n";
@@ -364,13 +364,10 @@ int main() {
         }
 
         auto odyMain = jit->lookup("ody_main")->toPtr<void (*)()>();
-        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void *)>();
+        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)()>();
         auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
-        auto runtimeTypeRegistry =
-                sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
-
-        odyInit(&runtimeTypeRegistry);
+        odyInit();
         odyMain();
         odyShutdown();
 

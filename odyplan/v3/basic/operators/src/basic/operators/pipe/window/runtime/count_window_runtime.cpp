@@ -2,14 +2,11 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
-    void* rtCreateCountWindowBuffer(const void* typeRegistryRaw,
-                                    const std::size_t size,
+    void* rtCreateCountWindowBuffer(const std::size_t size,
                                     const std::size_t slide,
                                     const std::size_t advance,
                                     const core::shared::types::ValueTypeId* typeIds,
                                     const std::size_t fieldCount) {
-        const auto* runtimeTypeRegistry =
-            static_cast<const core::runtime::types::RuntimeTypeRegistry*>(typeRegistryRaw);
 
         const details::CountWindowOptions config{
             .size = size,
@@ -23,8 +20,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new CountWindowBuffer(
-            config, std::move(schema), *runtimeTypeRegistry);
+        return new CountWindowBuffer(config, std::move(schema));
     }
 
     void rtDestroyCountWindowBuffer(void* state) {

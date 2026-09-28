@@ -523,13 +523,10 @@ int main() {
         }
 
         auto odyMain = jit->lookup("ody_main")->toPtr<void (*)()>();
-        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)(const void *)>();
+        auto odyInit = jit->lookup("ody_init")->toPtr<void (*)()>();
         auto odyShutdown = jit->lookup("ody_shutdown")->toPtr<void (*)()>();
 
-        auto runtimeTypeRegistry =
-                sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::withBuiltins();
-
-        odyInit(&runtimeTypeRegistry);
+        odyInit();
         odyMain();
         odyShutdown();
 

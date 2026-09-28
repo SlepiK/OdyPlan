@@ -44,8 +44,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             std::size_t candidateRowByteSize = 0;
             std::size_t candidateCount = 0;
 
+            const core::runtime::types::RuntimeTypeRegistry* mRegistry;
+
             std::vector<RetainPointer> retainPointers;
-            const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry = nullptr;
 
             std::vector<std::size_t> markedForRemove;
             bool isExtraction = false;
@@ -60,7 +61,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         JoinBuffer(core::logical::port::Port leftSchema,
                    core::logical::port::Port rightSchema,
                    core::logical::port::Port outputSchema,
-                   const core::runtime::types::RuntimeTypeRegistry* runtimeTypeRegistry,
                    bool outOfOrder);
 
         ~JoinBuffer();
@@ -93,7 +93,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         void matchRight(core::shared::types::Timestamp startTs, core::shared::types::Timestamp endTs, core::shared::types::TiBreak startTb, core::shared::types::TiBreak endTb);
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        JoinSnapshot* snapshotForCompute(bool callFromLeft, bool extract) const;
+        [[nodiscard]] JoinSnapshot* snapshotForCompute(bool callFromLeft) const;
 
         static void releaseSnapshot(JoinSnapshot* snapshot);
 
@@ -127,11 +127,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         [[nodiscard]] core::shared::types::Timestamp getMaxStartTimestampRight() const;
 
     private:
+        const core::runtime::types::RuntimeTypeRegistry* mRegistry;
         bool mOutOfOrder;
         JoinSide mLeftSide;
         JoinSide mRightSide;
         std::shared_mutex mMutex;
-        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
         std::vector<std::size_t> mCandidates;
         bool mAllReleased = false;

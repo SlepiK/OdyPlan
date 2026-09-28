@@ -1,4 +1,5 @@
 #include <basic/operators/pipe/union/physical/union_operator.h>
+#include <spdlog/spdlog.h>
 
 #include "spdlog/fmt/fmt.h"
 
@@ -12,7 +13,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
     }
 
     void UnionOperator::consume(core::physical::segment::SegmentContext &segmentCtx,
-                                core::shared::identifiers::PortId inputPort,
+                                const core::shared::identifiers::PortId inputPort,
                                 const core::physical::data::DataPackage &tuple,
                                 const core::physical::segment::SegmentDataConsumers &consumers) {
         llvm::LLVMContext &ctx = segmentCtx.builder.getContext();
@@ -23,9 +24,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
         auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
-        llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
-
         if (!mOutOfOrder) {
+            llvm::Value *bufferStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mUnionBufferState.var);
+
             const auto lockFn = module->getOrInsertFunction("rtUnionLock", llvm::FunctionType::get(voidTy, {ptrTy}, false));
             segmentCtx.builder.CreateCall(lockFn, {bufferStatePtr});
 

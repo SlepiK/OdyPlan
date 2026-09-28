@@ -9,8 +9,7 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     extern "C" {
     void*
-    rtCreateCountWindowBuffer(const void* typeRegistryRaw,
-                              std::size_t size,
+    rtCreateCountWindowBuffer(std::size_t size,
                               std::size_t slide,
                               std::size_t advance,
                               const core::shared::types::ValueTypeId* typeIds,

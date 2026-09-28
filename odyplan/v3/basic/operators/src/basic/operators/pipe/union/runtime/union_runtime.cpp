@@ -2,7 +2,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     extern "C" {
-    void *rtUnionWatermarkCreate(void * /*runtimeTypeRegistry*/, const std::size_t numInputs) {
+    void *rtUnionWatermarkCreate(const std::size_t numInputs) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto *state = new details::UnionWatermarkState();
         const auto cNumInputs = numInputs;
@@ -88,7 +88,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         return watermark;
     }
 
-    void *rtUnionBufferCreate(const core::runtime::types::RuntimeTypeRegistry *registry, const std::uint8_t outOfOrder,
+    void *rtUnionBufferCreate(const std::uint8_t outOfOrder,
                               const core::shared::types::ValueTypeId *typeIds,
                               const std::size_t fieldSize) {
         core::logical::port::Port schema;
@@ -99,7 +99,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         }
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        return new UnionBuffer(outOfOrder != 0, std::move(schema), registry);
+        return new UnionBuffer(outOfOrder != 0, std::move(schema));
     }
 
     void rtUnionBufferDestroy(void *state) {

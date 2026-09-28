@@ -42,7 +42,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         const std::unique_ptr<basic::expression::physical::IExpression> mPredicate;
         const std::optional<EquiKeyList> mEquiKeys;
         bool mIsEquiJoin;
-        core::runtime::types::RuntimeTypeRegistry mRuntimeTypeRegistry;
+        const core::runtime::types::RuntimeTypeRegistry* mRegistry;
 
         core::physical::state::StateHandle mState;
         core::physical::state::StateHandle mWatermarkState;
