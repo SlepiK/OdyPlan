@@ -3,14 +3,14 @@
 
 namespace sierra::odyplan::v3::basic::storage {
     RowLayout::RowLayout(
-        core::logical::port::Port dataSchema,
-        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry)
-        : mDataSchema(std::move(dataSchema)), mRuntimeTypeRegistry(&runtimeTypeRegistry) {
+        core::logical::port::Port dataSchema)
+        : mDataSchema(std::move(dataSchema)),
+        mRegistry(&core::runtime::types::RuntimeTypeRegistry::instance()){
         std::size_t offset = 0;
         mOffset.reserve(mDataSchema.size());
         for (const auto& dataSchemaField : mDataSchema) {
             mOffset.push_back(offset);
-            offset += mRuntimeTypeRegistry->byteSize(dataSchemaField.valueTypeId);
+            offset += mRegistry->byteSize(dataSchemaField.valueTypeId);
         }
         mRowByteSize = offset;
     }
@@ -22,13 +22,13 @@ namespace sierra::odyplan::v3::basic::storage {
     void RowLayout::push(const std::size_t index, const void* rawData) {
         const auto typeId = mDataSchema.at(index).valueTypeId;
         void* dst = mCurrentRow.data() + mOffset.at(index);
-        if (mRuntimeTypeRegistry->isPointerType(typeId)) {
+        if (mRegistry->isPointerType(typeId)) {
             void* ori = nullptr;
             std::memcpy(static_cast<void*>(&ori), rawData, sizeof(ori));
-            const void* own = mRuntimeTypeRegistry->retain(typeId, ori);
+            const void* own = mRegistry->retain(typeId, ori);
             std::memcpy(dst, static_cast<void*>(&own), sizeof(own));
         } else {
-            std::memcpy(dst, rawData, mRuntimeTypeRegistry->byteSize(typeId));
+            std::memcpy(dst, rawData, mRegistry->byteSize(typeId));
         }
     }
 
@@ -43,12 +43,12 @@ namespace sierra::odyplan::v3::basic::storage {
     void RowLayout::releaseRow(const std::vector<std::byte>& row) const {
         for (std::size_t i = 0; i < mDataSchema.size(); ++i) {
             const auto typeId = mDataSchema.at(i).valueTypeId;
-            if (!mRuntimeTypeRegistry->isPointerType(typeId)) {
+            if (!mRegistry->isPointerType(typeId)) {
                 continue;
             }
             void* own = nullptr;
             std::memcpy(static_cast<void*>(&own), row.data() + mOffset.at(i), sizeof(own));
-            mRuntimeTypeRegistry->release(typeId, own);
+            mRegistry->release(typeId, own);
         }
     }
 

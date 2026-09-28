@@ -22,8 +22,6 @@ namespace sierra::odyplan::v3::core::physical::state {
                                    llvm::Constant* initialValue);
 
         void finish();
-
-        [[nodiscard]] llvm::GlobalVariable* getRuntimeTypeRegistryGlobal() const;
     private:
         struct PendingDestroy {
             llvm::FunctionCallee destroyFn;
@@ -36,7 +34,6 @@ namespace sierra::odyplan::v3::core::physical::state {
         llvm::Function* mShutdownFn;
         std::unique_ptr<llvm::IRBuilder<>> mInitBuilder;
         std::unique_ptr<llvm::IRBuilder<>> mShutdownBuilder;
-        llvm::GlobalVariable* mRuntimeTypeRegistryGlobal = nullptr;
         std::vector<PendingDestroy> mPendingDestroys;
     };
 }  // namespace sierra::odyplan::v3::core::physical::state

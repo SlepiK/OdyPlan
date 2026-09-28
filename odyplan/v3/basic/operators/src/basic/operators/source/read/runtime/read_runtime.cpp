@@ -3,8 +3,7 @@
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
 
     extern "C" {
-    void* rtIOSourceCreate(const void* /*typeRegistryRawPtr*/,
-                           const io::IOFormatType ioFormat,
+    void* rtIOSourceCreate(const io::IOFormatType ioFormat,
                            const char* path) {
         static const io::IORegistry ioRegistry = io::IORegistry::withBuiltins();
         const nlohmann::json config = {{"path", path}};

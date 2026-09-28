@@ -6,7 +6,7 @@ namespace sierra::odyplan::v3::core::runtime {
         return gIoThreadPool.submitTask([fn] { fn(); });
     }
 
-    void rtIOTaskJoin(IOTaskHandle ioTaskHandle) {
+    void rtIOTaskJoin(const IOTaskHandle ioTaskHandle) {
         gIoThreadPool.joinWorker(ioTaskHandle);
     }
 

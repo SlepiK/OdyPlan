@@ -7,8 +7,7 @@
 namespace sierra::odyplan::v3::basic::storage {
     class RowLayout {
     public:
-        RowLayout(core::logical::port::Port dataSchema,
-                        const core::runtime::types::RuntimeTypeRegistry& runtimeTypeRegistry);
+        explicit RowLayout(core::logical::port::Port dataSchema);
 
         void begin();
 
@@ -34,8 +33,8 @@ namespace sierra::odyplan::v3::basic::storage {
 
         [[nodiscard]] const core::logical::port::Port& getSchema() const;
     private:
+        const core::runtime::types::RuntimeTypeRegistry* mRegistry;
         core::logical::port::Port mDataSchema;
-        const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
         std::vector<std::size_t> mOffset;
         std::size_t mRowByteSize = 0;
         std::vector<std::byte> mCurrentRow;

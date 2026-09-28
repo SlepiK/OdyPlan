@@ -15,6 +15,7 @@ namespace sierra::odyplan::v3::core::builder {
         using CodegenTypeRegistry = physical::types::CodegenTypeRegistry;
         using OperatorTypeId = shared::types::OperatorTypeId;
 
+        PlanBuilder();
         explicit PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry);
 
         void registerOperatorTransformation(OperatorTypeId oprTypeId,

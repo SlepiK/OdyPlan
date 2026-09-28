@@ -3,7 +3,7 @@
 
 namespace sierra::odyplan::v3::core::runtime::memory {
     extern "C" {
-    void *rtFanInAlloc(std::size_t size) {
+    void *rtFanInAlloc(const std::size_t size) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
         void *ptr = new std::byte[size];//std::malloc(size);
         if (ptr == nullptr) {

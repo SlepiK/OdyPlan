@@ -1,8 +1,13 @@
 #include <core/builder/plan_builder.h>
 
 namespace sierra::odyplan::v3::core::builder {
-    PlanBuilder::PlanBuilder(const CodegenTypeRegistry& codengenTypeRegistry)
-        : mCodegenTypeRegistry(&codengenTypeRegistry) {}
+    PlanBuilder::PlanBuilder()
+        : mCodegenTypeRegistry(&CodegenTypeRegistry::instance()) {
+    }
+
+    PlanBuilder::PlanBuilder(const CodegenTypeRegistry &codengenTypeRegistry)
+        : mCodegenTypeRegistry(&codengenTypeRegistry) {
+    }
 
     void PlanBuilder::registerOperatorTransformation(
         OperatorTypeId oprTypeId, transformation::OperatorTransformationFactory factory) {

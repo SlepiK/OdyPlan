@@ -2,8 +2,9 @@
 #include <set>
 
 namespace sierra::odyplan::v3::core::physical::plan {
-    Plan::Plan(const types::CodegenTypeRegistry& codegenTypeRegistry)
-        : mCodegenTypeRegistry(&codegenTypeRegistry) {}
+    Plan::Plan(const types::CodegenTypeRegistry &codegenTypeRegistry)
+        : mCodegenTypeRegistry(&codegenTypeRegistry) {
+    }
 
     void Plan::addOperator(std::unique_ptr<IOperator> opr) {
         if (!opr) {
@@ -82,7 +83,7 @@ namespace sierra::odyplan::v3::core::physical::plan {
                                        &module,
                                        &ctx,
                                        &functions,
-                                       mCodegenTypeRegistry,
+                                       *mCodegenTypeRegistry,
                                        &stateRegistry);
 
         for (const auto& [id, chain] : mSegments) {

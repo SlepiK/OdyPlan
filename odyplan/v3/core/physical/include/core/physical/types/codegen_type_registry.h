@@ -19,6 +19,13 @@ namespace sierra::odyplan::v3::core::physical::types {
             ConstantFactory constantFactory;
         };
 
+        static CodegenTypeRegistry& instance();
+
+        CodegenTypeRegistry(const CodegenTypeRegistry&) = delete;
+        CodegenTypeRegistry& operator=(const CodegenTypeRegistry&) = delete;
+        CodegenTypeRegistry(CodegenTypeRegistry&&) = delete;
+        CodegenTypeRegistry& operator=(CodegenTypeRegistry&&) = delete;
+
         void registerType(const shared::types::ValueTypeId id, Entry entry) {
             mStorage.emplace(id, std::move(entry));
         }
@@ -59,10 +66,11 @@ namespace sierra::odyplan::v3::core::physical::types {
             return get(id).typeName;
         }
 
-        static CodegenTypeRegistry withBuiltins();
-
     private:
         std::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
+
+        CodegenTypeRegistry() = default;
+        ~CodegenTypeRegistry() = default;
 
         [[nodiscard]] const Entry& get(const shared::types::ValueTypeId id) const {
             const auto it = mStorage.find(id);
@@ -72,6 +80,8 @@ namespace sierra::odyplan::v3::core::physical::types {
             }
             return it->second;
         }
+
+        void initializeBuiltins();
     };
 }  // namespace sierra::odyplan::v3::core::physical::types
 

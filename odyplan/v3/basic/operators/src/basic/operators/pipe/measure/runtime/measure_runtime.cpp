@@ -4,7 +4,7 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::measure::runtime {
     extern "C" {
-    void* rtCreateMeasure(const void* /*typeRegistry*/, const char* label) {
+    void* rtCreateMeasure(const char* label) {
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* state = new sierra::odyplan::v3::core::runtime::measure::MeasureState();
         state->label = label;

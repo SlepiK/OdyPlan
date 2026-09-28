@@ -24,6 +24,13 @@ namespace sierra::odyplan::v3::core::runtime::types {
             ReleaseFunctionPtr releaseFunction;
         };
 
+        static RuntimeTypeRegistry& instance();
+
+        RuntimeTypeRegistry(const RuntimeTypeRegistry&) = delete;
+        RuntimeTypeRegistry& operator=(const RuntimeTypeRegistry&) = delete;
+        RuntimeTypeRegistry(RuntimeTypeRegistry&&) = delete;
+        RuntimeTypeRegistry& operator=(RuntimeTypeRegistry&&) = delete;
+
         void registerType(const shared::types::ValueTypeId id,
                           const std::size_t byteSize,
                           const bool isPointerType,
@@ -78,10 +85,11 @@ namespace sierra::odyplan::v3::core::runtime::types {
             return get(id).equalFunction;
         }
 
-        static RuntimeTypeRegistry withBuiltins();
-
     private:
         std::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
+
+        RuntimeTypeRegistry() = default;
+        ~RuntimeTypeRegistry() = default;
 
         [[nodiscard]] const Entry& get(const shared::types::ValueTypeId id) const {
             const auto it = mStorage.find(id);
@@ -97,6 +105,8 @@ namespace sierra::odyplan::v3::core::runtime::types {
         }
 
         static void defaultRelease(void*) noexcept {}
+
+        void initializeBuiltins();
     };
 }  // namespace sierra::odyplan::v3::core::runtime::types
 
