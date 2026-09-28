@@ -4,7 +4,7 @@
 #include <basic/expression/logical/expression.h>
 #include <basic/expression/physical/expression.h>
 #include <basic/expression/translate/logical_to_physical_translator.h>
-#include <basic/operators/pipe/join/logical/details/join_config.h>
+#include <basic/operators/pipe/join/details/join_operator_options.h>
 #include <core/logical/operators/pipe/typed_pipe_operator.h>
 #include <utility>
 
@@ -14,12 +14,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID =
             std::to_underlying(core::shared::types::BuiltinOperatorType::JOIN);
 
-        explicit JoinOperator(details::JoinConfig config,
+        explicit JoinOperator(details::JoinOperatorOptions config,
                               std::unique_ptr<basic::expression::logical::IExpression> predicate = nullptr, bool assureOrder = true);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
-        [[nodiscard]] const details::JoinConfig& getConfig() const;
+        [[nodiscard]] const details::JoinOperatorOptions& getConfig() const;
 
         [[nodiscard]] std::unique_ptr<basic::expression::physical::IExpression> getPredicate();
 
@@ -34,7 +34,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::logical {
         void validate() const override;
 
     private:
-        details::JoinConfig mConfig;
+        details::JoinOperatorOptions mConfig;
         const std::unique_ptr<basic::expression::logical::IExpression> mLPredicate;
         std::unique_ptr<basic::expression::physical::IExpression> mPPredicate;
         bool mAssureOrder; //true == IN_ORDER | false == OUT_OF_ORDER

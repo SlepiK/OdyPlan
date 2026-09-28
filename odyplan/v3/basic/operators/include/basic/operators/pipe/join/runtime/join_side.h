@@ -16,7 +16,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         void begin();
 
-        void push(std::uint64_t index, const void* data);
+        void push(std::size_t index, const void* data);
 
         void evict(core::shared::types::Timestamp threshold, bool isFinal);
 
@@ -24,50 +24,50 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         void release();
 
-        [[nodiscard]] std::uint64_t getSize() const;
+        [[nodiscard]] std::size_t getSize() const;
 
-        [[nodiscard]] const std::byte* getFieldPtr(std::uint64_t rowIndex,
-                                                   std::uint64_t fieldIndex) const;
+        [[nodiscard]] const std::byte* getFieldPtr(std::size_t rowIndex,
+                                                   std::size_t fieldIndex) const;
 
-        [[nodiscard]] bool overlaps(core::shared::types::Timestamp otherStartTs, core::shared::types::Timestamp otherEndTs, std::uint64_t rowIndex) const;
+        [[nodiscard]] bool overlaps(core::shared::types::Timestamp otherStartTs, core::shared::types::Timestamp otherEndTs, std::size_t rowIndex) const;
 
-        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::Timestamp getStartTimestamp(std::size_t rowIndex) const;
 
-        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::Timestamp getEndTimestamp(std::size_t rowIndex) const;
 
-        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::TiBreak getStartTibreaker(std::size_t rowIndex) const;
 
-        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::uint64_t rowIndex) const;
+        [[nodiscard]] core::shared::types::TiBreak getEndTibreaker(std::size_t rowIndex) const;
 
-        void enableKeyIdx(const std::vector<std::uint64_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
+        void enableKeyIdx(const std::vector<std::size_t>& fieldIndices, const std::vector<core::shared::types::ValueTypeId>& keyTypeIds);
 
-        [[nodiscard]] std::vector<std::uint64_t> getKeyFieldIndices() const;
+        [[nodiscard]] std::vector<std::size_t> getKeyFieldIndices() const;
 
         [[nodiscard]] bool hasKeyIndex() const;
 
-        [[nodiscard]] std::uint64_t getLastAbsoluteIndex() const;
+        [[nodiscard]] std::size_t getLastAbsoluteIndex() const;
 
-        [[nodiscard]] std::vector<std::uint64_t> hashLookup(const std::vector<const std::byte*>& query);
+        [[nodiscard]] std::vector<std::size_t> hashLookup(const std::vector<const std::byte*>& query);
 
-        [[nodiscard]] std::uint64_t getBaseIndex() const;
+        [[nodiscard]] std::size_t getBaseIndex() const;
 
-        [[nodiscard]] const std::byte* getRowPtr(std::uint64_t rowIndex) const;
+        [[nodiscard]] const std::byte* getRowPtr(std::size_t rowIndex) const;
 
-        [[nodiscard]] std::uint64_t getRowByteSize() const;
+        [[nodiscard]] std::size_t getRowByteSize() const;
 
-        [[nodiscard]] std::uint64_t getFieldCount() const;
+        [[nodiscard]] std::size_t getFieldCount() const;
 
-        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::uint64_t index) const;
+        [[nodiscard]] core::shared::types::ValueTypeId getFieldTypeId(std::size_t index) const;
 
-        [[nodiscard]] std::uint64_t getFieldOffset(std::uint64_t index) const;
+        [[nodiscard]] std::size_t getFieldOffset(std::size_t index) const;
 
         void removeV(const std::vector<std::size_t>& absIndices);
 
-        [[nodiscard]] const std::byte* getLayoutFieldPtr(std::uint64_t fieldIndex) const;
+        [[nodiscard]] const std::byte* getLayoutFieldPtr(std::size_t fieldIndex) const;
 
         [[nodiscard]] const std::byte* getLayoutRowPtr() const;
 
-        [[nodiscard]] std::uint64_t getCurrentLayoutRowSize() const;
+        [[nodiscard]] std::size_t getCurrentLayoutRowSize() const;
 
         [[nodiscard]] core::shared::types::Timestamp getLayoutStartTs() const;
 
@@ -94,7 +94,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         };
 
         struct KeyFieldDetails {
-            std::uint64_t fieldIndex;
+            std::size_t fieldIndex;
             core::runtime::types::RuntimeTypeRegistry::HashFunctionPtr mHashFunction;
             core::runtime::types::RuntimeTypeRegistry::EqualFunctionPtr mEqualFunction;
         };
@@ -113,14 +113,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         std::deque<RowBuffer> mBufferedRows;
         // Hash-Behavior for == predicate only
 
-        std::multimap<std::vector<std::uint64_t>, std::uint64_t> mKeyIndex;
+        std::multimap<std::vector<std::size_t>, std::size_t> mKeyIndex;
         std::vector<KeyFieldDetails> mKeyFields;
         const core::runtime::types::RuntimeTypeRegistry* mRuntimeTypeRegistry;
 
-        std::uint64_t mBasisIndex = 0;
-        std::uint64_t mLastAbsoluteIndex = 0;
+        std::size_t mBasisIndex = 0;
+        std::size_t mLastAbsoluteIndex = 0;
 
-        std::vector<std::uint64_t> computeRowKeyV(const std::byte* row) const;
+        std::vector<std::size_t> computeRowKeyV(const std::byte* row) const;
 
         void compactIfNeeded();
         void compact();

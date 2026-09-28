@@ -27,7 +27,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         struct JoinSnapshot {
             bool wasLeft = false;
             std::vector<std::byte> data;
-            std::vector<std::uint64_t> fieldOffsets;
+            std::vector<std::size_t> fieldOffsets;
             std::vector<core::shared::types::ValueTypeId> fieldTypeIds;
             core::shared::types::Timestamp startTs;
             core::shared::types::Timestamp endTs;
@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             std::vector<core::shared::types::Timestamp> candidateEnds;
             std::vector<core::shared::types::TiBreak> candidateStartsTb;
             std::vector<core::shared::types::TiBreak> candidateEndsTb;
-            std::vector<std::uint64_t> candidateFieldOffsets;
+            std::vector<std::size_t> candidateFieldOffsets;
             std::vector<core::shared::types::ValueTypeId> candidateFieldTypeIds;
             std::size_t candidateRowByteSize = 0;
             std::size_t candidateCount = 0;
@@ -143,10 +143,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         std::vector<std::byte> mOutputTempBuf;
         std::mutex mOutputMutex;
 
-        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::uint64_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs, bool extract);
+        void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs, bool extract);
 
 
-        void copyRowIntoSnapshot(const JoinSide& side, std::uint64_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
+        void copyRowIntoSnapshot(const JoinSide& side, std::size_t rowIndex, std::vector<std::byte>& dst, std::size_t dstOffset,
                                  std::vector<std::size_t>& offsetsOut, std::vector<core::shared::types::ValueTypeId>& typeIdsOut,
                                  std::vector<RetainPointer>& retainedOut) const;
     };

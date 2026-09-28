@@ -20,14 +20,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     // NOLINTNEXTLINE(readability-function-size)
     void *rtJoinCreate(const void *typeRegistryRawPtr,
                        const core::shared::types::ValueTypeId *leftTypeIds,
-                       const std::uint64_t leftFieldSize,
+                       const std::size_t leftFieldSize,
                        const core::shared::types::ValueTypeId *rightTypeIds,
-                       const std::uint64_t rightFieldSize,
+                       const std::size_t rightFieldSize,
                        const std::uint8_t hasEquiKey,
-                       const std::uint64_t *leftKeyFieldIndices,
-                       const std::uint64_t *rightKeyFieldIndices,
+                       const std::size_t *leftKeyFieldIndices,
+                       const std::size_t *rightKeyFieldIndices,
                        const core::shared::types::ValueTypeId *keyTypeIds,
-                       const std::uint64_t equiKeyCnt,
+                       const std::size_t equiKeyCnt,
                        const uint8_t outOfOrder) {
         const auto *runtimeTypeRegistry =
                 static_cast<const core::runtime::types::RuntimeTypeRegistry *>(typeRegistryRawPtr);
@@ -36,7 +36,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         core::logical::port::Port rightSchema;
         core::logical::port::Port outputSchema;
 
-        for (std::uint64_t i = 0; i < leftFieldSize; ++i) {
+        for (std::size_t i = 0; i < leftFieldSize; ++i) {
             leftSchema.push_back(
                 core::logical::port::PortDescription{.valueTypeId = leftTypeIds[i]}
             );
@@ -45,7 +45,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             );
         }
 
-        for (std::uint64_t i = 0; i < rightFieldSize; ++i) {
+        for (std::size_t i = 0; i < rightFieldSize; ++i) {
             rightSchema.push_back(
                 core::logical::port::PortDescription{.valueTypeId = rightTypeIds[i]}
             );
@@ -68,9 +68,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             rightIndices.reserve(equiKeyCnt);
             typeIds.reserve(equiKeyCnt);
 
-            for (std::uint64_t i = 0; i < equiKeyCnt; ++i) {
-                leftIndices.push_back(static_cast<std::size_t>(leftKeyFieldIndices[i]));
-                rightIndices.push_back(static_cast<std::size_t>(rightKeyFieldIndices[i]));
+            for (std::size_t i = 0; i < equiKeyCnt; ++i) {
+                leftIndices.push_back(leftKeyFieldIndices[i]);
+                rightIndices.push_back(rightKeyFieldIndices[i]);
                 typeIds.push_back(keyTypeIds[i]);
             }
 
@@ -104,11 +104,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<JoinBuffer *>(state)->beginRight();
     }
 
-    void rtJoinPushLeft(void *state, const std::uint64_t index, const void *data) {
+    void rtJoinPushLeft(void *state, const std::size_t index, const void *data) {
         static_cast<JoinBuffer *>(state)->pushLeft(index, data);
     }
 
-    void rtJoinPushRight(void *state, const std::uint64_t index, const void *data) {
+    void rtJoinPushRight(void *state, const std::size_t index, const void *data) {
         static_cast<JoinBuffer *>(state)->pushRight(index, data);
     }
 
@@ -126,22 +126,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<JoinBuffer *>(state)->snapshotForCompute(callFromLeft != 0, extract != 0);
     }
 
-    const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::uint64_t fieldIndex) {
+    const void *rtJoinSnapshotGetOwnPtr(void *snapshot, const std::size_t fieldIndex) {
         const auto *s = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
-        return s->ownFieldPtr(static_cast<std::size_t>(fieldIndex));
+        return s->ownFieldPtr(fieldIndex);
     }
 
-    const void *rtJoinSnapshotGetCandidatePtr(void *snapshot, const std::uint64_t index,
-                                              const std::uint64_t fieldIndex) {
+    const void *rtJoinSnapshotGetCandidatePtr(void *snapshot, const std::size_t index,
+                                              const std::size_t fieldIndex) {
         auto *s = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
-        return s->candidateFieldPtr(static_cast<std::size_t>(index), static_cast<std::size_t>(fieldIndex));
+        return s->candidateFieldPtr(index, fieldIndex);
     }
 
-    core::shared::types::Timestamp rtJoinSnapshotGetCandidateStartTimestamp(void *snapshot, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateStartTimestamp(void *snapshot, const std::size_t index) {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->candidateStarts.at(index);
     }
 
-    core::shared::types::Timestamp rtJoinSnapshotGetCandidateEndTimestamp(void *snapshot, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinSnapshotGetCandidateEndTimestamp(void *snapshot, const std::size_t index) {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->candidateEnds.at(index);
     }
 
@@ -149,11 +149,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->startTs;
     }
 
-    core::shared::types::TiBreak rtJoinSnapshotGetCandidateStartTibreaker(void *snapshot, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinSnapshotGetCandidateStartTibreaker(void *snapshot, const std::size_t index) {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->candidateStartsTb.at(index);
     }
 
-    core::shared::types::TiBreak rtJoinSnapshotGetCandidateEndTibreaker(void *snapshot, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinSnapshotGetCandidateEndTibreaker(void *snapshot, const std::size_t index) {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->candidateEndsTb.at(index);
     }
 
@@ -169,9 +169,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->endTs;
     }
 
-    std::uint64_t rtJoinSnapshotGetCount(void *snapshot) {
+    std::size_t rtJoinSnapshotGetCount(void *snapshot) {
         auto *s = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
-        return static_cast<std::uint64_t>(s->candidateCount);
+        return s->candidateCount;
     }
 
     void rtJoinSnapshotRelease(void *snapshot) {
@@ -201,13 +201,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return std::min(watermark->leftWatermark, watermark->rightWatermark);
     }
 
-    void rtJoinMarkCandidateForRemove(void *state, void *snapshot, const std::uint64_t candidateIdx) {
+    void rtJoinMarkCandidateForRemove(void *state, void *snapshot, const std::size_t candidateIdx) {
         auto *joinBuffer = static_cast<JoinBuffer *>(state);
         auto *snap = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->markCandidateForRemove(snap, candidateIdx);
     }
 
-    void rtJoinMarkCandidateAsMatch(void *state, void *snapshot, const std::uint64_t candidateIdx) {
+    void rtJoinMarkCandidateAsMatch(void *state, void *snapshot, const std::size_t candidateIdx) {
         auto *joinBuffer = static_cast<JoinBuffer *>(state);
         auto *snap = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
         joinBuffer->markCandidateAsMatch(snap, candidateIdx);
@@ -225,12 +225,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         joinBuffer->removeMarkedCandidates(snap, snap->wasLeft);
     }
 
-    std::uint64_t rtJoinSnapshotGetMatchCount(void *snapshot) {
+    std::size_t rtJoinSnapshotGetMatchCount(void *snapshot) {
         const auto *snap = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
         return snap != nullptr ? snap->matchIndicies.size() : 0;
     }
 
-    std::uint64_t rtJoinSnapshotGetMatchIndex(void *snapshot, const std::uint64_t matchIndex) {
+    std::size_t rtJoinSnapshotGetMatchIndex(void *snapshot, const std::size_t matchIndex) {
         const auto *snap = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
         if (snap == nullptr || matchIndex >= snap->matchIndicies.size()) {
             return 0;
@@ -241,8 +241,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     // NOLINTNEXTLINE(readability-function-size)
     std::uint8_t rtJoinUpdateWatermark(void *state, const std::uint8_t isLeft, const core::shared::types::Timestamp inWatermark,
                                        const std::uint8_t inIsFinal, const core::shared::types::Timestamp allowedLateness,
-                                       std::int64_t *outEvictLeftTh, std::int64_t *outEvictRightTh,
-                                       std::int64_t *outGlobalWatermark, std::uint8_t *outIsFinal) {
+                                       core::shared::types::Timestamp *outEvictLeftTh, core::shared::types::Timestamp *outEvictRightTh,
+                                       core::shared::types::Timestamp *outGlobalWatermark, std::uint8_t *outIsFinal) {
         auto *watermarkState = static_cast<details::JoinWatermarkState *>(state);
 
         while (watermarkState->lock.test_and_set(std::memory_order_acquire)) {
@@ -269,22 +269,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         std::uint8_t shouldEmit = 0;
 
         if (watermarkState->leftFinal && watermarkState->rightFinal) {
-            *outEvictLeftTh = std::numeric_limits<std::int64_t>::max();
-            *outEvictRightTh = std::numeric_limits<std::int64_t>::max();
+            *outEvictLeftTh = std::numeric_limits<core::shared::types::Timestamp>::max();
+            *outEvictRightTh = std::numeric_limits<core::shared::types::Timestamp>::max();
 
             if (!watermarkState->finalEmitted) {
                 watermarkState->finalEmitted = true;
-                *outGlobalWatermark = std::numeric_limits<std::int64_t>::max();
+                *outGlobalWatermark = std::numeric_limits<core::shared::types::Timestamp>::max();
                 *outIsFinal = 1;
                 shouldEmit = 1;
             }
         } else {
             *outEvictLeftTh = watermarkState->rightReported
                                   ? watermarkState->rightWatermark - allowedLateness
-                                  : std::numeric_limits<std::int64_t>::min();
+                                  : std::numeric_limits<core::shared::types::Timestamp>::min();
             *outEvictRightTh = watermarkState->leftReported
                                    ? watermarkState->leftWatermark - allowedLateness
-                                   : std::numeric_limits<std::int64_t>::min();
+                                   : std::numeric_limits<core::shared::types::Timestamp>::min();
 
             if (watermarkState->leftReported && watermarkState->rightReported) {
                 const auto minWatermark = std::min(watermarkState->leftWatermark, watermarkState->rightWatermark);
@@ -316,8 +316,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         static_cast<JoinBuffer *>(state)->matchRight(startTs, endTs, startTb, endTb);
     }
 
-    void rtJoinBufferOutput(void *state, const void *ownRowPtr, const std::uint64_t ownRowSize, const void *candRowPtr,
-                            const std::uint64_t candRowSize, const std::uint8_t onLeft, const core::shared::types::Timestamp startTs,
+    void rtJoinBufferOutput(void *state, const void *ownRowPtr, const std::size_t ownRowSize, const void *candRowPtr,
+                            const std::size_t candRowSize, const std::uint8_t onLeft, const core::shared::types::Timestamp startTs,
                             const core::shared::types::Timestamp endTs,
                             const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         auto *buffer = static_cast<JoinBuffer *>(state);
@@ -325,38 +325,38 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                              endTb);
     }
 
-    std::uint64_t rtJoinDrainOutput(void *state, const core::shared::types::Timestamp watermark, const std::uint64_t maxCount,
-                                    std::uint64_t *outIndices) {
+    std::size_t rtJoinDrainOutput(void *state, const core::shared::types::Timestamp watermark, const std::size_t maxCount,
+                                    std::size_t *outIndices) {
         auto *buffer = static_cast<JoinBuffer *>(state);
         std::vector<std::size_t> indices;
-        auto count = buffer->drainOutput(watermark, maxCount, indices);
+        const auto count = buffer->drainOutput(watermark, maxCount, indices);
         for (std::size_t i = 0; i < indices.size(); ++i) {
             outIndices[i] = indices[i];
         }
         return count;
     }
 
-    const void *rtJoinGetOutputRowPtr(void *state, const std::uint64_t index) {
+    const void *rtJoinGetOutputRowPtr(void *state, const std::size_t index) {
         return static_cast<JoinBuffer *>(state)->getOutputRow(index).data.data();
     }
 
-    core::shared::types::Timestamp rtJoinGetOutputRowStartTs(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinGetOutputRowStartTs(void *state, const std::size_t index) {
         return static_cast<JoinBuffer *>(state)->getOutputRow(index).startTs;
     }
 
-    core::shared::types::Timestamp rtJoinGetOutputRowEndTs(void *state, const std::uint64_t index) {
+    core::shared::types::Timestamp rtJoinGetOutputRowEndTs(void *state, const std::size_t index) {
         return static_cast<JoinBuffer *>(state)->getOutputRow(index).endTs;
     }
 
-    core::shared::types::TiBreak rtJoinGetOutputRowStartTb(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinGetOutputRowStartTb(void *state, const std::size_t index) {
         return static_cast<JoinBuffer *>(state)->getOutputRow(index).startTb;
     }
 
-    core::shared::types::TiBreak rtJoinGetOutputRowEndTb(void *state, const std::uint64_t index) {
+    core::shared::types::TiBreak rtJoinGetOutputRowEndTb(void *state, const std::size_t index) {
         return static_cast<JoinBuffer *>(state)->getOutputRow(index).endTb;
     }
 
-    std::uint64_t rtJoinGetOutputRowSize(void *state) {
+    std::size_t rtJoinGetOutputRowSize(void *state) {
         return static_cast<JoinBuffer *>(state)->getOutputRowSize();
     }
 
@@ -364,21 +364,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->data.data();
     }
 
-    std::uint64_t rtJoinSnapshotGetOwnRowSize(void *snapshot) {
+    std::size_t rtJoinSnapshotGetOwnRowSize(void *snapshot) {
         return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->data.size();
     }
 
-    const void *rtJoinSnapshotGetCandidateRowPtr(void *snapshot, const std::uint64_t index) {
+    const void *rtJoinSnapshotGetCandidateRowPtr(void *snapshot, const std::size_t index) {
         auto *s = static_cast<JoinBuffer::JoinSnapshot *>(snapshot);
         return s->candidateData.data() + (index * s->candidateRowByteSize);
     }
 
-    std::uint64_t rtJoinSnapshotGetCandidateRowSize(void *snapshot) {
-        return static_cast<std::uint64_t>(static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->
-            candidateRowByteSize);
+    std::size_t rtJoinSnapshotGetCandidateRowSize(void *snapshot) {
+        return static_cast<JoinBuffer::JoinSnapshot *>(snapshot)->
+            candidateRowByteSize;
     }
 
-    void rtJoinRemoveOutputRows(void* state, const std::uint64_t* indices, std::uint64_t count) {
+    void rtJoinRemoveOutputRows(void* state, const std::size_t* indices, const std::size_t count) {
         auto* buf = static_cast<JoinBuffer*>(state);
         const std::vector<std::size_t> idx(indices, indices + count);
         buf->removeOutputRows(idx);

@@ -69,7 +69,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     void JoinBuffer::matchAgainst(const JoinSide &sourceSide, JoinSide &otherSide,
-        const std::vector<std::uint64_t>& sourceKeyFieldIndices, const core::shared::types::Timestamp sourceStartTs, const core::shared::types::Timestamp sourceEndTs, const bool extract) {
+        const std::vector<std::size_t>& sourceKeyFieldIndices, const core::shared::types::Timestamp sourceStartTs, const core::shared::types::Timestamp sourceEndTs, const bool extract) {
         mCandidates.clear();
 
         if (sourceSide.hasKeyIndex() && otherSide.hasKeyIndex()) {
@@ -125,7 +125,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
     }
 
-    void JoinBuffer::copyRowIntoSnapshot(const JoinSide &side, std::uint64_t rowIndex, std::vector<std::byte> &dst, std::size_t dstOffset,
+    void JoinBuffer::copyRowIntoSnapshot(const JoinSide &side, const std::size_t rowIndex, std::vector<std::byte> &dst, const std::size_t dstOffset,
         std::vector<std::size_t> &offsetsOut, std::vector<core::shared::types::ValueTypeId> &typeIdsOut, std::vector<RetainPointer> &retainedOut) const {
         const std::size_t rowSize = side.getRowByteSize();
         const std::byte* rowPtr = side.getRowPtr(rowIndex);
@@ -267,9 +267,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
 
-    void JoinBuffer::bufferOutput(const void* ownRowPtr, std::size_t ownRowSize, const void* candRowPtr, std::size_t candRowSize,
+    void JoinBuffer::bufferOutput(const void* ownRowPtr, const std::size_t ownRowSize, const void* candRowPtr, const std::size_t candRowSize,
         const bool onLeft, const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs,
-        const std::int64_t startTb, const std::int64_t endTb) {
+        const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
         if (mOutOfOrder) {
             return;
         }

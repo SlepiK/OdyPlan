@@ -6,20 +6,20 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     namespace {
-        bool _shouldExtract(const logical::details::JoinCard card, const bool onLeft) {
+        bool _shouldExtract(const details::JoinOperatorCard card, const bool onLeft) {
             switch (card) {
-                case logical::details::JoinCard::ONE_ONE: return true;
-                case logical::details::JoinCard::MANY_ONE: return !onLeft;
-                case logical::details::JoinCard::ONE_MANY: return onLeft;
+                case details::JoinOperatorCard::ONE_ONE: return true;
+                case details::JoinOperatorCard::MANY_ONE: return !onLeft;
+                case details::JoinOperatorCard::ONE_MANY: return onLeft;
                 default: return false;
             }
         }
 
-        bool _shouldInsert(const logical::details::JoinCard card, const bool onLeft, const bool hit) {
+        bool _shouldInsert(const details::JoinOperatorCard card, const bool onLeft, const bool hit) {
             switch (card) {
-                case logical::details::JoinCard::ONE_ONE: return !hit;
-                case logical::details::JoinCard::ONE_MANY: return onLeft || !hit;
-                case logical::details::JoinCard::MANY_ONE: return !onLeft || !hit;
+                case details::JoinOperatorCard::ONE_ONE: return !hit;
+                case details::JoinOperatorCard::ONE_MANY: return onLeft || !hit;
+                case details::JoinOperatorCard::MANY_ONE: return !onLeft || !hit;
                 default: return true;
             }
         }
@@ -27,7 +27,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
     JoinOperator::JoinOperator(core::physical::port::Ports inputPorts,
                                core::physical::port::Port outputPort,
-                               const logical::details::JoinConfig config,
+                               const details::JoinOperatorOptions config,
                                core::logical::port::Ports schemas,
                                std::unique_ptr<basic::expression::physical::IExpression> predicate,
                                const bool outOfOrder)
@@ -50,11 +50,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
         llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
-        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+        auto *voidTy = llvm::Type::getVoidTy(ctx);
+        auto *ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto *i1Ty = llvm::Type::getInt1Ty(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         llvm::Value* state = loadStatePtr(segmentCtx);
 
@@ -74,11 +75,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         const auto pushFn = module->getOrInsertFunction(
             onLeft ? "rtJoinPushLeft" : "rtJoinPushRight",
-            llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, ptrTy}, false));
+            llvm::FunctionType::get(voidTy, {ptrTy, sizeTTy, ptrTy}, false));
         for (std::size_t i = 0; i < schema.size(); ++i) {
             auto *slot = segmentCtx.storage.getNamed("join_slot." +std::to_string(getPId()), schema.at(i).valueTypeId);
             segmentCtx.builder.CreateStore(tuple.at(i), slot);
-            segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(i64Ty, i), slot});
+            segmentCtx.builder.CreateCall(pushFn, {state, llvm::ConstantInt::get(sizeTTy, i), slot});
         }
 
         //Match (fills Candidates-List!)
@@ -108,16 +109,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             segmentCtx.builder.CreateCall(markAllFn, {state, snapshot, llvm::ConstantInt::get(i8Ty, extract ? 1 : 0)});
 
             const auto countFn = module->getOrInsertFunction("rtJoinSnapshotGetCount",
-                        llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+                        llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
             llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
-            hasMatches = segmentCtx.builder.CreateICmpSGT(count, llvm::ConstantInt::get(i64Ty, 0));
+            hasMatches = segmentCtx.builder.CreateICmpSGT(count, llvm::ConstantInt::get(sizeTTy, 0));
 
         } else {
             evaluatePredicateAndMark(segmentCtx, snapshot, state, onLeft, extract);
 
-            auto* predicateHitSlot = segmentCtx.storage.getNamed("predicateJoinHitSlot." + std::to_string(getPId()), i64Ty);
-            llvm::Value* predicateHitCount = segmentCtx.builder.CreateLoad(i64Ty, predicateHitSlot);
-            hasMatches = segmentCtx.builder.CreateICmpSGT(predicateHitCount, llvm::ConstantInt::get(i64Ty, 0));
+            auto* predicateHitSlot = segmentCtx.storage.getNamed("predicateJoinHitSlot." + std::to_string(getPId()), sizeTTy);
+            llvm::Value* predicateHitCount = segmentCtx.builder.CreateLoad(sizeTTy, predicateHitSlot);
+            hasMatches = segmentCtx.builder.CreateICmpSGT(predicateHitCount, llvm::ConstantInt::get(sizeTTy, 0));
         }
 
         //If_Insert like in Odysseus
@@ -240,23 +241,24 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
-        auto* predicateHitSlot = segmentCtx.storage.getNamed("predicateJoinHitSlot." + std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), predicateHitSlot);
+        auto* predicateHitSlot = segmentCtx.storage.getNamed("predicateJoinHitSlot." + std::to_string(getPId()), sizeTTy);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), predicateHitSlot);
 
         auto* indexSlot = segmentCtx.storage.getNamed(
-                    "computeIndexSlot." + std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), indexSlot);
+                    "computeIndexSlot." + std::to_string(getPId()), sizeTTy);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), indexSlot);
 
         const auto countFn = module->getOrInsertFunction(
-            "rtJoinSnapshotGetCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+            "rtJoinSnapshotGetCount", llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
         llvm::Value* count = segmentCtx.builder.CreateCall(countFn, {snapshot});
 
         const auto& ownSchema = onLeft ? mLeftSchema : mRightSchema;
         const auto getOwnFn = module->getOrInsertFunction(
-        "rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
+        "rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy}, false));
         const auto getCandFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidatePtr",
-            llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
+            llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy, sizeTTy}, false));
 
         const auto getOwnStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         const auto getOwnEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
@@ -267,10 +269,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* ownStartTb = segmentCtx.builder.CreateCall(getOwnStartTbFn, {snapshot});
         llvm::Value* ownEndTb = segmentCtx.builder.CreateCall(getOwnEndTbFn, {snapshot});
 
-        const auto getCandidateStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateStartTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateEndTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        const auto getCandidateStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateStartTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateEndTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
 
         auto* headerBB = llvm::BasicBlock::Create(ctx, "predicate_header", fn);
         auto* bodyBB = llvm::BasicBlock::Create(ctx, "predicate_body", fn);
@@ -279,7 +281,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         segmentCtx.builder.CreateBr(headerBB);
         segmentCtx.builder.SetInsertPoint(headerBB);
 
-        llvm::Value* index = segmentCtx.builder.CreateLoad(i64Ty, indexSlot);
+        llvm::Value* index = segmentCtx.builder.CreateLoad(sizeTTy, indexSlot);
 
         segmentCtx.builder.CreateCondBr(
             segmentCtx.builder.CreateICmpSLT(index, count), bodyBB, exitBB);
@@ -314,7 +316,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         if (onLeft) {
             for (std::size_t i = 0; i < ownSchema.size(); ++i) {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
-                    getOwnFn, {snapshot, llvm::ConstantInt::get(i64Ty, i)});
+                    getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
                     segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -322,7 +324,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
             for (std::size_t i = 0; i < otherSchema.size(); ++i) {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
-                    getCandFn, {snapshot, index, llvm::ConstantInt::get(i64Ty, i)});
+                    getCandFn, {snapshot, index, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
                     segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -330,7 +332,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         } else {
             for (std::size_t i = 0; i < otherSchema.size(); ++i) {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
-                    getCandFn, {snapshot, index, llvm::ConstantInt::get(i64Ty, i)});
+                    getCandFn, {snapshot, index, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
                     segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -338,7 +340,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
             for (std::size_t i = 0; i < ownSchema.size(); ++i) {
                 llvm::Value* fieldPtr = segmentCtx.builder.CreateCall(
-                    getOwnFn, {snapshot, llvm::ConstantInt::get(i64Ty, i)});
+                    getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                 llvm::Type* fieldTy =
                     segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
                 combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -347,7 +349,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         const auto isEqui = mEquiKeys.has_value();
 
-        const auto markMatchFn = module->getOrInsertFunction("rtJoinMarkCandidateAsMatch", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, i64Ty}, false));
+        const auto markMatchFn = module->getOrInsertFunction("rtJoinMarkCandidateAsMatch", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, sizeTTy}, false));
 
         if (mPredicate != nullptr && !isEqui) {
             llvm::Value* predicateResult = expression::physical::codegenExpression(segmentCtx, combined, *mPredicate);
@@ -363,12 +365,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             segmentCtx.builder.CreateCall(markMatchFn, {state, snapshot, index});
 
             if (extract) {
-                const auto markRemoveFn = module->getOrInsertFunction("rtJoinMarkCandidateForRemove", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, i64Ty}, false));
+                const auto markRemoveFn = module->getOrInsertFunction("rtJoinMarkCandidateForRemove", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, sizeTTy}, false));
                 segmentCtx.builder.CreateCall(markRemoveFn, {state, snapshot, index});
             }
 
-            llvm::Value* currentHitCount = segmentCtx.builder.CreateLoad(i64Ty, predicateHitSlot);
-            llvm::Value* newHitCount = segmentCtx.builder.CreateAdd(currentHitCount, llvm::ConstantInt::get(i64Ty, 1));
+            llvm::Value* currentHitCount = segmentCtx.builder.CreateLoad(sizeTTy, predicateHitSlot);
+            llvm::Value* newHitCount = segmentCtx.builder.CreateAdd(currentHitCount, llvm::ConstantInt::get(sizeTTy, 1));
             segmentCtx.builder.CreateStore(newHitCount, predicateHitSlot);
 
             segmentCtx.builder.CreateBr(mergeBB);
@@ -381,16 +383,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             segmentCtx.builder.CreateCall(markMatchFn, {state, snapshot, index});
 
             if (extract) {
-                const auto markRemoveFn = module->getOrInsertFunction("rtJoinMarkCandidateForRemove", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, i64Ty}, false));
+                const auto markRemoveFn = module->getOrInsertFunction("rtJoinMarkCandidateForRemove", llvm::FunctionType::get(voidTy, {ptrTy, ptrTy, sizeTTy}, false));
                 segmentCtx.builder.CreateCall(markRemoveFn, {state, snapshot, index});
             }
 
-            llvm::Value* currentHitCount = segmentCtx.builder.CreateLoad(i64Ty, predicateHitSlot);
-            llvm::Value* newHitCount = segmentCtx.builder.CreateAdd(currentHitCount, llvm::ConstantInt::get(i64Ty, 1));
+            llvm::Value* currentHitCount = segmentCtx.builder.CreateLoad(sizeTTy, predicateHitSlot);
+            llvm::Value* newHitCount = segmentCtx.builder.CreateAdd(currentHitCount, llvm::ConstantInt::get(sizeTTy, 1));
             segmentCtx.builder.CreateStore(newHitCount, predicateHitSlot);
         }
 
-        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(i64Ty, 1));
+        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(sizeTTy, 1));
 
         segmentCtx.builder.CreateStore(next, indexSlot);
         segmentCtx.builder.CreateBr(headerBB);
@@ -405,21 +407,22 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Function* fn = segmentCtx.builder.GetInsertBlock()->getParent();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto *ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto *voidTy = llvm::Type::getVoidTy(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
-        const auto getMatchCountFn = module->getOrInsertFunction("rtJoinSnapshotGetMatchCount", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+        const auto getMatchCountFn = module->getOrInsertFunction("rtJoinSnapshotGetMatchCount", llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
         llvm::Value* matchCount = segmentCtx.builder.CreateCall(getMatchCountFn, {snapshot});
 
-        const auto getMatchIndexFn = module->getOrInsertFunction("rtJoinSnapshotGetMatchIndex", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        const auto getMatchIndexFn = module->getOrInsertFunction("rtJoinSnapshotGetMatchIndex", llvm::FunctionType::get(sizeTTy, {ptrTy, sizeTTy}, false));
 
         const auto& ownSchema = onLeft ? mLeftSchema : mRightSchema;
 
-        const auto getOwnFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
+        const auto getOwnFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnPtr", llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy}, false));
 
-        const auto getCandidateFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidatePtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty, i64Ty}, false));
+        const auto getCandidateFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidatePtr", llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy, sizeTTy}, false));
 
         const auto getOwnStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
         const auto getOwnEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
@@ -430,14 +433,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value* ownStartTb = segmentCtx.builder.CreateCall(getOwnStartTbFn, {snapshot});
         llvm::Value* ownEndTb = segmentCtx.builder.CreateCall(getOwnEndTbFn, {snapshot});
 
-        const auto getCandidateStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateStartTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
-        const auto getCandidateEndTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+        const auto getCandidateStartTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateEndTsFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTimestamp", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateStartTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateStartTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
+        const auto getCandidateEndTbFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateEndTibreaker", llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
 
         auto* indexSlot = segmentCtx.storage.getNamed(
-                    "emitIndexSlot." + std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), indexSlot);
+                    "emitIndexSlot." + std::to_string(getPId()), sizeTTy);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), indexSlot);
 
         auto* headerBB = llvm::BasicBlock::Create(ctx, "emit_match_header", fn);
         auto* bodyBB = llvm::BasicBlock::Create(ctx, "emit_match_body", fn);
@@ -446,7 +449,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         segmentCtx.builder.CreateBr(headerBB);
         segmentCtx.builder.SetInsertPoint(headerBB);
 
-        llvm::Value* index = segmentCtx.builder.CreateLoad(i64Ty, indexSlot);
+        llvm::Value* index = segmentCtx.builder.CreateLoad(sizeTTy, indexSlot);
 
         segmentCtx.builder.CreateCondBr(
             segmentCtx.builder.CreateICmpSLT(index, matchCount), bodyBB, exitBB);
@@ -476,17 +479,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         if (!mOutOfOrder) {
             const auto getOwnRowPtrFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnRowPtr", llvm::FunctionType::get(ptrTy, {ptrTy}, false));
-            const auto getOwnRowSizeFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnRowSize", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
-            const auto getCandRowPtrFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateRowPtr", llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
-            const auto getCandRowSizeFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateRowSize", llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+            const auto getOwnRowSizeFn = module->getOrInsertFunction("rtJoinSnapshotGetOwnRowSize", llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
+            const auto getCandRowPtrFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateRowPtr", llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy}, false));
+            const auto getCandRowSizeFn = module->getOrInsertFunction("rtJoinSnapshotGetCandidateRowSize", llvm::FunctionType::get(sizeTTy, {ptrTy}, false));
 
             llvm::Value* ownRowPtr = segmentCtx.builder.CreateCall(getOwnRowPtrFn, {snapshot});
             llvm::Value* ownRowSize = segmentCtx.builder.CreateCall(getOwnRowSizeFn, {snapshot});
             llvm::Value* candRowPtr = segmentCtx.builder.CreateCall(getCandRowPtrFn, {snapshot, candidateIndex});
             llvm::Value* candRowSize = segmentCtx.builder.CreateCall(getCandRowSizeFn, {snapshot});
 
-            const auto bufferOutputFn = module->getOrInsertFunction("rtJoinBufferOutput",llvm::FunctionType::get(voidTy,
-                {ptrTy, ptrTy,i64Ty,ptrTy,i64Ty,i8Ty,i64Ty,i64Ty,i64Ty,i64Ty}, false));
+            const auto bufferOutputFn = module->getOrInsertFunction("rtJoinBufferOutput", llvm::FunctionType::get(
+                                                                        voidTy,
+                                                                        {
+                                                                            ptrTy, ptrTy, sizeTTy, ptrTy, sizeTTy, i8Ty,
+                                                                            i64Ty, i64Ty, i64Ty, i64Ty
+                                                                        }, false));
             llvm::Value* state = loadStatePtr(segmentCtx);
 
             segmentCtx.builder.CreateCall(bufferOutputFn, {state, ownRowPtr, ownRowSize, candRowPtr, candRowSize,
@@ -501,7 +508,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             if (onLeft) {
                 for (std::size_t i = 0; i < ownSchema.size(); ++i) {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
-                        getOwnFn, {snapshot, llvm::ConstantInt::get(i64Ty, i)});
+                        getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
                             segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -509,7 +516,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
                 for (std::size_t i = 0; i < otherSchema.size(); ++i) {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
-                        getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(i64Ty, i)});
+                        getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
                             segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -517,7 +524,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             } else {
                 for (std::size_t i = 0; i < otherSchema.size(); ++i) {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
-                        getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(i64Ty, i)});
+                        getCandidateFn, {snapshot, candidateIndex, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
                             segmentCtx.codegenTypeRegistry.resolveType(otherSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -525,7 +532,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
                 for (std::size_t i = 0; i < ownSchema.size(); ++i) {
                     llvm::Value *fieldPtr = segmentCtx.builder.CreateCall(
-                        getOwnFn, {snapshot, llvm::ConstantInt::get(i64Ty, i)});
+                        getOwnFn, {snapshot, llvm::ConstantInt::get(sizeTTy, i)});
                     llvm::Type *fieldTy =
                             segmentCtx.codegenTypeRegistry.resolveType(ownSchema.at(i).valueTypeId, ctx);
                     combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -535,7 +542,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             consumers.front().consume(segmentCtx, combined);
         }
 
-        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(i64Ty, 1));
+        llvm::Value* next = segmentCtx.builder.CreateAdd(index, llvm::ConstantInt::get(sizeTTy, 1));
         segmentCtx.builder.CreateStore(next, indexSlot);
         segmentCtx.builder.CreateBr(headerBB);
 
@@ -559,9 +566,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
     void JoinOperator::declareState(core::physical::state::StateRegistry& stateRegistry,
                                     llvm::Module& module,
                                     llvm::LLVMContext& context) {
-        auto* i64Ty = llvm::Type::getInt64Ty(context);
-        auto* i8Ty = llvm::Type::getInt8Ty(context);
-        auto* ptrTy = llvm::PointerType::getUnqual(context);
+        auto *i64Ty = llvm::Type::getInt64Ty(context);
+        auto *i8Ty = llvm::Type::getInt8Ty(context);
+        auto *ptrTy = llvm::PointerType::getUnqual(context);
+        auto *sizeTTy = module.getDataLayout().getIntPtrType(context);
 
         auto* leftSideTypesGlobal = buildTypeIds(
             module, context, mLeftSchema, "join_left_side_types_" + std::to_string(getPId()));
@@ -581,16 +589,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
             "join_" + std::to_string(getPId()),
             "rtJoinCreate",
             {leftSideTypesGlobal,
-             llvm::ConstantInt::get(i64Ty, mLeftSchema.size()),
+             llvm::ConstantInt::get(sizeTTy, mLeftSchema.size()),
              rightSideTypesGlobal,
-             llvm::ConstantInt::get(i64Ty, mRightSchema.size()),
+             llvm::ConstantInt::get(sizeTTy, mRightSchema.size()),
              llvm::ConstantInt::get(i8Ty, isEqui ? 1 : 0),
              leftEquiIndices,
              rightEquiIndices,
              equiTypeIds,
-             llvm::ConstantInt::get(i64Ty, equiKeys.size()),
+             llvm::ConstantInt::get(sizeTTy, equiKeys.size()),
              llvm::ConstantInt::get(i8Ty, mOutOfOrder ? 1 : 0)},
-            {ptrTy, i64Ty, ptrTy, i64Ty, i8Ty, ptrTy, ptrTy, ptrTy, i64Ty, i8Ty},
+            {ptrTy, sizeTTy, ptrTy, sizeTTy, i8Ty, ptrTy, ptrTy, ptrTy, sizeTTy, i8Ty},
             "rtJoinDestroy");
 
         mWatermarkState = stateRegistry.createHandle(
@@ -649,14 +657,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                     const std::vector<EquiKeyInfo>& keys,
                                                     bool useLeftIndex,
                                                     const std::string& name) {
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *sizeTTy = module.getDataLayout().getIntPtrType(ctx);
+
         std::vector<llvm::Constant*> values;
         values.reserve(keys.size());
         for (const auto& key : keys) {
-            values.push_back(llvm::ConstantInt::get(i64Ty, useLeftIndex ? key.leftFieldIndex : key.rightFieldIndex));
+            values.push_back(llvm::ConstantInt::get(sizeTTy, useLeftIndex ? key.leftFieldIndex : key.rightFieldIndex));
         }
 
-        auto* arrTy = llvm::ArrayType::get(i64Ty, values.size());
+        auto* arrTy = llvm::ArrayType::get(sizeTTy, values.size());
 
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,clang-analyzer-cplusplus.NewDeleteLeaks)
         return new llvm::GlobalVariable(module, arrTy, true, llvm::GlobalValue::PrivateLinkage,
@@ -688,12 +698,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
         llvm::Function *fn = segmentCtx.builder.GetInsertBlock()->getParent();
 
-        const bool onLeft = (compactInputIndex(inputPort) == 0);
-
-        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
-        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
-        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
-        auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto *i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto *ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto *voidTy = llvm::Type::getVoidTy(ctx);
 
         llvm::Value *watermarkStatePtr = segmentCtx.builder.CreateLoad(ptrTy, mWatermarkState.var);
         llvm::Value *joinState = loadStatePtr(segmentCtx);
@@ -815,20 +823,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto *i64Ty = llvm::Type::getInt64Ty(ctx);
         auto *i8Ty = llvm::Type::getInt8Ty(ctx);
         auto *voidTy = llvm::Type::getVoidTy(ctx);
+        auto *sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
         constexpr std::size_t MAX_DRAIN = 64;
 
         auto *indicesArr = segmentCtx.storage.getNamed("join_drain_indices." + std::to_string(getPId()),
-                                                       llvm::ArrayType::get(i64Ty, MAX_DRAIN));
+                                                       llvm::ArrayType::get(sizeTTy, MAX_DRAIN));
 
         llvm::Value* watermarkValue = segmentCtx.builder.CreateLoad(i64Ty, watermark);
 
         const auto drainFn = module->getOrInsertFunction("rtJoinDrainOutput",
                                                          llvm::FunctionType::get(
-                                                             i64Ty, {ptrTy, i64Ty, i64Ty, ptrTy}, false));
+                                                             sizeTTy, {ptrTy, i64Ty, sizeTTy, ptrTy}, false));
         llvm::Value *drainedCount = segmentCtx.builder.CreateCall(drainFn, {
                                                                       joinState, watermarkValue,
-                                                                      llvm::ConstantInt::get(i64Ty, MAX_DRAIN),
+                                                                      llvm::ConstantInt::get(sizeTTy, MAX_DRAIN),
                                                                       indicesArr
                                                                   });
 
@@ -836,8 +845,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         auto *loopBodyBB = llvm::BasicBlock::Create(ctx, "join_drain_loop_body", fn);
         auto *loopExitBB = llvm::BasicBlock::Create(ctx, "join_drain_loop_exit", fn);
 
-        auto *loopIdxSlot = segmentCtx.storage.getNamed("drain_loop_idx." + std::to_string(getPId()), i64Ty);
-        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), loopIdxSlot);
+        auto *loopIdxSlot = segmentCtx.storage.getNamed("drain_loop_idx." + std::to_string(getPId()), sizeTTy);
+        segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), loopIdxSlot);
 
         segmentCtx.builder.CreateBr(loopHeaderBB);
         segmentCtx.builder.SetInsertPoint(loopHeaderBB);
@@ -849,21 +858,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         segmentCtx.builder.SetInsertPoint(loopBodyBB);
 
         llvm::Value *rowIdx = segmentCtx.builder.CreateLoad(
-            i64Ty, segmentCtx.builder.CreateGEP(llvm::ArrayType::get(i64Ty, MAX_DRAIN), indicesArr,
-                                                {llvm::ConstantInt::get(i64Ty, 0), loopIdx}));
+            sizeTTy, segmentCtx.builder.CreateGEP(llvm::ArrayType::get(sizeTTy, MAX_DRAIN), indicesArr,
+                                                {llvm::ConstantInt::get(sizeTTy, 0), loopIdx}));
 
         const auto getRowPtrFn = module->getOrInsertFunction("rtJoinGetOutputRowPtr",
-                                                             llvm::FunctionType::get(ptrTy, {ptrTy, i64Ty}, false));
+                                                             llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy}, false));
         llvm::Value *rowPtr = segmentCtx.builder.CreateCall(getRowPtrFn, {joinState, rowIdx});
 
         const auto getStartTsFn = module->getOrInsertFunction("rtJoinGetOutputRowStartTs",
-                                                              llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+                                                              llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getEndTsFn = module->getOrInsertFunction("rtJoinGetOutputRowEndTs",
-                                                            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+                                                            llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getStartTbFn = module->getOrInsertFunction("rtJoinGetOutputRowStartTb",
-                                                              llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+                                                              llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
         const auto getEndTbFn = module->getOrInsertFunction("rtJoinGetOutputRowEndTb",
-                                                            llvm::FunctionType::get(i64Ty, {ptrTy, i64Ty}, false));
+                                                            llvm::FunctionType::get(i64Ty, {ptrTy, sizeTTy}, false));
 
         llvm::Value* rowStartTs = segmentCtx.builder.CreateCall(getStartTsFn, {joinState, rowIdx});
         llvm::Value* rowEndTs = segmentCtx.builder.CreateCall(getEndTsFn, {joinState, rowIdx});
@@ -880,7 +889,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         std::size_t offset = 0;
         for (std::size_t i = 0; i < mLeftSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateGEP(
-                i8Ty, rowPtr, llvm::ConstantInt::get(i64Ty, offset));
+                i8Ty, rowPtr, llvm::ConstantInt::get(sizeTTy, offset));
             llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry.resolveType(
                 mLeftSchema.at(i).valueTypeId, ctx);
             combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -889,7 +898,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         for (std::size_t i = 0; i < mRightSchema.size(); ++i) {
             llvm::Value* fieldPtr = segmentCtx.builder.CreateGEP(
-                i8Ty, rowPtr, llvm::ConstantInt::get(i64Ty, offset));
+                i8Ty, rowPtr, llvm::ConstantInt::get(sizeTTy, offset));
             llvm::Type* fieldTy = segmentCtx.codegenTypeRegistry.resolveType(
                 mRightSchema.at(i).valueTypeId, ctx);
             combined.pushBack(segmentCtx.builder.CreateLoad(fieldTy, fieldPtr));
@@ -898,7 +907,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         consumers.front().consume(segmentCtx, combined);
 
-        llvm::Value* next = segmentCtx.builder.CreateAdd(loopIdx, llvm::ConstantInt::get(i64Ty, 1));
+        llvm::Value* next = segmentCtx.builder.CreateAdd(loopIdx, llvm::ConstantInt::get(sizeTTy, 1));
         segmentCtx.builder.CreateStore(next, loopIdxSlot);
         segmentCtx.builder.CreateBr(loopHeaderBB);
 
@@ -906,7 +915,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
 
         const auto removeFn = module->getOrInsertFunction("rtJoinRemoveOutputRows",
                                                           llvm::FunctionType::get(
-                                                              voidTy, {ptrTy, ptrTy, i64Ty}, false));
+                                                              voidTy, {ptrTy, ptrTy, sizeTTy}, false));
         segmentCtx.builder.CreateCall(removeFn, {joinState, indicesArr, drainedCount});
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::join::physical
