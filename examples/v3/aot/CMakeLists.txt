@@ -33,4 +33,5 @@ add_dependencies(odyplan_example_aot_check_all
         odyplan_example_aot_join_check
         odyplan_example_aot_join_window_check
         odyplan_example_aot_select_check
+        odyplan_example_aot_project_check
 )
