@@ -61,8 +61,8 @@ int main() {
             std::make_unique<
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::TimeWindowOperator>(
                 sierra::odyplan::v3::basic::operators::pipe::window::details::TimeWindowOptions{
-                    .size = std::chrono::milliseconds(10).count(),
-                    .slide = std::chrono::milliseconds(1).count()
+                    .size = std::chrono::milliseconds(5).count(),
+                    .advance = std::chrono::milliseconds(1).count()
                 }));
 
         auto sinkId = logicalPlan.addOperator(
