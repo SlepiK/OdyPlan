@@ -94,6 +94,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 }
             }
         }
+
+        if (mCandidates.size() > 1) {
+            std::ranges::sort(mCandidates,
+                              [&otherSide](std::size_t a, std::size_t b) {
+                                  const auto tsA = otherSide.getStartTimestamp(a);
+                                  const auto tsB = otherSide.getStartTimestamp(b);
+                                  if (tsA != tsB) {
+                                      return tsA < tsB;
+                                  }
+                                  return otherSide.getStartTibreaker(a) < otherSide.getStartTibreaker(b);
+                              });
+        }
     }
 
     void JoinBuffer::markAllCandidateAsMatch(JoinSnapshot *snapshot, const bool extract) {

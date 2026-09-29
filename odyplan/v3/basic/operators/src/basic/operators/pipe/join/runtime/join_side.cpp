@@ -229,8 +229,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 .isRemoved = false
             });
 
-
-
         if (mBufferedRows.size() == 1 || startTs < mMinStartTs) {
             mMinStartTs = startTs;
         }

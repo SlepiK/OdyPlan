@@ -204,6 +204,11 @@ int main() {
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseDouble),
             llvm::JITSymbolFlags::Exported);
 
+        symbolMap[jit->mangleAndIntern("rtParseString")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseString),
+            llvm::JITSymbolFlags::Exported);
+
         symbolMap[jit->mangleAndIntern("rtPrintDataPackage")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::sink::print::runtime::rtPrintDataPackage),

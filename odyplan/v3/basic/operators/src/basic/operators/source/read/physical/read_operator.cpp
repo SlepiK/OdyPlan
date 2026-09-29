@@ -81,12 +81,14 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
 
         std::vector<llvm::Value*> rawValues;
         rawValues.reserve(mDataSchema.size());
+        std::vector<core::shared::types::ValueTypeId> typeIds;
 
         for (const auto& dataField : mDataSchema) {
             llvm::Value* fieldName = segmentCtx.builder.CreateGlobalString(
                 dataField.fieldName, "field_" + dataField.fieldName, 0, module);
             llvm::Value* strValue = segmentCtx.builder.CreateCall(getFieldFn, {state, fieldName});
             rawValues.push_back(codegenField(segmentCtx, strValue, dataField.valueTypeId));
+            typeIds.push_back(dataField.valueTypeId);
         }
 
         const core::physical::time::TimePoint stp = [&]() {
@@ -110,6 +112,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         tuple.fields = std::move(rawValues);
 
         consumers.front().consume(segmentCtx, tuple);
+
+        codegenReleaseFields(segmentCtx, tuple.fields, typeIds);
 
         llvm::Value* allowedLatenessConst = llvm::ConstantInt::get(i64Ty, mOptions.allowedLateness.count());
         llvm::Function* smaxFn = llvm::Intrinsic::getOrInsertDeclaration(module, llvm::Intrinsic::smax, {i64Ty});
@@ -191,53 +195,28 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
     llvm::Value* ReadOperator::codegenField(core::physical::segment::SegmentContext& segmentCtx,
                                             llvm::Value* stringValue,
                                             const core::shared::types::ValueTypeId typeId) {
-        if (typeId == std::to_underlying(core::shared::types::BuiltinValueType::STRING)) {
-            return stringValue;
-        }
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
+        return segmentCtx.codegenTypeRegistry->emitParseCall(typeId, stringValue, segmentCtx.builder, *module);
+    }
+
+
+    void ReadOperator::codegenReleaseFields(core::physical::segment::SegmentContext& segmentCtx, const std::vector<llvm::Value*>& fields, const std::vector<core::shared::types::ValueTypeId>& typeIds) {
         llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto *voidTy = llvm::Type::getVoidTy(ctx);
+        auto *i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
 
-        std::string fnName;
-        llvm::Type* retTy = segmentCtx.codegenTypeRegistry->resolveType(typeId, ctx);
+        const auto releaseFn = module->getOrInsertFunction("rtTypeRegistryRelease",
+                                                     llvm::FunctionType::get(voidTy, {i8Ty, ptrTy}, false));
 
-        switch (typeId) {
-            case std::to_underlying(core::shared::types::BuiltinValueType::BOOL): {
-                fnName = "rtParseBool";
-                break;
+        for (std::size_t i = 0; i < fields.size(); ++i) {
+            if (!fields[i]->getType()->isPointerTy()) {
+                continue;
             }
-            case std::to_underlying(core::shared::types::BuiltinValueType::INT8): {
-                fnName = "rtParseInt8";
-                break;
-            }
-            case std::to_underlying(core::shared::types::BuiltinValueType::INT16): {
-                fnName = "rtParseInt16";
-                break;
-            }
-            case std::to_underlying(core::shared::types::BuiltinValueType::INT32): {
-                fnName = "rtParseInt32";
-                break;
-            }
-            case std::to_underlying(core::shared::types::BuiltinValueType::INT64): {
-                fnName = "rtParseInt64";
-                break;
-            }
-            case std::to_underlying(core::shared::types::BuiltinValueType::FLOAT): {
-                fnName = "rtParseFloat";
-                break;
-            }
-            case std::to_underlying(core::shared::types::BuiltinValueType::DOUBLE): {
-                fnName = "rtParseDouble";
-                break;
-            }
-            default:
-                throw std::invalid_argument("ReadOperator: cant parse given type with typeid " +
-                                            std::to_string(typeId));
+            segmentCtx.builder.CreateCall(releaseFn, {segmentCtx.builder.getInt8(typeIds[i]), fields[i]});
         }
-
-        auto* fnType = llvm::FunctionType::get(retTy, {ptrTy}, false);
-        const auto fn = module->getOrInsertFunction(fnName, fnType);
-        return segmentCtx.builder.CreateCall(fn, {stringValue});
     }
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::physical
