@@ -140,7 +140,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         std::vector<OutputRow> mOutputBuffer;
         std::vector<std::size_t> mOutputOrder;
         core::logical::port::Port mOutputSchema;
-        std::vector<std::byte> mOutputTempBuf;
         std::mutex mOutputMutex;
 
         void matchAgainst(const JoinSide& sourceSide, JoinSide& otherSide, const std::vector<std::size_t>& sourceKeyFieldIndices, core::shared::types::Timestamp sourceStartTs, core::shared::types::Timestamp sourceEndTs);
