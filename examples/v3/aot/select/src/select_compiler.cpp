@@ -71,20 +71,26 @@ int main(int argc, char** argv) {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::example::aot::select::logical::ConstantIntSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+        nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
+        sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+            .startTimestampPosition = "timestamp"
+        }
+    ));
 
-    auto selectPredicate = sierra::odyplan::v3::basic::expression::logical::LE(
-        sierra::odyplan::v3::basic::expression::logical::field("demoValue"),
-        sierra::odyplan::v3::basic::expression::logical::cInt(6));
+    auto selectPredicate = sierra::odyplan::v3::basic::expression::logical::EQ(
+        sierra::odyplan::v3::basic::expression::logical::field("state"),
+        sierra::odyplan::v3::basic::expression::logical::cString("Hawaii"));
 
     auto selectId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::select::logical::SelectOperator>(
         std::move(selectPredicate)));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
     sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
-        .printPunctuation = true,
-    },
-        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV{0}));
+        //.printPunctuation = true,
+    }
+    ));
 
     logicalPlan.connect(
         sierra::odyplan::v3::core::shared::operators::OperatorPortReference{.operatorId = sourceId, .portId = 0},

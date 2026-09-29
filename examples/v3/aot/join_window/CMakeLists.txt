@@ -58,10 +58,6 @@ add_dependencies(${TARGET_NAME}
         odyplan_example_aot_join_window_plan
 )
 
-target_include_directories(${TARGET_NAME} PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/include"
-)
-
 if(ENABLE_LOOPED_SOURCE)
     target_compile_definitions(${TARGET_NAME} PRIVATE
             ENABLE_LOOPED_SOURCE

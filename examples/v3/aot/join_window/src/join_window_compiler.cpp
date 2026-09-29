@@ -109,10 +109,11 @@ int main(int argc, char** argv) {
 
     auto joinId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::join::logical::JoinOperator>(
         sierra::odyplan::v3::basic::operators::pipe::join::details::JoinOperatorOptions {
-        .allowedLateness = std::chrono::milliseconds(1).count(),
+        .allowedLateness = std::chrono::milliseconds(0).count(),
         .card = sierra::odyplan::v3::basic::operators::pipe::join::details::JoinOperatorCard::ONE_MANY
         },
-        std::move(joinPredicate)
+        std::move(joinPredicate),
+        true
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(

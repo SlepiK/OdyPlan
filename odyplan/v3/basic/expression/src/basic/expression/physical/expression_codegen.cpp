@@ -187,16 +187,17 @@ namespace sierra::odyplan::v3::basic::expression::physical {
                 throw std::invalid_argument("expression operands have mismatched types");
             }
 
-            const auto* runtimeTypeRegistry = &core::runtime::types::RuntimeTypeRegistry::instance();
-            auto *cmpFn = runtimeTypeRegistry->getEqualFnPtr(leftId);
+            auto *cmpFnTy = llvm::FunctionType::get(
+                builder.getInt1Ty(),
+                {builder.getInt8Ty(), builder.getPtrTy(), builder.getPtrTy()},
+                false
+            );
 
-            auto *cmpFnPtr = llvm::ConstantExpr::getCast(llvm::Instruction::IntToPtr,
-                                                         llvm::ConstantInt::get(
-                                                             builder.getInt64Ty(), reinterpret_cast<uint64_t>(cmpFn)),
-                                                         llvm::PointerType::getUnqual(builder.getContext()));
-            auto *cmpFnTy = llvm::FunctionType::get(builder.getInt1Ty(), {builder.getPtrTy(), builder.getPtrTy()},
-                                                    false);
-            auto *result = builder.CreateCall(cmpFnTy, cmpFnPtr, {left, right});
+            const auto cmpFnDecl = builder.GetInsertBlock()->getModule()->getOrInsertFunction("rtTypeEqual", cmpFnTy);
+
+            auto *result = builder.CreateCall(cmpFnDecl, {
+                                                  llvm::ConstantInt::get(builder.getInt8Ty(), leftId), left, right
+                                              });
 
             if (opr == CompareOp::NE) {
                 return builder.CreateNot(result);

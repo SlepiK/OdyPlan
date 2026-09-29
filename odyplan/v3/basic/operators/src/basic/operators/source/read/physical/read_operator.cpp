@@ -136,7 +136,7 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         segmentCtx.builder.CreateBr(loopBB);
         segmentCtx.builder.SetInsertPoint(exitBB);
 
-        llvm::Value* finalWatermark = llvm::ConstantInt::get(i64Ty, std::numeric_limits<core::shared::types::Timestamp>::max());
+        llvm::Value* finalWatermark = llvm::ConstantInt::get(i64Ty, core::shared::types::INFINITY_TIMESTAMP_SENTINEL);
         const auto finalPunctuation = core::physical::data::PunctuationPackage::createFinal(segmentCtx.builder, finalWatermark);
 
         consumers.front().consumePunctuation(segmentCtx, finalPunctuation);

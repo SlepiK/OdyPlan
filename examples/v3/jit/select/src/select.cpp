@@ -24,7 +24,8 @@
 #include <iostream>
 #include <llvm/IR/Verifier.h>
 
-#include "basic/expression/logical/builtin_expressions.h"
+#include <basic/expression/logical/builtin_expressions.h>
+#include <basic/expression/runtime/expression_runtime.h>
 
 namespace {
     void optimizeLlvmModule(llvm::Module &module, const llvm::OptimizationLevel level) {
@@ -209,6 +210,9 @@ int main() {
                         &sierra::odyplan::v3::core::runtime::rtComputeSegmentDrain),
                     llvm::JITSymbolFlags::Exported);
 
+        symbolMap[jit->mangleAndIntern("rtTypeEqual")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::expression::runtime::rtTypeEqual),
+            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtTypeRegistryRetain")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::rtTypeRegistryRetain),
             llvm::JITSymbolFlags::Exported);
