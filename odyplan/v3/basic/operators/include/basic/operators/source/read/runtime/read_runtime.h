@@ -58,6 +58,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
     std::float_t rtParseFloat(const char* str);
 
     std::double_t rtParseDouble(const char* str);
+
+    void* rtParseString(const char* str);
     }
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::runtime
 

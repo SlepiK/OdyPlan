@@ -4,6 +4,41 @@
 #include <mutex>
 #include <utility>
 
+#include "core/runtime/types/ref_counted_header.h"
+
+namespace {
+    void* gRetain(void* ori) {
+        if (ori == nullptr) {
+            return nullptr;
+        }
+
+        auto* header = sierra::odyplan::v3::core::runtime::types::getRefHeader(ori);
+        header->refCount.fetch_add(1, std::memory_order_relaxed);
+        return ori;
+    }
+
+    void gRelease(void* own) {
+        if (own == nullptr) {
+            return;
+        }
+
+        auto* header = sierra::odyplan::v3::core::runtime::types::getRefHeader(own);
+
+        if (header->refCount.fetch_sub(1, std::memory_order_release) == 1) {
+            std::atomic_thread_fence(std::memory_order_acquire);
+
+            const auto* registry = &sierra::odyplan::v3::core::runtime::types::RuntimeTypeRegistry::instance();
+            const auto* entry = registry->getEntry(header->typeId);
+
+            if (entry != nullptr && entry->destroyFunction != nullptr) {
+                entry->destroyFunction(own);
+            }
+
+            free(header);
+        }
+    }
+}
+
 namespace sierra::odyplan::v3::core::runtime::types {
     RuntimeTypeRegistry &RuntimeTypeRegistry::instance() {
         static RuntimeTypeRegistry instance;
@@ -12,6 +47,12 @@ namespace sierra::odyplan::v3::core::runtime::types {
             instance.initializeBuiltins();
         });
         return instance;
+    }
+
+    const RuntimeTypeRegistry::Entry *RuntimeTypeRegistry::getEntry(const shared::types::ValueTypeId id) const {
+        std::shared_lock<std::shared_mutex> lock(m_mutex);
+        const auto it = mStorage.find(id);
+        return (it != mStorage.end()) ? &it->second : nullptr;
     }
 
     // NOLINTNEXTLINE(readability-function-size)
@@ -142,17 +183,8 @@ namespace sierra::odyplan::v3::core::runtime::types {
                 }
                 return std::strcmp(a, b) == 0;
             },
-            [](void* ori) -> void* {
-                auto* cpy = strdup(static_cast<const char*>(ori));
-                if (!cpy) {
-                    throw std::bad_alloc();
-                }
-                return cpy;
-            },
-            [](void* own) {
-                // NOLINTNEXTLINE
-                free(own);
-            });
+            &gRetain,
+            &gRelease);
 
 
         registerType(

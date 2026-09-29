@@ -4,6 +4,8 @@
 #include <core/shared/types/global_types.h>
 
 #include <cstddef>
+#include <mutex>
+#include <shared_mutex>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -14,6 +16,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
         using EqualFunctionPtr = bool (*)(const std::byte*, const std::byte*);
         using RetainFunctionPtr = void* (*)(void*);
         using ReleaseFunctionPtr = void (*)(void*);
+        using DestroyFunctionPtr = void (*)(void*);
 
         struct Entry {
             std::size_t byteSize;
@@ -22,6 +25,7 @@ namespace sierra::odyplan::v3::core::runtime::types {
             EqualFunctionPtr equalFunction;
             RetainFunctionPtr retainFunction;
             ReleaseFunctionPtr releaseFunction;
+            DestroyFunctionPtr destroyFunction;
         };
 
         static RuntimeTypeRegistry& instance();
@@ -36,15 +40,20 @@ namespace sierra::odyplan::v3::core::runtime::types {
                           const bool isPointerType,
                           const HashFunctionPtr hashFunction,
                           const EqualFunctionPtr equalFunction,
-                          const RetainFunctionPtr retainFunction = &defaultRetain,
-                          const ReleaseFunctionPtr releaseFunction = &defaultRelease) {
+                          const RetainFunctionPtr retainFunction = nullptr,
+                          const ReleaseFunctionPtr releaseFunction = nullptr,
+                          const DestroyFunctionPtr destroyFunction = nullptr) {
+            std::unique_lock<std::shared_mutex> lock(m_mutex);
             mStorage.emplace(id,
-                             Entry{.byteSize = byteSize,
-                                   .isPointerType = isPointerType,
-                                   .hashFunction = hashFunction,
-                                   .equalFunction = equalFunction,
-                                   .retainFunction = retainFunction,
-                                   .releaseFunction = releaseFunction});
+                             Entry{
+                                 .byteSize = byteSize,
+                                 .isPointerType = isPointerType,
+                                 .hashFunction = hashFunction,
+                                 .equalFunction = equalFunction,
+                                 .retainFunction = retainFunction,
+                                 .releaseFunction = releaseFunction,
+                                 .destroyFunction = destroyFunction
+                             });
         }
 
         [[nodiscard]] std::size_t byteSize(const shared::types::ValueTypeId id) const
@@ -85,7 +94,10 @@ namespace sierra::odyplan::v3::core::runtime::types {
             return get(id).equalFunction;
         }
 
+        const Entry* getEntry(shared::types::ValueTypeId id) const;
+
     private:
+        mutable std::shared_mutex m_mutex;
         std::unordered_map<shared::types::ValueTypeId, Entry> mStorage;
 
         RuntimeTypeRegistry() = default;
@@ -99,12 +111,6 @@ namespace sierra::odyplan::v3::core::runtime::types {
             }
             return it->second;
         }
-
-        static void* defaultRetain(void* ptr) noexcept {
-            return ptr;
-        }
-
-        static void defaultRelease(void*) noexcept {}
 
         void initializeBuiltins();
     };

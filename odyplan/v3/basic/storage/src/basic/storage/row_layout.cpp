@@ -48,7 +48,9 @@ namespace sierra::odyplan::v3::basic::storage {
             }
             void* own = nullptr;
             std::memcpy(static_cast<void*>(&own), row.data() + mOffset.at(i), sizeof(own));
-            mRegistry->release(typeId, own);
+            if (own != nullptr) {
+                mRegistry->release(typeId, own);
+            }
         }
     }
 
