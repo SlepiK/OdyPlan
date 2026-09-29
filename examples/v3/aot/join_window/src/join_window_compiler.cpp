@@ -112,7 +112,8 @@ int main(int argc, char** argv) {
         .allowedLateness = std::chrono::milliseconds(1).count(),
         .card = sierra::odyplan::v3::basic::operators::pipe::join::details::JoinOperatorCard::ONE_MANY
         },
-        std::move(joinPredicate)
+        std::move(joinPredicate),
+        true
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
