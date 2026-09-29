@@ -22,8 +22,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                        const bool outOfOrder)
         : mRegistry(&rtRegistry),
           mOutOfOrder(outOfOrder),
-          mMinStartTs(0),
-          mMinEndTs(0),
+          mMinStartTs(std::numeric_limits<core::shared::types::Timestamp>::max()),
+          mMinEndTs(std::numeric_limits<core::shared::types::Timestamp>::max()),
+          mMaxEndTs(0),
           mLayout(std::move(schema)) {
     }
 
@@ -52,13 +53,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     void JoinSide::compact() {
-        if (mRemovedCount == 0) {
-            return;
-        }
-
         std::deque<RowBuffer> newRows;
 
         mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        mMaxEndTs = 0;
         mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
 
         for (auto& row : mBufferedRows) {
@@ -69,6 +67,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
                 if (row.startTs < mMinStartTs) {
                     mMinStartTs = row.startTs;
+                }
+
+                if (row.endTs > mMaxEndTs) {
+                    mMaxEndTs = row.endTs;
                 }
 
                 newRows.push_back(std::move(row));
@@ -124,9 +126,29 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void JoinSide::evict(const core::shared::types::Timestamp threshold, const bool isFinal) {
         if (!mOutOfOrder) {
+            //Nothing to evict ("nothing is ready to evict")
             if (!isFinal && !before(mMinEndTs, threshold)) {
                 return;
             }
+
+            //Everything to evict ("every element is ready to evict")
+            if (!isFinal && before(mMaxEndTs, threshold)) {
+                std::size_t evictedCount = 0;
+                for (auto& row : mBufferedRows) {
+                    if (!row.isRemoved) {
+                        row.isRemoved = true;
+                        evictedCount++;
+                    }
+                }
+                if (evictedCount > 0) {
+                    mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+                    mMaxEndTs = 0;
+                    compactIfNeeded();
+                }
+                return;
+            }
+
+            //Some to evict ("some elements are ready to evict")
             std::size_t evictedCount = 0;
             for (std::size_t i = 0; i < mBufferedRows.size(); ++i) {
                 auto& row = mBufferedRows[i];
@@ -143,16 +165,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 }
             }
 
-            mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
-            for (const auto& row : mBufferedRows) {
-                if (!row.isRemoved && row.endTs < mMinEndTs) {
-                    mMinEndTs = row.endTs;
-                }
-            }
-
             if (evictedCount > 0) {
 
-                compactIfNeeded();
+                mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+                mMaxEndTs = 0;
+                for (const auto& row : mBufferedRows) {
+                    if (!row.isRemoved) {
+                        if (row.endTs < mMinEndTs) {
+                            mMinEndTs = row.endTs;
+                        }
+
+                        if (row.endTs > mMaxEndTs) {
+                            mMaxEndTs = row.endTs;
+                        }
+
+                    }
+                }
+
+
+                compact();
             }
         } else { //InOrder
             while (!mBufferedRows.empty()) {
@@ -198,8 +229,14 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 .isRemoved = false
             });
 
+
+
         if (mBufferedRows.size() == 1 || startTs < mMinStartTs) {
             mMinStartTs = startTs;
+        }
+
+        if (mBufferedRows.size() == 1 || endTs > mMaxEndTs) {
+            mMinEndTs = endTs;
         }
 
         if (mBufferedRows.size() == 1 || endTs < mMinEndTs) {
@@ -222,6 +259,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         mBufferedRows.clear();
         mKeyIndex.clear();
         mRemovedCount = 0;
+        mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
         mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
     }
 

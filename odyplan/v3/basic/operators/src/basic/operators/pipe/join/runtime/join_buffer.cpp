@@ -1,3 +1,4 @@
+#include <atomic>
 #include <basic/operators/pipe/join/runtime/join_buffer.h>
 #include <cassert>
 #include <cstring>
@@ -289,10 +290,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             return;
         }
 
-        const std::lock_guard<std::mutex> lock(mOutputMutex);
-
         const std::size_t totalSize = ownRowSize + candRowSize;
-        mOutputTempBuf.resize(totalSize);
+        std::vector<std::byte> mOutputTempBuf(totalSize);
 
         if (onLeft) {
             std::memcpy(mOutputTempBuf.data(), ownRowPtr, ownRowSize);
@@ -331,14 +330,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             offset += mRegistry->byteSize(field.valueTypeId);
         }
 
-        mOutputBuffer.push_back(OutputRow{
-            .data = mOutputTempBuf,
-            .startTs = startTs,
-            .endTs = endTs,
-            .startTb = startTb,
-            .endTb = endTb,
-            .retainPointers = std::move(retainPointers)
-        });
+        {
+            const std::lock_guard<std::mutex> lock(mOutputMutex);
+            mOutputBuffer.push_back(OutputRow{
+                .data = mOutputTempBuf,
+                .startTs = startTs,
+                .endTs = endTs,
+                .startTb = startTb,
+                .endTb = endTb,
+                .retainPointers = std::move(retainPointers)
+            });
+        }
     }
 
     std::size_t JoinBuffer::drainOutput(const core::shared::types::Timestamp watermark, const std::size_t maxCount, std::vector<std::size_t>& outIndices) {

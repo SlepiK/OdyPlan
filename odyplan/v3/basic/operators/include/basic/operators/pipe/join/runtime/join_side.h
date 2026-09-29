@@ -107,8 +107,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         bool mOutOfOrder;
         std::size_t mRemovedCount = 0;
-        core::shared::types::Timestamp mMinStartTs = 0;
-        core::shared::types::Timestamp mMinEndTs = 0;
+        core::shared::types::Timestamp mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        core::shared::types::Timestamp mMaxEndTs = 0;
+        core::shared::types::Timestamp mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
 
         storage::RowLayout mLayout;
         std::deque<RowBuffer> mBufferedRows;
