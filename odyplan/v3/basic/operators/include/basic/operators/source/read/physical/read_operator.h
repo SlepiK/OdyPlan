@@ -43,6 +43,8 @@ namespace sierra::odyplan::v3::basic::operators::source::read::physical {
         static llvm::Value* codegenField(core::physical::segment::SegmentContext& segmentCtx,
                                          llvm::Value* stringValue,
                                          core::shared::types::ValueTypeId typeId);
+
+        static void codegenReleaseFields(core::physical::segment::SegmentContext& segmentCtx, const std::vector<llvm::Value*>& fields, const std::vector<core::shared::types::ValueTypeId>& typeIds);
     };
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::physical
 

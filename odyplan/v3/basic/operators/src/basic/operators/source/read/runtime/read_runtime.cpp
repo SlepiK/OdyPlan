@@ -1,5 +1,7 @@
 #include <basic/operators/source/read/runtime/read_runtime.h>
 
+#include "core/runtime/types/ref_counted_header.h"
+
 namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
 
     extern "C" {
@@ -93,6 +95,21 @@ namespace sierra::odyplan::v3::basic::operators::source::read::runtime {
         }
 
         return value;
+    }
+
+    void* rtParseString(const char* str) {
+        if (str == nullptr) {
+            return nullptr;
+        }
+
+        const std::size_t len = std::strlen(str) + 1;
+        auto* header = static_cast<core::runtime::types::RefCountedHeader*>(malloc(sizeof(core::runtime::types::RefCountedHeader) + len));
+
+        header->refCount.store(1, std::memory_order_relaxed);
+        header->typeId = std::to_underlying(core::shared::types::BuiltinValueType::STRING);
+
+        std::memcpy(core::runtime::types::getRefData(header), str, len);
+        return core::runtime::types::getRefData(header);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::source::read::runtime

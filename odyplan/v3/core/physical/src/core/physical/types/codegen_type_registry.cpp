@@ -97,7 +97,7 @@ namespace sierra::odyplan::v3::core::physical::types {
         registerType(
             std::to_underlying(T::STRING),
             {.typeName = "string",
-             .parseFunctionName = "",
+             .parseFunctionName = "rtParseString",
              .llvmTypeFactory =
                  [](llvm::LLVMContext& ctx) { return llvm::PointerType::getUnqual(ctx); },
              .constantFactory = [](llvm::IRBuilder<>& b,

@@ -188,6 +188,11 @@ int main() {
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseInt16),
             llvm::JITSymbolFlags::Exported);
+
+        symbolMap[jit->mangleAndIntern("rtParseString")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(
+                &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseString),
+            llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtParseInt32")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(
                 &sierra::odyplan::v3::basic::operators::source::read::runtime::rtParseInt32),
