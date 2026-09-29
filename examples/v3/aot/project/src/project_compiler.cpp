@@ -70,17 +70,22 @@ int main(int argc, char** argv) {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::example::aot::project::logical::ConstantSourceOperator>());
+    auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
+        std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
+        nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
+        sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
+            .startTimestampPosition = "timestamp"
+        }
+    ));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::project::logical::ProjectOperator>(
-        sierra::odyplan::v3::basic::operators::pipe::project::logical::ProjectOperator::IndexMapping {1}
+        sierra::odyplan::v3::basic::operators::pipe::project::logical::ProjectOperator::NameMapping {"state"}
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
     sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
-        .printPunctuation = true,
-    },
-        sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::PortFieldIndexV {0}
+        //.printPunctuation = true,
+    }
     ));
 
     logicalPlan.connect(
