@@ -1,10 +1,11 @@
 #include <basic/operators/pipe/join/runtime/join_side.h>
+#include <spdlog/spdlog.h>
 
 #include "core/physical/time/time_point.h"
 
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     namespace {
-        constexpr bool _before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
+        constexpr bool before(const core::shared::types::Timestamp lft, const core::shared::types::Timestamp rht) {
             if (lft == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
                 return false;
             }
@@ -17,9 +18,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
     }
 
-    JoinSide::JoinSide(core::logical::port::Port schema,
+    JoinSide::JoinSide(const core::runtime::types::RuntimeTypeRegistry &rtRegistry, core::logical::port::Port schema,
                        const bool outOfOrder)
-        : mOutOfOrder(outOfOrder),
+        : mRegistry(&rtRegistry),
+          mOutOfOrder(outOfOrder),
           mMinStartTs(0),
           mMinEndTs(0),
           mLayout(std::move(schema)) {
@@ -122,10 +124,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void JoinSide::evict(const core::shared::types::Timestamp threshold, const bool isFinal) {
         if (!mOutOfOrder) {
-            if (!isFinal && !_before(mMinEndTs, threshold)) {
+            if (!isFinal && !before(mMinEndTs, threshold)) {
                 return;
             }
-
             std::size_t evictedCount = 0;
             for (std::size_t i = 0; i < mBufferedRows.size(); ++i) {
                 auto& row = mBufferedRows[i];
@@ -134,7 +135,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                     continue;
                 }
 
-                if (isFinal || _before(row.endTs, threshold)) {
+                if (isFinal || before(row.endTs, threshold)) {
                     removeFromKeyIndex(row, i);
 
                     row.isRemoved = true;
@@ -142,7 +143,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 }
             }
 
+            mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+            for (const auto& row : mBufferedRows) {
+                if (!row.isRemoved && row.endTs < mMinEndTs) {
+                    mMinEndTs = row.endTs;
+                }
+            }
+
             if (evictedCount > 0) {
+
                 compactIfNeeded();
             }
         } else { //InOrder
@@ -155,7 +164,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                     continue;
                 }
 
-                if (!isFinal && !_before(front.endTs, threshold)) {
+                if (!isFinal && !before(front.endTs, threshold)) {
                     break;
                 }
 
@@ -213,6 +222,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         mBufferedRows.clear();
         mKeyIndex.clear();
         mRemovedCount = 0;
+        mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
     }
 
     std::uint64_t JoinSide::getSize() const {
@@ -232,7 +242,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             return false;
         }
 
-        return _before(row.startTs, otherEndTs) && _before(otherStartTs, row.endTs);
+        return before(row.startTs, otherEndTs) && before(otherStartTs, row.endTs);
     }
 
     core::shared::types::Timestamp JoinSide::getStartTimestamp(const std::size_t rowIndex) const {
@@ -248,13 +258,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         mKeyFields.clear();
         mKeyFields.reserve(fieldIndices.size());
 
-        const auto& registry = core::runtime::types::RuntimeTypeRegistry::instance();
-
         for (std::size_t i = 0; i < fieldIndices.size(); ++i) {
             mKeyFields.push_back(KeyFieldDetails{
                 .fieldIndex=fieldIndices.at(i),
-                .mHashFunction=registry.getHashFnPtr(keyTypeIds.at(i)),
-                .mEqualFunction=registry.getEqualFnPtr(keyTypeIds.at(i))
+                .mHashFunction=mRegistry->getHashFnPtr(keyTypeIds.at(i)),
+                .mEqualFunction=mRegistry->getEqualFnPtr(keyTypeIds.at(i))
             });
         }
     }

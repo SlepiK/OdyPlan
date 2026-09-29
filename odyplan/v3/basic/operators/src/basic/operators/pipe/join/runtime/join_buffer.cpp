@@ -10,8 +10,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                            const bool outOfOrder)
         : mRegistry(&core::runtime::types::RuntimeTypeRegistry::instance()),
           mOutOfOrder(outOfOrder),
-          mLeftSide(std::move(leftSchema), outOfOrder),
-          mRightSide(std::move(rightSchema), outOfOrder),
+          mLeftSide(*mRegistry, std::move(leftSchema), outOfOrder),
+          mRightSide(*mRegistry,std::move(rightSchema), outOfOrder),
           mOutputSchema(std::move(outputSchema)) {
     }
 

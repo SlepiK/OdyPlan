@@ -11,7 +11,7 @@
 namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     class JoinSide {
     public:
-        JoinSide(core::logical::port::Port schema, bool outOfOrder);
+        JoinSide(const core::runtime::types::RuntimeTypeRegistry& rtRegistry, core::logical::port::Port schema, bool outOfOrder);
 
         void begin();
 
