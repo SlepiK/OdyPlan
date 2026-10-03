@@ -8,7 +8,7 @@ namespace sierra::odyplan::v3::core::physical::state {
         auto* ptrTy = llvm::PointerType::getUnqual(*context);
         auto* voidTy = llvm::Type::getVoidTy(*context);
 
-        auto* initFnType = llvm::FunctionType::get(voidTy, {ptrTy}, false);
+        auto* initFnType = llvm::FunctionType::get(voidTy, {}, false);
         mInitFn = llvm::Function::Create(
             initFnType, llvm::Function::ExternalLinkage, "ody_init", *module);
         mInitBuilder = std::make_unique<llvm::IRBuilder<>>(
