@@ -49,24 +49,6 @@ int main() {
 
         std::cout << "Building Logical Plan...\n";
 
-        auto sourceOutput = sierra::odyplan::v3::core::logical::port::Port{
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64),
-                .fieldName = "id"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE),
-                .fieldName = "value"
-            },
-            sierra::odyplan::v3::core::logical::port::PortDescription{
-                .valueTypeId = std::to_underlying(
-                    sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING),
-                .fieldName = "name"
-            }
-        };
-
         auto sourceId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
             nlohmann::json{{"path", "read.ndjson"}},

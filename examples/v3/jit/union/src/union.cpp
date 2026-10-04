@@ -59,7 +59,6 @@ int main() {
             }
         ));
 
-
         auto sourceSecondId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
             nlohmann::json{{"path", "read.ndjson"}},
@@ -77,9 +76,7 @@ int main() {
                 sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(
                 sierra::odyplan::v3::basic::operators::sink::print::details::PrintOperatorOptions{
         .printPunctuation = true,
-    },
-                sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator::
-                PortFieldIndexV{0, 1, 2}));
+    }));
 
         logicalPlan.connect(
             sierra::odyplan::v3::core::shared::operators::OperatorPortReference{

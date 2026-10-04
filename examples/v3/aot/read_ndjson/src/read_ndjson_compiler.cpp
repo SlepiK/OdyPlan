@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
         nlohmann::json{{"path", "read.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
-           // .startTimestampPosition = "timestamp"
+           .startTimestampPosition = "timestamp"
         }
     ));
 
