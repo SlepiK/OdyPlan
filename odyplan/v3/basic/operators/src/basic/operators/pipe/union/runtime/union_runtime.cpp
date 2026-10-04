@@ -1,4 +1,5 @@
 #include <basic/operators/pipe/union/runtime/union_runtime.h>
+#include <spdlog/spdlog.h>
 
 namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
     extern "C" {
@@ -46,11 +47,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         bool allFinal = true;
 
         for (std::size_t i = 0; i < wState->perInputWatermark.size(); ++i) {
-            if (wState->perInputFinal[i]) {
-                continue;
+            if (!wState->hasReported[i] || !wState->perInputFinal[i]) {
+                allFinal = false;
             }
-            allFinal = false;
-            effMin = wState->hasReported[i] ? std::min(effMin, wState->perInputWatermark[i]) : 0;
+            if (wState->hasReported[i] && !wState->perInputFinal[i]) {
+                effMin = std::min(effMin, wState->perInputWatermark[i]);
+            }
         }
 
         std::uint8_t sEmit = 0;
@@ -58,7 +60,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         if (allFinal) {
             if (!wState->finalEmitted) {
                 wState->finalEmitted = true;
-                *outWatermark = std::numeric_limits<core::shared::types::Timestamp>::max();
+                *outWatermark = core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
                 *outIsFinal = 1;
                 sEmit = 1;
             }
@@ -81,7 +83,13 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         while (wState->lock.test_and_set(std::memory_order_acquire)) {
         }
 
-        const auto watermark = wState->lastEmittedWatermark;
+        core::shared::types::Timestamp watermark = 0;
+
+        if (wState->finalEmitted) {
+            watermark = std::numeric_limits<core::shared::types::Timestamp>::max();
+        } else {
+            watermark = wState->lastEmittedWatermark;
+        }
 
         wState->lock.clear(std::memory_order_release);
 

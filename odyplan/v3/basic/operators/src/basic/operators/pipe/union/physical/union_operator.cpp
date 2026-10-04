@@ -207,6 +207,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         llvm::Value *newIsFinal = segmentCtx.builder.CreateICmpNE(
             newOpGlobIsFinal, llvm::ConstantInt::get(i8Ty, 0));
 
+        if (!mOutOfOrder) {
+            flushBuffer(segmentCtx, consumers);
+        }
+
         const auto outgoingPunctuation = core::physical::data::PunctuationPackage::create(segmentCtx.builder, newOpGlobWatermark, newIsFinal);
 
         consumers.front().consumePunctuation(segmentCtx, outgoingPunctuation);
@@ -214,10 +218,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         segmentCtx.builder.CreateBr(afterMergeBB);
 
         segmentCtx.builder.SetInsertPoint(afterMergeBB);
-
-        if (!mOutOfOrder) {
-            flushBuffer(segmentCtx, consumers);
-        }
 
         segmentCtx.builder.CreateBr(returnBB);
 
