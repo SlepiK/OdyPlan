@@ -59,7 +59,6 @@ int main() {
             }
         ));
 
-
         auto sourceSecondId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
             std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
             nlohmann::json{{"path", "read.ndjson"}},
