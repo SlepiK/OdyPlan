@@ -69,16 +69,9 @@ int main(int argc, char** argv) {
 
     std::cout << "Building Logical Plan...\n";
 
-    auto sourceOutput = sierra::odyplan::v3::core::logical::port::Port {
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::INT64), .fieldName = "id"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::DOUBLE), .fieldName = "value"},
-        sierra::odyplan::v3::core::logical::port::PortDescription {.valueTypeId= std::to_underlying(sierra::odyplan::v3::core::shared::types::BuiltinValueType::STRING), .fieldName = "name"}
-    };
-
-
     auto sourceFirstId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-        nlohmann::json{{"path", "read.ndjson"}},
+        nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
             .startTimestampPosition = "timestamp"
         }
@@ -86,7 +79,7 @@ int main(int argc, char** argv) {
 
     auto sourceSecondId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-        nlohmann::json{{"path", "read.ndjson"}},
+        nlohmann::json{{"path", "nexmark.person.10k.2.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
             .startTimestampPosition = "timestamp"
         }
