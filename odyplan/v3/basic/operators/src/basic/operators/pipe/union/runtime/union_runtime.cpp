@@ -43,6 +43,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
             wState->perInputFinal[index] = true;
         }
 
+        bool allHaveReported = true;
+        for (std::size_t i = 0; i < wState->perInputWatermark.size(); ++i) {
+            if (!wState->hasReported[i]) {
+                allHaveReported = false;
+                break;
+            }
+        }
+
+        if (!allHaveReported) {
+            wState->lock.clear(std::memory_order_release);
+            return 0;
+        }
+
         core::shared::types::Timestamp effMin = std::numeric_limits<core::shared::types::Timestamp>::max();
         bool allFinal = true;
 
