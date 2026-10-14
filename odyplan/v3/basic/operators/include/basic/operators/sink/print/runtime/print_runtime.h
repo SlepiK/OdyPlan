@@ -24,7 +24,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
     extern "C" {
     void rtPrintDataPackage(const PrintContext* ctx);
 
-    void rtOdyPrintNewline();
+    void rtOdyPrintNewline(const std::string& bfr);
 
     void rtOdyPrintPunctuation(core::shared::types::Timestamp watermark, bool isFinal);
     }
