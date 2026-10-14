@@ -5,7 +5,7 @@
 > **https://gitlab.example.com/sierra/odyplan**
 >
 > Please open issues, merge requests, and questions there. This repository is kept read-only for reference.
-> The last release published here is [**v0.6.4**](https://github.com/SlepiK/OdyPlan/releases/tag/v0.6.4).
+> The last release published here is [**v0.6.4.1**](https://github.com/SlepiK/OdyPlan/releases/tag/v0.6.4.1).
 
 ---
 
@@ -27,7 +27,7 @@
 | **v3**          | ✅ Current | The maintained generation of OdyPlan. Everything in this README, the `odyplan/v3` namespaces, and `examples/v3/` refer to it.                                |
 | **v1** & **v2** | ⚠️ Deprecated | Earlier iterations and experimental test attempts. Kept for historical reference only. They are unsupported, may not build, and are not recommended for use. |
 
-The last release published on this repository is [**v0.6.4**](https://github.com/SlepiK/OdyPlan/releases/tag/v0.6.4). For anything newer, see the GitLab repository linked above.
+The last release published on this repository is [**v0.6.4.1**](https://github.com/SlepiK/OdyPlan/releases/tag/v0.6.4.1). For anything newer, see the GitLab repository linked above.
 
 
 ## Platform Support
