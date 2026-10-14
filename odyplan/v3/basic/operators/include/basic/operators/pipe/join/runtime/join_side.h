@@ -112,7 +112,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         core::shared::types::Timestamp mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
 
         storage::RowLayout mLayout;
-        std::deque<RowBuffer> mBufferedRows;
+        std::vector<RowBuffer> mBufferedRows;
         // Hash-Behavior for == predicate only
 
         std::multimap<std::vector<std::size_t>, std::size_t> mKeyIndex;
