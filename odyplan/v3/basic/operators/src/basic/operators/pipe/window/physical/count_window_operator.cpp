@@ -136,7 +136,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         const core::physical::time::TimePoint sharedEndTP(segmentCtx.builder, endTs);
 
-        auto* rowIndexSlot = segmentCtx.storage.getNamed("countWindowRowIndex." + std::to_string(getPId()), sizeTTy);
+        auto* rowIndexSlot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".countWindowRowIndex", sizeTTy);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(i64Ty, 0), rowIndexSlot);
 
         auto* rowHeaderBB = llvm::BasicBlock::Create(ctx, "windowRowHeader", fn);
@@ -236,7 +236,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* sizeTTy = module->getDataLayout().getIntPtrType(ctx);
 
-        auto *slot = segmentCtx.storage.getNamed("slot." +std::to_string(getPId()), typeId);
+        auto *slot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".slot", typeId);
         segmentCtx.builder.CreateStore(value, slot);
 
         const auto fn = module->getOrInsertFunction(
