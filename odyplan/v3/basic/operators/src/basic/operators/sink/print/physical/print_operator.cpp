@@ -28,7 +28,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
         });
         auto* printFieldArrayTy = llvm::ArrayType::get(printFieldTy, fieldCount);
 
-        llvm::Value* printFieldArray = segmentCtx.storage.getNamed(std::to_string(getPId()) + "_print_field_array", printFieldArrayTy);
+        llvm::Value* printFieldArray = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".print_field_array", printFieldArrayTy);
 
         for (std::size_t i = 0; i < fieldCount; ++i) {
             const auto fieldIndex = mPortFieldIndices.at(i);
@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
             if (fieldValue->getType()->isPointerTy()) {
                 valuePtr = fieldValue;
             } else {
-                llvm::Value* valueSlot = segmentCtx.storage.getNamed(std::to_string(getPId()) + "_print_value_" + std::to_string(i), fieldValue->getType());
+                llvm::Value* valueSlot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".print_value_" + std::to_string(i), fieldValue->getType());
                 segmentCtx.builder.CreateStore(fieldValue, valueSlot);
                 valuePtr = valueSlot;
             }
@@ -61,7 +61,7 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::physical {
             i64Ty,
             i64Ty
         });
-        llvm::Value* printContext = segmentCtx.storage.getNamed(std::to_string(getPId()) + "_print_context", printContextTy);
+        llvm::Value* printContext = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".print_context", printContextTy);
 
         llvm::Value* fieldsPtr = segmentCtx.builder.CreateGEP(printFieldArrayTy, printFieldArray, {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 0)});
 

@@ -39,7 +39,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
                                                                 voidTy, {ptrTy, sizeTTy, ptrTy}, false));
 
             for (std::size_t i = 0; i < mSchema.size(); ++i) {
-                auto *slot = segmentCtx.storage.getNamed("union_slot." + std::to_string(getPId()),
+                auto *slot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".union_slot",
                                                          mSchema.at(i).valueTypeId);
                 segmentCtx.builder.CreateStore(tuple.at(i), slot);
                 segmentCtx.builder.CreateCall(pushFn, {bufferStatePtr, llvm::ConstantInt::get(sizeTTy, i), slot});
@@ -183,9 +183,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         llvm::FunctionType *fnType = llvm::FunctionType::get(i8Ty, {ptrTy, sizeTTy, i64Ty, i8Ty, ptrTy, ptrTy}, false);
         const llvm::FunctionCallee fn = module->getOrInsertFunction("rtUnionUpdateWatermark", fnType);
 
-        auto *outWatermarkSlot = segmentCtx.storage.getNamed("union_outWatermarkSlot." + std::to_string(getPId()),
+        auto *outWatermarkSlot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".union_outWatermarkSlot",
                                                              i64Ty);
-        auto *outIsFinalSlot = segmentCtx.storage.getNamed("union_outIsFinalSlot." + std::to_string(getPId()), i8Ty);
+        auto *outIsFinalSlot = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".union_outIsFinalSlot", i8Ty);
 
         llvm::Value *sEmit = segmentCtx.builder.CreateCall(fn, {
                                                                watermarkStatePtr,
@@ -264,7 +264,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::physical {
         segmentCtx.builder.CreateCondBr(isEmpty, flushExitBB, checkBB);
 
         segmentCtx.builder.SetInsertPoint(checkBB);
-        auto* loopIdx = segmentCtx.storage.getNamed("union_flush_loopIdx." + std::to_string(getPId()), sizeTTy);
+        auto* loopIdx = segmentCtx.storage.getNamed(std::to_string(getPId()) + ".union_flush_loopIdx", sizeTTy);
         segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), loopIdx);
         segmentCtx.builder.CreateBr(loopHeaderBB);
 
