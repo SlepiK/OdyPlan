@@ -23,9 +23,11 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         : mRegistry(&rtRegistry),
           mOutOfOrder(outOfOrder),
           mMinStartTs(std::numeric_limits<core::shared::types::Timestamp>::max()),
-          mMinEndTs(std::numeric_limits<core::shared::types::Timestamp>::max()),
           mMaxEndTs(0),
-          mLayout(std::move(schema)) {
+          mMinEndTs(std::numeric_limits<core::shared::types::Timestamp>::max()),
+          mLayout(std::move(schema)),
+          mLastScannedThreshold(0) {
+        mBufferedRows.reserve(100000);
     }
 
     void JoinSide::begin() {
@@ -47,7 +49,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     void JoinSide::compact() {
-        std::deque<RowBuffer> newRows;
+        std::vector<RowBuffer> newRows;
+        newRows.reserve(mBufferedRows.size() - mRemovedCount - mBasisIndex);
 
         mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
         mMaxEndTs = 0;
@@ -189,8 +192,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 auto& front = mBufferedRows.front();
 
                 if (front.isRemoved) {
-                    mBufferedRows.pop_front();
                     mLayout.releaseRow(front.values);
+                    mBasisIndex++;
                     continue;
                 }
 
@@ -201,18 +204,25 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                 removeFromKeyIndex(front, 0);
 
                 mLayout.releaseRow(front.values);
-                mBufferedRows.pop_front();
                 ++mBasisIndex;
             }
         }
     }
 
     core::shared::types::TiBreak JoinSide::getStartTibreaker(const std::size_t rowIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).startTb;
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return 0;
+        }
+        return mBufferedRows[locIndex].startTb;
     }
 
     core::shared::types::TiBreak JoinSide::getEndTibreaker(const std::size_t rowIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).endTb;
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return 0;
+        }
+        return mBufferedRows[locIndex].endTb;
     }
 
     void JoinSide::end(const core::shared::types::Timestamp startTs, const core::shared::types::Timestamp endTs, const core::shared::types::TiBreak startTb, const core::shared::types::TiBreak endTb) {
@@ -254,25 +264,37 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             mLayout.releaseRow(row.values);
         }
         mBufferedRows.clear();
+        mBufferedRows.shrink_to_fit();
         mKeyIndex.clear();
         mRemovedCount = 0;
+        mBasisIndex = 0;
         mMinStartTs = std::numeric_limits<core::shared::types::Timestamp>::max();
         mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        mMaxEndTs = 0;
+        mLastScannedThreshold = 0;
     }
 
     std::uint64_t JoinSide::getSize() const {
-        return mBufferedRows.size();
+        return mBufferedRows.size() - mBasisIndex;
     }
 
     const std::byte* JoinSide::getFieldPtr(const std::size_t rowIndex,
                                            const std::size_t fieldIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).values.data() +
-               mLayout.offsetOf(fieldIndex);
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return nullptr;
+        }
+        return mBufferedRows[locIndex].values.data() + mLayout.offsetOf(fieldIndex);
     }
 
     bool JoinSide::overlaps(const core::shared::types::Timestamp otherStartTs, const core::shared::types::Timestamp otherEndTs, const std::size_t rowIndex) const {
-        const auto& row = mBufferedRows.at(rowIndex - mBasisIndex);
+        const std::size_t locIndex = rowIndex - mBasisIndex;
 
+        if (locIndex >= mBufferedRows.size()) {
+            return false;
+        }
+
+        const auto& row = mBufferedRows[locIndex];
         if (row.isRemoved) {
             return false;
         }
@@ -281,11 +303,19 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     core::shared::types::Timestamp JoinSide::getStartTimestamp(const std::size_t rowIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).startTs;
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
+        }
+        return mBufferedRows[locIndex].startTs;
     }
 
     core::shared::types::Timestamp JoinSide::getEndTimestamp(const std::size_t rowIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).endTs;
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
+        }
+        return mBufferedRows[locIndex].endTs;
     }
 
     void JoinSide::enableKeyIdx(const std::vector<std::size_t>& fieldIndices,
@@ -377,7 +407,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
     }
 
     const std::byte* JoinSide::getRowPtr(const std::size_t rowIndex) const {
-        return mBufferedRows.at(rowIndex - mBasisIndex).values.data();
+        const std::size_t locIndex = rowIndex - mBasisIndex;
+        if (locIndex >= mBufferedRows.size()) {
+            return nullptr;
+        }
+
+        return mBufferedRows[locIndex].values.data();
     }
 
     std::size_t JoinSide::getRowByteSize() const {
