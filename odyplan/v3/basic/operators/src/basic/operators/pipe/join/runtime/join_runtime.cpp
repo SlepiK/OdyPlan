@@ -192,10 +192,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     core::shared::types::Timestamp rtJoinGetGlobalWatermark(void* state) {
         auto* watermark = static_cast<details::JoinWatermarkState*>(state);
-        if (!watermark->leftReported || !watermark->rightReported) {
-            return core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
+
+        while (watermark->lock.test_and_set(std::memory_order_acquire)) {
         }
-        return std::min(watermark->leftWatermark, watermark->rightWatermark);
+
+        core::shared::types::Timestamp wmTs = 0;
+
+        if (watermark->finalEmitted) {
+            wmTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+        } else {
+            wmTs = watermark->lastEmittedWatermark;
+        }
+
+        watermark->lock.clear(std::memory_order_release);
+
+        return wmTs;
     }
 
     void rtJoinMarkCandidateForRemove(void *state, void *snapshot, const std::size_t candidateIdx) {

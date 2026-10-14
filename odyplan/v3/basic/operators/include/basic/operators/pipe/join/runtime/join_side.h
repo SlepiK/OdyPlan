@@ -120,6 +120,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
         std::size_t mBasisIndex = 0;
         std::size_t mLastAbsoluteIndex = 0;
+        core::shared::types::Timestamp mLastScannedThreshold = 0;
 
         std::vector<std::size_t> computeRowKeyV(const std::byte* row) const;
 

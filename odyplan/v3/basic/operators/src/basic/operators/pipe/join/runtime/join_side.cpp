@@ -41,15 +41,9 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
             return;
         }
 
-        if (mBufferedRows.size() < 10000) {
-            return;
+        if (static_cast<double>(mRemovedCount) / mBufferedRows.size() >= 0.25) {
+            compact();
         }
-
-        if (static_cast<double>(mRemovedCount) / mBufferedRows.size() < 0.50) {
-            return;
-        }
-
-        compact();
     }
 
     void JoinSide::compact() {
@@ -82,6 +76,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         mBufferedRows = std::move(newRows);
         mBasisIndex = 0;
         mRemovedCount = 0;
+        mLastScannedThreshold = 0;
 
         rebuildKeyIndex();
     }
@@ -126,6 +121,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
     void JoinSide::evict(const core::shared::types::Timestamp threshold, const bool isFinal) {
         if (!mOutOfOrder) {
+            if (!isFinal && threshold <= mLastScannedThreshold) {
+                return;
+            }
+
             //Nothing to evict ("nothing is ready to evict")
             if (!isFinal && !before(mMinEndTs, threshold)) {
                 return;
@@ -141,10 +140,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
                     }
                 }
                 if (evictedCount > 0) {
-                    mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
-                    mMaxEndTs = 0;
+                    mRemovedCount += evictedCount;
                     compactIfNeeded();
                 }
+                mLastScannedThreshold = threshold;
                 return;
             }
 
@@ -159,32 +158,32 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
 
                 if (isFinal || before(row.endTs, threshold)) {
                     removeFromKeyIndex(row, i);
-
                     row.isRemoved = true;
                     evictedCount++;
                 }
             }
 
-            if (evictedCount > 0) {
-
-                mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
-                mMaxEndTs = 0;
-                for (const auto& row : mBufferedRows) {
-                    if (!row.isRemoved) {
-                        if (row.endTs < mMinEndTs) {
-                            mMinEndTs = row.endTs;
-                        }
-
-                        if (row.endTs > mMaxEndTs) {
-                            mMaxEndTs = row.endTs;
-                        }
-
+            mMinEndTs = std::numeric_limits<core::shared::types::Timestamp>::max();
+            mMaxEndTs = 0;
+            for (const auto& row : mBufferedRows) {
+                if (!row.isRemoved) {
+                    if (row.endTs < mMinEndTs) {
+                        mMinEndTs = row.endTs;
                     }
+
+                    if (row.endTs > mMaxEndTs) {
+                        mMaxEndTs = row.endTs;
+                    }
+
                 }
-
-
-                compact();
             }
+
+            if (evictedCount > 0) {
+                mRemovedCount += evictedCount;
+                compactIfNeeded();
+            }
+
+            mLastScannedThreshold = threshold;
         } else { //InOrder
             while (!mBufferedRows.empty()) {
                 auto& front = mBufferedRows.front();
@@ -234,7 +233,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::runtime {
         }
 
         if (mBufferedRows.size() == 1 || endTs > mMaxEndTs) {
-            mMinEndTs = endTs;
+            mMaxEndTs = endTs;
         }
 
         if (mBufferedRows.size() == 1 || endTs < mMinEndTs) {
