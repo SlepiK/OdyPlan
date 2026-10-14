@@ -7,9 +7,9 @@
 #include "core/shared/types/value_type_id.h"
 
 namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
-    namespace {
+    /*namespace {
         thread_local std::string threadPrintBuffer;
-    }
+    }*/
 
     extern "C" {
 
@@ -27,35 +27,35 @@ namespace sierra::odyplan::v3::basic::operators::sink::print::runtime {
                 io::detail::writeToJson(json, field.name, field.typeId, field.value);
             }
         }
-
-        threadPrintBuffer += json.dump();
-        threadPrintBuffer += ";";
-        threadPrintBuffer += std::to_string(ctx->startTs);
-        threadPrintBuffer += "|";
+        std::string bfr;
+        bfr += json.dump();
+        bfr += ";";
+        bfr += std::to_string(ctx->startTs);
+        bfr += "|";
         if (ctx->endTs == core::shared::types::INFINITY_TIMESTAMP_SENTINEL) {
-            threadPrintBuffer += "oo";
+            bfr += "oo";
         } else {
-            threadPrintBuffer += std::to_string(ctx->endTs);
+            bfr += std::to_string(ctx->endTs);
         }
-        rtOdyPrintNewline();
+        rtOdyPrintNewline(bfr);
     }
 
-    void rtOdyPrintNewline() {
-        threadPrintBuffer += '\n';
-        std::osyncstream(std::cout) << threadPrintBuffer;
-        threadPrintBuffer.clear();
+    void rtOdyPrintNewline(const std::string& bfr) {
+        std::osyncstream(std::cout) << bfr << '\n';
+        //threadPrintBuffer.clear();
     }
 
     void rtOdyPrintPunctuation(const core::shared::types::Timestamp watermark, const bool isFinal) {
-        threadPrintBuffer += "[PUNCTUATION ";
+        std::string bfr;
+        bfr += "[PUNCTUATION ";
         if (isFinal) {
-            threadPrintBuffer += "FINAL]";
+            bfr += "FINAL]";
         } else {
-            threadPrintBuffer += "watermark=";
-            threadPrintBuffer += std::to_string(watermark);
-            threadPrintBuffer += ']';
+            bfr += "watermark=";
+            bfr += std::to_string(watermark);
+            bfr += ']';
         }
-        rtOdyPrintNewline();
+        rtOdyPrintNewline(bfr);
     }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::sink::print::runtime
