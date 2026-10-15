@@ -163,28 +163,17 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             mActiveRowCount -= actuallyRemoved;
         }
 
-        std::size_t writeIdx = 0;
-        for (std::size_t readIdx = 0; readIdx < mRowIndex.size(); ++readIdx) {
-            auto idx = mRowIndex[readIdx];
-            if (idx < mRowMetas.size() && !mRowMetas[idx].isRemoved) {
-                mRowIndex[writeIdx++] = idx;
+        if (mRemovedCount > mRowIndex.size() / 75) {
+            std::size_t writeIdx = 0;
+            for (std::size_t readIdx = 0; readIdx < mRowIndex.size(); ++readIdx) {
+                auto idx = mRowIndex[readIdx];
+                if (idx < mRowMetas.size() && !mRowMetas[idx].isRemoved) {
+                    mRowIndex[writeIdx++] = idx;
+                }
             }
+            mRowIndex.resize(writeIdx);
+            mRemovedCount = 0;
         }
-        mRowIndex.resize(writeIdx);
-
-        /*std::vector<std::size_t> newRowIndex;
-        newRowIndex.reserve(mRowIndex.size());
-        for (auto idx : mRowIndex) {
-            if (idx >= mRowMetas.size()) {
-                continue;
-            }
-
-            if (mRowMetas[idx].isRemoved) {
-                continue;
-            }
-            newRowIndex.push_back(idx);
-        }
-        mRowIndex = std::move(newRowIndex);*/
     }
 
     void UnionBuffer::clear() {
@@ -309,12 +298,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {// NOLIN
             return;
         }
 
-        if (mRowMetas.size() < 1000) {
-            return;
-        }
-
-        double ratio = static_cast<double>(mRemovedCount) / mRowMetas.size();
-        if (ratio >= 0.20) {
+        if (static_cast<double>(mRemovedCount) / mRowMetas.size() >= 0.10) {
             compact();
         }
     }
