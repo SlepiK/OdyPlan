@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
     auto sourceFirstId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-        nlohmann::json{{"path", "nexmark.person.250k.ndjson"}},
+        nlohmann::json{{"path", "nexmark.person.10k.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
             .startTimestampPosition = "timestamp"
         }
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
     auto sourceSecondId = logicalPlan.addOperator(sierra::odyplan::v3::basic::operators::source::read::logical::ReadOperator::fromAutoSchema(
         std::to_underlying(sierra::odyplan::v3::basic::io::BuiltinIOFormat::NDJSON),
-        nlohmann::json{{"path", "nexmark.person.250k.rev.ndjson"}},
+        nlohmann::json{{"path", "nexmark.person.10k.2.ndjson"}},
         sierra::odyplan::v3::basic::operators::source::read::details::LReadOperatorOptions{
             .startTimestampPosition = "timestamp"
         }
