@@ -73,7 +73,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::union_::runtime {
         if (allFinal) {
             if (!wState->finalEmitted) {
                 wState->finalEmitted = true;
-                *outWatermark = core::shared::types::INFINITY_TIMESTAMP_SENTINEL;
+                *outWatermark = std::numeric_limits<core::shared::types::Timestamp>::max();
                 *outIsFinal = 1;
                 sEmit = 1;
             }
