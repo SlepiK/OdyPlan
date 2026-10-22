@@ -11,16 +11,18 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
         static constexpr core::shared::types::OperatorTypeId TYPE_ID =
             std::to_underlying(core::shared::types::BuiltinOperatorType::WINDOW_COUNT);
 
-        explicit CountWindowOperator(const details::CountWindowOptions& windowConfig);
+        explicit CountWindowOperator(const details::CountWindowOptions& windowConfig, bool assureOrder);
 
         [[nodiscard]] core::shared::types::OperatorTypeId getOperatorTypeId() const override;
 
         [[nodiscard]] const details::CountWindowOptions& getWindowConfig() const;
 
+        [[nodiscard]] bool isOutOfOrder() const;
     protected:
         void validateInput() override;
 
     private:
+        bool mAssureOrder;
         details::CountWindowOptions mWindowConfig;
     };
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::logical

@@ -11,7 +11,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         CountWindowOperator(core::physical::port::Port inputPort,
                             core::physical::port::Port outputPort,
                             const details::CountWindowOptions& config,
-                            core::logical::port::Port schema);
+                            core::logical::port::Port schema, bool outOfOrder);
 
         void declareState(core::physical::state::StateRegistry& stateRegistry,
                           llvm::Module& module,
@@ -22,10 +22,16 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                      const core::physical::data::DataPackage& tuple,
                      const core::physical::segment::SegmentDataConsumers& consumers) override;
 
+        void consumePunctuation(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId,
+                                const core::physical::data::PunctuationPackage &punctuation,
+                                const core::physical::segment::SegmentDataConsumers &consumers) override;
+
     private:
+        bool mOutOfOrder;
         details::CountWindowOptions mConfig;
         core::logical::port::Port mDataSchema;
         core::physical::state::StateHandle mState;
+        core::physical::state::StateHandle mPunctuationState;
         llvm::Function* mDrainFn = nullptr;
 
         static llvm::GlobalVariable* buildTypeIds(llvm::Module& module,

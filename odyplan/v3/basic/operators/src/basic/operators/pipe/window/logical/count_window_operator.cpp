@@ -2,8 +2,8 @@
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
     CountWindowOperator::CountWindowOperator(
-        const details::CountWindowOptions& windowConfig)
-        : mWindowConfig(windowConfig) {
+        const details::CountWindowOptions& windowConfig, const bool assureOrder = true)
+        : mWindowConfig(windowConfig), mAssureOrder(assureOrder) {
     }
 
     core::shared::types::OperatorTypeId CountWindowOperator::getOperatorTypeId() const {
@@ -12,6 +12,10 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::logical {
 
     const details::CountWindowOptions& CountWindowOperator::getWindowConfig() const {
         return mWindowConfig;
+    }
+
+    bool CountWindowOperator::isOutOfOrder() const {
+        return !mAssureOrder;
     }
 
     void CountWindowOperator::validateInput() {}

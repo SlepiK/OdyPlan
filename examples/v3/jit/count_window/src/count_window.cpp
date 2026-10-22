@@ -63,7 +63,7 @@ int main() {
                 sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
                 sierra::odyplan::v3::basic::operators::pipe::window::details::CountWindowOptions{
                     .size = 3,
-                }));
+                }, true));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<
@@ -242,6 +242,29 @@ int main() {
             llvm::JITSymbolFlags::Exported);
         symbolMap[jit->mangleAndIntern("rtFanInFree")] = llvm::orc::ExecutorSymbolDef(
             llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::core::runtime::memory::rtFanInFree),
+            llvm::JITSymbolFlags::Exported);
+
+
+        symbolMap[jit->mangleAndIntern("rtPunctuationBufferGetToSend")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtPunctuationBufferGetToSend),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCountWindowGetMinTs")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCountWindowGetMinTs),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtPunctuationBufferCleanup")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtPunctuationBufferCleanup),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtDestroyPunctuationBuffer")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtDestroyPunctuationBuffer),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtPunctuationBufferStore")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtPunctuationBufferStore),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtCreatePunctuationBuffer")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtCreatePunctuationBuffer),
+            llvm::JITSymbolFlags::Exported);
+        symbolMap[jit->mangleAndIntern("rtPunctuationBufferFlush")] = llvm::orc::ExecutorSymbolDef(
+            llvm::orc::ExecutorAddr::fromPtr(&sierra::odyplan::v3::basic::operators::pipe::window::runtime::rtPunctuationBufferFlush),
             llvm::JITSymbolFlags::Exported);
 
         symbolMap[jit->mangleAndIntern("rtParseString")] = llvm::orc::ExecutorSymbolDef(
