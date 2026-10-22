@@ -69,5 +69,44 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     std::size_t rtCountWindowEmitCount(void* state) {
         return static_cast<ICountWindowBuffer*>(state)->getEmitCount();
     }
+
+    core::shared::types::Timestamp rtCountWindowGetMinTs(void* state) {
+        return static_cast<ICountWindowBuffer*>(state)->getMinTs();
+    }
+
+    void *rtCreatePunctuationBuffer() {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        return new CountWindowPunctuationBuffer();
+    }
+
+    void rtPunctuationBufferStore(void* buffer, core::shared::types::Timestamp watermark, bool isFinal, bool isHeartbeat) {
+        auto* buf = static_cast<CountWindowPunctuationBuffer*>(buffer);
+        CountWindowPunctuationBuffer::CountWindowPunctuationBufferEntry const entry{
+            .mark = watermark,
+            .isFinal = isFinal,
+            .isHeartbeat = isHeartbeat
+        };
+        buf->store(entry);
+    }
+
+    std::size_t rtPunctuationBufferFlush(void *buffer, core::shared::types::Timestamp minTs) {
+        auto* buf = static_cast<CountWindowPunctuationBuffer*>(buffer);
+        return buf->flush(minTs);
+    }
+
+    const void *rtPunctuationBufferGetToSend(void *buffer, std::size_t index) {
+        auto *buf = static_cast<CountWindowPunctuationBuffer *>(buffer);
+        return &buf->getToSend(index);
+    }
+
+    void rtPunctuationBufferCleanup(void *buffer) {
+        auto *buf = static_cast<CountWindowPunctuationBuffer *>(buffer);
+        buf->cleanup();
+    }
+
+    void rtDestroyPunctuationBuffer(void *buffer) {
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+        delete static_cast<CountWindowPunctuationBuffer*>(buffer);
+    }
     }
 }  // namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime

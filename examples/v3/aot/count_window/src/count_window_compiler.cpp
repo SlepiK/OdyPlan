@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     ));
 
     auto pipeId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::logical::CountWindowOperator>(
-        sierra::odyplan::v3::basic::operators::pipe::window::details::CountWindowOptions{.size = 5}
+        sierra::odyplan::v3::basic::operators::pipe::window::details::CountWindowOptions{.size = 5}, false
     ));
 
     auto sinkId = logicalPlan.addOperator(std::make_unique<sierra::odyplan::v3::basic::operators::sink::print::logical::PrintOperator>(

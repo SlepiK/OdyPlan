@@ -15,7 +15,12 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::transformation {
         const auto& config = concrete.getWindowConfig();
 
         sierra::odyplan::v3::core::builder::transformation::OperatorTransformation ot;
-        ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::CountWindowOperator>(inputPorts.front(), outputPorts.front(), config, concrete.getInputPorts().front()));
+        ot.operators.push_back(std::make_unique<sierra::odyplan::v3::basic::operators::pipe::window::physical::CountWindowOperator>(
+            inputPorts.front(),
+            outputPorts.front(),
+            config,
+            concrete.getInputPorts().front(),
+            concrete.isOutOfOrder()));
         return ot;
     };
 }

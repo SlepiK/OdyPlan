@@ -35,7 +35,21 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
     void rtCountWindowAdvance(void* state);
 
+    core::shared::types::Timestamp rtCountWindowGetMinTs(void* state);
+
     std::size_t rtCountWindowEmitCount(void* state);
+
+    void* rtCreatePunctuationBuffer();
+
+    void rtPunctuationBufferStore(void* buffer, core::shared::types::Timestamp watermark, bool isFinal, bool isHeartbeat);
+
+    std::size_t rtPunctuationBufferFlush(void* buffer, core::shared::types::Timestamp minTs);
+
+    const void* rtPunctuationBufferGetToSend(void* buffer, std::size_t index);
+
+    void rtPunctuationBufferCleanup(void* buffer);
+
+    void rtDestroyPunctuationBuffer(void* buffer);
     }
 }
 

@@ -1,12 +1,15 @@
 #include <basic/operators/pipe/window/physical/count_window_operator.h>
 
+#include "basic/operators/pipe/window/runtime/count_window_buffer.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
     CountWindowOperator::CountWindowOperator(core::physical::port::Port inputPort,
                                              core::physical::port::Port outputPort,
-                                             const details::CountWindowOptions& config,
-                                             core::logical::port::Port schema)
-    : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
-                    core::physical::port::Ports{std::move(outputPort)}),
+                                             const details::CountWindowOptions &config,
+                                             core::logical::port::Port schema, const bool outOfOrder)
+        : TypedPipeOperator(core::physical::port::Ports{std::move(inputPort)},
+                            core::physical::port::Ports{std::move(outputPort)}),
+          mOutOfOrder(outOfOrder),
           mConfig(config),
           mDataSchema(std::move(schema)) {
         assert(mConfig.advance > 0 && "Advance 0 not supported");
@@ -32,6 +35,15 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                                              llvm::ConstantInt::get(sizeTTy, mDataSchema.size())},
                                             {sizeTTy, sizeTTy, sizeTTy, ptrTy, sizeTTy},
                                             "rtDestroyCountWindowBuffer");
+
+        if (mOutOfOrder) {
+            mPunctuationState = stateRegistry.createHandle(
+                "count_window_punc_" + std::to_string(getPId()),
+                "rtCreatePunctuationBuffer",
+                {},
+                {},
+                "rtDestroyPunctuationBuffer");
+        }
     }
 
 
@@ -64,6 +76,67 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         llvm::Function* drainFn = getOrCreateDrainFn(segmentCtx, consumers.front());
         segmentCtx.builder.CreateCall(drainFn, {state});
+    }
+
+
+    void CountWindowOperator::consumePunctuation(core::physical::segment::SegmentContext &segmentCtx, core::shared::identifiers::PortId,
+                            const core::physical::data::PunctuationPackage &punctuation,
+                            const core::physical::segment::SegmentDataConsumers &consumers) {
+        llvm::LLVMContext& ctx = segmentCtx.builder.getContext();
+        llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
+
+        auto* voidTy = llvm::Type::getVoidTy(ctx);
+        auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i1Ty = llvm::Type::getInt1Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
+        auto* ptrTy = llvm::PointerType::getUnqual(ctx);
+        auto* sizeTTy = module->getDataLayout().getIntPtrType(ctx);
+
+        llvm::Value* state = loadStatePtr(segmentCtx);
+        llvm::Value* puncTs = punctuation.watermark;
+
+        if (!mOutOfOrder) {
+            consumers.front().consumePunctuation(segmentCtx, punctuation);
+        } else {
+            const auto getMinTsFn = module->getOrInsertFunction("rtCountWindowGetMinTs",
+                                                                llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+
+            llvm::Value *minTs = segmentCtx.builder.CreateCall(getMinTsFn, {state});
+            llvm::Value *isSafe = segmentCtx.builder.CreateICmpSLT(puncTs, minTs);
+
+            auto *sendBB = llvm::BasicBlock::Create(ctx, "puncSend", segmentCtx.builder.GetInsertBlock()->getParent());
+            auto *bufferBB = llvm::BasicBlock::Create(ctx, "puncBuffer",
+                                                      segmentCtx.builder.GetInsertBlock()->getParent());
+            auto *mergeBB =
+                    llvm::BasicBlock::Create(ctx, "puncMerge", segmentCtx.builder.GetInsertBlock()->getParent());
+
+            segmentCtx.builder.CreateCondBr(isSafe, sendBB, bufferBB);
+
+            segmentCtx.builder.SetInsertPoint(sendBB);
+
+            consumers.front().consumePunctuation(segmentCtx, punctuation);
+
+            segmentCtx.builder.CreateBr(mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(bufferBB);
+
+            llvm::Value *puncState = segmentCtx.builder.CreateLoad(ptrTy, mPunctuationState.var);
+
+            const auto storeFn = module->getOrInsertFunction(
+                "rtPunctuationBufferStore",
+                llvm::FunctionType::get(voidTy, {ptrTy, i64Ty, i1Ty, i1Ty}, false));
+
+            segmentCtx.builder.CreateCall(storeFn, {
+                                              puncState,
+                                              punctuation.watermark,
+                                              punctuation.isFinal,
+                                              punctuation.isHeartbeat
+                                          });
+
+            segmentCtx.builder.CreateBr(mergeBB);
+
+            segmentCtx.builder.SetInsertPoint(mergeBB);
+        }
     }
 
     llvm::Function*
@@ -110,6 +183,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Module* module = segmentCtx.builder.GetInsertBlock()->getModule();
 
         auto* i64Ty = llvm::Type::getInt64Ty(ctx);
+        auto* i8Ty = llvm::Type::getInt8Ty(ctx);
         auto* i1Ty = llvm::Type::getInt1Ty(ctx);
         auto* ptrTy = llvm::PointerType::getUnqual(ctx);
         auto* voidTy = llvm::Type::getVoidTy(ctx);
@@ -170,6 +244,102 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
 
         segmentCtx.builder.SetInsertPoint(rowExitBB);
         segmentCtx.builder.CreateCall(advanceFn, {state});
+
+        if (mOutOfOrder) {
+            const auto getMinTsFn = module->getOrInsertFunction(
+            "rtCountWindowGetMinTs",
+            llvm::FunctionType::get(i64Ty, {ptrTy}, false));
+            llvm::Value* newMinTs = segmentCtx.builder.CreateCall(getMinTsFn, {state});
+
+            const auto flushFn = module->getOrInsertFunction(
+            "rtPunctuationBufferFlush",
+            llvm::FunctionType::get(sizeTTy, {ptrTy, i64Ty}, false));
+
+            llvm::Value* puncState = segmentCtx.builder.CreateLoad(ptrTy, mPunctuationState.var);
+            llvm::Value* sendCount = segmentCtx.builder.CreateCall(flushFn, {puncState, newMinTs});
+
+            auto* flushHeader = llvm::BasicBlock::Create(ctx, "flushHeader", fn);
+            auto* flushBody = llvm::BasicBlock::Create(ctx, "flushBody", fn);
+            auto* flushExit = llvm::BasicBlock::Create(ctx, "flushExit", fn);
+
+            auto* iSlot = segmentCtx.storage.getNamed(
+                "flushIdx_" + std::to_string(getPId()),
+                sizeTTy);
+            segmentCtx.builder.CreateStore(llvm::ConstantInt::get(sizeTTy, 0), iSlot);
+
+            segmentCtx.builder.CreateBr(flushHeader);
+            segmentCtx.builder.SetInsertPoint(flushHeader);
+            llvm::Value* i = segmentCtx.builder.CreateLoad(sizeTTy, iSlot);
+            segmentCtx.builder.CreateCondBr(
+                segmentCtx.builder.CreateICmpULT(i, sendCount),
+                flushBody,
+                flushExit);
+
+            segmentCtx.builder.SetInsertPoint(flushBody);
+
+            const auto getFn = module->getOrInsertFunction(
+                            "rtPunctuationBufferGetToSend",
+                            llvm::FunctionType::get(ptrTy, {ptrTy, sizeTTy}, false));
+
+            llvm::Value* puncPtr = segmentCtx.builder.CreateCall(getFn, {puncState, i});
+
+            llvm::Value* watermark = segmentCtx.builder.CreateLoad(i64Ty,
+        segmentCtx.builder.CreateBitCast(
+            segmentCtx.builder.CreateGEP(
+                llvm::ArrayType::get(i8Ty, 16),
+                puncPtr,
+                {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 0)},
+                "",
+                llvm::GEPNoWrapFlags::none()),
+            llvm::PointerType::get(i64Ty, 0)));
+
+            // isFinal (bool, offset 8)
+            llvm::Value* isFinal = segmentCtx.builder.CreateTrunc(
+                segmentCtx.builder.CreateLoad(i8Ty,
+                    segmentCtx.builder.CreateBitCast(
+                        segmentCtx.builder.CreateGEP(
+                            llvm::ArrayType::get(i8Ty, 16),
+                            puncPtr,
+                            {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 8)},
+                            "",
+                            llvm::GEPNoWrapFlags::none()),
+                        llvm::PointerType::get(i8Ty, 0))),
+                i1Ty);
+
+            // isHeartbeat (bool, offset 9)
+            llvm::Value* isHeartbeat = segmentCtx.builder.CreateTrunc(
+                segmentCtx.builder.CreateLoad(i8Ty,
+                    segmentCtx.builder.CreateBitCast(
+                        segmentCtx.builder.CreateGEP(
+                            llvm::ArrayType::get(i8Ty, 16),
+                            puncPtr,
+                            {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 9)},
+                            "",
+                            llvm::GEPNoWrapFlags::none()),
+                        llvm::PointerType::get(i8Ty, 0))),
+                i1Ty);
+
+
+            core::physical::data::PunctuationPackage reconPunc;
+            reconPunc.watermark = watermark;
+            reconPunc.isFinal = isFinal;
+            reconPunc.isHeartbeat = isHeartbeat;
+
+            consumer.consumePunctuation(segmentCtx, reconPunc);
+
+            llvm::Value* nextI = segmentCtx.builder.CreateAdd(i, llvm::ConstantInt::get(sizeTTy, 1));
+            segmentCtx.builder.CreateStore(nextI, iSlot);
+            segmentCtx.builder.CreateBr(flushHeader);
+
+            segmentCtx.builder.SetInsertPoint(flushExit);
+
+            const auto cleanupFn = module->getOrInsertFunction(
+            "rtPunctuationBufferCleanup",
+            llvm::FunctionType::get(voidTy, {ptrTy}, false));
+            segmentCtx.builder.CreateCall(cleanupFn, {puncState});
+        }
+
+
         segmentCtx.builder.CreateBr(headerBB);
 
         segmentCtx.builder.SetInsertPoint(exitBB);

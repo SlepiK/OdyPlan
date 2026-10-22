@@ -9,6 +9,8 @@
 #include <vector>
 #include <core/shared/types/global_types.h>
 
+#include "core/physical/data/data_package.h"
+
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     class ICountWindowBuffer {
     public:
@@ -37,6 +39,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         virtual void close() = 0;
 
         [[nodiscard]] virtual std::size_t getEmitCount() const = 0;
+
+        [[nodiscard]] virtual core::shared::types::Timestamp getMinTs() const = 0;
     };
 
     class CountWindowBuffer final : public ICountWindowBuffer {
@@ -68,6 +72,8 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         void close() override;
 
         [[nodiscard]] std::size_t getEmitCount() const override;
+
+        [[nodiscard]] core::shared::types::Timestamp getMinTs() const override;
     private:
         struct Row {
             std::vector<std::byte> data;
@@ -88,6 +94,41 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         std::size_t mReadyEmitCount = 0;
         core::shared::types::Timestamp mReadyEnd = 0;
         bool mFlushed = false;
+    };
+
+    /*
+     * Based on Odysseus Code
+     */
+    class CountWindowPunctuationBuffer {
+    public:
+        struct CountWindowPunctuationBufferEntry {
+            core::shared::types::Timestamp mark;
+            bool isFinal;
+            bool isHeartbeat;
+        };
+
+        CountWindowPunctuationBuffer() = default;
+        virtual ~CountWindowPunctuationBuffer() = default;
+
+        void store(const CountWindowPunctuationBufferEntry &punc);
+
+        std::size_t flush(core::shared::types::Timestamp minTs);
+
+        [[nodiscard]] const CountWindowPunctuationBufferEntry& getToSend(std::size_t index) const;
+
+        void cleanup();
+
+        [[nodiscard]] std::size_t size() const {
+            return mBuffer.size();
+        }
+
+        [[nodiscard]] std::size_t toSendCount() const {
+            return mToSendIndices.size();
+        }
+
+    private:
+        std::vector<CountWindowPunctuationBufferEntry> mBuffer;
+        std::vector<std::size_t> mToSendIndices;
     };
 }
 
