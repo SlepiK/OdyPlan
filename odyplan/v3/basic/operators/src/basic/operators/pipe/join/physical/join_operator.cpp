@@ -705,7 +705,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         llvm::Value *joinState = loadStatePtr(segmentCtx);
 
         auto *mergeBB = llvm::BasicBlock::Create(ctx, "join_watermark_merge", fn);
-        auto *emitBB = llvm::BasicBlock::Create(ctx, "join_emit_watermark", fn);
         auto *afterMergeBB = llvm::BasicBlock::Create(ctx, "join_after_merge", fn);
         auto *returnBB = llvm::BasicBlock::Create(ctx, "join_return", fn);
 
@@ -768,20 +767,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
                                                                outCurrentWatermark, outIsFinal
                                                            }, "should_emit");
 
-        llvm::Value *condition = segmentCtx.builder.CreateICmpNE(sEmit, llvm::ConstantInt::get(i8Ty, 0));
-
-        segmentCtx.builder.CreateCondBr(condition, emitBB, afterMergeBB);
-
-        segmentCtx.builder.SetInsertPoint(emitBB);
-
-        llvm::Value *currentWatermark = segmentCtx.builder.CreateLoad(i64Ty, outCurrentWatermark);
-        llvm::Value *currentIsFinal = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
-        llvm::Value *newIsFinal = segmentCtx.builder.CreateICmpNE(currentIsFinal, llvm::ConstantInt::get(i8Ty, 0));
-
-        const auto outgoingPunctuation = core::physical::data::PunctuationPackage::create(segmentCtx.builder, currentWatermark, newIsFinal);
-
-        consumers.front().consumePunctuation(segmentCtx, outgoingPunctuation);
-
         segmentCtx.builder.CreateBr(afterMergeBB);
 
         segmentCtx.builder.SetInsertPoint(afterMergeBB);
@@ -803,6 +788,28 @@ namespace sierra::odyplan::v3::basic::operators::pipe::join::physical {
         }
 
         segmentCtx.builder.CreateCall(unlockFn, {joinState});
+
+        llvm::Value *condition = segmentCtx.builder.CreateICmpNE(sEmit, llvm::ConstantInt::get(i8Ty, 0));
+
+        auto* doEmitBB = llvm::BasicBlock::Create(ctx, "do_emit_punc", fn);
+        auto* skipEmitBB = llvm::BasicBlock::Create(ctx, "do_skip_emit_punc", fn);
+
+        segmentCtx.builder.CreateCondBr(condition, doEmitBB, skipEmitBB);
+
+        segmentCtx.builder.SetInsertPoint(doEmitBB);
+
+        llvm::Value *currentWatermark = segmentCtx.builder.CreateLoad(i64Ty, outCurrentWatermark);
+        llvm::Value *currentIsFinal = segmentCtx.builder.CreateLoad(i8Ty, outIsFinal);
+        llvm::Value *newIsFinal = segmentCtx.builder.CreateICmpNE(currentIsFinal, llvm::ConstantInt::get(i8Ty, 0));
+
+        const auto outgoingPunctuation = core::physical::data::PunctuationPackage::create(
+            segmentCtx.builder, currentWatermark, newIsFinal);
+
+        consumers.front().consumePunctuation(segmentCtx, outgoingPunctuation);
+        segmentCtx.builder.CreateBr(skipEmitBB);
+
+
+        segmentCtx.builder.SetInsertPoint(skipEmitBB);
 
         segmentCtx.builder.CreateBr(returnBB);
 
