@@ -291,7 +291,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                 {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 0)},
                 "",
                 llvm::GEPNoWrapFlags::none()),
-            llvm::PointerType::get(i64Ty, 0)));
+                llvm::PointerType::getUnqual(i64Ty->getContext())));
 
             // isFinal (bool, offset 8)
             llvm::Value* isFinal = segmentCtx.builder.CreateTrunc(
@@ -303,7 +303,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                             {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 8)},
                             "",
                             llvm::GEPNoWrapFlags::none()),
-                        llvm::PointerType::get(i8Ty, 0))),
+                        llvm::PointerType::getUnqual(i8Ty->getContext()))),
                 i1Ty);
 
             // isHeartbeat (bool, offset 9)
@@ -316,7 +316,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                             {llvm::ConstantInt::get(sizeTTy, 0), llvm::ConstantInt::get(sizeTTy, 9)},
                             "",
                             llvm::GEPNoWrapFlags::none()),
-                        llvm::PointerType::get(i8Ty, 0))),
+                        llvm::PointerType::getUnqual(i8Ty->getContext()))),
                 i1Ty);
 
 
