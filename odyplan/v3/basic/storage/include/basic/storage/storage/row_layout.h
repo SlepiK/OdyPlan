@@ -1,10 +1,10 @@
-#ifndef SIERRA_ODYPLAN_V3_BASIC_STORAGE_ROW_LAYOUT_HPP
-#define SIERRA_ODYPLAN_V3_BASIC_STORAGE_ROW_LAYOUT_HPP
+#ifndef SIERRA_ODYPLAN_V3_BASIC_STORAGE_STORAGE_ROW_LAYOUT_HPP
+#define SIERRA_ODYPLAN_V3_BASIC_STORAGE_STORAGE_ROW_LAYOUT_HPP
 #include <core/logical/port/port.h>
 #include <core/runtime/types/runtime_type_registry.h>
 #include <utility>
 
-namespace sierra::odyplan::v3::basic::storage {
+namespace sierra::odyplan::v3::basic::storage::storage {
     class RowLayout {
     public:
         explicit RowLayout(core::logical::port::Port dataSchema);
@@ -41,4 +41,4 @@ namespace sierra::odyplan::v3::basic::storage {
     };
 }
 
-#endif  // SIERRA_ODYPLAN_V3_BASIC_STORAGE_ROW_LAYOUT_HPP
+#endif  // SIERRA_ODYPLAN_V3_BASIC_STORAGE_STORAGE_ROW_LAYOUT_HPP

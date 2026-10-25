@@ -3,13 +3,11 @@
 
 #include <basic/operators/pipe/window/details/count_window_options.h>
 #include <basic/operators/pipe/window/runtime/count_window_range.h>
-#include <basic/storage/row_layout.h>
+#include <basic/storage/storage/row_layout.h>
 #include <deque>
 #include <optional>
 #include <vector>
 #include <core/shared/types/global_types.h>
-
-#include "core/physical/data/data_package.h"
 
 namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
     class ICountWindowBuffer {
@@ -82,7 +80,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         };
 
         details::CountWindowOptions mConfig;
-        storage::RowLayout mRowLayout;
+        storage::storage::RowLayout mRowLayout;
         core::logical::port::Port mSchema;
 
         std::deque<Row> mRowBuffer;
@@ -94,41 +92,6 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
         std::size_t mReadyEmitCount = 0;
         core::shared::types::Timestamp mReadyEnd = 0;
         bool mFlushed = false;
-    };
-
-    /*
-     * Based on Odysseus Code
-     */
-    class CountWindowPunctuationBuffer {
-    public:
-        struct CountWindowPunctuationBufferEntry {
-            core::shared::types::Timestamp mark;
-            bool isFinal;
-            bool isHeartbeat;
-        };
-
-        CountWindowPunctuationBuffer() = default;
-        virtual ~CountWindowPunctuationBuffer() = default;
-
-        void store(const CountWindowPunctuationBufferEntry &punc);
-
-        std::size_t flush(core::shared::types::Timestamp minTs);
-
-        [[nodiscard]] const CountWindowPunctuationBufferEntry& getToSend(std::size_t index) const;
-
-        void cleanup();
-
-        [[nodiscard]] std::size_t size() const {
-            return mBuffer.size();
-        }
-
-        [[nodiscard]] std::size_t toSendCount() const {
-            return mToSendIndices.size();
-        }
-
-    private:
-        std::vector<CountWindowPunctuationBufferEntry> mBuffer;
-        std::vector<std::size_t> mToSendIndices;
     };
 }
 

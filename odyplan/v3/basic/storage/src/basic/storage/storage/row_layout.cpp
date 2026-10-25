@@ -1,7 +1,7 @@
-#include <basic/storage/row_layout.h>
+#include <basic/storage/storage/row_layout.h>
 #include <cstring>
 
-namespace sierra::odyplan::v3::basic::storage {
+namespace sierra::odyplan::v3::basic::storage::storage {
     RowLayout::RowLayout(
         core::logical::port::Port dataSchema)
         : mDataSchema(std::move(dataSchema)),
