@@ -69,7 +69,7 @@ int main() {
 
         auto unionId = logicalPlan.addOperator(
             std::make_unique<
-                sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>(false));
+                sierra::odyplan::v3::basic::operators::pipe::union_::logical::UnionOperator>(true));
 
         auto sinkId = logicalPlan.addOperator(
             std::make_unique<

@@ -96,33 +96,4 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::runtime {
 
         return mRowBuffer.front().startTs;
     }
-
-    void CountWindowPunctuationBuffer::store(const CountWindowPunctuationBufferEntry &punc) {
-        mBuffer.push_back(punc);
-    }
-
-    std::size_t CountWindowPunctuationBuffer::flush(const core::shared::types::Timestamp minTs) {
-        mToSendIndices.clear();
-
-        for (std::size_t i = 0; i < mBuffer.size(); ++i) {
-            if (mBuffer[i].mark < minTs) {
-                mToSendIndices.push_back(i);
-            }
-        }
-
-        return mToSendIndices.size();
-    }
-
-    const CountWindowPunctuationBuffer::CountWindowPunctuationBufferEntry
-    &CountWindowPunctuationBuffer::getToSend(const std::size_t index) const {
-        return mBuffer[mToSendIndices[index]];
-    }
-
-    void CountWindowPunctuationBuffer::cleanup() {
-        std::ranges::sort(mToSendIndices);
-        for (const auto index : mToSendIndices) {
-            mBuffer.erase(mBuffer.begin() + index);
-        }
-        mToSendIndices.clear();
-    }
 }  // namespace sierra::odyplan::v3::basic::window::count
