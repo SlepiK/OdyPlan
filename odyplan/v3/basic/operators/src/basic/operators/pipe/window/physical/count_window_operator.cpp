@@ -36,7 +36,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
                                             {sizeTTy, sizeTTy, sizeTTy, ptrTy, sizeTTy},
                                             "rtDestroyCountWindowBuffer");
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             mPunctuationState = stateRegistry.createHandle(
                 "count_window_punc_" + std::to_string(getPId()),
                 "rtCreatePunctuationBuffer",
@@ -95,7 +95,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         llvm::Value* state = loadStatePtr(segmentCtx);
         llvm::Value* puncTs = punctuation.watermark;
 
-        if (!mOutOfOrder) {
+        if (mOutOfOrder) {
             consumers.front().consumePunctuation(segmentCtx, punctuation);
         } else {
             const auto getMinTsFn = module->getOrInsertFunction("rtCountWindowGetMinTs",
@@ -245,7 +245,7 @@ namespace sierra::odyplan::v3::basic::operators::pipe::window::physical {
         segmentCtx.builder.SetInsertPoint(rowExitBB);
         segmentCtx.builder.CreateCall(advanceFn, {state});
 
-        if (mOutOfOrder) {
+        if (!mOutOfOrder) {
             const auto getMinTsFn = module->getOrInsertFunction(
             "rtCountWindowGetMinTs",
             llvm::FunctionType::get(i64Ty, {ptrTy}, false));
